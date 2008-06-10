@@ -1,0 +1,34 @@
+pianobar/libpiano
+=================
+
+libpiano is a shared library to access the xmlrpc api at pandora.com.
+
+pianobar will be a pandora.com music player.
+
+This software is not yet complete and only implements essential functions to
+connect to pandora, authenticate, getting a station- and playlist and play the
+first song from the first station. Currently you need to be a developer to get
+this piece of code working... But the code is well-documented, I think.
+
+XML-RPC API
+===========
+
+You might want to have a look at the api documentation. Currently only
+available in german, but this may change:
+
+http://uint16.ath.cx/web/pandora.com/api
+
+Are you pandora.com? Read this!
+===============================
+
+"Why are you doing this?" you might ask. This is my anwer: I love your service
+(recommendations are much better than those from last.fm, audio quality is much
+better, stationS that actually *learn* what I like, ...), but your flashplayer
+sucks! (25% CPU load and a browser window is too much for playing music) So I
+decided to write a free-to-use (even you could use it commercially!) library
+and player to access your service.
+
+By the way: It's useless to change the encryption/decryption key. It won't take
+a week to get it working again, because the key is visible to every decompiler
+and debugger.
+
