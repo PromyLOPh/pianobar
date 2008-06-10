@@ -276,3 +276,32 @@ void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 	xmlFreeDoc (doc);
 	xmlCleanupParser();
 }
+
+/*	parse addFeedback answer
+ *	@author PromyLOPh
+ *	@added 2008-06-10
+ *	@param xml string
+ *	@return
+ */
+PianoReturn_t PianoXmlParseRate (char *xml) {
+	xmlNode *docRoot = NULL, *curNode = NULL;
+	xmlDocPtr doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
+	PianoReturn_t ret = PIANO_RET_ERR;
+
+	if (doc == NULL) {
+		printf ("whoops... xml parser error\n");
+		return;
+	}
+
+	docRoot = xmlDocGetRootElement (doc);
+
+	xmlNode *val = docRoot->children->children->children->children;
+	if (xmlStrEqual (val->content, (xmlChar *) "1")) {
+		ret = PIANO_RET_OK;
+	}
+
+	xmlFreeDoc (doc);
+	xmlCleanupParser();
+
+	return ret;
+}

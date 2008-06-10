@@ -115,6 +115,10 @@ struct PianoHandle {
 
 typedef struct PianoHandle PianoHandle_t;
 
+/* FIXME: more error types (http failed, e.g.) later */
+enum PianoReturn {PIANO_RET_OK, PIANO_RET_ERR};
+typedef enum PianoReturn PianoReturn_t;
+
 enum PianoSongRating {PIANO_RATE_BAN, PIANO_RATE_LOVE};
 typedef enum PianoSongRating PianoSongRating_t;
 
@@ -126,7 +130,7 @@ void PianoConnect (PianoHandle_t *, char *, char *);
 void PianoGetStations (PianoHandle_t *ph);
 void PianoGetPlaylist (PianoHandle_t *ph, char *stationId);
 
-void PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
+PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		PianoSong_t *song, PianoSongRating_t rating);
 
 #endif /* _PIANO_H */

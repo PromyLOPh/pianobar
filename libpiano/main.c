@@ -218,10 +218,11 @@ void PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
 	free (requestStr);
 }
 
-void PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
+PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		PianoSong_t *song, PianoSongRating_t rating) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
+	PianoReturn_t ret = PIANO_RET_ERR;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>station.addFeedback</methodName>"
@@ -245,7 +246,9 @@ void PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 			song->matchingSeed, song->userSeed, song->focusTraitId,
 			(rating == PIANO_RATE_LOVE) ? "true" : "false");
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	/* FIXME: check answer (success = <?xml version="1.0" encoding="UTF-8"?><methodResponse><params><param><value>1</value></param></params></methodResponse> ) */
+	ret = PianoXmlParseRate (retStr);
 	free (requestStr);
 	free (retStr);
+
+	return ret;
 }

@@ -283,17 +283,23 @@ int main (int argc, char **argv) {
 
 					case 'b':
 						player.doQuit = 1;
-						PianoRateTrack (&ph, curStation, curSong,
-								PIANO_RATE_BAN);
-						printf ("Banned.\n");
+						if (PianoRateTrack (&ph, curStation, curSong,
+								PIANO_RATE_BAN) == PIANO_RET_OK) {
+							printf ("Banned.\n");
+						} else {
+							printf ("Error while banning track.\n");
+						}
 						/* pandora does this too, I think */
 						PianoDestroyPlaylist (&ph);
 						break;
 
 					case 'l':
-						PianoRateTrack (&ph, curStation, curSong,
-								PIANO_RATE_LOVE);
-						printf ("Loved.\n");
+						if (PianoRateTrack (&ph, curStation, curSong,
+								PIANO_RATE_LOVE) == PIANO_RET_OK) {
+							printf ("Loved.\n");
+						} else {
+							printf ("Error while loving track.\n");
+						}
 						break;
 
 					case 'n':

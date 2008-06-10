@@ -1,3 +1,7 @@
+2008-06-10
+	* introduced love/ban error reporting
+	* fixed love/ban segfault
+
 2008-06-09
 	* replaced calloc & strcpy by strdup in xml.c
 	* rating implemented
