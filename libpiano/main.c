@@ -218,6 +218,17 @@ void PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
 	free (requestStr);
 }
 
+/*	love or ban track (you cannot remove your rating, so PIANO_RATE_NONE is
+ *	not allowed
+ *	@author PromyLOPh
+ *	@added 2008-06-10
+ *	@public yes
+ *	@param piano handle
+ *	@param track will be added to this stations loved tracks list
+ *	@param rate this track
+ *	@param your rating
+ *	@return value from return enum
+ */
 PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		PianoSong_t *song, PianoSongRating_t rating) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
