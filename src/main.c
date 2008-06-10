@@ -285,12 +285,15 @@ int main (int argc, char **argv) {
 						player.doQuit = 1;
 						PianoRateTrack (&ph, curStation, curSong,
 								PIANO_RATE_BAN);
+						printf ("Banned.\n");
+						/* pandora does this too, I think */
 						PianoDestroyPlaylist (&ph);
 						break;
 
 					case 'l':
 						PianoRateTrack (&ph, curStation, curSong,
 								PIANO_RATE_LOVE);
+						printf ("Loved.\n");
 						break;
 
 					case 'n':
@@ -303,13 +306,11 @@ int main (int argc, char **argv) {
 						break;
 
 					case 's':
-						/* FIXME: does not work, segfault... */
 						player.doQuit = 1;
 						PianoDestroyPlaylist (&ph);
 						curStation = selectStation (&ph);
 						printf ("changed station to %s\n", curStation->name);
 						break;
-
 				}
 			}
 		}
@@ -321,10 +322,11 @@ int main (int argc, char **argv) {
 		curSong = lastSong->next;
 		if (curSong == NULL && !doQuit) {
 			printf ("receiving new playlist\n");
+			PianoDestroyPlaylist (&ph);
 			PianoGetPlaylist (&ph, curStation->id);
-			curSong = lastSong->next;
+			curSong = ph.playlist;
 			if (curSong == NULL) {
-				/* no tracks left */
+				printf ("no tracks left\n");
 				doQuit = 1;
 			}
 		}

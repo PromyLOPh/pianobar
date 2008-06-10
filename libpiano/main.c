@@ -68,6 +68,7 @@ void PianoDestroyStations (PianoHandle_t *ph) {
 		memset (lastStation, 0, sizeof (*lastStation));
 		free (lastStation);
 	}
+	ph->stations = NULL;
 }
 
 /* FIXME: copy & waste */
@@ -94,6 +95,7 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
 		memset (lastSong, 0, sizeof (*lastSong));
 		free (lastSong);
 	}
+	ph->playlist = NULL;
 }
 
 /*	frees the whole piano handle structure
