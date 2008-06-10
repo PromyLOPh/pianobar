@@ -296,7 +296,7 @@ PianoReturn_t PianoXmlParseRate (char *xml) {
 
 	if (doc == NULL) {
 		printf ("whoops... xml parser error\n");
-		return;
+		return PIANO_RET_ERR;
 	}
 
 	docRoot = xmlDocGetRootElement (doc);
