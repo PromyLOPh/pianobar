@@ -262,7 +262,8 @@ int main (int argc, char **argv) {
 	while (!doQuit) {
 		PianoSong_t *lastSong = NULL;
 		pthread_t playerThread;
-		printf ("%s by %s\n", curSong->title, curSong->artist);
+		printf ("\"%s\" by \"%s\"%s\n", curSong->title, curSong->artist,
+				(curSong->rating == PIANO_RATE_LOVE) ? " (Loved)" : "");
 		memset (&player, 0, sizeof (player));
 		player.url = strdup (curSong->audioUrl);
 
@@ -294,6 +295,10 @@ int main (int argc, char **argv) {
 						break;
 
 					case 'l':
+						if (curSong->rating == PIANO_RATE_LOVE) {
+							printf ("Already loved. No need to do this twice.\n");
+							break;
+						}
 						if (PianoRateTrack (&ph, curStation, curSong,
 								PIANO_RATE_LOVE) == PIANO_RET_OK) {
 							printf ("Loved.\n");
