@@ -49,6 +49,7 @@ void PianoInit (PianoHandle_t *ph) {
 	/* set tor as control connection proxy */
 	curl_easy_setopt (ph->curlHandle, CURLOPT_PROXY, "localhost:9050");
 	curl_easy_setopt (ph->curlHandle, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS4A);
+	curl_easy_setopt (ph->curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 }
 
 /*	free complete station list
