@@ -131,5 +131,7 @@ void PianoGetPlaylist (PianoHandle_t *ph, char *stationId);
 
 PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		PianoSong_t *song, PianoSongRating_t rating);
+PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
+		char *newName);
 
 #endif /* _PIANO_H */
