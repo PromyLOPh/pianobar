@@ -99,11 +99,11 @@ void PianoXmlParseUserinfoCb (char *key, xmlNode *value, void *data) {
 		 valueStr = (char *) value->children->content;
 	}
 	/* FIXME: should be continued later */
-	if (strcmp ("webAuthToken", key) == 0) {
+	if (xmlStrEqual ("webAuthToken", key)) {
 		user->webAuthToken = strdup (valueStr);
-	} else if (strcmp ("authToken", key) == 0) {
+	} else if (xmlStrEqual ("authToken", key)) {
 		user->authToken = strdup (valueStr);
-	} else if (strcmp ("listenerId", key) == 0) {
+	} else if (xmlStrEqual ("listenerId", key)) {
 		user->listenerId = strdup (valueStr);
 	}
 }
@@ -121,9 +121,9 @@ void PianoXmlParseStationsCb (char *key, xmlNode *value, void *data) {
 			value->children->content != NULL) {
 		 valueStr = (char *) value->children->content;
 	}
-	if (strcmp ("stationName", key) == 0) {
+	if (xmlStrEqual ("stationName", key)) {
 		station->name = strdup (valueStr);
-	} else if (strcmp ("stationId", key) == 0) {
+	} else if (xmlStrEqual ("stationId", key)) {
 		station->id = strdup (valueStr);
 	}
 }
@@ -141,7 +141,7 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 			value->children->content != NULL) {
 		 valueStr = (char *) value->children->content;
 	}
-	if (strcmp ("audioURL", key) == 0) {
+	if (xmlStrEqual ("audioURL", key)) {
 		/* last 48 chars of audioUrl are encrypted, but they put the key
 		 * into the door's lock; dumb pandora... */
 		const char urlTailN = 48;
@@ -155,19 +155,19 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 		strncat (song->audioUrl, urlTail, (urlTailN/2)-8);
 		free (urlTail);
 
-	} else if (strcmp ("artistSummary", key) == 0) {
+	} else if (xmlStrEqual ("artistSummary", key)) {
 		song->artist = strdup (valueStr);
-	} else if (strcmp ("musicId", key) == 0) {
+	} else if (xmlStrEqual ("musicId", key)) {
 		song->musicId = strdup (valueStr);
-	} else if (strcmp ("matchingSeed", key) == 0) {
+	} else if (xmlStrEqual ("matchingSeed", key)) {
 		song->matchingSeed = strdup (valueStr);
-	} else if (strcmp ("userSeed", key) == 0) {
+	} else if (xmlStrEqual ("userSeed", key)) {
 		song->userSeed = strdup (valueStr);
-	} else if (strcmp ("focusTraitId", key) == 0) {
+	} else if (xmlStrEqual ("focusTraitId", key)) {
 		song->focusTraitId = strdup (valueStr);
-	} else if (strcmp ("songTitle", key) == 0) {
+	} else if (xmlStrEqual ("songTitle", key)) {
 		song->title = strdup (valueStr);
-	} else if (strcmp ("rating", key) == 0) {
+	} else if (xmlStrEqual ("rating", key)) {
 		if (xmlStrEqual (valueStr, "1")) {
 			song->rating = PIANO_RATE_LOVE;
 		} else {
