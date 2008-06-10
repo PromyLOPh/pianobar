@@ -283,13 +283,15 @@ void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 	xmlCleanupParser();
 }
 
-/*	parse addFeedback answer
+/*	parse simple answers like this: <?xml version="1.0" encoding="UTF-8"?>
+ *	<methodResponse><params><param><value>1</value></param></params>
+ *	</methodResponse>
  *	@author PromyLOPh
  *	@added 2008-06-10
  *	@param xml string
  *	@return
  */
-PianoReturn_t PianoXmlParseRate (char *xml) {
+PianoReturn_t PianoXmlParseSimple (char *xml) {
 	xmlNode *docRoot = NULL, *curNode = NULL;
 	xmlDocPtr doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
 	PianoReturn_t ret = PIANO_RET_ERR;
