@@ -313,3 +313,41 @@ PianoReturn_t PianoXmlParseSimple (char *xml) {
 
 	return ret;
 }
+
+/*	encode reserved chars
+ *	@author PromyLOPh
+ *	@added 2008-06-10
+ *	@param encode this
+ *	@return encoded string
+ */
+char *PianoXmlEncodeString (const char *s) {
+	char *replacements[] = {"&&amp;", "'&apos;", "\"&quot;", "<&lt;", ">&gt;"};
+	char *s_new = NULL;
+	unsigned int s_new_n = 0;
+	unsigned int i;
+	char found = 0;
+
+	s_new_n = strlen (s) + 1;
+	s_new = calloc (s_new_n, 1);
+
+	while (*s) {
+		found = 0;
+		for (i = 0; i < sizeof (replacements) / sizeof (*replacements); i++) {
+			if (*s == replacements[i][0]) {
+				/* replacements[i]+1 is our replacement, and -1 'cause we
+				 * "overwrite" one byte */
+				s_new_n += strlen (replacements[i]+1)-1;
+				s_new = realloc (s_new, s_new_n);
+				strncat (s_new, replacements[i]+1, strlen (replacements[i]+1));
+				found = 1;
+				/* no need to look for other entities */
+				break;
+			}
+		}
+		if (!found) {
+			strncat (s_new, s, 1);
+		}
+		s++;
+	}
+	return s_new;
+}

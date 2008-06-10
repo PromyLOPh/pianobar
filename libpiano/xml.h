@@ -27,4 +27,6 @@ void PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml);
 void PianoXmlParseStations (PianoHandle_t *ph, char *xml);
 void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml);
 
+char *PianoXmlEncodeString (const char *s);
+
 #endif /* _XML_H */
