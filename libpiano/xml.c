@@ -167,6 +167,12 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 		song->focusTraitId = strdup (valueStr);
 	} else if (strcmp ("songTitle", key) == 0) {
 		song->title = strdup (valueStr);
+	} else if (strcmp ("rating", key) == 0) {
+		if (xmlStrEqual (valueStr, "1")) {
+			song->rating = PIANO_RATE_LOVE;
+		} else {
+			song->rating = PIANO_RATE_NONE;
+		}
 	}
 }
 

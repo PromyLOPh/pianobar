@@ -65,8 +65,10 @@ struct PianoStation {
 	char *id;
 	struct PianoStation *next;
 };
-
 typedef struct PianoStation PianoStation_t;
+
+enum PianoSongRating {PIANO_RATE_BAN, PIANO_RATE_LOVE, PIANO_RATE_NONE};
+typedef enum PianoSongRating PianoSongRating_t;
 
 struct PianoSong {
 	char *artist;
@@ -82,7 +84,7 @@ struct PianoSong {
 	char *webId;
 	/* disabled: musicComUrl */
 	/* disabled: fanExplorerUrl */
-	int rating;
+	PianoSongRating_t rating;
 	/* disabled: artistExplorerUrl */
 	/* disabled: artRadio */
 	char *audioEncoding; /* FIXME: should be enum: mp3 or aacplus */
@@ -118,9 +120,6 @@ typedef struct PianoHandle PianoHandle_t;
 /* FIXME: more error types (http failed, e.g.) later */
 enum PianoReturn {PIANO_RET_OK, PIANO_RET_ERR};
 typedef enum PianoReturn PianoReturn_t;
-
-enum PianoSongRating {PIANO_RATE_BAN, PIANO_RATE_LOVE};
-typedef enum PianoSongRating PianoSongRating_t;
 
 void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
