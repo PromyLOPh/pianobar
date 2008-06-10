@@ -219,7 +219,7 @@ void PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
 }
 
 /*	love or ban track (you cannot remove your rating, so PIANO_RATE_NONE is
- *	not allowed
+ *	not allowed)
  *	@author PromyLOPh
  *	@added 2008-06-10
  *	@public yes
@@ -248,13 +248,16 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 			"<param><value><boolean>0</boolean></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			station->id, song->musicId, song->matchingSeed, song->userSeed,
-			song->focusTraitId, (rating == PIANO_RATE_LOVE) ? 1 : 0);
+			/* sometimes focusTraitId is not set, dunno why yet */
+			(song->focusTraitId == NULL) ? "" : song->focusTraitId,
+			(rating == PIANO_RATE_LOVE) ? 1 : 0);
 	requestStr = PianoEncryptString (xmlSendBuf);
 	snprintf (url, sizeof (url), PIANO_RPC_URL
 			"rid=%s&lid=%s&method=addFeedback&arg1=%s&arg2=%s"
 			"&arg3=%s&arg4=%s&arg5=%s&arg6=%s&arg7=false", ph->routeId,
 			ph->user.listenerId, station->id, song->musicId,
-			song->matchingSeed, song->userSeed, song->focusTraitId,
+			song->matchingSeed, song->userSeed,
+			(song->focusTraitId == NULL) ? "" : song->focusTraitId,
 			(rating == PIANO_RATE_LOVE) ? "true" : "false");
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseRate (retStr);
