@@ -267,3 +267,33 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 
 	return ret;
 }
+
+PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
+		char *newName) {
+	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char *requestStr, *retStr, *urlencodedNewName;
+	PianoReturn_t ret = PIANO_RET_ERR;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>station.setStationName</methodName>"
+			"<params><param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			station->id, /* FIXME: xml-encode this */ newName);
+	requestStr = PianoEncryptString (xmlSendBuf);
+
+	urlencodedNewName = curl_easy_escape (ph->curlHandle, newName, 0);
+	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s"
+			"&method=setStationName&arg1=%s&arg2=%s", ph->routeId,
+			ph->user.listenerId, station->id, urlencodedNewName);
+	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
+	ret = PianoXmlParseSimple (retStr);
+	
+	curl_free (urlencodedNewName);
+	free (requestStr);
+	free (retStr);
+
+	return ret;
+}
