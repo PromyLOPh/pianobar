@@ -306,3 +306,39 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 
 	return ret;
 }
+
+/*	delete station
+ *	@author PromyLOPh
+ *	@added 2008-06-10
+ *	@public yes
+ *	@param piano handle
+ *	@param station you want to delete
+ *	@return
+ */
+PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
+	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char *requestStr, *retStr;
+	PianoReturn_t ret = PIANO_RET_ERR;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>station.removeStation</methodName>"
+			"<params><param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			station->id);
+	requestStr = PianoEncryptString (xmlSendBuf);
+
+	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s"
+			"&method=removeStation&arg1=%s", ph->routeId, ph->user.listenerId,
+			station->id);
+	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
+	ret = PianoXmlParseSimple (retStr);
+
+	/* FIXME would be our job to delete station from global station list... */
+
+	free (requestStr);
+	free (retStr);
+
+	return ret;
+}

@@ -133,5 +133,6 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		PianoSong_t *song, PianoSongRating_t rating);
 PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 		char *newName);
+PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station);
 
 #endif /* _PIANO_H */
