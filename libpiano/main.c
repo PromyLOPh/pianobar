@@ -268,6 +268,15 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 	return ret;
 }
 
+/*	rename station
+ *	@author PromyLOPh
+ *	@added 2008-06-10
+ *	@public yes
+ *	@param piano handle
+ *	@param change this stations name
+ *	@param new name
+ *	@return
+ */
 PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 		char *newName) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
