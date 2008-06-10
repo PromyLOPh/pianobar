@@ -261,7 +261,7 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 			(song->focusTraitId == NULL) ? "" : song->focusTraitId,
 			(rating == PIANO_RATE_LOVE) ? "true" : "false");
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseRate (retStr);
+	ret = PianoXmlParseSimple (retStr);
 	free (requestStr);
 	free (retStr);
 
