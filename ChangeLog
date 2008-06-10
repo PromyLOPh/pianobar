@@ -1,0 +1,15 @@
+2008-06-09
+	* replaced calloc & strcpy by strdup in xml.c
+	* rating implemented
+	* skip, change station, quit implemented
+	* now using thread for audio playback
+
+2008-06-07
+	* updated readme
+	* documented some more functions
+	* fixed autotools
+	* added primitive playback of first song using libao and faad2
+
+2008-06-05
+	* url creation now uses less buffers
+	* first public release

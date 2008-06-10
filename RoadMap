@@ -1,0 +1,18 @@
+Roadmap
+=======
+
+Ordered by importance:
+
+Must-have:
+----------
+
+* implement all pandora commands like ban/love/...
+* buffer songs (works without too, but would be a huge improvement)
+* fixes, fixes, fixes (look for memory leaks or implement error handling, e.g.)
+
+Wishes:
+-------
+
+* replaygain
+* cache for authtoken (how long are they valid?) and other userdata
+* last.fm scrobbling

@@ -1,0 +1,25 @@
+Install
+=======
+
+Do not install this application yet!
+
+Dependencies
+------------
+
+Versions may vary :) Just get the newest one:
+
+libao		http://www.xiph.org/ao/						(pianobar)
+libcurl		http://curl.haxx.se/						(libpiano, pianobar)
+libfaad2	http://www.audiocoding.com/downloads.html	(pianobar)
+libxml2		http://xmlsoft.org/							(libpiano)
+
+Build
+-----
+
+./autogen.sh
+./configure
+make
+
+Just run the client from this source directory
+ 
+./src/pianobar
