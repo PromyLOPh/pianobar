@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include <unistd.h>
 #include <termios.h>
 #include <poll.h>
+#include <readline/readline.h>
 
 struct aacPlayer {
 	/* buffer */
@@ -274,6 +275,7 @@ int main (int argc, char **argv) {
 		while (!player.finishedPlayback) {
 			struct pollfd polls = {fileno (stdin), POLLIN, POLLIN};
 			char buf;
+			char *lineBuf;
 
 			if (poll (&polls, 1, 1000) > 0) {
 				read (fileno (stdin), &buf, sizeof (buf));
@@ -314,6 +316,21 @@ int main (int argc, char **argv) {
 					case 'q':
 						doQuit = 1;
 						player.doQuit = 1;
+						break;
+
+					case 'r':
+						lineBuf = readline ("New name?\n");
+						if (lineBuf != NULL && strlen (lineBuf) > 0) {
+							if (PianoRenameStation (&ph, curStation, lineBuf) ==
+									PIANO_RET_OK) {
+								printf ("Renamed.\n");
+							} else {
+								printf ("Error while renaming station.\n");
+							}
+						}
+						if (lineBuf != NULL) {
+							free (lineBuf);
+						}
 						break;
 
 					case 's':

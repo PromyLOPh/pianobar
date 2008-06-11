@@ -12,6 +12,7 @@ libao		http://www.xiph.org/ao/						(pianobar)
 libcurl		http://curl.haxx.se/						(libpiano, pianobar)
 libfaad2	http://www.audiocoding.com/downloads.html	(pianobar)
 libxml2		http://xmlsoft.org/							(libpiano)
+readline												(pianobar)
 
 Build
 -----

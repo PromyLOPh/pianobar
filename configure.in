@@ -24,6 +24,9 @@ AC_SUBST(LIBAO_LIBS)
 AC_CHECK_LIB([faad], [NeAACDecOpen], [LIBFAAD_LIBS=-lfaad], AC_MSG_ERROR([libfaad2 is required. See INSTALL]))
 AC_SUBST(LIBFAAD_LIBS)
 
+AC_CHECK_LIB([readline], [readline], [LIBREADLINE_LIBS=-lreadline], AC_MSG_ERROR([readline is required. See INSTALL]))
+AC_SUBST(LIBREADLINE_LIBS)
+
 # FIXME: check for pthread
 
 AC_CHECK_HEADERS([stdlib.h string.h])
