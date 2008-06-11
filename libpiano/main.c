@@ -268,7 +268,7 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 	return ret;
 }
 
-/*	rename station
+/*	rename station (on the server and local)
  *	@author PromyLOPh
  *	@added 2008-06-10
  *	@public yes
@@ -301,6 +301,11 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseSimple (retStr);
 	
+	if (ret == PIANO_RET_OK) {
+		free (station->name);
+		station->name = strdup (newName);
+	}
+
 	curl_free (urlencodedNewName);
 	free (xmlencodedNewName);
 	free (requestStr);
