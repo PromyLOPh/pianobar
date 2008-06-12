@@ -304,6 +304,11 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 			(rating == PIANO_RATE_LOVE) ? "true" : "false");
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseSimple (retStr);
+
+	if (ret == PIANO_RET_OK) {
+		song->rating = rating;
+	}
+
 	free (requestStr);
 	free (retStr);
 
