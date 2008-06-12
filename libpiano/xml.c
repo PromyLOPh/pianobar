@@ -24,6 +24,7 @@ THE SOFTWARE.
 #include <libxml/tree.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "piano.h"
 #include "crypt.h"

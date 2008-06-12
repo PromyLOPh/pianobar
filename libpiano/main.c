@@ -30,8 +30,7 @@ THE SOFTWARE.
 #include "piano.h"
 #include "http.h"
 #include "xml.h"
-
-char *PianoEncryptString (char *strInput);
+#include "crypt.h"
 
 /*	initialize piano handle, set up curl handle and settings
  *	@author PromyLOPh
