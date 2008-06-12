@@ -168,7 +168,6 @@ void PianoDestroy (PianoHandle_t *ph) {
  *	@return nothing
  */
 void PianoConnect (PianoHandle_t *ph, char *user, char *password) {
-	/* sync */
 	char url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr = PianoEncryptString ("<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>misc.sync</methodName>"
@@ -415,8 +414,9 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 	return ret;
 }
 
-/*	search for music (artist or track), needed to create new station, don't
- *	forget to free the search result
+/*	search for music (artist or track), needed to create new station; don't
+ *	forget to free the search result; beware! searchResult will be nulled
+ *	by PianoXmlParseSearch
  *	@author PromyLOPh
  *	@added 2008-06-11
  *	@public yes

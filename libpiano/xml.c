@@ -246,6 +246,12 @@ void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
 	xmlCleanupParser();
 }
 
+/*	parses playlist; used when searching too
+ *	@author PromyLOPh
+ *	@added 2008-06-12
+ *	@param piano handle
+ *	@param xml document
+ */
 void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 	/* FIXME: copy & waste */
 	xmlNode *docRoot = NULL, *curNode = NULL;
@@ -339,7 +345,7 @@ void PianoXmlParseSearchArtistCb (char *key, xmlNode *value, void *data) {
 }
 
 /*	callback for xml struct parser used in PianoXmlParseSearch, "switch" for
- *	PianoXmlParseSearchArtistCb and XXX
+ *	PianoXmlParseSearchArtistCb and PianoXmlParsePlaylistCb
  *	@author PromyLOPh
  *	@added 2008-06-12
  */
@@ -399,7 +405,7 @@ void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
 	}
 }
 
-/*	parse search result
+/*	parse search result; searchResult is nulled before use
  *	@author PromyLOPh
  *	@added 2008-06-12
  *	@param xml document
@@ -428,7 +434,7 @@ void PianoXmlParseSearch (char *searchXml,
 	xmlCleanupParser();
 }
 
-/*	encode reserved chars
+/*	encode reserved xml chars
  *	@author PromyLOPh
  *	@added 2008-06-10
  *	@param encode this
