@@ -261,7 +261,6 @@ int main (int argc, char **argv) {
 	curSong = ph.playlist;
 	/* play first track */
 	while (!doQuit) {
-		PianoSong_t *lastSong = NULL;
 		pthread_t playerThread;
 		printf ("\"%s\" by \"%s\"%s\n", curSong->title, curSong->artist,
 				(curSong->rating == PIANO_RATE_LOVE) ? " (Loved)" : "");
@@ -294,6 +293,7 @@ int main (int argc, char **argv) {
 						}
 						/* pandora does this too, I think */
 						PianoDestroyPlaylist (&ph);
+						curSong = NULL;
 						break;
 
 					case 'd':
@@ -306,6 +306,7 @@ int main (int argc, char **argv) {
 								player.doQuit = 1;
 								printf ("Deleted.\n");
 								PianoDestroyPlaylist (&ph);
+								curSong = NULL;
 								curStation = selectStation (&ph);
 							} else {
 								printf ("Error while deleting station.\n");
@@ -353,6 +354,7 @@ int main (int argc, char **argv) {
 					case 's':
 						player.doQuit = 1;
 						PianoDestroyPlaylist (&ph);
+						curSong = NULL;
 						curStation = selectStation (&ph);
 						printf ("changed station to %s\n", curStation->name);
 						break;
@@ -363,8 +365,9 @@ int main (int argc, char **argv) {
 
 		free (player.url);
 		/* what's next? */
-		lastSong = curSong;
-		curSong = lastSong->next;
+		if (curSong != NULL) {
+			curSong = curSong->next;
+		}
 		if (curSong == NULL && !doQuit) {
 			printf ("receiving new playlist\n");
 			PianoDestroyPlaylist (&ph);
