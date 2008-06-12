@@ -101,10 +101,23 @@ struct PianoSong {
 	char *title;
 	char *focusTraitId;
 	char *identity;
+	int score; /* only used for search results */
 	struct PianoSong *next;
 };
 
 typedef struct PianoSong PianoSong_t;
+
+/* currently only used for search results */
+struct PianoArtist {
+	/* disabled: iscomposer */
+	/* disabled: likelymatch */
+	char *name;
+	char *musicId;
+	int score;
+	struct PianoArtist *next;
+};
+
+typedef struct PianoArtist PianoArtist_t;
 
 struct PianoHandle {
 	CURL *curlHandle;
@@ -117,6 +130,13 @@ struct PianoHandle {
 
 typedef struct PianoHandle PianoHandle_t;
 
+struct PianoSearchResult {
+	PianoSong_t *songs;
+	PianoArtist_t *artists;
+};
+
+typedef struct PianoSearchResult PianoSearchResult_t;
+
 /* FIXME: more error types (http failed, e.g.) later */
 enum PianoReturn {PIANO_RET_OK, PIANO_RET_ERR};
 typedef enum PianoReturn PianoReturn_t;
@@ -124,6 +144,7 @@ typedef enum PianoReturn PianoReturn_t;
 void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
 void PianoDestroyPlaylist (PianoHandle_t *ph);
+void PianoDestroySearchResult (PianoSearchResult_t *searchResult);
 void PianoConnect (PianoHandle_t *, char *, char *);
 
 void PianoGetStations (PianoHandle_t *ph);

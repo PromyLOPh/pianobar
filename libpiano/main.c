@@ -52,6 +52,38 @@ void PianoInit (PianoHandle_t *ph) {
 	curl_easy_setopt (ph->curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 }
 
+/*	free complete search result
+ *	@author PromyLOPh
+ *	@added 2008-06-12
+ *	@public yes
+ *	@param search result
+ */
+void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
+	PianoArtist_t *curArtist, *lastArtist;
+	PianoSong_t *curSong, *lastSong;
+
+	curArtist = searchResult->artists;
+	while (curArtist != NULL) {
+		free (curArtist->name);
+		free (curArtist->musicId);
+		lastArtist = curArtist;
+		curArtist = curArtist->next;
+		memset (lastArtist, 0, sizeof (*lastArtist));
+		free (lastArtist);
+	}
+
+	curSong = searchResult->songs;
+	while (curSong != NULL) {
+		free (curSong->title);
+		free (curSong->artist);
+		free (curSong->musicId);
+		lastSong = curSong;
+		curSong = curSong->next;
+		memset (lastSong, 0, sizeof (*lastSong));
+		free (lastSong);
+	}
+}
+
 /*	free complete station list
  *	@author PromyLOPh
  *	@added 2008-06-09
@@ -348,4 +380,43 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 	free (retStr);
 
 	return ret;
+}
+
+/*	search for music (artist or track), needed to create new station, don't
+ *	forget to free the search result
+ *	@author PromyLOPh
+ *	@added 2008-06-11
+ *	@public yes
+ *	@param piano handle
+ *	@param utf-8 search string
+ *	@param return search result
+ *	@return nothing yet
+ */
+void PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
+		PianoSearchResult_t *searchResult) {
+	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char *requestStr, *retStr, *xmlencodedSearchStr, *urlencodedSearchStr;
+
+	xmlencodedSearchStr = PianoXmlEncodeString (searchStr);
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>music.search</methodName>"
+			"<params><param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			xmlencodedSearchStr);
+	requestStr = PianoEncryptString (xmlSendBuf);
+
+	urlencodedSearchStr = curl_easy_escape (ph->curlHandle, searchStr, 0);
+	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s&"
+			"method=search&arg1=%s", ph->routeId, ph->user.listenerId,
+			urlencodedSearchStr);
+	
+	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
+	PianoXmlParseSearch (retStr, searchResult);
+
+	curl_free (urlencodedSearchStr);
+	free (xmlencodedSearchStr);
+	free (retStr);
+	free (requestStr);
 }

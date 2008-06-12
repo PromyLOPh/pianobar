@@ -314,6 +314,120 @@ PianoReturn_t PianoXmlParseSimple (char *xml) {
 	return ret;
 }
 
+/*	xml struct parser callback, used in PianoXmlParseSearchCb
+ *	@author PromyLOPh
+ *	@added 2008-06-12
+ */
+void PianoXmlParseSearchArtistCb (char *key, xmlNode *value, void *data) {
+	PianoArtist_t *artist = data;
+	char *valueStr = NULL;
+
+	/* some values have subnodes like <boolean> or <string>, just
+	 * ignore them... */
+	if (value->content != NULL) {
+		valueStr = (char *) value->content;
+	} else if (value->children != NULL &&
+			value->children->content != NULL) {
+		 valueStr = (char *) value->children->content;
+	}
+
+	if (strcmp ("artistName", key) == 0) {
+		artist->name = strdup (valueStr);
+	} else if (strcmp ("musicId", key) == 0) {
+		artist->musicId = strdup (valueStr);
+	}
+}
+
+/*	callback for xml struct parser used in PianoXmlParseSearch, "switch" for
+ *	PianoXmlParseSearchArtistCb and XXX
+ *	@author PromyLOPh
+ *	@added 2008-06-12
+ */
+void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
+	PianoSearchResult_t *searchResult = data;
+
+	if (strcmp ("artists", key) == 0) {
+		xmlNode *curNode;
+
+		/* skip <value><array><data> */
+		for (curNode = value->children->children; curNode;
+				curNode = curNode->next) {
+	        if (curNode->type == XML_ELEMENT_NODE &&
+					xmlStrEqual ((xmlChar *) "value", curNode->name)) {
+
+				PianoArtist_t *artist = calloc (1, sizeof (*artist));
+				memset (artist, 0, sizeof (*artist));
+
+				PianoXmlStructParser (curNode->children,
+						PianoXmlParseSearchArtistCb, artist);
+
+				/* add result to linked list */
+				if (searchResult->artists == NULL) {
+					searchResult->artists = artist;
+				} else {
+					PianoArtist_t *curArtist = searchResult->artists;
+					while (curArtist->next != NULL) {
+						curArtist = curArtist->next;
+					}
+					curArtist->next = artist;
+				}
+			}
+		}
+	} else if (strcmp ("songs", key) == 0) {
+		xmlNode *curNode;
+
+		for (curNode = value->children->children; curNode;
+				curNode = curNode->next) {
+	        if (curNode->type == XML_ELEMENT_NODE &&
+					xmlStrEqual ((xmlChar *) "value", curNode->name)) {
+				/* FIXME: copy & waste */
+				PianoSong_t *tmpSong = calloc (1, sizeof (*tmpSong));
+				PianoXmlStructParser (curNode->children,
+						PianoXmlParsePlaylistCb, tmpSong);
+				/* begin linked list or append */
+				if (searchResult->songs == NULL) {
+					searchResult->songs = tmpSong;
+				} else {
+					PianoSong_t *curSong = searchResult->songs;
+					while (curSong->next != NULL) {
+						curSong = curSong->next;
+					}
+					curSong->next = tmpSong;
+				}
+			}
+		}
+	}
+}
+
+/*	parse search result
+ *	@author PromyLOPh
+ *	@added 2008-06-12
+ *	@param xml document
+ *	@param returns search result
+ *	@return nothing yet
+ */
+void PianoXmlParseSearch (char *searchXml,
+		PianoSearchResult_t *searchResult) {
+	/* FIXME: copy & waste */
+	xmlNode *docRoot = NULL, *curNode = NULL;
+	xmlDocPtr doc = xmlReadDoc ((xmlChar *) searchXml, NULL, NULL, 0);
+
+	if (doc == NULL) {
+		printf ("whoops... xml parser error\n");
+		return;
+	}
+
+	docRoot = xmlDocGetRootElement (doc);
+	
+	xmlNode *structRoot = docRoot->children->children->children->children;
+	/* we need a "clean" search result (with null pointers) */
+	memset (searchResult, 0, sizeof (*searchResult));
+	PianoXmlStructParser (structRoot, PianoXmlParseSearchCb, searchResult);
+
+	xmlFreeDoc (doc);
+	xmlCleanupParser();
+}
+
 /*	encode reserved chars
  *	@author PromyLOPh
  *	@added 2008-06-10
