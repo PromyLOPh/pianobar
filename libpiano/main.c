@@ -84,6 +84,18 @@ void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
 	}
 }
 
+/*	free single station
+ *	@author PromyLOPh
+ *	@added 2008-06-12
+ *	@public yes
+ *	@param station
+ */
+void PianoDestroyStation (PianoStation_t *station) {
+	free (station->name);
+	free (station->id);
+	memset (station, 0, sizeof (station));
+}
+
 /*	free complete station list
  *	@author PromyLOPh
  *	@added 2008-06-09
@@ -94,11 +106,9 @@ void PianoDestroyStations (PianoHandle_t *ph) {
 
 	curStation = ph->stations;
 	while (curStation != NULL) {
-		free (curStation->name);
-		free (curStation->id);
 		lastStation = curStation;
 		curStation = curStation->next;
-		memset (lastStation, 0, sizeof (*lastStation));
+		PianoDestroyStation (lastStation);
 		free (lastStation);
 	}
 	ph->stations = NULL;
@@ -374,7 +384,25 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseSimple (retStr);
 
-	/* FIXME would be our job to delete station from global station list... */
+	if (ret == PIANO_RET_OK) {
+		/* delete station from local station list */
+		PianoStation_t *curStation = ph->stations, *lastStation = NULL;
+		while (curStation != NULL) {
+			if (curStation == station) {
+				printf ("deleting station\n");
+				if (lastStation != NULL) {
+					lastStation->next = curStation->next;
+				} else {
+					/* first station in list */
+					ph->stations = curStation->next;
+				}
+				PianoDestroyStation (curStation);
+				free (curStation);
+			}
+			lastStation = curStation;
+			curStation = curStation->next;
+		}
+	}
 
 	free (requestStr);
 	free (retStr);

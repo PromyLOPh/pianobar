@@ -274,7 +274,7 @@ int main (int argc, char **argv) {
 		/* in the meantime: wait for user actions */
 		while (!player.finishedPlayback) {
 			struct pollfd polls = {fileno (stdin), POLLIN, POLLIN};
-			char buf;
+			char buf, yesnoBuf;
 			char *lineBuf;
 
 			if (poll (&polls, 1, 1000) > 0) {
@@ -294,6 +294,23 @@ int main (int argc, char **argv) {
 						}
 						/* pandora does this too, I think */
 						PianoDestroyPlaylist (&ph);
+						break;
+
+					case 'd':
+						printf ("Really delete \"%s\"? [yn]\n",
+								curStation->name);
+						read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
+						if (yesnoBuf == 'y') {
+							if (PianoDeleteStation (&ph, curStation) ==
+									PIANO_RET_OK) {
+								player.doQuit = 1;
+								printf ("Deleted.\n");
+								PianoDestroyPlaylist (&ph);
+								curStation = selectStation (&ph);
+							} else {
+								printf ("Error while deleting station.\n");
+							}
+						}
 						break;
 
 					case 'l':
