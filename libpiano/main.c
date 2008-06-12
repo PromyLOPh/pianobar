@@ -84,6 +84,18 @@ void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
 	}
 }
 
+/*	free single station
+ *	@author PromyLOPh
+ *	@added 2008-06-12
+ *	@public yes
+ *	@param station
+ */
+void PianoDestroyStation (PianoStation_t *station) {
+	free (station->name);
+	free (station->id);
+	memset (station, 0, sizeof (station));
+}
+
 /*	free complete station list
  *	@author PromyLOPh
  *	@added 2008-06-09
@@ -94,11 +106,9 @@ void PianoDestroyStations (PianoHandle_t *ph) {
 
 	curStation = ph->stations;
 	while (curStation != NULL) {
-		free (curStation->name);
-		free (curStation->id);
 		lastStation = curStation;
 		curStation = curStation->next;
-		memset (lastStation, 0, sizeof (*lastStation));
+		PianoDestroyStation (lastStation);
 		free (lastStation);
 	}
 	ph->stations = NULL;

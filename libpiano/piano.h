@@ -145,6 +145,8 @@ void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
 void PianoDestroyPlaylist (PianoHandle_t *ph);
 void PianoDestroySearchResult (PianoSearchResult_t *searchResult);
+void PianoDestroyStation (PianoStation_t *station);
+void PianoDestroyStations (PianoHandle_t *ph);
 void PianoConnect (PianoHandle_t *, char *, char *);
 
 void PianoGetStations (PianoHandle_t *ph);
