@@ -79,6 +79,24 @@ void PianoXmlStructParser (xmlNode *structRoot,
 	}
 }
 
+/*	get text from <value> nodes; some of them have <boolean>, <string>
+ *	or <int> subnodes, just ignore them
+ *	@author PromyLOPh
+ *	@added 2008-06-13
+ *	@param xml node <value>
+ */
+char *PianoXmlGetNodeText (xmlNode *node) {
+	/* FIXME: this is not the correct way; we should check the node type
+	 * as well */
+	if (node->content != NULL) {
+		return (char *) node->content;
+	} else if (node->children != NULL &&
+			node->children->content != NULL) {
+		return (char *) node->children->content;
+	}
+	return NULL;
+}
+
 /*	structParser callback; writes userinfo to PianoUserInfo structure
  *	@author PromyLOPh
  *	@added 2008-06-03
@@ -88,17 +106,9 @@ void PianoXmlStructParser (xmlNode *structRoot,
  *	@return nothing
  */
 void PianoXmlParseUserinfoCb (char *key, xmlNode *value, void *data) {
-	char *valueStr = NULL;
 	PianoUserInfo_t *user = data;
+	char *valueStr = PianoXmlGetNodeText (value);
 
-	/* some values have subnodes like <boolean> or <string>, just
-	 * ignore them... */
-	if (value->content != NULL) {
-		valueStr = (char *) value->content;
-	} else if (value->children != NULL &&
-			value->children->content != NULL) {
-		 valueStr = (char *) value->children->content;
-	}
 	/* FIXME: should be continued later */
 	if (strcmp ("webAuthToken", key) == 0) {
 		user->webAuthToken = strdup (valueStr);
@@ -111,17 +121,8 @@ void PianoXmlParseUserinfoCb (char *key, xmlNode *value, void *data) {
 
 void PianoXmlParseStationsCb (char *key, xmlNode *value, void *data) {
 	PianoStation_t *station = data;
-	char *valueStr = NULL;
+	char *valueStr = PianoXmlGetNodeText (value);
 
-	/* FIXME: copy & waste */
-	/* some values have subnodes like <boolean> or <string>, just
-	 * ignore them... */
-	if (value->content != NULL) {
-		valueStr = (char *) value->content;
-	} else if (value->children != NULL &&
-			value->children->content != NULL) {
-		 valueStr = (char *) value->children->content;
-	}
 	if (strcmp ("stationName", key) == 0) {
 		station->name = strdup (valueStr);
 	} else if (strcmp ("stationId", key) == 0) {
@@ -132,16 +133,8 @@ void PianoXmlParseStationsCb (char *key, xmlNode *value, void *data) {
 /* FIXME: copy & waste */
 void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 	PianoSong_t *song = data;
-	char *valueStr = NULL;
+	char *valueStr = PianoXmlGetNodeText (value);
 
-	/* some values have subnodes like <boolean> or <string>, just
-	 * ignore them... */
-	if (value->content != NULL) {
-		valueStr = (char *) value->content;
-	} else if (value->children != NULL &&
-			value->children->content != NULL) {
-		 valueStr = (char *) value->children->content;
-	}
 	if (strcmp ("audioURL", key) == 0) {
 		/* last 48 chars of audioUrl are encrypted, but they put the key
 		 * into the door's lock; dumb pandora... */
@@ -327,16 +320,7 @@ PianoReturn_t PianoXmlParseSimple (char *xml) {
  */
 void PianoXmlParseSearchArtistCb (char *key, xmlNode *value, void *data) {
 	PianoArtist_t *artist = data;
-	char *valueStr = NULL;
-
-	/* some values have subnodes like <boolean> or <string>, just
-	 * ignore them... */
-	if (value->content != NULL) {
-		valueStr = (char *) value->content;
-	} else if (value->children != NULL &&
-			value->children->content != NULL) {
-		 valueStr = (char *) value->children->content;
-	}
+	char *valueStr = PianoXmlGetNodeText (value);
 
 	if (strcmp ("artistName", key) == 0) {
 		artist->name = strdup (valueStr);
