@@ -32,7 +32,9 @@ THE SOFTWARE.
 #include "xml.h"
 #include "crypt.h"
 
-/*	initialize piano handle, set up curl handle and settings
+/*	initialize piano handle, set up curl handle and settings; note: you
+ *	_must_ init curl and libxml2 using curl_global_init (CURL_GLOBAL_SSL)
+ *	and xmlInitParser (), you also _must_ cleanup their garbage on your own!
  *	@author PromyLOPh
  *	@added 2008-06-05
  *	@param piano handle
@@ -140,7 +142,9 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
 	ph->playlist = NULL;
 }
 
-/*	frees the whole piano handle structure
+/*	frees the whole piano handle structure; this will _not_ cleanup curl's
+ *	internal garbage, you have to call curl_global_cleanup () and
+ *	xmlCleanupParser () for libxml2
  *	@author PromyLOPh
  *	@added 2008-06-05
  *	@param piano handle

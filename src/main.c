@@ -22,6 +22,8 @@ THE SOFTWARE.
 
 #include <piano.h>
 #include <curl/curl.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -240,6 +242,7 @@ int main (int argc, char **argv) {
 
 	/* init some things */
 	curl_global_init (CURL_GLOBAL_SSL);
+	xmlInitParser ();
 	ao_initialize();
 	PianoInit (&ph);
 
@@ -384,6 +387,7 @@ int main (int argc, char **argv) {
 	PianoDestroy (&ph);
 	curl_global_cleanup ();
 	ao_shutdown();
+	xmlCleanupParser ();
 
 	return 0;
 }

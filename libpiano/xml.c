@@ -203,7 +203,6 @@ void PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
 	PianoXmlStructParser (structRoot, PianoXmlParseUserinfoCb, &ph->user);
 
 	xmlFreeDoc (doc);
-	xmlCleanupParser();
 }
 
 /*	parse stations returned by pandora
@@ -244,7 +243,6 @@ void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
 	}
 
 	xmlFreeDoc (doc);
-	xmlCleanupParser();
 }
 
 /*	parses playlist; used when searching too
@@ -284,7 +282,6 @@ void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 	}
 
 	xmlFreeDoc (doc);
-	xmlCleanupParser();
 }
 
 /*	parse simple answers like this: <?xml version="1.0" encoding="UTF-8"?>
@@ -310,7 +307,6 @@ PianoReturn_t PianoXmlParseSimple (char *xml) {
 	}
 
 	xmlFreeDoc (doc);
-	xmlCleanupParser();
 
 	return ret;
 }
@@ -413,7 +409,6 @@ void PianoXmlParseSearch (char *searchXml,
 	PianoXmlStructParser (structRoot, PianoXmlParseSearchCb, searchResult);
 
 	xmlFreeDoc (doc);
-	xmlCleanupParser();
 }
 
 /*	encode reserved xml chars
