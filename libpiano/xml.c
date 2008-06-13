@@ -79,6 +79,19 @@ void PianoXmlStructParser (xmlNode *structRoot,
 	}
 }
 
+PianoReturn_t PianoXmlInitDoc (char *xml, xmlDocPtr *doc, xmlNode **docRoot) {
+	*doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
+
+	if (*doc == NULL) {
+		printf ("libpandora: error while parsing this xml document\n%s\n", xml);
+		return PIANO_RET_ERR;
+	}
+
+	*docRoot = xmlDocGetRootElement (*doc);
+
+	return PIANO_RET_OK;
+}
+
 /*	get text from <value> nodes; some of them have <boolean>, <string>
  *	or <int> subnodes, just ignore them
  *	@author PromyLOPh
@@ -178,15 +191,12 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
  *	@return nothing
  */
 void PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
-	xmlNode *docRoot = NULL;
-	xmlDocPtr doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
+	xmlNode *docRoot;
+	xmlDocPtr doc;
 
-	if (doc == NULL) {
-		printf ("whoops... xml parser error\n");
+	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
 		return;
 	}
-
-	docRoot = xmlDocGetRootElement (doc);
 
 	/* <methodResponse> <params> <param> <value> <struct> */
 	xmlNode *structRoot = docRoot->children->children->children->children;
@@ -205,15 +215,12 @@ void PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
  */
 void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
 	/* FIXME: copy & waste */
-	xmlNode *docRoot = NULL, *curNode = NULL;
-	xmlDocPtr doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
+	xmlNode *docRoot, *curNode;
+	xmlDocPtr doc;
 
-	if (doc == NULL) {
-		printf ("whoops... xml parser error\n");
+	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
 		return;
 	}
-
-	docRoot = xmlDocGetRootElement (doc);
 
 	/* <methodResponse> <params> <param> <value> <array> <data> */
 	xmlNode *dataRoot = docRoot->children->children->children->children->children;
@@ -248,15 +255,12 @@ void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
  */
 void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 	/* FIXME: copy & waste */
-	xmlNode *docRoot = NULL, *curNode = NULL;
-	xmlDocPtr doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
+	xmlNode *docRoot, *curNode;
+	xmlDocPtr doc;
 
-	if (doc == NULL) {
-		printf ("whoops... xml parser error\n");
+	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
 		return;
 	}
-
-	docRoot = xmlDocGetRootElement (doc);
 
 	/* <methodResponse> <params> <param> <value> <array> <data> */
 	xmlNode *dataRoot = docRoot->children->children->children->children->children;
@@ -292,16 +296,13 @@ void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
  *	@return
  */
 PianoReturn_t PianoXmlParseSimple (char *xml) {
-	xmlNode *docRoot = NULL, *curNode = NULL;
-	xmlDocPtr doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
+	xmlNode *docRoot;
+	xmlDocPtr doc;
 	PianoReturn_t ret = PIANO_RET_ERR;
 
-	if (doc == NULL) {
-		printf ("whoops... xml parser error\n");
+	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
 		return PIANO_RET_ERR;
 	}
-
-	docRoot = xmlDocGetRootElement (doc);
 
 	xmlNode *val = docRoot->children->children->children->children;
 	if (xmlStrEqual (val->content, (xmlChar *) "1")) {
@@ -399,16 +400,12 @@ void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
  */
 void PianoXmlParseSearch (char *searchXml,
 		PianoSearchResult_t *searchResult) {
-	/* FIXME: copy & waste */
-	xmlNode *docRoot = NULL, *curNode = NULL;
-	xmlDocPtr doc = xmlReadDoc ((xmlChar *) searchXml, NULL, NULL, 0);
+	xmlNode *docRoot, *curNode;
+	xmlDocPtr doc;
 
-	if (doc == NULL) {
-		printf ("whoops... xml parser error\n");
+	if (PianoXmlInitDoc (searchXml, &doc, &docRoot) != PIANO_RET_OK) {
 		return;
 	}
-
-	docRoot = xmlDocGetRootElement (doc);
 	
 	xmlNode *structRoot = docRoot->children->children->children->children;
 	/* we need a "clean" search result (with null pointers) */
