@@ -245,6 +245,34 @@ void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
 	xmlFreeDoc (doc);
 }
 
+void PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
+	xmlNode *docRoot;
+	xmlDocPtr doc;
+	PianoStation_t *tmpStation;
+
+	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
+		return;
+	}
+
+	/* get <struct> node */
+	xmlNode *dataRoot = docRoot->children->children->children->children;
+	tmpStation = calloc (1, sizeof (*tmpStation));
+	PianoXmlStructParser (dataRoot, PianoXmlParseStationsCb, tmpStation);
+	/* FIXME: copy & waste */
+	/* start new linked list or append */
+	if (ph->stations == NULL) {
+		ph->stations = tmpStation;
+	} else {
+		PianoStation_t *curStation = ph->stations;
+		while (curStation->next != NULL) {
+			curStation = curStation->next;
+		}
+		curStation->next = tmpStation;
+	}
+	
+	xmlFreeDoc (doc);
+}
+
 /*	parses playlist; used when searching too
  *	@author PromyLOPh
  *	@added 2008-06-12

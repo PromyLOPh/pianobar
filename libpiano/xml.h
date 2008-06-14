@@ -29,6 +29,7 @@ void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml);
 void PianoXmlParseSearch (char *searchXml,
 		PianoSearchResult_t *searchResult);
 PianoReturn_t PianoXmlParseSimple (char *xml);
+void PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml);
 
 char *PianoXmlEncodeString (const char *s);
 

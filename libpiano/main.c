@@ -456,3 +456,36 @@ void PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 	free (retStr);
 	free (requestStr);
 }
+
+/*	create new station on server
+ *	@author PromyLOPh
+ *	@added 2008-06-14
+ *	@public yes
+ *	@param piano handle
+ *	@param music id from artist or track, you may obtain one by calling
+ *			PianoSearchMusic
+ *	@return nothing, yet
+ */
+void PianoCreateStation (PianoHandle_t *ph, char *musicId) {
+	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char *requestStr, *retStr;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>station.createStation</methodName>"
+			"<params><param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>mi%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			musicId);
+	requestStr = PianoEncryptString (xmlSendBuf);
+
+	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s"
+			"&method=createStation&arg1=mi%s", ph->routeId,
+			ph->user.listenerId, musicId);
+	
+	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
+	PianoXmlParseCreateStation (ph, retStr);
+
+	free (requestStr);
+	free (retStr);
+}

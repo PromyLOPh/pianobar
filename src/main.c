@@ -232,6 +232,46 @@ PianoStation_t *selectStation (PianoHandle_t *ph) {
 	return curStation;
 }
 
+PianoSong_t *selectSong (PianoSong_t *startSong) {
+	PianoSong_t *tmpSong;
+	size_t i;
+
+	tmpSong = startSong;
+	i = 0;
+	while (tmpSong != NULL) {
+		printf ("%2u) %s - %s\n", i, tmpSong->artist, tmpSong->title);
+		i++;
+		tmpSong = tmpSong->next;
+	}
+	scanf ("%i", &i);
+	tmpSong = startSong;
+	while (tmpSong != NULL && i > 0) {
+		tmpSong = tmpSong->next;
+		i--;
+	}
+	return tmpSong;
+}
+
+PianoArtist_t *selectArtist (PianoArtist_t *startArtist) {
+	PianoArtist_t *tmpArtist;
+	size_t i;
+
+	tmpArtist = startArtist;
+	i = 0;
+	while (tmpArtist != NULL) {
+		printf ("%2u) %s\n", i, tmpArtist->name);
+		i++;
+		tmpArtist = tmpArtist->next;
+	}
+	scanf ("%i", &i);
+	tmpArtist = startArtist;
+	while (tmpArtist != NULL && i > 0) {
+		tmpArtist = tmpArtist->next;
+		i--;
+	}
+	return tmpArtist;
+}
+
 int main (int argc, char **argv) {
 	PianoHandle_t ph;
 	struct aacPlayer player;
@@ -278,6 +318,9 @@ int main (int argc, char **argv) {
 			struct pollfd polls = {fileno (stdin), POLLIN, POLLIN};
 			char buf, yesnoBuf;
 			char *lineBuf;
+			PianoSearchResult_t searchResult;
+			PianoArtist_t *tmpArtist;
+			PianoSong_t *tmpSong;
 
 			if (poll (&polls, 1, 1000) > 0) {
 				read (fileno (stdin), &buf, sizeof (buf));
@@ -297,6 +340,42 @@ int main (int argc, char **argv) {
 						/* pandora does this too, I think */
 						PianoDestroyPlaylist (&ph);
 						curSong = NULL;
+						break;
+
+					case 'c':
+						lineBuf = readline ("Search for artist/title\n");
+						if (lineBuf != NULL && strlen (lineBuf) > 0) {
+							PianoSearchMusic (&ph, lineBuf, &searchResult);
+							if (searchResult.songs != NULL && searchResult.artists != NULL) {
+								printf ("Is this an [a]rtist or [t]rack name?\n");
+								read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
+								if (yesnoBuf == 'a') {
+									tmpArtist = selectArtist (searchResult.artists);
+									PianoCreateStation (&ph, tmpArtist->musicId);
+									printf ("Ok.\n");
+								} else if (yesnoBuf == 't') {
+									tmpSong = selectSong (searchResult.songs);
+									PianoCreateStation (&ph, tmpSong->musicId);
+									printf ("Ok.\n");
+								}
+							} else if (searchResult.songs != NULL) {
+								printf ("Select song\n");
+								tmpSong = selectSong (searchResult.songs);
+								PianoCreateStation (&ph, tmpSong->musicId);
+								printf ("Ok.\n");
+							} else if (searchResult.artists != NULL) {
+								printf ("Select artist\n");
+								tmpArtist = selectArtist (searchResult.artists);
+								PianoCreateStation (&ph, tmpArtist->musicId);
+								printf ("Ok.\n");
+							} else {
+								printf ("Nothing found...\n");
+							}
+							PianoDestroySearchResult (&searchResult);
+						}
+						if (lineBuf != NULL) {
+							free (lineBuf);
+						}
 						break;
 
 					case 'd':

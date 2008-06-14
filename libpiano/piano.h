@@ -157,5 +157,8 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 		char *newName);
 PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station);
+void PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
+		PianoSearchResult_t *searchResult);
+void PianoCreateStation (PianoHandle_t *ph, char *musicId);
 
 #endif /* _PIANO_H */
