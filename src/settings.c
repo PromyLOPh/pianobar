@@ -65,6 +65,12 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->password);
 }
 
+/*	read app settings from file; format is: key = value\n
+ *	@author PromyLOPh
+ *	@added 2008-06-15
+ *	@param where to save these settings
+ *	@return nothing yet
+ */
 void readSettings (BarSettings_t *settings) {
 	char configfile[1024], key[256], val[256];
 	FILE *configfd;

@@ -88,13 +88,10 @@ int playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 		/* keep some bytes in buffer */
 		while (bufferOffset < aacBufferN-500) {
-			//printf ("play buffer at %i/%i: ", bufferOffset, aacBufferN);
-			//dumpBuffer (aacBuffer+bufferOffset, 50);
 			/* FIXME: well, i think we need this block length table */
 			aacDecoded = NeAACDecDecode(player->aacHandle, &frameInfo,
 					(unsigned char *) aacBuffer+bufferOffset,
 					aacBufferN-bufferOffset);
-			//printf ("bytesconsumed: %li\nerror: %i\nsamples: %lu\nsamplerate: %lu\n\n", frameInfo.bytesconsumed, frameInfo.error, frameInfo.samples, frameInfo.samplerate);
 			if (frameInfo.error != 0) {
 				printf ("error: %s\n\n", NeAACDecGetErrorMessage (frameInfo.error));
 				break;
@@ -108,8 +105,6 @@ int playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 		memcpy (player->buffer, aacBuffer+bufferOffset,
 				aacBufferN - bufferOffset);
 		player->bufferFilled = aacBufferN - bufferOffset;
-		//printf ("player->buffer (%i) = ", aacBufferN - bufferOffset);
-		//dumpBuffer (player->buffer, 50);
 		free (aacBuffer);
 	} else {
 		player->buffer = calloc (nmemb + sizeof (player->lastBytes), size);
@@ -144,14 +139,13 @@ int playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 						printf ("whoops... %i\n", err);
 						return 1;
 					}
-					//printf ("samplerate: %li\nchannels: %i\n\n",
-					//		player->samplerate, player->channels);
 					audioOutDriver = ao_default_driver_id();
 					format.bits = 16;
 					format.channels = player->channels;
 					format.rate = player->samplerate;
 					format.byte_format = AO_FMT_LITTLE;
-					player->audioOutDevice = ao_open_live (audioOutDriver, &format, NULL);
+					player->audioOutDevice = ao_open_live (audioOutDriver,
+							&format, NULL);
 					player->audioInitialized = 1;
 					break;
 				}
@@ -164,8 +158,6 @@ int playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 					player->dataMode = 1;
 					memmove (player->buffer, searchBegin+4, nmemb - (searchBegin-player->buffer));
 					player->bufferFilled = nmemb - (searchBegin-player->buffer);
-					//printf ("copied %i bytes: ", nmemb - (searchBegin-player->buffer));
-					//dumpBuffer (player->buffer, 50);
 					break;
 				}
 				searchBegin++;
@@ -174,8 +166,6 @@ int playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 		if (!player->dataMode) {
 			memcpy (player->lastBytes, data + (size * nmemb - sizeof (player->lastBytes)),
 					sizeof (player->lastBytes));
-			//printf ("last bytes: ");
-			//dumpBuffer (player->lastBytes, 4);
 			free (player->buffer);
 		}
 	}
@@ -183,6 +173,7 @@ int playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	return size*nmemb;
 }
 
+/* player thread; for every song a new thread is started */
 void *threadPlayUrl (void *data) {
 	struct aacPlayer *player = data;
 	NeAACDecConfigurationPtr conf;
@@ -300,12 +291,11 @@ int main (int argc, char **argv) {
 	}
 
 	PianoInit (&ph);
-	/* setup control proxy */
+	/* setup control connection */
 	curl_easy_setopt (ph.curlHandle, CURLOPT_PROXY, bsettings.controlProxy);
 	curl_easy_setopt (ph.curlHandle, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS4A);
 	curl_easy_setopt (ph.curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 
-	/* no buffering for stdin */
 	termSetBuffer (0);
 
 	printf ("Login...\n");
@@ -319,7 +309,6 @@ int main (int argc, char **argv) {
 	PianoGetPlaylist (&ph, curStation->id);
 
 	curSong = ph.playlist;
-	/* play first track */
 	while (!doQuit) {
 		pthread_t playerThread;
 		printf ("\"%s\" by \"%s\"%s\n", curSong->title, curSong->artist,
