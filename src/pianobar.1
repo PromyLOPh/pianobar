@@ -1,0 +1,43 @@
+.TH pianobar 1
+
+.SH NAME
+pianobar \- console pandora.com music player
+
+.SH SYNOPSIS
+.B pianobar
+
+.SH DESCRIPTION
+.B pianobar
+is a lightweight console music player for the personalized online radio
+pandora.com. Currently
+.B pianobar
+is alpha stage software and neither stable nor complete.
+
+.SH FILES
+.I $XDG_CONFIG_HOME/pianobar/config
+or
+.I ~/.config/pianobar/config
+.RS
+Per-user configuration file. See
+.B CONFIGURATION.
+
+.SH CONFIGURATION
+The configuration file consists of simple
+.B key = value
+lines. Each terminated with a newline (\\n) character.
+
+.TP
+.B control_proxy = host:port
+Non-american users need a proxy to use pandora.com. Currently this needs to
+be a SOCKS4a proxy like Tor.
+
+.TP
+.B user = your@user.name
+Your pandora.com username.
+
+.TP
+.B password = plaintext_password
+Your pandora.com password. Plain-text.
+
+.SH AUTHOR
+Lars-Dominik Braun <PromyLOPh@gmail.com>
