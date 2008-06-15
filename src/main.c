@@ -31,9 +31,11 @@ THE SOFTWARE.
 #include <neaacdec.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <termios.h>
 #include <poll.h>
 #include <readline/readline.h>
+
+#include "terminal.h"
+#include "settings.h"
 
 struct aacPlayer {
 	/* buffer */
@@ -278,23 +280,38 @@ int main (int argc, char **argv) {
 	char doQuit = 0;
 	PianoSong_t *curSong = NULL;
 	PianoStation_t *curStation;
-	struct termios termopts;
+	BarSettings_t bsettings;
 
 	/* init some things */
 	curl_global_init (CURL_GLOBAL_SSL);
 	xmlInitParser ();
 	ao_initialize();
+
+	BarSettingsInit (&bsettings);
+	readSettings (&bsettings);
+
+	if (bsettings.username == NULL) {
+		bsettings.username = readline ("Username: ");
+	}
+	if (bsettings.password == NULL) {
+		termSetEcho (0);
+		bsettings.password = readline ("Password: ");
+		termSetEcho (1);
+	}
+
 	PianoInit (&ph);
+	/* setup control proxy */
+	curl_easy_setopt (ph.curlHandle, CURLOPT_PROXY, bsettings.controlProxy);
+	curl_easy_setopt (ph.curlHandle, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS4A);
+	curl_easy_setopt (ph.curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 
 	/* no buffering for stdin */
-	tcgetattr (fileno (stdin), &termopts);
-	termopts.c_lflag &= ~ICANON;
-	tcsetattr(fileno (stdin), TCSANOW, &termopts);
-	setvbuf (stdin, NULL, _IONBF, 1);
+	termSetBuffer (0);
 
-	PianoConnect (&ph, argv[1], argv[2]);
+	printf ("Login...\n");
+	PianoConnect (&ph, bsettings.username, bsettings.password);
+	printf ("Get stations...\n");
 	PianoGetStations (&ph);
-	printf ("webAuthToken: %s\nauthToken: %s\nlistenerId: %s\n", ph.user.webAuthToken, ph.user.authToken, ph.user.listenerId);
 
 	/* select station */
 	curStation = selectStation (&ph);
@@ -467,6 +484,7 @@ int main (int argc, char **argv) {
 	curl_global_cleanup ();
 	ao_shutdown();
 	xmlCleanupParser ();
+	BarSettingsDestroy (&bsettings);
 
 	return 0;
 }

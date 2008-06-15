@@ -47,10 +47,6 @@ void PianoInit (PianoHandle_t *ph) {
 	snprintf (ph->routeId, sizeof (ph->routeId), "%07liP", time (NULL)>>8);
 	/* at the moment we don't need publicity */
 	curl_easy_setopt (ph->curlHandle, CURLOPT_USERAGENT, PIANO_USERAGENT);
-	/* set tor as control connection proxy */
-	curl_easy_setopt (ph->curlHandle, CURLOPT_PROXY, "localhost:9050");
-	curl_easy_setopt (ph->curlHandle, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS4A);
-	curl_easy_setopt (ph->curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 }
 
 /*	free complete search result
