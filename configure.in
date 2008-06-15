@@ -1,4 +1,4 @@
-AC_INIT([pianobar], [20080609], [PromyLOPh@gmail.com])
+AC_INIT([pianobar], [0.1], [PromyLOPh@gmail.com])
 AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE([-Wall])
 
@@ -35,6 +35,7 @@ AC_CHECK_FUNCS([memset])
 
 AC_TYPE_SIZE_T
 
-AC_CONFIG_FILES(Makefile src/Makefile libpiano/Makefile)
+AC_CONFIG_FILES(Makefile src/Makefile)
+AC_CONFIG_SUBDIRS([libpiano])
 
 AC_OUTPUT
