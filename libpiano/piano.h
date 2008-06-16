@@ -23,7 +23,8 @@ THE SOFTWARE.
 #ifndef _PIANO_H
 #define _PIANO_H
 
-/* this is our public API
+/* this is our public API; don't expect this api to be stable, as long
+ * pandora does not provide a stable api
  * all strings _must_ be utf-8 encoded. i won't care, but pandora does. so
  * be nice and check the encoding of your strings. thanks :) */
 

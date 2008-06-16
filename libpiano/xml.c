@@ -45,7 +45,7 @@ THE SOFTWARE.
  *			or text), additional data used by callback(); don't forget
  *			to *copy* data taken from <name> or <value> as they will be
  *			freed soon
- *	@param 
+ *	@param extra data for callback
  */
 void PianoXmlStructParser (xmlNode *structRoot,
 		void (*callback) (char *, xmlNode *, void *), void *data) {
@@ -79,11 +79,19 @@ void PianoXmlStructParser (xmlNode *structRoot,
 	}
 }
 
+/*	create xml parser from string
+ *	@author PromyLOPh
+ *	@added 2008-06-16
+ *	@param xml document
+ *	@param returns document pointer (needed to free memory later)
+ *	@param returns document root
+ *	@return _RET_ERR or _RET_OK
+ */
 PianoReturn_t PianoXmlInitDoc (char *xml, xmlDocPtr *doc, xmlNode **docRoot) {
 	*doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
 
 	if (*doc == NULL) {
-		printf ("libpandora: error while parsing this xml document\n%s\n", xml);
+		printf (PACKAGE ": error while parsing this xml document\n%s\n", xml);
 		return PIANO_RET_ERR;
 	}
 
@@ -154,7 +162,6 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 		const char urlTailN = 48;
 		char *urlTail, *urlTailCrypted = valueStr + (strlen (valueStr) - urlTailN);
 		urlTail = PianoDecryptString (urlTailCrypted);
-		//printf ("tail is:\t%s\nwas:\t\t%s (%i)\nurl was:\t %s (%i)\n", urlTail, urlTailCrypted, strlen (urlTailCrypted), valueStr, strlen (valueStr));
 		song->audioUrl = calloc (strlen (valueStr) + 1, sizeof (char));
 		strncpy (song->audioUrl, valueStr, strlen (valueStr) - urlTailN);
 		/* FIXME: the key seems to be broken... so ignore 8 x 0x08 postfix;
@@ -213,7 +220,6 @@ void PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
  *	@return nothing
  */
 void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
-	/* FIXME: copy & waste */
 	xmlNode *docRoot, *curNode;
 	xmlDocPtr doc;
 
@@ -245,6 +251,13 @@ void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
 	xmlFreeDoc (doc);
 }
 
+/*	parse "create station" answer (it returns a new station structure)
+ *	@author PromyLOPh
+ *	@added 2008-06-16
+ *	@param piano handle
+ *	@param xml document
+ *	@return nothing yet
+ */
 void PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
@@ -280,7 +293,6 @@ void PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
  *	@param xml document
  */
 void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
-	/* FIXME: copy & waste */
 	xmlNode *docRoot, *curNode;
 	xmlDocPtr doc;
 
@@ -422,8 +434,7 @@ void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
  *	@param returns search result
  *	@return nothing yet
  */
-void PianoXmlParseSearch (char *searchXml,
-		PianoSearchResult_t *searchResult) {
+void PianoXmlParseSearch (char *searchXml, PianoSearchResult_t *searchResult) {
 	xmlNode *docRoot, *curNode;
 	xmlDocPtr doc;
 
