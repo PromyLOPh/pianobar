@@ -7,7 +7,7 @@ Must-have:
 ----------
 
 * [done] implement all essential pandora commands like ban/love/station editing
-* client config file
+* [done] client config file
 * fixes, fixes, fixes (look for memory leaks or implement error handling, e.g.)
 * buffer songs (works without too, but would be a huge improvement)
 
