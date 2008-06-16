@@ -24,7 +24,8 @@ Per-user configuration file. See
 .SH CONFIGURATION
 The configuration file consists of simple
 .B key = value
-lines. Each terminated with a newline (\\n) character.
+lines. Each terminated with a newline (\\n) character. Keys and values are both
+case sensitive.
 
 .TP
 .B control_proxy = host:port
@@ -32,12 +33,20 @@ Non-american users need a proxy to use pandora.com. Currently this needs to
 be a SOCKS4a proxy like Tor.
 
 .TP
-.B user = your@user.name
-Your pandora.com username.
+.B control_proxy_type = {http,socks4,socks4a,socks5}
+If you want to use a proxy you need to specify the proxy type you're going to
+use. Note that
+.B socks5
+needs an IP address specified in
+.B control_proxy
 
 .TP
 .B password = plaintext_password
 Your pandora.com password. Plain-text.
+
+.TP
+.B user = your@user.name
+Your pandora.com username.
 
 .SH AUTHOR
 Lars-Dominik Braun <PromyLOPh@gmail.com>

@@ -292,8 +292,11 @@ int main (int argc, char **argv) {
 
 	PianoInit (&ph);
 	/* setup control connection */
-	curl_easy_setopt (ph.curlHandle, CURLOPT_PROXY, bsettings.controlProxy);
-	curl_easy_setopt (ph.curlHandle, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS4A);
+	if (bsettings.controlProxy != NULL && bsettings.controlProxyType != -1) {
+		curl_easy_setopt (ph.curlHandle, CURLOPT_PROXY, bsettings.controlProxy);
+		curl_easy_setopt (ph.curlHandle, CURLOPT_PROXYTYPE,
+				bsettings.controlProxyType);
+	}
 	curl_easy_setopt (ph.curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 
 	termSetBuffer (0);

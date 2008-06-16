@@ -90,6 +90,19 @@ void readSettings (BarSettings_t *settings) {
 		}
 		if (strcmp ("control_proxy", key) == 0) {
 			settings->controlProxy = strdup (val);
+		} else if (strcmp ("control_proxy_type", key) == 0) {
+			if (strcmp ("http", val) == 0) {
+				settings->controlProxyType = CURLPROXY_HTTP;
+			} else if (strcmp ("socks4", val) == 0) {
+				settings->controlProxyType = CURLPROXY_SOCKS4;
+			} else if (strcmp ("socks4a", val) == 0) {
+				settings->controlProxyType = CURLPROXY_SOCKS4A;
+			} else if (strcmp ("socks5", val) == 0) {
+				settings->controlProxyType = CURLPROXY_SOCKS5;
+			} else {
+				/* error: don't use proxy at all */
+				settings->controlProxyType = -1;
+			}
 		} else if (strcmp ("user", key) == 0) {
 			settings->username = strdup (val);
 		} else if (strcmp ("password", key) == 0) {

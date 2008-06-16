@@ -23,10 +23,13 @@ THE SOFTWARE.
 #ifndef _SETTINGS_H
 #define _SETTINGS_H
 
+#include <curl/curl.h>
+
 struct BarSettings {
 	char *username;
 	char *password;
 	char *controlProxy; /* non-american listeners need this */
+	curl_proxytype controlProxyType;
 };
 
 typedef struct BarSettings BarSettings_t;
