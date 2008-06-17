@@ -150,7 +150,6 @@ void PianoDestroy (PianoHandle_t *ph) {
  *	@param piano handle
  *	@param username (utf-8 encoded)
  *	@param password (plaintext, utf-8 encoded)
- *	@return nothing
  */
 PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 	char url[PIANO_URL_BUFFER_SIZE];
@@ -190,7 +189,6 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 /*	get all stations for authenticated user (so: PianoConnect needs to
  *	be run before)
  *	@param piano handle filled with some authentication data by PianoConnect
- *	@return nothing
  */
 PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
@@ -217,11 +215,11 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 /*	get next songs for station (usually four tracks)
  *	@param piano handle
  *	@param station id
- *	@return nothing yet
  */
-void PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
+PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
+	PianoReturn_t ret;
 
 	/* FIXME: remove static numbers */
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -242,9 +240,10 @@ void PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
 			"&arg3=181840822&arg4=&arg5=&arg6=aacplus", ph->routeId,
 			ph->user.listenerId, stationId);
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	PianoXmlParsePlaylist (ph, retStr);
+	ret = PianoXmlParsePlaylist (ph, retStr);
 	free (retStr);
 	free (requestStr);
+	return ret;
 }
 
 /*	love or ban track (you cannot remove your rating, so PIANO_RATE_NONE is
@@ -254,7 +253,6 @@ void PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
  *	@param track will be added to this stations loved tracks list
  *	@param rate this track
  *	@param your rating
- *	@return value from return enum
  */
 PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		PianoSong_t *song, PianoSongRating_t rating) {
@@ -347,7 +345,6 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
  *	@public yes
  *	@param piano handle
  *	@param station you want to delete
- *	@return
  */
 PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
@@ -402,12 +399,12 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
  *	@param piano handle
  *	@param utf-8 search string
  *	@param return search result
- *	@return nothing yet
  */
-void PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
+PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 		PianoSearchResult_t *searchResult) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr, *xmlencodedSearchStr, *urlencodedSearchStr;
+	PianoReturn_t ret;
 
 	xmlencodedSearchStr = PianoXmlEncodeString (searchStr);
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -425,12 +422,14 @@ void PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 			urlencodedSearchStr);
 	
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	PianoXmlParseSearch (retStr, searchResult);
+	ret = PianoXmlParseSearch (retStr, searchResult);
 
 	curl_free (urlencodedSearchStr);
 	free (xmlencodedSearchStr);
 	free (retStr);
 	free (requestStr);
+
+	return ret;
 }
 
 /*	create new station on server
@@ -438,11 +437,11 @@ void PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
  *	@param piano handle
  *	@param music id from artist or track, you may obtain one by calling
  *			PianoSearchMusic
- *	@return nothing, yet
  */
-void PianoCreateStation (PianoHandle_t *ph, char *musicId) {
+PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
+	PianoReturn_t ret;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>station.createStation</methodName>"
@@ -458,8 +457,10 @@ void PianoCreateStation (PianoHandle_t *ph, char *musicId) {
 			ph->user.listenerId, musicId);
 	
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	PianoXmlParseCreateStation (ph, retStr);
+	ret = PianoXmlParseCreateStation (ph, retStr);
 
 	free (requestStr);
 	free (retStr);
+
+	return ret;
 }
