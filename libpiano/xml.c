@@ -518,7 +518,7 @@ void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
  */
 PianoReturn_t PianoXmlParseSearch (char *searchXml,
 		PianoSearchResult_t *searchResult) {
-	xmlNode *docRoot, *curNode;
+	xmlNode *docRoot;
 	xmlDocPtr doc;
 	PianoReturn_t ret;
 
