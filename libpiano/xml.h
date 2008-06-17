@@ -23,8 +23,10 @@ THE SOFTWARE.
 #ifndef _XML_H
 #define _XML_H
 
-void PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml);
-void PianoXmlParseStations (PianoHandle_t *ph, char *xml);
+#include "piano.h"
+
+PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml);
+PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, char *xml);
 void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml);
 void PianoXmlParseSearch (char *searchXml,
 		PianoSearchResult_t *searchResult);

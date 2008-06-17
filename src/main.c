@@ -302,9 +302,16 @@ int main (int argc, char **argv) {
 	termSetBuffer (0);
 
 	printf ("Login...\n");
-	PianoConnect (&ph, bsettings.username, bsettings.password);
+	if (PianoConnect (&ph, bsettings.username, bsettings.password) !=
+			PIANO_RET_OK) {
+		printf ("Login failed. Check your username and password\n");
+		return 0;
+	}
 	printf ("Get stations...\n");
-	PianoGetStations (&ph);
+	if (PianoGetStations (&ph) != PIANO_RET_OK) {
+		printf ("Error while fetching your stations.\n");
+		return 0;
+	}
 
 	/* select station */
 	curStation = selectStation (&ph);

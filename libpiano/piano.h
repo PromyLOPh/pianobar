@@ -139,7 +139,8 @@ struct PianoSearchResult {
 typedef struct PianoSearchResult PianoSearchResult_t;
 
 /* FIXME: more error types (http failed, e.g.) later */
-enum PianoReturn {PIANO_RET_OK, PIANO_RET_ERR};
+enum PianoReturn {PIANO_RET_OK, PIANO_RET_ERR, PIANO_RET_XML_INVALID,
+		PIANO_RET_AUTH_TOKEN_INVALID, PIANO_RET_AUTH_USER_PASSWORD_INVALID};
 typedef enum PianoReturn PianoReturn_t;
 
 void PianoInit (PianoHandle_t *);
@@ -148,9 +149,9 @@ void PianoDestroyPlaylist (PianoHandle_t *ph);
 void PianoDestroySearchResult (PianoSearchResult_t *searchResult);
 void PianoDestroyStation (PianoStation_t *station);
 void PianoDestroyStations (PianoHandle_t *ph);
-void PianoConnect (PianoHandle_t *, char *, char *);
+PianoReturn_t PianoConnect (PianoHandle_t *, char *, char *);
 
-void PianoGetStations (PianoHandle_t *ph);
+PianoReturn_t PianoGetStations (PianoHandle_t *ph);
 void PianoGetPlaylist (PianoHandle_t *ph, char *stationId);
 
 PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,

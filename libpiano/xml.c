@@ -29,6 +29,71 @@ THE SOFTWARE.
 #include "piano.h"
 #include "crypt.h"
 
+void PianoXmlStructParser (xmlNode *structRoot,
+		void (*callback) (char *, xmlNode *, void *), void *data);
+char *PianoXmlGetNodeText (xmlNode *node);
+
+/*	parse fault and get fault type
+ */
+void PianoXmlIsFaultCb (char *key, xmlNode *value, void *data) {
+	PianoReturn_t *ret = data;
+	char *valueStr = PianoXmlGetNodeText (value);
+	char *matchStart, *matchEnd, *matchStr;
+
+	if (strcmp ("faultString", key) == 0) {
+		*ret = PIANO_RET_ERR;
+		/* find fault identifier in a string like this:
+		 * com.savagebeast.radio.api.protocol.xmlrpc.RadioXmlRpcException:
+		 * 192.168.160.78|1213101717317|AUTH_INVALID_TOKEN|
+		 * Invalid auth token */
+		if ((matchStart = strchr (valueStr, '|')) != NULL) {
+			if ((matchStart = strchr (matchStart+1, '|')) != NULL) {
+				if ((matchEnd = strchr (matchStart+1, '|')) != NULL) {
+					matchStr = calloc (matchEnd - (matchStart+1)+1,
+							sizeof (*matchStr));
+					memcpy (matchStr, matchStart+1, matchEnd -
+							(matchStart+1));
+					/* translate to our error message system */
+					if (strcmp ("AUTH_INVALID_TOKEN", matchStr) == 0) {
+						*ret = PIANO_RET_AUTH_TOKEN_INVALID;
+					} else if (strcmp ("AUTH_INVALID_USERNAME_PASSWORD",
+							matchStr) == 0) {
+						*ret = PIANO_RET_AUTH_USER_PASSWORD_INVALID;
+					} else {
+						*ret = PIANO_RET_ERR;
+						printf (PACKAGE ": Unknown error %s in %s\n",
+								matchStr, valueStr);
+					}
+					free (matchStr);
+				}
+			}
+		}
+	}
+}
+
+/*	check whether pandora returned an error or not
+ *	@author PromyLOPh
+ *	@added 2008-06-16
+ *	@param document root of xml doc
+ *	@return _RET_OK or fault code (_RET_*)
+ */
+PianoReturn_t PianoXmlIsFault (xmlNode *docRoot) {
+	xmlNode *faultStruct;
+	PianoReturn_t ret;
+
+	/* FIXME: we could get into troubles when fault is not the first child
+	 * (pandora yould add whitespace e.g.) */
+	if (docRoot->children != NULL &&
+			docRoot->children->type == XML_ELEMENT_NODE &&
+			xmlStrEqual (docRoot->children->name, (xmlChar *) "fault")) {
+		/* FIXME: detect fault type */
+		faultStruct = docRoot->children->children->children;
+		PianoXmlStructParser (faultStruct, PianoXmlIsFaultCb, &ret);
+		return ret;
+	}
+	return PIANO_RET_OK;
+}
+
 /*	parses things like this:
  *	<struct>
  *		<member>
@@ -89,13 +154,18 @@ void PianoXmlStructParser (xmlNode *structRoot,
  */
 PianoReturn_t PianoXmlInitDoc (char *xml, xmlDocPtr *doc, xmlNode **docRoot) {
 	*doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
+	PianoReturn_t ret;
 
 	if (*doc == NULL) {
 		printf (PACKAGE ": error while parsing this xml document\n%s\n", xml);
-		return PIANO_RET_ERR;
+		return PIANO_RET_XML_INVALID;
 	}
 
 	*docRoot = xmlDocGetRootElement (*doc);
+
+	if ((ret = PianoXmlIsFault (*docRoot)) != PIANO_RET_OK) {
+		return ret;
+	}
 
 	return PIANO_RET_OK;
 }
@@ -190,19 +260,20 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 	}
 }
 
-/*	parses server response and updates handle
+/*	parses userinfos sent by pandora as login response
  *	@author PromyLOPh
  *	@added 2008-06-03
  *	@param piano handle
  *	@param utf-8 string
- *	@return nothing
+ *	@return _RET_OK or error
  */
-void PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
+PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
+	PianoReturn_t ret;
 
-	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
-		return;
+	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+		return ret;
 	}
 
 	/* <methodResponse> <params> <param> <value> <struct> */
@@ -210,6 +281,7 @@ void PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
 	PianoXmlStructParser (structRoot, PianoXmlParseUserinfoCb, &ph->user);
 
 	xmlFreeDoc (doc);
+	return PIANO_RET_OK;
 }
 
 /*	parse stations returned by pandora
@@ -217,14 +289,15 @@ void PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
  *	@added 2008-06-04
  *	@param piano handle
  *	@param xml returned by pandora
- *	@return nothing
+ *	@return _RET_OK or error
  */
-void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
+PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
 	xmlNode *docRoot, *curNode;
 	xmlDocPtr doc;
+	PianoReturn_t ret;
 
-	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
-		return;
+	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+		return ret;
 	}
 
 	/* <methodResponse> <params> <param> <value> <array> <data> */
@@ -249,6 +322,7 @@ void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
 	}
 
 	xmlFreeDoc (doc);
+	return PIANO_RET_OK;
 }
 
 /*	parse "create station" answer (it returns a new station structure)
@@ -258,13 +332,14 @@ void PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
  *	@param xml document
  *	@return nothing yet
  */
-void PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
+PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
 	PianoStation_t *tmpStation;
+	PianoReturn_t ret;
 
-	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
-		return;
+	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+		return ret;
 	}
 
 	/* get <struct> node */
@@ -284,6 +359,8 @@ void PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
 	}
 	
 	xmlFreeDoc (doc);
+
+	return PIANO_RET_OK;
 }
 
 /*	parses playlist; used when searching too
@@ -292,12 +369,13 @@ void PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
  *	@param piano handle
  *	@param xml document
  */
-void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
+PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 	xmlNode *docRoot, *curNode;
 	xmlDocPtr doc;
+	PianoReturn_t ret;
 
-	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
-		return;
+	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+		return ret;
 	}
 
 	/* <methodResponse> <params> <param> <value> <array> <data> */
@@ -322,6 +400,8 @@ void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 	}
 
 	xmlFreeDoc (doc);
+
+	return PIANO_RET_OK;
 }
 
 /*	parse simple answers like this: <?xml version="1.0" encoding="UTF-8"?>
@@ -335,15 +415,17 @@ void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 PianoReturn_t PianoXmlParseSimple (char *xml) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
-	PianoReturn_t ret = PIANO_RET_ERR;
+	PianoReturn_t ret;
 
-	if (PianoXmlInitDoc (xml, &doc, &docRoot) != PIANO_RET_OK) {
-		return PIANO_RET_ERR;
+	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+		return ret;
 	}
 
 	xmlNode *val = docRoot->children->children->children->children;
 	if (xmlStrEqual (val->content, (xmlChar *) "1")) {
 		ret = PIANO_RET_OK;
+	} else {
+		ret = PIANO_RET_ERR;
 	}
 
 	xmlFreeDoc (doc);
@@ -434,12 +516,14 @@ void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
  *	@param returns search result
  *	@return nothing yet
  */
-void PianoXmlParseSearch (char *searchXml, PianoSearchResult_t *searchResult) {
+PianoReturn_t PianoXmlParseSearch (char *searchXml,
+		PianoSearchResult_t *searchResult) {
 	xmlNode *docRoot, *curNode;
 	xmlDocPtr doc;
+	PianoReturn_t ret;
 
-	if (PianoXmlInitDoc (searchXml, &doc, &docRoot) != PIANO_RET_OK) {
-		return;
+	if ((ret = PianoXmlInitDoc (searchXml, &doc, &docRoot)) != PIANO_RET_OK) {
+		return ret;
 	}
 	
 	xmlNode *structRoot = docRoot->children->children->children->children;
@@ -448,6 +532,8 @@ void PianoXmlParseSearch (char *searchXml, PianoSearchResult_t *searchResult) {
 	PianoXmlStructParser (structRoot, PianoXmlParseSearchCb, searchResult);
 
 	xmlFreeDoc (doc);
+
+	return PIANO_RET_OK;
 }
 
 /*	encode reserved xml chars

@@ -166,12 +166,13 @@ void PianoDestroy (PianoHandle_t *ph) {
  *	@param password (plaintext, utf-8 encoded)
  *	@return nothing
  */
-void PianoConnect (PianoHandle_t *ph, char *user, char *password) {
+PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 	char url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr = PianoEncryptString ("<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>misc.sync</methodName>"
 			"<params></params></methodCall>");
 	char *retStr, requestStrPlain[10000];
+	PianoReturn_t ret;
 
 	/* sync (is the return value used by pandora? for now: ignore result) */
 	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&method=sync",
@@ -192,10 +193,12 @@ void PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 	snprintf (url, sizeof (url), PIANO_SECURE_RPC_URL "rid=%s"
 			"&method=authenticateListener", ph->routeId);
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	PianoXmlParseUserinfo (ph, retStr);
+	ret = PianoXmlParseUserinfo (ph, retStr);
 
 	free (requestStr);
 	free (retStr);
+
+	return ret;
 }
 
 /*	get all stations for authenticated user (so: PianoConnect needs to
@@ -205,9 +208,10 @@ void PianoConnect (PianoHandle_t *ph, char *user, char *password) {
  *	@param piano handle filled with some authentication data by PianoConnect
  *	@return nothing
  */
-void PianoGetStations (PianoHandle_t *ph) {
+PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
+	PianoReturn_t ret;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>station.getStations</methodName>"
@@ -219,9 +223,11 @@ void PianoGetStations (PianoHandle_t *ph) {
 			"rid=%s&lid=%s&method=getStations", ph->routeId,
 			ph->user.listenerId);
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	PianoXmlParseStations (ph, retStr);
+	ret = PianoXmlParseStations (ph, retStr);
 	free (retStr);
 	free (requestStr);
+
+	return ret;
 }
 
 /*	get next songs for station (usually four tracks)
