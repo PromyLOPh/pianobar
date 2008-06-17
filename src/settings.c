@@ -28,8 +28,6 @@ THE SOFTWARE.
 
 /*	tries to guess your config dir; somehow conforming to
  *	http://standards.freedesktop.org/basedir-spec/basedir-spec-0.6.html
- *	@author PromyLOPh
- *	@added 2008-06-15
  *	@param name of the config file (can contain subdirs too)
  *	@param store the whole path here
  *	@param but only up to this size
@@ -66,8 +64,6 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 }
 
 /*	read app settings from file; format is: key = value\n
- *	@author PromyLOPh
- *	@added 2008-06-15
  *	@param where to save these settings
  *	@return nothing yet
  */

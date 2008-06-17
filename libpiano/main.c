@@ -35,8 +35,6 @@ THE SOFTWARE.
 /*	initialize piano handle, set up curl handle and settings; note: you
  *	_must_ init curl and libxml2 using curl_global_init (CURL_GLOBAL_SSL)
  *	and xmlInitParser (), you also _must_ cleanup their garbage on your own!
- *	@author PromyLOPh
- *	@added 2008-06-05
  *	@param piano handle
  *	@return nothing
  */
@@ -50,8 +48,6 @@ void PianoInit (PianoHandle_t *ph) {
 }
 
 /*	free complete search result
- *	@author PromyLOPh
- *	@added 2008-06-12
  *	@public yes
  *	@param search result
  */
@@ -82,8 +78,6 @@ void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
 }
 
 /*	free single station
- *	@author PromyLOPh
- *	@added 2008-06-12
  *	@public yes
  *	@param station
  */
@@ -94,8 +88,6 @@ void PianoDestroyStation (PianoStation_t *station) {
 }
 
 /*	free complete station list
- *	@author PromyLOPh
- *	@added 2008-06-09
  *	@param piano handle
  */
 void PianoDestroyStations (PianoHandle_t *ph) {
@@ -113,8 +105,6 @@ void PianoDestroyStations (PianoHandle_t *ph) {
 
 /* FIXME: copy & waste */
 /*	free _all_ elements of playlist
- *	@author PromyLOPh
- *	@added 2008-06-09
  *	@param piano handle
  *	@return nothing
  */
@@ -141,8 +131,6 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
 /*	frees the whole piano handle structure; this will _not_ cleanup curl's
  *	internal garbage, you have to call curl_global_cleanup () and
  *	xmlCleanupParser () for libxml2
- *	@author PromyLOPh
- *	@added 2008-06-05
  *	@param piano handle
  *	@return nothing
  */
@@ -159,8 +147,6 @@ void PianoDestroy (PianoHandle_t *ph) {
 }
 
 /*	authenticates user
- *	@author PromyLOPh
- *	@added 2008-06-05
  *	@param piano handle
  *	@param username (utf-8 encoded)
  *	@param password (plaintext, utf-8 encoded)
@@ -203,8 +189,6 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 
 /*	get all stations for authenticated user (so: PianoConnect needs to
  *	be run before)
- *	@author PromyLOPh
- *	@added 2008-06-05
  *	@param piano handle filled with some authentication data by PianoConnect
  *	@return nothing
  */
@@ -231,8 +215,6 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 }
 
 /*	get next songs for station (usually four tracks)
- *	@author PromyLOPh
- *	@added 2008-06-05
  *	@param piano handle
  *	@param station id
  *	@return nothing yet
@@ -267,8 +249,6 @@ void PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
 
 /*	love or ban track (you cannot remove your rating, so PIANO_RATE_NONE is
  *	not allowed)
- *	@author PromyLOPh
- *	@added 2008-06-10
  *	@public yes
  *	@param piano handle
  *	@param track will be added to this stations loved tracks list
@@ -320,8 +300,6 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 }
 
 /*	rename station (on the server and local)
- *	@author PromyLOPh
- *	@added 2008-06-10
  *	@public yes
  *	@param piano handle
  *	@param change this stations name
@@ -366,8 +344,6 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 }
 
 /*	delete station
- *	@author PromyLOPh
- *	@added 2008-06-10
  *	@public yes
  *	@param piano handle
  *	@param station you want to delete
@@ -422,8 +398,6 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 /*	search for music (artist or track), needed to create new station; don't
  *	forget to free the search result; beware! searchResult will be nulled
  *	by PianoXmlParseSearch
- *	@author PromyLOPh
- *	@added 2008-06-11
  *	@public yes
  *	@param piano handle
  *	@param utf-8 search string
@@ -460,8 +434,6 @@ void PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 }
 
 /*	create new station on server
- *	@author PromyLOPh
- *	@added 2008-06-14
  *	@public yes
  *	@param piano handle
  *	@param music id from artist or track, you may obtain one by calling

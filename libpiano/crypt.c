@@ -28,8 +28,6 @@ THE SOFTWARE.
 #include "crypt_key_input.h"
 
 /*	hex string to array of unsigned int values
- *	@author PromyLOPh
- *	@added 2008-06-01
  *	@param hex string
  *	@param return array
  *	@param return size of array
@@ -53,9 +51,6 @@ void PianoHexToInts (char *strHex, unsigned int **retInts, size_t *retIntsN) {
 }
 
 /*	decipher int array; reverse engineered from pandora source
- *	@author PromyLOPh
- *	@author probably pandora?
- *	@added 2008-06-01
  *	@param decrypt-me
  *	@param decrypt-me-length
  *	@param return plain ints array
@@ -111,8 +106,6 @@ void PianoDecipherInts (unsigned int *cipherInts, size_t cipherIntsN,
 }
 
 /*	int array to string
- *	@author PromyLOPh
- *	@added 2008-06-01
  *	@param int array
  *	@param length of array
  *	@return the string
@@ -128,8 +121,6 @@ char *PianoIntsToString (unsigned int *arrInts, size_t arrIntsN) {
 }
 
 /*	decrypt hex-encoded string
- *	@author PromyLOPh
- *	@added 2008-06-01
  *	@param hex string
  *	@return decrypted string
  */
@@ -149,8 +140,6 @@ char *PianoDecryptString (char *strInput) {
 }
 
 /*	string to int array
- *	@author PromyLOPh
- *	@added 2008-06-02
  *	@param the string, length % 8 needs to be 0
  *	@param returns int array
  *	@param returns size of int array
@@ -188,9 +177,6 @@ void PianoBytesToInts (char *strInput, unsigned int **retArrInts,
 }
 
 /*	decipher ints; reverse engineered from pandora flash client
- *	@author PromyLOPh
- *	@author probably pandora?
- *	@added 2008-06-07
  *	@param encipher this
  *	@param how many ints
  *	@param returns crypted ints; memory is allocated by this function
@@ -244,8 +230,6 @@ void PianoEncipherInts (unsigned int *plainInts, size_t plainIntsN,
 }
 
 /*	int array to hex-encoded string
- *	@author PromyLOPh
- *	@added 2008-06-07
  *	@param int array
  *	@param size of array
  *	@return string; memory is allocated here, don't forget to free it
@@ -262,8 +246,6 @@ char *PianoIntsToHexString (unsigned int *arrInts, size_t arrIntsN) {
 }
 
 /*	blowfish-encrypt string; used before sending xml to server
- *	@author PromyLOPh
- *	@added 2008-06-07
  *	@param encrypt this
  *	@return encrypted, hex-encoded string
  */

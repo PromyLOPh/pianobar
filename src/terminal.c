@@ -24,8 +24,6 @@ THE SOFTWARE.
 #include <stdio.h>
 
 /*	en/disable echoing for stdin
- *	@author PromyLOPh
- *	@added 2008-06-15
  *	@param 1 = enable, everything else = disable
  */
 void termSetEcho (char enable) {
@@ -42,8 +40,6 @@ void termSetEcho (char enable) {
 
 /*	en/disable stdin buffering; when enabling line-buffer method will be
  *	selected for you
- *	@author PromyLOPh
- *	@added 2008-06-15
  *	@param 1 = enable, everything else = disable
  */
 void termSetBuffer (char enable) {

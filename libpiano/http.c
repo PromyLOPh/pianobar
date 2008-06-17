@@ -30,8 +30,6 @@ THE SOFTWARE.
 
 /* FIXME: curl has a receive limit, use it! */
 /*	callback for curl, writes data to buffer
- *	@author PromyLOPh
- *	@added 2008-06-05
  *	@param received data
  *	@param block size
  *	@param blocks received
@@ -54,8 +52,6 @@ size_t PianoCurlRetToVar (void *ptr, size_t size, size_t nmemb, void *stream) {
 /* FIXME: we may use a callback given by the library client here. would be
  * more flexible... */
 /*	post data to url and receive answer as string
- *	@author PromyLOPh
- *	@added 2008-06-05
  *	@param initialized curl handle
  *	@param call this url
  *	@param post this data

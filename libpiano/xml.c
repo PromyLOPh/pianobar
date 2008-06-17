@@ -72,8 +72,6 @@ void PianoXmlIsFaultCb (char *key, xmlNode *value, void *data) {
 }
 
 /*	check whether pandora returned an error or not
- *	@author PromyLOPh
- *	@added 2008-06-16
  *	@param document root of xml doc
  *	@return _RET_OK or fault code (_RET_*)
  */
@@ -102,8 +100,6 @@ PianoReturn_t PianoXmlIsFault (xmlNode *docRoot) {
  *		</member>
  *		<!-- ... -->
  *	</struct>
- *	@author PromyLOPh
- *	@added 2008-06-03
  *	@param xml node named "struct" (or containing a similar structure)
  *	@param who wants to use this data? callback: content of <name> as
  *			string, content of <value> as xmlNode (may contain other nodes
@@ -145,8 +141,6 @@ void PianoXmlStructParser (xmlNode *structRoot,
 }
 
 /*	create xml parser from string
- *	@author PromyLOPh
- *	@added 2008-06-16
  *	@param xml document
  *	@param returns document pointer (needed to free memory later)
  *	@param returns document root
@@ -172,8 +166,6 @@ PianoReturn_t PianoXmlInitDoc (char *xml, xmlDocPtr *doc, xmlNode **docRoot) {
 
 /*	get text from <value> nodes; some of them have <boolean>, <string>
  *	or <int> subnodes, just ignore them
- *	@author PromyLOPh
- *	@added 2008-06-13
  *	@param xml node <value>
  */
 char *PianoXmlGetNodeText (xmlNode *node) {
@@ -189,8 +181,6 @@ char *PianoXmlGetNodeText (xmlNode *node) {
 }
 
 /*	structParser callback; writes userinfo to PianoUserInfo structure
- *	@author PromyLOPh
- *	@added 2008-06-03
  *	@param value identifier
  *	@param value node
  *	@param pointer to userinfo structure
@@ -261,8 +251,6 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 }
 
 /*	parses userinfos sent by pandora as login response
- *	@author PromyLOPh
- *	@added 2008-06-03
  *	@param piano handle
  *	@param utf-8 string
  *	@return _RET_OK or error
@@ -285,8 +273,6 @@ PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
 }
 
 /*	parse stations returned by pandora
- *	@author PromyLOPh
- *	@added 2008-06-04
  *	@param piano handle
  *	@param xml returned by pandora
  *	@return _RET_OK or error
@@ -326,8 +312,6 @@ PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
 }
 
 /*	parse "create station" answer (it returns a new station structure)
- *	@author PromyLOPh
- *	@added 2008-06-16
  *	@param piano handle
  *	@param xml document
  *	@return nothing yet
@@ -364,8 +348,6 @@ PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
 }
 
 /*	parses playlist; used when searching too
- *	@author PromyLOPh
- *	@added 2008-06-12
  *	@param piano handle
  *	@param xml document
  */
@@ -407,8 +389,6 @@ PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 /*	parse simple answers like this: <?xml version="1.0" encoding="UTF-8"?>
  *	<methodResponse><params><param><value>1</value></param></params>
  *	</methodResponse>
- *	@author PromyLOPh
- *	@added 2008-06-10
  *	@param xml string
  *	@return
  */
@@ -434,8 +414,6 @@ PianoReturn_t PianoXmlParseSimple (char *xml) {
 }
 
 /*	xml struct parser callback, used in PianoXmlParseSearchCb
- *	@author PromyLOPh
- *	@added 2008-06-12
  */
 void PianoXmlParseSearchArtistCb (char *key, xmlNode *value, void *data) {
 	PianoArtist_t *artist = data;
@@ -450,8 +428,6 @@ void PianoXmlParseSearchArtistCb (char *key, xmlNode *value, void *data) {
 
 /*	callback for xml struct parser used in PianoXmlParseSearch, "switch" for
  *	PianoXmlParseSearchArtistCb and PianoXmlParsePlaylistCb
- *	@author PromyLOPh
- *	@added 2008-06-12
  */
 void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
 	PianoSearchResult_t *searchResult = data;
@@ -510,8 +486,6 @@ void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
 }
 
 /*	parse search result; searchResult is nulled before use
- *	@author PromyLOPh
- *	@added 2008-06-12
  *	@param xml document
  *	@param returns search result
  *	@return nothing yet
@@ -537,8 +511,6 @@ PianoReturn_t PianoXmlParseSearch (char *searchXml,
 }
 
 /*	encode reserved xml chars
- *	@author PromyLOPh
- *	@added 2008-06-10
  *	@param encode this
  *	@return encoded string
  */
