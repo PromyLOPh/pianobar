@@ -28,6 +28,7 @@ THE SOFTWARE.
 
 #include "piano.h"
 #include "crypt.h"
+#include "config.h"
 
 void PianoXmlStructParser (xmlNode *structRoot,
 		void (*callback) (char *, xmlNode *, void *), void *data);

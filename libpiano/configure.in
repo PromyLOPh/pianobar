@@ -1,6 +1,7 @@
 AC_INIT([libpiano], [0.1], [PromyLOPh@gmail.com])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR([src/main.c])
+AM_CONFIG_HEADER([src/config.h])
 AM_INIT_AUTOMAKE([-Wall])
 
 AC_PROG_CC

@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include <stdio.h>
 
 #include "settings.h"
+#include "config.h"
 
 /*	tries to guess your config dir; somehow conforming to
  *	http://standards.freedesktop.org/basedir-spec/basedir-spec-0.6.html
