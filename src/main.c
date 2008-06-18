@@ -66,12 +66,12 @@ void dumpBuffer (char *buf, size_t len) {
 }
 
 /* FIXME: this is a huge block of _bad_ and buggy code */
-int playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
+size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	char *data = ptr;
 	struct aacPlayer *player = stream;
 
 	if (player->doQuit) {
-		return -1;
+		return 0;
 	}
 
 	if (player->dataMode == 1) {
