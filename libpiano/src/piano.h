@@ -152,15 +152,15 @@ void PianoDestroyStations (PianoHandle_t *ph);
 PianoReturn_t PianoConnect (PianoHandle_t *, char *, char *);
 
 PianoReturn_t PianoGetStations (PianoHandle_t *ph);
-void PianoGetPlaylist (PianoHandle_t *ph, char *stationId);
+PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId);
 
 PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		PianoSong_t *song, PianoSongRating_t rating);
 PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 		char *newName);
 PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station);
-void PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
+PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 		PianoSearchResult_t *searchResult);
-void PianoCreateStation (PianoHandle_t *ph, char *musicId);
+PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId);
 
 #endif /* _PIANO_H */

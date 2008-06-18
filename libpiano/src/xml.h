@@ -27,11 +27,11 @@ THE SOFTWARE.
 
 PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml);
 PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, char *xml);
-void PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml);
-void PianoXmlParseSearch (char *searchXml,
+PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml);
+PianoReturn_t PianoXmlParseSearch (char *searchXml,
 		PianoSearchResult_t *searchResult);
 PianoReturn_t PianoXmlParseSimple (char *xml);
-void PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml);
+PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml);
 
 char *PianoXmlEncodeString (const char *s);
 
