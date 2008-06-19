@@ -348,6 +348,31 @@ PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
 	return PIANO_RET_OK;
 }
 
+/*	parse "add seed" answer, nearly the same as ParseCreateStation
+ *	@param piano handle
+ *	@param xml document
+ *	@param update this station
+ */
+PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
+		PianoStation_t *station) {
+	xmlNode *docRoot;
+	xmlDocPtr doc;
+	PianoReturn_t ret;
+
+	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+		return ret;
+	}
+
+	/* get <struct> node */
+	xmlNode *dataRoot = docRoot->children->children->children->children;
+	PianoDestroyStation (station);
+	PianoXmlStructParser (dataRoot, PianoXmlParseStationsCb, station);
+	
+	xmlFreeDoc (doc);
+
+	return PIANO_RET_OK;
+}
+
 /*	parses playlist; used when searching too
  *	@param piano handle
  *	@param xml document

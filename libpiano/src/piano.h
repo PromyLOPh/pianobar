@@ -162,5 +162,7 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station);
 PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 		PianoSearchResult_t *searchResult);
 PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId);
+PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
+		PianoStation_t *station, char *musicId);
 
 #endif /* _PIANO_H */

@@ -464,3 +464,41 @@ PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId) {
 
 	return ret;
 }
+
+/* FIXME: update station data instead of replacing them */
+/*	add more music to existing station; multithreaded apps beware! this alters
+ *	station data, don't forget to lock the station pointer you passed to this
+ *	function
+ *	@public yes
+ *	@param piano handle
+ *	@param add music to this station
+ *	@param music id; can be obtained with PianoSearchMusic ()
+ */
+PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
+		PianoStation_t *station, char *musicId) {
+	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char *requestStr, *retStr;
+	PianoReturn_t ret;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>station.addSeed</methodName><params>"
+			"<param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			station->id, musicId);
+	requestStr = PianoEncryptString (xmlSendBuf);
+
+	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s"
+			"&method=addSeed&arg1=%s&arg2=%s", ph->routeId,
+			ph->user.listenerId, station->id, musicId);
+	
+	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
+	ret = PianoXmlParseAddSeed (ph, retStr, station);
+
+	free (requestStr);
+	free (retStr);
+
+	return ret;
+}

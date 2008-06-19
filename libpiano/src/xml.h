@@ -32,6 +32,8 @@ PianoReturn_t PianoXmlParseSearch (char *searchXml,
 		PianoSearchResult_t *searchResult);
 PianoReturn_t PianoXmlParseSimple (char *xml);
 PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml);
+PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
+		PianoStation_t *station);
 
 char *PianoXmlEncodeString (const char *s);
 
