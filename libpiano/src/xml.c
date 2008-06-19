@@ -29,6 +29,7 @@ THE SOFTWARE.
 #include "piano.h"
 #include "crypt.h"
 #include "config.h"
+#include "main.h"
 
 void PianoXmlStructParser (xmlNode *structRoot,
 		void (*callback) (char *, xmlNode *, void *), void *data);
@@ -65,7 +66,7 @@ void PianoXmlIsFaultCb (char *key, xmlNode *value, void *data) {
 						printf (PACKAGE ": Unknown error %s in %s\n",
 								matchStr, valueStr);
 					}
-					free (matchStr);
+					PianoFree (matchStr, 0);
 				}
 			}
 		}
@@ -228,7 +229,7 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 		/* FIXME: the key seems to be broken... so ignore 8 x 0x08 postfix;
 		 * urlTailN/2 because the encrypted hex string is now decoded */
 		strncat (song->audioUrl, urlTail, (urlTailN/2)-8);
-		free (urlTail);
+		PianoFree (urlTail, 0);
 
 	} else if (strcmp ("artistSummary", key) == 0) {
 		song->artist = strdup (valueStr);

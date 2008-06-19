@@ -23,5 +23,6 @@ THE SOFTWARE.
 #ifndef _MAIN_H
 #define _MAIN_H
 
+void PianoFree (void *ptr, size_t size);
 
 #endif /* _MAIN_H */

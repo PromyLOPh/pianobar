@@ -32,6 +32,23 @@ THE SOFTWARE.
 #include "xml.h"
 #include "crypt.h"
 
+/*	more "secure" free version; only use this function, not original free ()
+ *	in this library
+ *	@public no!!!
+ *	@param free this pointer
+ *	@param zero n bytes; 0 disables zeroing (for strings with unknown size,
+ *			e.g.)
+ */
+void PianoFree (void *ptr, size_t size) {
+	if (ptr != NULL) {
+		if (size > 0) {
+			/* avoid reuse of freed memory */
+			memset ((char *) ptr, 0, size);
+		}
+		free (ptr);
+	}
+}
+
 /*	initialize piano handle, set up curl handle and settings; note: you
  *	_must_ init curl and libxml2 using curl_global_init (CURL_GLOBAL_SSL)
  *	and xmlInitParser (), you also _must_ cleanup their garbage on your own!
@@ -57,23 +74,21 @@ void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
 
 	curArtist = searchResult->artists;
 	while (curArtist != NULL) {
-		free (curArtist->name);
-		free (curArtist->musicId);
+		PianoFree (curArtist->name, 0);
+		PianoFree (curArtist->musicId, 0);
 		lastArtist = curArtist;
 		curArtist = curArtist->next;
-		memset (lastArtist, 0, sizeof (*lastArtist));
-		free (lastArtist);
+		PianoFree (lastArtist, sizeof (*lastArtist));
 	}
 
 	curSong = searchResult->songs;
 	while (curSong != NULL) {
-		free (curSong->title);
-		free (curSong->artist);
-		free (curSong->musicId);
+		PianoFree (curSong->title, 0);
+		PianoFree (curSong->artist, 0);
+		PianoFree (curSong->musicId, 0);
 		lastSong = curSong;
 		curSong = curSong->next;
-		memset (lastSong, 0, sizeof (*lastSong));
-		free (lastSong);
+		PianoFree (lastSong, sizeof (*lastSong));
 	}
 }
 
@@ -82,8 +97,8 @@ void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
  *	@param station
  */
 void PianoDestroyStation (PianoStation_t *station) {
-	free (station->name);
-	free (station->id);
+	PianoFree (station->name, 0);
+	PianoFree (station->id, 0);
 	memset (station, 0, sizeof (station));
 }
 
@@ -98,7 +113,7 @@ void PianoDestroyStations (PianoHandle_t *ph) {
 		lastStation = curStation;
 		curStation = curStation->next;
 		PianoDestroyStation (lastStation);
-		free (lastStation);
+		PianoFree (lastStation, sizeof (*lastStation));
 	}
 	ph->stations = NULL;
 }
@@ -113,17 +128,16 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
 
 	curSong = ph->playlist;
 	while (curSong != NULL) {
-		free (curSong->audioUrl);
-		free (curSong->artist);
-		free (curSong->focusTraitId);
-		free (curSong->matchingSeed);
-		free (curSong->musicId);
-		free (curSong->title);
-		free (curSong->userSeed);
+		PianoFree (curSong->audioUrl, 0);
+		PianoFree (curSong->artist, 0);
+		PianoFree (curSong->focusTraitId, 0);
+		PianoFree (curSong->matchingSeed, 0);
+		PianoFree (curSong->musicId, 0);
+		PianoFree (curSong->title, 0);
+		PianoFree (curSong->userSeed, 0);
 		lastSong = curSong;
 		curSong = curSong->next;
-		memset (lastSong, 0, sizeof (*lastSong));
-		free (lastSong);
+		PianoFree (lastSong, sizeof (*lastSong));
 	}
 	ph->playlist = NULL;
 }
@@ -136,10 +150,9 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
  */
 void PianoDestroy (PianoHandle_t *ph) {
 	curl_easy_cleanup (ph->curlHandle);
-	/* FIXME: only free if pointer != NULL */
-	free (ph->user.webAuthToken);
-	free (ph->user.authToken);
-	free (ph->user.listenerId);
+	PianoFree (ph->user.webAuthToken, 0);
+	PianoFree (ph->user.authToken, 0);
+	PianoFree (ph->user.listenerId, 0);
 
 	PianoDestroyStations (ph);
 	PianoDestroyPlaylist (ph);
@@ -163,8 +176,8 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&method=sync",
 			ph->routeId);
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	free (requestStr);
-	free (retStr);
+	PianoFree (requestStr, 0);
+	PianoFree (retStr, 0);
 
 	/* authenticate */
 	snprintf (requestStrPlain, sizeof (requestStrPlain), 
@@ -180,8 +193,8 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseUserinfo (ph, retStr);
 
-	free (requestStr);
-	free (retStr);
+	PianoFree (requestStr, 0);
+	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -206,8 +219,8 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 			ph->user.listenerId);
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseStations (ph, retStr);
-	free (retStr);
-	free (requestStr);
+	PianoFree (retStr, 0);
+	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -241,8 +254,8 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
 			ph->user.listenerId, stationId);
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParsePlaylist (ph, retStr);
-	free (retStr);
-	free (requestStr);
+	PianoFree (retStr, 0);
+	PianoFree (requestStr, 0);
 	return ret;
 }
 
@@ -291,8 +304,8 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		song->rating = rating;
 	}
 
-	free (requestStr);
-	free (retStr);
+	PianoFree (requestStr, 0);
+	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -329,14 +342,14 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 	ret = PianoXmlParseSimple (retStr);
 	
 	if (ret == PIANO_RET_OK) {
-		free (station->name);
+		PianoFree (station->name, 0);
 		station->name = strdup (newName);
 	}
 
 	curl_free (urlencodedNewName);
-	free (xmlencodedNewName);
-	free (requestStr);
-	free (retStr);
+	PianoFree (xmlencodedNewName, 0);
+	PianoFree (requestStr, 0);
+	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -379,15 +392,15 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 					ph->stations = curStation->next;
 				}
 				PianoDestroyStation (curStation);
-				free (curStation);
+				PianoFree (curStation, sizeof (*curStation));
 			}
 			lastStation = curStation;
 			curStation = curStation->next;
 		}
 	}
 
-	free (requestStr);
-	free (retStr);
+	PianoFree (requestStr, 0);
+	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -425,9 +438,9 @@ PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 	ret = PianoXmlParseSearch (retStr, searchResult);
 
 	curl_free (urlencodedSearchStr);
-	free (xmlencodedSearchStr);
-	free (retStr);
-	free (requestStr);
+	PianoFree (xmlencodedSearchStr, 0);
+	PianoFree (retStr, 0);
+	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -459,8 +472,8 @@ PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId) {
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseCreateStation (ph, retStr);
 
-	free (requestStr);
-	free (retStr);
+	PianoFree (requestStr, 0);
+	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -497,8 +510,8 @@ PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseAddSeed (ph, retStr, station);
 
-	free (requestStr);
-	free (retStr);
+	PianoFree (requestStr, 0);
+	PianoFree (retStr, 0);
 
 	return ret;
 }

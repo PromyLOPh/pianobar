@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 #include "crypt_key_output.h"
 #include "crypt_key_input.h"
+#include "main.h"
 
 /*	hex string to array of unsigned int values
  *	@param hex string
@@ -133,8 +134,8 @@ char *PianoDecryptString (char *strInput) {
 	PianoDecipherInts (cipherInts, cipherIntsN, &plainInts);
 	strDecrypted = PianoIntsToString (plainInts, cipherIntsN);
 
-	free (cipherInts);
-	free (plainInts);
+	PianoFree (cipherInts, cipherIntsN * sizeof (*cipherInts));
+	PianoFree (plainInts, cipherIntsN * sizeof (*plainInts));
 
 	return strDecrypted;
 }
@@ -258,8 +259,8 @@ char *PianoEncryptString (char *strInput) {
 	PianoEncipherInts (plainInts, plainIntsN, &cipherInts);
 	strHex = PianoIntsToHexString (cipherInts, plainIntsN);
 
-	free (plainInts);
-	free (cipherInts);
+	PianoFree (plainInts, plainIntsN * sizeof (*plainInts));
+	PianoFree (cipherInts, plainIntsN * sizeof (*cipherInts));
 
 	return strHex;
 }
