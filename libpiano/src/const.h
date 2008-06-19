@@ -25,8 +25,6 @@ THE SOFTWARE.
 
 /* constants */
 
-
-#define PIANO_USERAGENT "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9pre) Gecko/2008051115 Firefox/3.0pre"
 #define PIANO_RPC_URL "http://www.pandora.com/radio/xmlrpc/v19?"
 #define PIANO_SECURE_RPC_URL "https://www.pandora.com/radio/xmlrpc/v19?"
 #define PIANO_URL_BUFFER_SIZE 1024

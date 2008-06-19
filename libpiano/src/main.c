@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include "http.h"
 #include "xml.h"
 #include "crypt.h"
+#include "config.h"
 
 /*	more "secure" free version; only use this function, not original free ()
  *	in this library
@@ -60,8 +61,7 @@ void PianoInit (PianoHandle_t *ph) {
 	ph->curlHandle = curl_easy_init ();
 	/* FIXME: 64-bit may make this hack useless */
 	snprintf (ph->routeId, sizeof (ph->routeId), "%07liP", time (NULL)>>8);
-	/* at the moment we don't need publicity */
-	curl_easy_setopt (ph->curlHandle, CURLOPT_USERAGENT, PIANO_USERAGENT);
+	curl_easy_setopt (ph->curlHandle, CURLOPT_USERAGENT, PACKAGE_STRING);
 }
 
 /*	free complete search result

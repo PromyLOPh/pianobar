@@ -36,6 +36,7 @@ THE SOFTWARE.
 
 #include "terminal.h"
 #include "settings.h"
+#include "config.h"
 
 struct aacPlayer {
 	/* buffer */
@@ -190,8 +191,7 @@ void *threadPlayUrl (void *data) {
 	curl_easy_setopt (audioFd, CURLOPT_URL, player->url);
 	curl_easy_setopt (audioFd, CURLOPT_WRITEFUNCTION, playCurlCb);
 	curl_easy_setopt (audioFd, CURLOPT_WRITEDATA, player);
-	/* at the moment we don't need publicity */
-	curl_easy_setopt (audioFd, CURLOPT_USERAGENT, "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9pre) Gecko/2008051115 Firefox/3.0pre");
+	curl_easy_setopt (audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
 	curl_easy_perform (audioFd);
 
 	free (player->buffer);
