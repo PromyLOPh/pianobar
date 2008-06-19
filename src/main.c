@@ -383,7 +383,15 @@ int main (int argc, char **argv) {
 				read (fileno (stdin), &buf, sizeof (buf));
 				switch (buf) {
 					case '?':
-						printf ("n\tnext track\nq\tquit\ns\tchange station\n");
+						printf ("a\tadd music to current station\n"
+								"b\tban current song\n"
+								"c\tcreate new station\n"
+								"d\tdelete current station\n"
+								"l\tlove current song\n"
+								"n\tnext song\n"
+								"q\tquit\n"
+								"r\trename current station\n"
+								"s\tchange station\n");
 						break;
 
 					case 'a':
