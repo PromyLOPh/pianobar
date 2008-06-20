@@ -55,6 +55,8 @@ struct aacPlayer {
 	char *url;
 	char finishedPlayback;
 	char doQuit;
+	char doPause;
+	CURL *audioFd;
 };
 
 void dumpBuffer (char *buf, size_t len) {
@@ -72,6 +74,16 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 	if (player->doQuit) {
 		return 0;
+	}
+
+	/* FIXME: not the best solution to poll every second, but the easiest one
+	 * I know... (pthread's conditions could be another solution) */
+	if (player->doPause == 1) {
+		curl_easy_pause (player->audioFd, CURLPAUSE_ALL);
+		while (player->doPause == 1) {
+			sleep (1);
+		}
+		curl_easy_pause (player->audioFd, CURLPAUSE_CONT);
 	}
 
 	/* fill buffer */
@@ -171,9 +183,8 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 void *threadPlayUrl (void *data) {
 	struct aacPlayer *player = data;
 	NeAACDecConfigurationPtr conf;
-	CURL *audioFd;
 
-	audioFd = curl_easy_init ();
+	player->audioFd = curl_easy_init ();
 	player->aacHandle = NeAACDecOpen();
 
 	conf = NeAACDecGetCurrentConfiguration(player->aacHandle);
@@ -181,15 +192,15 @@ void *threadPlayUrl (void *data) {
     conf->downMatrix = 1;
 	NeAACDecSetConfiguration(player->aacHandle, conf);
 
-	curl_easy_setopt (audioFd, CURLOPT_URL, player->url);
-	curl_easy_setopt (audioFd, CURLOPT_WRITEFUNCTION, playCurlCb);
-	curl_easy_setopt (audioFd, CURLOPT_WRITEDATA, player);
-	curl_easy_setopt (audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
-	curl_easy_perform (audioFd);
+	curl_easy_setopt (player->audioFd, CURLOPT_URL, player->url);
+	curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION, playCurlCb);
+	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, player);
+	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
+	curl_easy_perform (player->audioFd);
 
 	NeAACDecClose(player->aacHandle);
 	ao_close(player->audioOutDevice);
-	curl_easy_cleanup (audioFd);
+	curl_easy_cleanup (player->audioFd);
 
 	player->finishedPlayback = 1;
 
@@ -418,6 +429,7 @@ int main (int argc, char **argv) {
 							"d\tdelete current station\n"
 							"l\tlove current song\n"
 							"n\tnext song\n"
+							"p\tpause/continue\n"
 							"q\tquit\n"
 							"r\trename current station\n"
 							"s\tchange station\n");
@@ -486,6 +498,10 @@ int main (int argc, char **argv) {
 
 				case 'n':
 					player.doQuit = 1;
+					break;
+				
+				case 'p':
+					player.doPause = !player.doPause;
 					break;
 
 				case 'q':
