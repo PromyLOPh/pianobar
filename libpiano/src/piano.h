@@ -31,37 +31,37 @@ THE SOFTWARE.
 #include <curl/curl.h>
 
 struct PianoUserInfo {
-	unsigned int zipcode;
+	//unsigned int zipcode;
 	/* disabled: billingFrequency */
-	signed hasExplicitContentFilter;
+	//char hasExplicitContentFilter;
 	char *webAuthToken;
 	/* disabled: alertCode */
 	/* disabled: seenQuickMixPanel */
-	unsigned short birthYear;
-	char *bookmarkUrl;
-	char *listenerState; /* FIXME: use enum? */
+	//unsigned short birthYear;
+	//char *bookmarkUrl;
+	//char *listenerState; /* FIXME: use enum? */
 	/* disabled: adCookieValue */
 	/* disabled: gender */
 	/* disabled: emailOptIn */
 	/* disabled: autoRenew */
-	char *username;
+	//char *username;
 	char *listenerId;
 	char *authToken;
-	char *webName;
+	//char *webName;
 };
 
 typedef struct PianoUserInfo PianoUserInfo_t;
 
 struct PianoStation {
-	signed isCreator;
+	//char isCreator;
 	/* disabled: originalStationId */
-	char **genre;
-	unsigned int originalCreatorId;
+	//char **genre;
+	//unsigned int originalCreatorId;
 	/* disabled: initialSeed */
 	/* disabled: isNew */
 	/* disabled: transformType */
-	char *idToken;
-	signed isQuickMix;
+	//char *idToken;
+	//signed isQuickMix;
 	char *name;
 	char *id;
 	struct PianoStation *next;
@@ -73,36 +73,36 @@ typedef enum PianoSongRating PianoSongRating_t;
 
 struct PianoSong {
 	char *artist;
-	char **genre;
+	//char **genre;
 	char *matchingSeed;
 	/* disabled: composerName */
 	/* disabled: isSeed */
 	/* disabled: artistFansURL */
 	/* disabled: songExplorerUrl */
-	float fileGain;
+	//float fileGain;
 	/* disabled: songDetailURL */
 	/* disabled: albumDetailURL */
-	char *webId;
+	//char *webId;
 	/* disabled: musicComUrl */
 	/* disabled: fanExplorerUrl */
 	PianoSongRating_t rating;
 	/* disabled: artistExplorerUrl */
 	/* disabled: artRadio */
-	char *audioEncoding; /* FIXME: should be enum: mp3 or aacplus */
-	char *stationId;
-	char *album;
-	char *artistMusicId;
+	//char *audioEncoding; /* FIXME: should be enum: mp3 or aacplus */
+	//char *stationId;
+	//char *album;
+	//char *artistMusicId;
 	char *userSeed;
 	/* disabled: albumExplorerUrl */
 	/* disabled: amazonUrl */
 	char *audioUrl;
-	signed onTour;
+	//signed onTour;
 	/* disabled: itunesUrl */
 	char *musicId;
 	char *title;
 	char *focusTraitId;
-	char *identity;
-	int score; /* only used for search results */
+	//char *identity;
+	//int score; /* only used for search results */
 	struct PianoSong *next;
 };
 
