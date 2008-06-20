@@ -61,7 +61,7 @@ struct PianoStation {
 	/* disabled: isNew */
 	/* disabled: transformType */
 	//char *idToken;
-	//signed isQuickMix;
+	//char isQuickMix;
 	char *name;
 	char *id;
 	struct PianoStation *next;
@@ -96,7 +96,7 @@ struct PianoSong {
 	/* disabled: albumExplorerUrl */
 	/* disabled: amazonUrl */
 	char *audioUrl;
-	//signed onTour;
+	//char onTour;
 	/* disabled: itunesUrl */
 	char *musicId;
 	char *title;
