@@ -314,8 +314,11 @@ int main (int argc, char **argv) {
 	struct aacPlayer player;
 	char doQuit = 0;
 	PianoSong_t *curSong = NULL;
-	PianoStation_t *curStation;
+	PianoStation_t *curStation = NULL;
 	BarSettings_t bsettings;
+	pthread_t playerThread;
+
+	printf ("Welcome to " PACKAGE_STRING "! Press ? for help.\n");
 
 	/* init some things */
 	curl_global_init (CURL_GLOBAL_SSL);
@@ -336,8 +339,10 @@ int main (int argc, char **argv) {
 
 	PianoInit (&ph);
 	/* setup control connection */
-	if (bsettings.controlProxy != NULL && bsettings.controlProxyType != -1) {
-		curl_easy_setopt (ph.curlHandle, CURLOPT_PROXY, bsettings.controlProxy);
+	if (bsettings.controlProxy != NULL &&
+			bsettings.controlProxyType != -1) {
+		curl_easy_setopt (ph.curlHandle, CURLOPT_PROXY,
+				bsettings.controlProxy);
 		curl_easy_setopt (ph.curlHandle, CURLOPT_PROXYTYPE,
 				bsettings.controlProxyType);
 	}
@@ -359,154 +364,176 @@ int main (int argc, char **argv) {
 
 	/* select station */
 	curStation = selectStation (&ph);
-	printf ("playing station %s\n", curStation->name);
-	PianoGetPlaylist (&ph, curStation->id);
+	printf ("Playing station \"%s\"\n", curStation->name);
 
-	curSong = ph.playlist;
+	/* little hack, needed to signal: hey! we need a playlist, but don't
+	 * free anything (there is nothing to be freed yet) */
+	memset (&player, 0, sizeof (player));
+	player.finishedPlayback = 1;
+
 	while (!doQuit) {
-		pthread_t playerThread;
-		printf ("\"%s\" by \"%s\"%s\n", curSong->title, curSong->artist,
-				(curSong->rating == PIANO_RATE_LOVE) ? " (Loved)" : "");
-		memset (&player, 0, sizeof (player));
-		player.url = strdup (curSong->audioUrl);
+		/* check whether player finished playing and start playing new
+		 * song */
+		if (player.finishedPlayback == 1) {
+			/* already played a song, clean up things */
+			if (player.url != NULL) {
+				free (player.url);
+				memset (&player, 0, sizeof (player));
+				pthread_join (playerThread, NULL);
+			}
 
-		/* start player */
-		pthread_create (&playerThread, NULL, threadPlayUrl, &player);
-
-		/* in the meantime: wait for user actions */
-		while (!player.finishedPlayback) {
-			struct pollfd polls = {fileno (stdin), POLLIN, POLLIN};
-			char buf, yesnoBuf;
-			char *lineBuf, *musicId;
-
-			if (poll (&polls, 1, 1000) > 0) {
-				read (fileno (stdin), &buf, sizeof (buf));
-				switch (buf) {
-					case '?':
-						printf ("a\tadd music to current station\n"
-								"b\tban current song\n"
-								"c\tcreate new station\n"
-								"d\tdelete current station\n"
-								"l\tlove current song\n"
-								"n\tnext song\n"
-								"q\tquit\n"
-								"r\trename current station\n"
-								"s\tchange station\n");
-						break;
-
-					case 'a':
-						musicId = selectMusicId (&ph);
-						if (PianoStationAddMusic (&ph, curStation, musicId) == PIANO_RET_OK) {
-							printf ("Added music to station.\n");
-						} else {
-							printf ("Error while adding music to station.\n");
-						}
-						free (musicId);
-						break;
-
-					case 'b':
-						player.doQuit = 1;
-						if (PianoRateTrack (&ph, curStation, curSong,
-								PIANO_RATE_BAN) == PIANO_RET_OK) {
-							printf ("Banned.\n");
-						} else {
-							printf ("Error while banning track.\n");
-						}
-						/* pandora does this too, I think */
-						PianoDestroyPlaylist (&ph);
-						curSong = NULL;
-						break;
-
-					case 'c':
-						musicId = selectMusicId (&ph);
-						PianoCreateStation (&ph, musicId);
-						free (musicId);
-						break;
-
-					case 'd':
-						printf ("Really delete \"%s\"? [yn]\n",
-								curStation->name);
-						read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
-						if (yesnoBuf == 'y') {
-							if (PianoDeleteStation (&ph, curStation) ==
-									PIANO_RET_OK) {
-								player.doQuit = 1;
-								printf ("Deleted.\n");
-								PianoDestroyPlaylist (&ph);
-								curSong = NULL;
-								curStation = selectStation (&ph);
-							} else {
-								printf ("Error while deleting station.\n");
-							}
-						}
-						break;
-
-					case 'l':
-						if (curSong->rating == PIANO_RATE_LOVE) {
-							printf ("Already loved. No need to do this twice.\n");
-							break;
-						}
-						if (PianoRateTrack (&ph, curStation, curSong,
-								PIANO_RATE_LOVE) == PIANO_RET_OK) {
-							printf ("Loved.\n");
-						} else {
-							printf ("Error while loving track.\n");
-						}
-						break;
-
-					case 'n':
-						player.doQuit = 1;
-						break;
-
-					case 'q':
-						doQuit = 1;
-						player.doQuit = 1;
-						break;
-
-					case 'r':
-						lineBuf = readline ("New name?\n");
-						if (lineBuf != NULL && strlen (lineBuf) > 0) {
-							if (PianoRenameStation (&ph, curStation, lineBuf) ==
-									PIANO_RET_OK) {
-								printf ("Renamed.\n");
-							} else {
-								printf ("Error while renaming station.\n");
-							}
-						}
-						if (lineBuf != NULL) {
-							free (lineBuf);
-						}
-						break;
-
-					case 's':
-						player.doQuit = 1;
-						PianoDestroyPlaylist (&ph);
-						curSong = NULL;
-						curStation = selectStation (&ph);
-						printf ("changed station to %s\n", curStation->name);
-						break;
+			if (curStation != NULL) {
+				/* what's next? */
+				if (curSong != NULL) {
+					curSong = curSong->next;
+				}
+				if (curSong == NULL && curStation != NULL) {
+					printf ("Receiving new playlist\n");
+					PianoDestroyPlaylist (&ph);
+					PianoGetPlaylist (&ph, curStation->id);
+					curSong = ph.playlist;
+					if (curSong == NULL) {
+						printf ("No tracks left\n");
+					}
+				}
+				if (curSong != NULL) {
+					printf ("\"%s\" by \"%s\"%s\n", curSong->title,
+							curSong->artist, (curSong->rating ==
+							PIANO_RATE_LOVE) ? " (Loved)" : "");
+					/* FIXME: why do we need to zero everything again? */
+					memset (&player, 0, sizeof (player));
+					player.url = strdup (curSong->audioUrl);
+		
+					/* start player */
+					pthread_create (&playerThread, NULL, threadPlayUrl,
+							&player);
 				}
 			}
 		}
-		pthread_join (playerThread, NULL);
 
-		free (player.url);
-		/* what's next? */
-		if (curSong != NULL) {
-			curSong = curSong->next;
-		}
-		if (curSong == NULL && !doQuit) {
-			printf ("receiving new playlist\n");
-			PianoDestroyPlaylist (&ph);
-			PianoGetPlaylist (&ph, curStation->id);
-			curSong = ph.playlist;
-			if (curSong == NULL) {
-				printf ("no tracks left\n");
-				doQuit = 1;
+		/* in the meantime: wait for user actions */
+		struct pollfd polls = {fileno (stdin), POLLIN, POLLIN};
+		char buf, yesnoBuf;
+		char *lineBuf, *musicId;
+
+		if (poll (&polls, 1, 1000) > 0) {
+			read (fileno (stdin), &buf, sizeof (buf));
+			switch (buf) {
+				case '?':
+					printf ("a\tadd music to current station\n"
+							"b\tban current song\n"
+							"c\tcreate new station\n"
+							"d\tdelete current station\n"
+							"l\tlove current song\n"
+							"n\tnext song\n"
+							"q\tquit\n"
+							"r\trename current station\n"
+							"s\tchange station\n");
+					break;
+
+				case 'a':
+					musicId = selectMusicId (&ph);
+					if (PianoStationAddMusic (&ph, curStation, musicId) ==
+							PIANO_RET_OK) {
+						printf ("Added music to station.\n");
+					} else {
+						printf ("Error while adding music to station.\n");
+					}
+					free (musicId);
+					break;
+
+				case 'b':
+					player.doQuit = 1;
+					if (PianoRateTrack (&ph, curStation, curSong,
+							PIANO_RATE_BAN) == PIANO_RET_OK) {
+						printf ("Banned.\n");
+					} else {
+						printf ("Error while banning track.\n");
+					}
+					/* pandora does this too, I think */
+					PianoDestroyPlaylist (&ph);
+					curSong = NULL;
+					break;
+
+				case 'c':
+					musicId = selectMusicId (&ph);
+					PianoCreateStation (&ph, musicId);
+					free (musicId);
+					break;
+
+				case 'd':
+					printf ("Really delete \"%s\"? [yn]\n",
+							curStation->name);
+					read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
+					if (yesnoBuf == 'y') {
+						if (PianoDeleteStation (&ph, curStation) ==
+								PIANO_RET_OK) {
+							player.doQuit = 1;
+							printf ("Deleted.\n");
+							PianoDestroyPlaylist (&ph);
+							curSong = NULL;
+							curStation = selectStation (&ph);
+						} else {
+							printf ("Error while deleting station.\n");
+						}
+					}
+					break;
+
+				case 'l':
+					if (curSong->rating == PIANO_RATE_LOVE) {
+						printf ("Already loved. No need to do this twice.\n");
+						break;
+					}
+					if (PianoRateTrack (&ph, curStation, curSong,
+							PIANO_RATE_LOVE) == PIANO_RET_OK) {
+						printf ("Loved.\n");
+					} else {
+						printf ("Error while loving track.\n");
+					}
+					break;
+
+				case 'n':
+					player.doQuit = 1;
+					break;
+
+				case 'q':
+					doQuit = 1;
+					player.doQuit = 1;
+					break;
+
+				case 'r':
+					lineBuf = readline ("New name?\n");
+					if (lineBuf != NULL && strlen (lineBuf) > 0) {
+						if (PianoRenameStation (&ph, curStation, lineBuf) ==
+								PIANO_RET_OK) {
+							printf ("Renamed.\n");
+						} else {
+							printf ("Error while renaming station.\n");
+						}
+					}
+					if (lineBuf != NULL) {
+						free (lineBuf);
+					}
+					break;
+
+				case 's':
+					player.doQuit = 1;
+					PianoDestroyPlaylist (&ph);
+					curSong = NULL;
+					curStation = selectStation (&ph);
+					if (curStation != NULL) {
+						printf ("changed station to %s\n",
+								curStation->name);
+					}
+					break;
 			}
 		}
 	}
 
+	if (player.url != NULL) {
+		free (player.url);
+		pthread_join (playerThread, NULL);
+	}
 	/* destroy everything (including the world...) */
 	PianoDestroy (&ph);
 	curl_global_cleanup ();
