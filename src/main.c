@@ -39,10 +39,9 @@ THE SOFTWARE.
 #include "config.h"
 
 struct aacPlayer {
-	/* buffer */
-	char *buffer;
+	/* buffer; should be large enough */
+	char buffer[CURL_MAX_WRITE_SIZE*2];
 	size_t bufferFilled;
-	char lastBytes[4];
 	/* got mdat atom */
 	char dataMode;
 	char foundEsdsAtom;
@@ -75,46 +74,37 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 		return 0;
 	}
 
+	/* fill buffer */
+	if (player->bufferFilled + size*nmemb > sizeof (player->buffer)) {
+		printf ("Buffer overflow!\n");
+		return 0;
+	}
+	memcpy (player->buffer+player->bufferFilled, data, size*nmemb);
+	player->bufferFilled += size*nmemb;
+
 	if (player->dataMode == 1) {
-		size_t bufferOffset = 0, aacBufferN;
-		char *aacDecoded, *aacBuffer;
+		char *aacDecoded;
 		NeAACDecFrameInfo frameInfo;
 
-		aacBufferN = player->bufferFilled + nmemb;
-		aacBuffer = calloc (aacBufferN, sizeof (char));
-		memcpy (aacBuffer, player->buffer, player->bufferFilled);
-		memcpy (aacBuffer + player->bufferFilled, data, nmemb * size);
-
-		free (player->buffer);
-
-		/* keep some bytes in buffer */
-		while (bufferOffset < aacBufferN-500) {
+		/* 500 is just a guessed size; prevent buffer underruns and error
+		 * messages by faad2 */
+		while (player->bufferFilled > 500) {
 			/* FIXME: well, i think we need this block length table */
 			aacDecoded = NeAACDecDecode(player->aacHandle, &frameInfo,
-					(unsigned char *) aacBuffer+bufferOffset,
-					aacBufferN-bufferOffset);
+					(unsigned char *) player->buffer, player->bufferFilled);
 			if (frameInfo.error != 0) {
-				printf ("error: %s\n\n", NeAACDecGetErrorMessage (frameInfo.error));
+				printf ("error: %s\n\n",
+						NeAACDecGetErrorMessage (frameInfo.error));
 				break;
 			}
 			ao_play (player->audioOutDevice, aacDecoded,
 					frameInfo.samples*frameInfo.channels);
-			bufferOffset += frameInfo.bytesconsumed;
+			/* move remaining bytes to buffer beginning */
+			memmove (player->buffer, player->buffer + frameInfo.bytesconsumed,
+					player->bufferFilled - frameInfo.bytesconsumed);
+			player->bufferFilled -= frameInfo.bytesconsumed;
 		}
-		/* copy remaining bytes */
-		player->buffer = calloc (aacBufferN - bufferOffset, sizeof (char));
-		memcpy (player->buffer, aacBuffer+bufferOffset,
-				aacBufferN - bufferOffset);
-		player->bufferFilled = aacBufferN - bufferOffset;
-		free (aacBuffer);
 	} else {
-		player->buffer = calloc (nmemb + sizeof (player->lastBytes), size);
-		/* we are going to find a 4-byte string, but curl sends fragments and
-		 * if the identifier is cut into two pieces, we will get into big
-		 * trouble... */
-		memcpy (player->buffer, player->lastBytes, sizeof (player->lastBytes));
-		memcpy (player->buffer+sizeof (player->lastBytes), data, size*nmemb);
-
 		char *searchBegin = player->buffer;
 
 		if (!player->foundEsdsAtom) {
@@ -133,6 +123,7 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 					ao_sample_format format;
 					int audioOutDriver;
 
+					/* +1+4 needs to be replaced by <something>! */
 					char err = NeAACDecInit2 (player->aacHandle,
 							(unsigned char *) searchBegin+1+4, 5,
 							&player->samplerate, &player->channels);
@@ -157,7 +148,8 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			while (searchBegin < player->buffer + nmemb) {
 				if (memcmp (searchBegin, "mdat", 4) == 0) {
 					player->dataMode = 1;
-					memmove (player->buffer, searchBegin+4, nmemb - (searchBegin-player->buffer));
+					memmove (player->buffer, searchBegin + strlen ("mdat"),
+							nmemb - (searchBegin - player->buffer));
 					player->bufferFilled = nmemb - (searchBegin-player->buffer);
 					break;
 				}
@@ -165,9 +157,10 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			}
 		}
 		if (!player->dataMode) {
-			memcpy (player->lastBytes, data + (size * nmemb - sizeof (player->lastBytes)),
-					sizeof (player->lastBytes));
-			free (player->buffer);
+			/* copy last four bytes to buffer beginning and set filled
+			 * size to four */
+			memcpy (player->buffer, player->buffer+player->bufferFilled - 4, 4);
+			player->bufferFilled = 4;
 		}
 	}
 
@@ -194,7 +187,6 @@ void *threadPlayUrl (void *data) {
 	curl_easy_setopt (audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
 	curl_easy_perform (audioFd);
 
-	free (player->buffer);
 	NeAACDecClose(player->aacHandle);
 	ao_close(player->audioOutDevice);
 	curl_easy_cleanup (audioFd);
