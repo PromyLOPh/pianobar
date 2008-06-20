@@ -55,53 +55,38 @@ void PianoHexToInts (char *strHex, unsigned int **retInts, size_t *retIntsN) {
  *	@param decrypt-me
  *	@param decrypt-me-length
  *	@param return plain ints array
- *	@return nothing, yet
  */
 void PianoDecipherInts (unsigned int *cipherInts, size_t cipherIntsN,
 		unsigned int **retPlainInts) {
 	unsigned int *plainInts = calloc (cipherIntsN, sizeof (*plainInts));
-
-	size_t i;
+	size_t i, j;
+	unsigned int f, l, r, lrExchange;
 
 	for (i = 0; i < cipherIntsN; i += 2) {
-		unsigned int _loc2 = cipherInts [i];
-		unsigned int _loc3 = cipherInts [i+1];
-		unsigned int _loc6;
-		size_t n_count;
+		l = cipherInts [i];
+		r = cipherInts [i+1];
 
-		for (n_count = in_key_n + 1; n_count > 1; --n_count) {
-			_loc2 = _loc2 ^ in_key_p [n_count];
+		for (j = in_key_n + 1; j > 1; --j) {
+			l ^= in_key_p [j];
 			
-			unsigned int _loc4 = _loc2;
-			#if 0
-			unsigned short _loc8 = _loc4 & 0xff;
-			_loc4 = _loc4 >> 8;
-			unsigned short _loc9 = _loc4 & 0xff;
-			_loc4 = _loc4 >> 8;
-			unsigned short _loc10 = _loc4 & 0xff;
-			_loc4 = _loc4 >> 8;
-			unsigned short _loc11 = _loc4 & 0xff;
-			#endif
-			unsigned short _loc8 = _loc4 & 0xff;
-			unsigned short _loc9 = (_loc4 >> 8) & 0xff;
-			unsigned short _loc10 = (_loc4 >> 16) & 0xff;
-			unsigned short _loc11 = (_loc4 >> 24) & 0xff;
-			unsigned int _loc5 = in_key_s [0][_loc11] +
-					in_key_s [1][_loc10];
-			_loc5 = _loc5 ^ in_key_s [2][_loc9];
-			_loc5 = _loc5 + in_key_s [3][_loc8];
-			_loc3 = _loc3 ^ _loc5;
-			_loc6 = _loc2;
-			_loc2 = _loc3;
-			_loc3 = _loc6;
+			f = in_key_s [0][(l >> 24) & 0xff] +
+					in_key_s [1][(l >> 16) & 0xff];
+			f ^= in_key_s [2][(l >> 8) & 0xff];
+			f += in_key_s [3][l & 0xff];
+			r ^= f;
+			/* exchange l & r */
+			lrExchange = l;
+			l = r;
+			r = lrExchange;
 		}
-		_loc6 = _loc2;
-		_loc2 = _loc3;
-		_loc3 = _loc6;
-		_loc3 = _loc3 ^ in_key_p [1];
-		_loc2 = _loc2 ^ in_key_p [0];
-		plainInts [i] = _loc2;
-		plainInts [i+1] = _loc3;
+		/* exchange l & r */
+		lrExchange = l;
+		l = r;
+		r = lrExchange;
+		r ^= in_key_p [1];
+		l ^= in_key_p [0];
+		plainInts [i] = l;
+		plainInts [i+1] = r;
 	}
 	*retPlainInts = plainInts;
 }
@@ -177,55 +162,42 @@ void PianoBytesToInts (char *strInput, unsigned int **retArrInts,
 	*retArrIntsN = neededStrLen / 4;
 }
 
-/*	decipher ints; reverse engineered from pandora flash client
+/*	encipher ints; reverse engineered from pandora flash client
  *	@param encipher this
  *	@param how many ints
  *	@param returns crypted ints; memory is allocated by this function
- *	@return nothing yet
  */
 void PianoEncipherInts (unsigned int *plainInts, size_t plainIntsN,
 		unsigned int **retCipherInts) {
 	unsigned int *cipherInts = calloc (plainIntsN, sizeof (*cipherInts));
-	size_t i, _loc7;
+	size_t i, j;
+	unsigned int f, l, r, lrExchange;
 
 		for (i = 0; i < plainIntsN; i+=2) {
-			/* ++ encipher */
-			unsigned int _loc2 = plainInts [i];
-			unsigned int _loc3 = plainInts [i+1];
-			unsigned int _loc6;
+			l = plainInts [i];
+			r = plainInts [i+1];
 			
-			for (_loc7 = 0; _loc7 < out_key_n; _loc7++) {
-				_loc2 = _loc2 ^ out_key_p[_loc7];
-				unsigned int _loc4 = _loc2;
-				#if 0
-				unsigned int _loc8 = _loc4 & 0xff;
-				_loc4 >>= 8;
-				unsigned int _loc9 = _loc4 & 0xff;
-				_loc4 >>= 8;
-				unsigned int _loc10 = _loc4 & 0xff;
-				_loc4 >>= 8;
-				unsigned _loc11 = _loc4 & 0xff;
-				#endif
-				unsigned int _loc8 = _loc4 & 0xff;
-				unsigned int _loc9 = (_loc4 >> 8) & 0xff;
-				unsigned int _loc10 = (_loc4 >> 16) & 0xff;
-				unsigned _loc11 = (_loc4 >> 24) & 0xff;
-				unsigned int _loc5 = out_key_s[0][_loc11] +
-						out_key_s [1][_loc10];
-				_loc5 ^= out_key_s [2][_loc9];
-				_loc5 += out_key_s [3][_loc8];
-				_loc3 ^= _loc5;
-				_loc6 = _loc2;
-				_loc2 = _loc3;
-				_loc3 = _loc6;
+			for (j = 0; j < out_key_n; j++) {
+				l ^= out_key_p[j];
+
+				f = out_key_s[0][(l >> 24) & 0xff] +
+						out_key_s [1][(l >> 16) & 0xff];
+				f ^= out_key_s [2][(l >> 8) & 0xff];
+				f += out_key_s [3][l & 0xff];
+				r ^= f;
+				/* exchange l & r */
+				lrExchange = l;
+				l = r;
+				r = lrExchange;
 			}
-			_loc6 = _loc2;
-			_loc2 = _loc3;
-			_loc3 = _loc6;
-			_loc3 ^= out_key_p [out_key_n];
-			_loc2 ^= out_key_p [out_key_n+1];
-			cipherInts [i] = _loc2;
-			cipherInts [i+1] = _loc3;
+			/* exchange l & r again */
+			lrExchange = l;
+			l = r;
+			r = lrExchange;
+			r ^= out_key_p [out_key_n];
+			l ^= out_key_p [out_key_n+1];
+			cipherInts [i] = l;
+			cipherInts [i+1] = r;
 		}
 	*retCipherInts = cipherInts;
 }
