@@ -27,7 +27,6 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <neaacdec.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <poll.h>

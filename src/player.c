@@ -123,8 +123,8 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 							&player->channels);
 					player->bufferRead += 5;
 					if (err != 0) {
-						printf ("Error while initializing audio decoder (%i)\n",
-								err);
+						printf ("Error while initializing audio decoder"
+								"(%i)\n", err);
 						return 1;
 					}
 					audioOutDriver = ao_default_driver_id();
@@ -159,7 +159,8 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 				/* how many frames do we have? */
 				if (player->sampleSizeN == 0) {
 					/* mp4 uses big endian, convert */
-					player->sampleSizeN = changeByteorderUI32 (player->buffer +
+					player->sampleSizeN =
+							changeByteorderUI32 (player->buffer +
 							player->bufferRead);
 					player->sampleSize = calloc (player->sampleSizeN,
 							sizeof (player->sampleSizeN));
