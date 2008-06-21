@@ -27,7 +27,6 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <ao/ao.h>
 #include <neaacdec.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -37,175 +36,7 @@ THE SOFTWARE.
 #include "terminal.h"
 #include "settings.h"
 #include "config.h"
-
-struct aacPlayer {
-	/* buffer; should be large enough */
-	char buffer[CURL_MAX_WRITE_SIZE*2];
-	size_t bufferFilled;
-	/* got mdat atom */
-	char dataMode;
-	char foundEsdsAtom;
-	char audioInitialized;
-	/* aac */
-	NeAACDecHandle aacHandle;
-	unsigned long samplerate;
-	unsigned char channels;
-	/* audio out */
-	ao_device *audioOutDevice;
-	char *url;
-	char finishedPlayback;
-	char doQuit;
-	char doPause;
-	CURL *audioFd;
-};
-
-void dumpBuffer (char *buf, size_t len) {
-	int i;
-	for (i = 0; i < len; i++) {
-		printf ("%02x ", buf[i] & 0xff);
-	}
-	printf ("\n");
-}
-
-/* FIXME: this is a huge block of _bad_ and buggy code */
-size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
-	char *data = ptr;
-	struct aacPlayer *player = stream;
-
-	if (player->doQuit) {
-		return 0;
-	}
-
-	/* FIXME: not the best solution to poll every second, but the easiest one
-	 * I know... (pthread's conditions could be another solution) */
-	if (player->doPause == 1) {
-		curl_easy_pause (player->audioFd, CURLPAUSE_ALL);
-		while (player->doPause == 1) {
-			sleep (1);
-		}
-		curl_easy_pause (player->audioFd, CURLPAUSE_CONT);
-	}
-
-	/* fill buffer */
-	if (player->bufferFilled + size*nmemb > sizeof (player->buffer)) {
-		printf ("Buffer overflow!\n");
-		return 0;
-	}
-	memcpy (player->buffer+player->bufferFilled, data, size*nmemb);
-	player->bufferFilled += size*nmemb;
-
-	if (player->dataMode == 1) {
-		char *aacDecoded;
-		NeAACDecFrameInfo frameInfo;
-
-		/* 500 is just a guessed size; prevent buffer underruns and error
-		 * messages by faad2 */
-		while (player->bufferFilled > 500) {
-			/* FIXME: well, i think we need this block length table */
-			aacDecoded = NeAACDecDecode(player->aacHandle, &frameInfo,
-					(unsigned char *) player->buffer, player->bufferFilled);
-			if (frameInfo.error != 0) {
-				printf ("error: %s\n\n",
-						NeAACDecGetErrorMessage (frameInfo.error));
-				break;
-			}
-			ao_play (player->audioOutDevice, aacDecoded,
-					frameInfo.samples*frameInfo.channels);
-			/* move remaining bytes to buffer beginning */
-			memmove (player->buffer, player->buffer + frameInfo.bytesconsumed,
-					player->bufferFilled - frameInfo.bytesconsumed);
-			player->bufferFilled -= frameInfo.bytesconsumed;
-		}
-	} else {
-		char *searchBegin = player->buffer;
-
-		if (!player->foundEsdsAtom) {
-			while (searchBegin < player->buffer + nmemb) {
-				if (memcmp (searchBegin, "esds", 4) == 0) {
-					player->foundEsdsAtom = 1;
-					break;
-				}
-				searchBegin++;
-			}
-		}
-		if (player->foundEsdsAtom && !player->audioInitialized) {
-			/* FIXME: is this the correct way? */
-			while (searchBegin < player->buffer + nmemb) {
-				if (memcmp (searchBegin, "\x05\x80\x80\x80", 4) == 0) {
-					ao_sample_format format;
-					int audioOutDriver;
-
-					/* +1+4 needs to be replaced by <something>! */
-					char err = NeAACDecInit2 (player->aacHandle,
-							(unsigned char *) searchBegin+1+4, 5,
-							&player->samplerate, &player->channels);
-					if (err != 0) {
-						printf ("whoops... %i\n", err);
-						return 1;
-					}
-					audioOutDriver = ao_default_driver_id();
-					format.bits = 16;
-					format.channels = player->channels;
-					format.rate = player->samplerate;
-					format.byte_format = AO_FMT_LITTLE;
-					player->audioOutDevice = ao_open_live (audioOutDriver,
-							&format, NULL);
-					player->audioInitialized = 1;
-					break;
-				}
-				searchBegin++;
-			}
-		}
-		if (player->audioInitialized) {
-			while (searchBegin < player->buffer + nmemb) {
-				if (memcmp (searchBegin, "mdat", 4) == 0) {
-					player->dataMode = 1;
-					memmove (player->buffer, searchBegin + strlen ("mdat"),
-							nmemb - (searchBegin - player->buffer));
-					player->bufferFilled = nmemb - (searchBegin-player->buffer);
-					break;
-				}
-				searchBegin++;
-			}
-		}
-		if (!player->dataMode) {
-			/* copy last four bytes to buffer beginning and set filled
-			 * size to four */
-			memcpy (player->buffer, player->buffer+player->bufferFilled - 4, 4);
-			player->bufferFilled = 4;
-		}
-	}
-
-	return size*nmemb;
-}
-
-/* player thread; for every song a new thread is started */
-void *threadPlayUrl (void *data) {
-	struct aacPlayer *player = data;
-	NeAACDecConfigurationPtr conf;
-
-	player->audioFd = curl_easy_init ();
-	player->aacHandle = NeAACDecOpen();
-
-	conf = NeAACDecGetCurrentConfiguration(player->aacHandle);
-	conf->outputFormat = FAAD_FMT_16BIT;
-    conf->downMatrix = 1;
-	NeAACDecSetConfiguration(player->aacHandle, conf);
-
-	curl_easy_setopt (player->audioFd, CURLOPT_URL, player->url);
-	curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION, playCurlCb);
-	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, player);
-	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
-	curl_easy_perform (player->audioFd);
-
-	NeAACDecClose(player->aacHandle);
-	ao_close(player->audioOutDevice);
-	curl_easy_cleanup (player->audioFd);
-
-	player->finishedPlayback = 1;
-
-	return NULL;
-}
+#include "player.h"
 
 PianoStation_t *selectStation (PianoHandle_t *ph) {
 	PianoStation_t *curStation;
@@ -534,7 +365,23 @@ int main (int argc, char **argv) {
 								curStation->name);
 					}
 					break;
-			}
+			} /* end case */
+		} /* end poll */
+
+		/* show time */
+		if (player.finishedPlayback == 0) {
+			/* FIXME: is this calculation correct? */
+			/* one frame length: T = 1/f */
+			float songLength = 1.0 / (float) player.samplerate *
+					(float) player.channels * 1000.0 *
+					(float) player.sampleSizeN;
+			float songRemaining = songLength - 1.0 / (float) player.samplerate *
+					(float) player.channels * 1000.0 *
+					(float) player.sampleSizeCurr;
+			printf ("-%02i:%02i/%02i:%02i\r", (int) songRemaining/60,
+					(int) songRemaining%60, (int) songLength/60,
+					(int) songLength%60);
+			fflush (stdout);
 		}
 	}
 
