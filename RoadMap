@@ -6,14 +6,13 @@ Ordered by importance:
 Must-have:
 ----------
 
-* [done] implement all essential pandora commands like ban/love/station editing
-* [done] client config file
+* better UI
 * fixes, fixes, fixes (look for memory leaks or implement error handling, e.g.)
-* buffer songs (works without too, but would be a huge improvement)
 
 Wishes:
 -------
 
+* feedback from the pandora.com guys :)
 * replaygain
 * cache for authtoken (how long are they valid?) and other userdata
 * last.fm scrobbling

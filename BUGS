@@ -8,6 +8,3 @@ Already found
 
 - Sometimes songs are not played completely (skipped in the middle); reason
   currently unknown
-- We produce many "Maximum number of bitstream elements exceeded" errors,
-  because faad2 is fed with all data we have. We really should read the mp4
-  block length atom...
