@@ -368,7 +368,8 @@ int main (int argc, char **argv) {
 		} /* end poll */
 
 		/* show time */
-		if (player.finishedPlayback == 0) {
+		if (player.finishedPlayback == 0 &&
+				player.mode >= SAMPLESIZE_INITIALIZED) {
 			/* FIXME: is this calculation correct? */
 			/* one frame length: T = 1/f */
 			float songLength = 1.0 / (float) player.samplerate *
