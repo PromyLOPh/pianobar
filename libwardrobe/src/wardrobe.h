@@ -22,6 +22,27 @@ THE SOFTWARE.
 
 /* public api, not stable yet */
 
+#include <curl/curl.h>
+
+typedef struct {
+	char *user;
+	char *password;
+	char authToken[100];
+	char postUrl[1024];
+	CURL *ch;
+} WardrobeHandle_t;
+
+typedef struct {
+	char *artist;
+	char *title;
+	time_t started;
+	time_t length;
+} WardrobeSong_t;
+
+typedef enum {WARDROBE_RET_ERR, WARDROBE_RET_OK,
+		WARDROBE_RET_CLIENT_BANNED, WARDROBE_RET_BADAUTH,
+		WARDROBE_RET_BADTIME, WARDROBE_RET_BADSESSION} WardrobeReturn_t;
+
 void WardrobeInit (WardrobeHandle_t *wh);
 void WardrobeSongInit (WardrobeSong_t *ws);
 void WardrobeSongDestroy (WardrobeSong_t *ws);
