@@ -37,6 +37,6 @@ AC_CHECK_FUNCS([memset])
 AC_TYPE_SIZE_T
 
 AC_CONFIG_FILES(Makefile src/Makefile)
-AC_CONFIG_SUBDIRS([libpiano])
+AC_CONFIG_SUBDIRS([libpiano libwardrobe])
 
 AC_OUTPUT

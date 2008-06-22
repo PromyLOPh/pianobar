@@ -62,6 +62,9 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->controlProxy);
 	free (settings->username);
 	free (settings->password);
+	free (settings->lastfmUser);
+	free (settings->lastfmPassword);
+	memset (settings, 0, sizeof (*settings));
 }
 
 /*	read app settings from file; format is: key = value\n
@@ -104,7 +107,14 @@ void readSettings (BarSettings_t *settings) {
 			settings->username = strdup (val);
 		} else if (strcmp ("password", key) == 0) {
 			settings->password = strdup (val);
+		} else if (strcmp ("lastfm_user", key) == 0) {
+			settings->lastfmUser = strdup (val);
+		} else if (strcmp ("lastfm_password", key) == 0) {
+			settings->lastfmPassword = strdup (val);
 		}
+	}
+	if (settings->lastfmUser != NULL && settings->lastfmPassword != NULL) {
+		settings->enableScrobbling = 1;
 	}
 
 	fclose (configfd);

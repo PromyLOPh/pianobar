@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 
 #include <piano.h>
+#include <wardrobe.h>
 #include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -31,6 +32,7 @@ THE SOFTWARE.
 #include <unistd.h>
 #include <poll.h>
 #include <readline/readline.h>
+#include <time.h>
 
 #include "terminal.h"
 #include "settings.h"
@@ -156,6 +158,8 @@ int main (int argc, char **argv) {
 	PianoStation_t *curStation = NULL;
 	BarSettings_t bsettings;
 	pthread_t playerThread;
+	WardrobeSong_t scrobbleSong;
+	WardrobeHandle_t wh;
 
 	printf ("Welcome to " PACKAGE_STRING "! Press ? for help.\n");
 
@@ -177,6 +181,13 @@ int main (int argc, char **argv) {
 	}
 
 	PianoInit (&ph);
+	WardrobeInit (&wh);
+
+	if (bsettings.enableScrobbling) {
+		wh.user = strdup (bsettings.lastfmUser);
+		wh.password = strdup (bsettings.lastfmPassword);
+	}
+
 	/* setup control connection */
 	if (bsettings.controlProxy != NULL &&
 			bsettings.controlProxyType != -1) {
@@ -216,6 +227,21 @@ int main (int argc, char **argv) {
 		if (player.finishedPlayback == 1) {
 			/* already played a song, clean up things */
 			if (player.url != NULL) {
+				scrobbleSong.length = BarSamplesToSeconds (player.samplerate,
+						player.channels, player.sampleSizeN);
+				/* scrobble when >= 90% are played */
+				if (BarSamplesToSeconds (player.samplerate,
+						player.channels, player.sampleSizeCurr) * 100 /
+						scrobbleSong.length >= 90 &&
+						bsettings.enableScrobbling) {
+					if (WardrobeSubmit (&wh, &scrobbleSong) ==
+							WARDROBE_RET_OK) {
+						printf ("Scrobbled. \n");
+					} else {
+						printf ("Errror while scrobbling. \n");
+					}
+				}
+				WardrobeSongDestroy (&scrobbleSong);
 				free (player.url);
 				memset (&player, 0, sizeof (player));
 				pthread_join (playerThread, NULL);
@@ -236,9 +262,18 @@ int main (int argc, char **argv) {
 					}
 				}
 				if (curSong != NULL) {
+					time_t currTime = time (NULL);
+					time_t currGmTime = mktime (gmtime (&currTime));
 					printf ("\"%s\" by \"%s\"%s\n", curSong->title,
 							curSong->artist, (curSong->rating ==
 							PIANO_RATE_LOVE) ? " (Loved)" : "");
+					/* setup artist and song name for scrobbling (curSong
+					 * may be NULL later) */
+					WardrobeSongInit (&scrobbleSong);
+					scrobbleSong.artist = strdup (curSong->artist);
+					scrobbleSong.title = strdup (curSong->title);
+					scrobbleSong.started = currGmTime;
+
 					/* FIXME: why do we need to zero everything again? */
 					memset (&player, 0, sizeof (player));
 					player.url = strdup (curSong->audioUrl);
@@ -394,6 +429,7 @@ int main (int argc, char **argv) {
 	}
 	/* destroy everything (including the world...) */
 	PianoDestroy (&ph);
+	WardrobeDestroy (&wh);
 	curl_global_cleanup ();
 	ao_shutdown();
 	xmlCleanupParser ();

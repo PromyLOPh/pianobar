@@ -30,6 +30,9 @@ struct BarSettings {
 	char *password;
 	char *controlProxy; /* non-american listeners need this */
 	curl_proxytype controlProxyType;
+	char *lastfmUser;
+	char *lastfmPassword;
+	char enableScrobbling;
 };
 
 typedef struct BarSettings BarSettings_t;
