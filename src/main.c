@@ -142,6 +142,12 @@ char *selectMusicId (PianoHandle_t *ph) {
 	return musicId;
 }
 
+/* FIXME: this is now correct */
+inline float BarSamplesToSeconds (float samplerate, float channels,
+		float samples) {
+	return channels * 1000.0 * samples / samplerate;
+}
+
 int main (int argc, char **argv) {
 	PianoHandle_t ph;
 	struct aacPlayer player;
@@ -370,14 +376,11 @@ int main (int argc, char **argv) {
 		/* show time */
 		if (player.finishedPlayback == 0 &&
 				player.mode >= SAMPLESIZE_INITIALIZED) {
-			/* FIXME: is this calculation correct? */
-			/* one frame length: T = 1/f */
-			float songLength = 1.0 / (float) player.samplerate *
-					(float) player.channels * 1000.0 *
-					(float) player.sampleSizeN;
-			float songRemaining = songLength - 1.0 / (float) player.samplerate *
-					(float) player.channels * 1000.0 *
-					(float) player.sampleSizeCurr;
+			float songLength = BarSamplesToSeconds (player.samplerate,
+					player.channels, player.sampleSizeN);
+			float songRemaining = songLength -
+					BarSamplesToSeconds (player.samplerate, player.channels,
+							player.sampleSizeCurr);
 			printf ("-%02i:%02i/%02i:%02i\r", (int) songRemaining/60,
 					(int) songRemaining%60, (int) songLength/60,
 					(int) songLength%60);
