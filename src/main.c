@@ -39,8 +39,12 @@ THE SOFTWARE.
 #include "config.h"
 #include "player.h"
 
+/*	let user pick one station
+ *	@param piano handle
+ *	@return pointer to selected station
+ */
 PianoStation_t *selectStation (PianoHandle_t *ph) {
-	PianoStation_t *curStation;
+	PianoStation_t *curStation = NULL;
 	size_t i;
 
 	printf ("which station do you want to listen to?\n");
@@ -51,7 +55,10 @@ PianoStation_t *selectStation (PianoHandle_t *ph) {
 		curStation = curStation->next;
 		i++;
 	}
-	scanf ("%i", &i);
+	printf ("Press c to abort.\n");
+	if (scanf ("%i", &i) < 1) {
+		return NULL;
+	}
 	curStation = ph->stations;
 	while (curStation != NULL && i > 0) {
 		curStation = curStation->next;
@@ -60,8 +67,12 @@ PianoStation_t *selectStation (PianoHandle_t *ph) {
 	return curStation;
 }
 
+/*	let user pick one song
+ *	@param song list
+ *	@return pointer to selected item in song list or NULL
+ */
 PianoSong_t *selectSong (PianoSong_t *startSong) {
-	PianoSong_t *tmpSong;
+	PianoSong_t *tmpSong = NULL;
 	size_t i;
 
 	tmpSong = startSong;
@@ -71,7 +82,10 @@ PianoSong_t *selectSong (PianoSong_t *startSong) {
 		i++;
 		tmpSong = tmpSong->next;
 	}
-	scanf ("%i", &i);
+	printf ("Press c to abort.\n");
+	if (scanf ("%i", &i) < 1) {
+		return NULL;
+	}
 	tmpSong = startSong;
 	while (tmpSong != NULL && i > 0) {
 		tmpSong = tmpSong->next;
@@ -80,8 +94,12 @@ PianoSong_t *selectSong (PianoSong_t *startSong) {
 	return tmpSong;
 }
 
+/*	let user pick one artist
+ *	@param artists (linked list)
+ *	@return pointer to selected artist or NULL on abort
+ */
 PianoArtist_t *selectArtist (PianoArtist_t *startArtist) {
-	PianoArtist_t *tmpArtist;
+	PianoArtist_t *tmpArtist = NULL;
 	size_t i;
 
 	tmpArtist = startArtist;
@@ -91,7 +109,10 @@ PianoArtist_t *selectArtist (PianoArtist_t *startArtist) {
 		i++;
 		tmpArtist = tmpArtist->next;
 	}
-	scanf ("%i", &i);
+	printf ("Press c to abort.\n");
+	if (scanf ("%i", &i) < 1) {
+		return NULL;
+	}
 	tmpArtist = startArtist;
 	while (tmpArtist != NULL && i > 0) {
 		tmpArtist = tmpArtist->next;
@@ -100,6 +121,10 @@ PianoArtist_t *selectArtist (PianoArtist_t *startArtist) {
 	return tmpArtist;
 }
 
+/*	search music: query, search request, return music id
+ *	@param piano handle
+ *	@return musicId or NULL on abort/error
+ */
 char *selectMusicId (PianoHandle_t *ph) {
 	char *musicId = NULL, *lineBuf;
 	char yesnoBuf;
@@ -111,27 +136,31 @@ char *selectMusicId (PianoHandle_t *ph) {
 	if (lineBuf != NULL && strlen (lineBuf) > 0) {
 		PianoSearchMusic (ph, lineBuf, &searchResult);
 		if (searchResult.songs != NULL && searchResult.artists != NULL) {
-			printf ("Is this an [a]rtist or [t]rack name?\n");
+			printf ("Is this an [a]rtist or [t]rack name? Press c to abort.\n");
 			read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
 			if (yesnoBuf == 'a') {
 				tmpArtist = selectArtist (searchResult.artists);
-				musicId = strdup (tmpArtist->musicId);
-				printf ("Ok.\n");
+				if (tmpArtist != NULL) {
+					musicId = strdup (tmpArtist->musicId);
+				}
 			} else if (yesnoBuf == 't') {
 				tmpSong = selectSong (searchResult.songs);
-				musicId = strdup (tmpSong->musicId);
-				printf ("Ok.\n");
+				if (tmpSong != NULL) {
+					musicId = strdup (tmpSong->musicId);
+				}
 			}
 		} else if (searchResult.songs != NULL) {
 			printf ("Select song\n");
 			tmpSong = selectSong (searchResult.songs);
-			musicId = strdup (tmpSong->musicId);
-			printf ("Ok.\n");
+			if (tmpSong != NULL) {
+				musicId = strdup (tmpSong->musicId);
+			}
 		} else if (searchResult.artists != NULL) {
 			printf ("Select artist\n");
 			tmpArtist = selectArtist (searchResult.artists);
-			musicId = strdup (tmpArtist->musicId);
-			printf ("Ok.\n");
+			if (tmpArtist != NULL) {
+				musicId = strdup (tmpArtist->musicId);
+			}
 		} else {
 			printf ("Nothing found...\n");
 		}
@@ -214,7 +243,9 @@ int main (int argc, char **argv) {
 
 	/* select station */
 	curStation = selectStation (&ph);
-	printf ("Playing station \"%s\"\n", curStation->name);
+	if (curStation != NULL) {
+		printf ("Playing station \"%s\"\n", curStation->name);
+	}
 
 	/* little hack, needed to signal: hey! we need a playlist, but don't
 	 * free anything (there is nothing to be freed yet) */
@@ -308,13 +339,19 @@ int main (int argc, char **argv) {
 
 				case 'a':
 					musicId = selectMusicId (&ph);
-					if (PianoStationAddMusic (&ph, curStation, musicId) ==
-							PIANO_RET_OK) {
-						printf ("Added music to station.\n");
+					if (musicId == NULL) {
+						printf ("Aborted.\n");
 					} else {
-						printf ("Error while adding music to station.\n");
+						printf ("Adding music to station... ");
+						fflush (stdout);
+						if (PianoStationAddMusic (&ph, curStation, musicId) ==
+								PIANO_RET_OK) {
+							printf ("Ok.\n");
+						} else {
+							printf ("Error.\n");
+						}
+						free (musicId);
 					}
-					free (musicId);
 					break;
 
 				case 'b':
@@ -332,8 +369,18 @@ int main (int argc, char **argv) {
 
 				case 'c':
 					musicId = selectMusicId (&ph);
-					PianoCreateStation (&ph, musicId);
-					free (musicId);
+					if (musicId != NULL) {
+						printf ("Creating station... ");
+						fflush (stdout);
+						if (PianoCreateStation (&ph, musicId) == PIANO_RET_OK) {
+							printf ("Ok.\n");
+						} else {
+							printf ("Error.\n");
+						}
+						free (musicId);
+					} else {
+						printf ("Aborted.\n");
+					}
 					break;
 
 				case 'd':
@@ -347,7 +394,7 @@ int main (int argc, char **argv) {
 							printf ("Deleted.\n");
 							PianoDestroyPlaylist (&ph);
 							curSong = NULL;
-							curStation = selectStation (&ph);
+							curStation = NULL;
 						} else {
 							printf ("Error while deleting station.\n");
 						}
@@ -401,8 +448,7 @@ int main (int argc, char **argv) {
 					curSong = NULL;
 					curStation = selectStation (&ph);
 					if (curStation != NULL) {
-						printf ("changed station to %s\n",
-								curStation->name);
+						printf ("Changed station to %s\n", curStation->name);
 					}
 					break;
 			} /* end case */
