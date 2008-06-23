@@ -225,6 +225,7 @@ void *BarPlayerThread (void *data) {
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION, BarPlayerCurlCb);
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, player);
 	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
+	curl_easy_setopt (player->audioFd, CURLOPT_CONNECTTIMEOUT, 60);
 	curl_easy_perform (player->audioFd);
 
 	NeAACDecClose(player->aacHandle);

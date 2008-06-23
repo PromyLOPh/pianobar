@@ -28,6 +28,7 @@ THE SOFTWARE.
 
 #include "wardrobe.h"
 #include "md5.h"
+#include "config.h"
 
 #define WARDROBE_HTTP_BUFFER_SIZE 10000
 
@@ -105,6 +106,8 @@ void WardrobeHttpPost (CURL *ch, char *url, char *postData, char **retData) {
 void WardrobeInit (WardrobeHandle_t *wh) {
 	memset (wh, 0, sizeof (*wh));
 	wh->ch = curl_easy_init ();
+	curl_easy_setopt (wh->ch, CURLOPT_USERAGENT, PACKAGE_STRING);
+	curl_easy_setopt (wh->ch, CURLOPT_CONNECTTIMEOUT, 60);
 }
 
 /*	free () replacement that does some checks and zeros memory

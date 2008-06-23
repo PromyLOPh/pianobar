@@ -62,6 +62,7 @@ void PianoInit (PianoHandle_t *ph) {
 	/* FIXME: 64-bit may make this hack useless */
 	snprintf (ph->routeId, sizeof (ph->routeId), "%07liP", time (NULL)>>8);
 	curl_easy_setopt (ph->curlHandle, CURLOPT_USERAGENT, PACKAGE_STRING);
+	curl_easy_setopt (ph->curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 }
 
 /*	free complete search result
