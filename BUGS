@@ -6,5 +6,7 @@ Report bugs to: PromyLOPh@gmail.com
 Already found
 -------------
 
-- Sometimes songs are not played completely (skipped in the middle); reason
-  currently unknown
+- Sometimes songs are not played completely (skipped in the middle);
+  curl returns CURLE_PARTIAL_FILE (file larger/smller than expected): Could be
+  a server issue and solved by requesting the missing parts of the file
+  via HTTP partial request (content-range)
