@@ -26,6 +26,7 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <curl/curl.h>
 
+#include "wardrobe.h"
 #include "md5.h"
 
 #define WARDROBE_HTTP_BUFFER_SIZE 10000
@@ -144,17 +145,16 @@ void WardrobeDestroy (WardrobeHandle_t *wh) {
  */
 WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 	/* we'll use gmt */
-	time_t currTime = time (NULL);
-	time_t currGmTime = mktime (gmtime (&currTime));
 	char url[1024], tmp[100], *tmpDigest, *pwDigest, *ret;
 	WardrobeReturn_t fRet = WARDROBE_RET_ERR;
+	time_t currTStamp = time (NULL);
 
 	tmpDigest = WardrobeMd5Calc (wh->password);
-	snprintf (tmp, sizeof (tmp), "%s%li", tmpDigest, currGmTime);
+	snprintf (tmp, sizeof (tmp), "%s%li", tmpDigest, currTStamp);
 	pwDigest = WardrobeMd5Calc (tmp);
 	snprintf (url, sizeof (url), "http://post.audioscrobbler.com/"
 			"?hs=true&p=1.2&c=tst&v=1.0&u=%s&t=%li&a=%s", wh->user,
-			currGmTime, pwDigest);
+			currTStamp, pwDigest);
 	
 	WardrobeHttpGet (wh->ch, url, &ret);
 
@@ -289,3 +289,4 @@ char *WardrobeErrorToString (WardrobeReturn_t ret) {
 	}
 	return NULL;
 }
+

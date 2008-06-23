@@ -56,6 +56,7 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph) {
 		i++;
 	}
 	printf ("Press c to abort.\n");
+
 	if (scanf ("%i", &i) < 1) {
 		return NULL;
 	}
@@ -293,8 +294,6 @@ int main (int argc, char **argv) {
 					}
 				}
 				if (curSong != NULL) {
-					time_t currTime = time (NULL);
-					time_t currGmTime = mktime (gmtime (&currTime));
 					printf ("\"%s\" by \"%s\"%s\n", curSong->title,
 							curSong->artist, (curSong->rating ==
 							PIANO_RATE_LOVE) ? " (Loved)" : "");
@@ -303,7 +302,7 @@ int main (int argc, char **argv) {
 					WardrobeSongInit (&scrobbleSong);
 					scrobbleSong.artist = strdup (curSong->artist);
 					scrobbleSong.title = strdup (curSong->title);
-					scrobbleSong.started = currGmTime;
+					scrobbleSong.started = time (NULL);
 
 					/* FIXME: why do we need to zero everything again? */
 					memset (&player, 0, sizeof (player));
