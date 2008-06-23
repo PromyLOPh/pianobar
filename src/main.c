@@ -43,7 +43,7 @@ THE SOFTWARE.
  *	@param piano handle
  *	@return pointer to selected station
  */
-PianoStation_t *selectStation (PianoHandle_t *ph) {
+PianoStation_t *BarUiSelectStation (PianoHandle_t *ph) {
 	PianoStation_t *curStation = NULL;
 	size_t i;
 
@@ -71,7 +71,7 @@ PianoStation_t *selectStation (PianoHandle_t *ph) {
  *	@param song list
  *	@return pointer to selected item in song list or NULL
  */
-PianoSong_t *selectSong (PianoSong_t *startSong) {
+PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
 	PianoSong_t *tmpSong = NULL;
 	size_t i;
 
@@ -98,7 +98,7 @@ PianoSong_t *selectSong (PianoSong_t *startSong) {
  *	@param artists (linked list)
  *	@return pointer to selected artist or NULL on abort
  */
-PianoArtist_t *selectArtist (PianoArtist_t *startArtist) {
+PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
 	PianoArtist_t *tmpArtist = NULL;
 	size_t i;
 
@@ -125,7 +125,7 @@ PianoArtist_t *selectArtist (PianoArtist_t *startArtist) {
  *	@param piano handle
  *	@return musicId or NULL on abort/error
  */
-char *selectMusicId (PianoHandle_t *ph) {
+char *BarUiSelectMusicId (PianoHandle_t *ph) {
 	char *musicId = NULL, *lineBuf;
 	char yesnoBuf;
 	PianoSearchResult_t searchResult;
@@ -139,25 +139,25 @@ char *selectMusicId (PianoHandle_t *ph) {
 			printf ("Is this an [a]rtist or [t]rack name? Press c to abort.\n");
 			read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
 			if (yesnoBuf == 'a') {
-				tmpArtist = selectArtist (searchResult.artists);
+				tmpArtist = BarUiSelectArtist (searchResult.artists);
 				if (tmpArtist != NULL) {
 					musicId = strdup (tmpArtist->musicId);
 				}
 			} else if (yesnoBuf == 't') {
-				tmpSong = selectSong (searchResult.songs);
+				tmpSong = BarUiSelectSong (searchResult.songs);
 				if (tmpSong != NULL) {
 					musicId = strdup (tmpSong->musicId);
 				}
 			}
 		} else if (searchResult.songs != NULL) {
 			printf ("Select song\n");
-			tmpSong = selectSong (searchResult.songs);
+			tmpSong = BarUiSelectSong (searchResult.songs);
 			if (tmpSong != NULL) {
 				musicId = strdup (tmpSong->musicId);
 			}
 		} else if (searchResult.artists != NULL) {
 			printf ("Select artist\n");
-			tmpArtist = selectArtist (searchResult.artists);
+			tmpArtist = BarUiSelectArtist (searchResult.artists);
 			if (tmpArtist != NULL) {
 				musicId = strdup (tmpArtist->musicId);
 			}
@@ -198,15 +198,15 @@ int main (int argc, char **argv) {
 	ao_initialize();
 
 	BarSettingsInit (&bsettings);
-	readSettings (&bsettings);
+	BarSettingsRead (&bsettings);
 
 	if (bsettings.username == NULL) {
 		bsettings.username = readline ("Username: ");
 	}
 	if (bsettings.password == NULL) {
-		termSetEcho (0);
+		BarTermSetEcho (0);
 		bsettings.password = readline ("Password: ");
-		termSetEcho (1);
+		BarTermSetEcho (1);
 	}
 
 	PianoInit (&ph);
@@ -227,7 +227,7 @@ int main (int argc, char **argv) {
 	}
 	curl_easy_setopt (ph.curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 
-	termSetBuffer (0);
+	BarTermSetBuffer (0);
 
 	printf ("Login...\n");
 	if (PianoConnect (&ph, bsettings.username, bsettings.password) !=
@@ -242,7 +242,7 @@ int main (int argc, char **argv) {
 	}
 
 	/* select station */
-	curStation = selectStation (&ph);
+	curStation = BarUiSelectStation (&ph);
 	if (curStation != NULL) {
 		printf ("Playing station \"%s\"\n", curStation->name);
 	}
@@ -310,7 +310,7 @@ int main (int argc, char **argv) {
 					player.url = strdup (curSong->audioUrl);
 		
 					/* start player */
-					pthread_create (&playerThread, NULL, threadPlayUrl,
+					pthread_create (&playerThread, NULL, BarPlayerThread,
 							&player);
 				}
 			}
@@ -338,7 +338,7 @@ int main (int argc, char **argv) {
 					break;
 
 				case 'a':
-					musicId = selectMusicId (&ph);
+					musicId = BarUiSelectMusicId (&ph);
 					if (musicId == NULL) {
 						printf ("Aborted.\n");
 					} else {
@@ -368,7 +368,7 @@ int main (int argc, char **argv) {
 					break;
 
 				case 'c':
-					musicId = selectMusicId (&ph);
+					musicId = BarUiSelectMusicId (&ph);
 					if (musicId != NULL) {
 						printf ("Creating station... ");
 						fflush (stdout);
@@ -446,7 +446,7 @@ int main (int argc, char **argv) {
 					player.doQuit = 1;
 					PianoDestroyPlaylist (&ph);
 					curSong = NULL;
-					curStation = selectStation (&ph);
+					curStation = BarUiSelectStation (&ph);
 					if (curStation != NULL) {
 						printf ("Changed station to %s\n", curStation->name);
 					}

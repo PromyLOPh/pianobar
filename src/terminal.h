@@ -23,7 +23,7 @@ THE SOFTWARE.
 #ifndef _TERMINAL_H
 #define _TERMINAL_H
 
-void termSetEcho (char enable);
-void termSetBuffer (char enable);
+void BarTermSetEcho (char enable);
+void BarTermSetBuffer (char enable);
 
 #endif /* _TERMINAL_H */

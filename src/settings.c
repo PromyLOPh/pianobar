@@ -34,7 +34,7 @@ THE SOFTWARE.
  *	@param but only up to this size
  *	@return nothing
  */
-void getXdgConfigDir (char *filename, char *retDir, size_t retDirN) {
+void BarGetXdgConfigDir (char *filename, char *retDir, size_t retDirN) {
 	char *xdgConfigDir = NULL;
 
 	if ((xdgConfigDir = getenv ("XDG_CONFIG_HOME")) != NULL &&
@@ -71,11 +71,11 @@ void BarSettingsDestroy (BarSettings_t *settings) {
  *	@param where to save these settings
  *	@return nothing yet
  */
-void readSettings (BarSettings_t *settings) {
+void BarSettingsRead (BarSettings_t *settings) {
 	char configfile[1024], key[256], val[256];
 	FILE *configfd;
 
-	getXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
+	BarGetXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
 	if ((configfd = fopen (configfile, "r")) == NULL) {
 		printf ("config file at %s not found\n", configfile);
 		return;

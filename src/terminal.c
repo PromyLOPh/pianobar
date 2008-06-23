@@ -26,7 +26,7 @@ THE SOFTWARE.
 /*	en/disable echoing for stdin
  *	@param 1 = enable, everything else = disable
  */
-void termSetEcho (char enable) {
+void BarTermSetEcho (char enable) {
 	struct termios termopts;
 
 	tcgetattr (fileno (stdin), &termopts);
@@ -42,7 +42,7 @@ void termSetEcho (char enable) {
  *	selected for you
  *	@param 1 = enable, everything else = disable
  */
-void termSetBuffer (char enable) {
+void BarTermSetBuffer (char enable) {
 	struct termios termopts;
 
 	tcgetattr (fileno (stdin), &termopts);

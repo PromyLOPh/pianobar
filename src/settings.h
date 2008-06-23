@@ -40,6 +40,6 @@ typedef struct BarSettings BarSettings_t;
 void BarSettingsInit (BarSettings_t *settings);
 void BarSettingsDestroy (BarSettings_t *settings);
 
-void readSettings (BarSettings_t *settings);
+void BarSettingsRead (BarSettings_t *settings);
 
 #endif /* _SETTINGS_H */

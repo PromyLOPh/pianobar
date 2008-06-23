@@ -48,5 +48,5 @@ struct aacPlayer {
 	CURL *audioFd;
 };
 
-void *threadPlayUrl (void *data);
+void *BarPlayerThread (void *data);
 

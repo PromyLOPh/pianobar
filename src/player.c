@@ -30,7 +30,7 @@ THE SOFTWARE.
  *	@param unsigned int
  *	@return byteswapped unsigned int
  */
-unsigned int changeByteorderUI32 (char buf[4]) {
+unsigned int BarChangeByteorderUI32 (char buf[4]) {
 	unsigned int ret = 0;
 
 	ret = buf[0] << 24 & 0xffffffff;
@@ -47,7 +47,7 @@ unsigned int changeByteorderUI32 (char buf[4]) {
  *	@param extra data (player data)
  *	@return received bytes or less on error
  */
-size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
+size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	char *data = ptr;
 	struct aacPlayer *player = stream;
 
@@ -160,7 +160,7 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 				if (player->sampleSizeN == 0) {
 					/* mp4 uses big endian, convert */
 					player->sampleSizeN =
-							changeByteorderUI32 (player->buffer +
+							BarChangeByteorderUI32 (player->buffer +
 							player->bufferRead);
 					player->sampleSize = calloc (player->sampleSizeN,
 							sizeof (player->sampleSizeN));
@@ -169,7 +169,7 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 					break;
 				} else {
 					player->sampleSize[player->sampleSizeCurr] =
-							changeByteorderUI32 (player->buffer +
+							BarChangeByteorderUI32 (player->buffer +
 							player->bufferRead);
 					player->sampleSizeCurr++;
 					player->bufferRead += 4;
@@ -209,7 +209,7 @@ size_t playCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
  *	@param aacPlayer structure
  *	@return NULL NULL NULL ...
  */
-void *threadPlayUrl (void *data) {
+void *BarPlayerThread (void *data) {
 	struct aacPlayer *player = data;
 	NeAACDecConfigurationPtr conf;
 
@@ -222,7 +222,7 @@ void *threadPlayUrl (void *data) {
 	NeAACDecSetConfiguration(player->aacHandle, conf);
 
 	curl_easy_setopt (player->audioFd, CURLOPT_URL, player->url);
-	curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION, playCurlCb);
+	curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION, BarPlayerCurlCb);
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, player);
 	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
 	curl_easy_perform (player->audioFd);
