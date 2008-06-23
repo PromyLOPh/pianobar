@@ -264,7 +264,8 @@ int main (int argc, char **argv) {
 				/* scrobble when >= 90% are played */
 				if (BarSamplesToSeconds (player.samplerate,
 						player.channels, player.sampleSizeCurr) * 100 /
-						scrobbleSong.length >= 90 &&
+						scrobbleSong.length >=
+						bsettings.lastfmScrobblePercent &&
 						bsettings.enableScrobbling) {
 					if (WardrobeSubmit (&wh, &scrobbleSong) ==
 							WARDROBE_RET_OK) {

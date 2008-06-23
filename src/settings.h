@@ -32,6 +32,7 @@ struct BarSettings {
 	curl_proxytype controlProxyType;
 	char *lastfmUser;
 	char *lastfmPassword;
+	unsigned char lastfmScrobblePercent;
 	char enableScrobbling;
 };
 

@@ -111,8 +111,18 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->lastfmUser = strdup (val);
 		} else if (strcmp ("lastfm_password", key) == 0) {
 			settings->lastfmPassword = strdup (val);
+		} else if (strcmp ("lastfm_scrobble_percent", key) == 0) {
+			settings->lastfmScrobblePercent = atoi (val);
 		}
 	}
+
+	/* some checks */
+	/* last.fm requests tracks to be played at least 50% */
+	if (settings->lastfmScrobblePercent < 50 ||
+			settings->lastfmScrobblePercent > 100) {
+		settings->lastfmScrobblePercent = 50;
+	}
+	/* only scrobble tracks if username and password are set */
 	if (settings->lastfmUser != NULL && settings->lastfmPassword != NULL) {
 		settings->enableScrobbling = 1;
 	}
