@@ -57,9 +57,9 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	
 	/* FIXME: not the best solution to poll every second, but the easiest
 	 * one I know... (pthread's conditions could be another solution) */
-	if (player->doPause == 1) {
+	if (player->doPause) {
 		curl_easy_pause (player->audioFd, CURLPAUSE_ALL);
-		while (player->doPause == 1) {
+		while (player->doPause && !player->doQuit) {
 			sleep (1);
 		}
 		curl_easy_pause (player->audioFd, CURLPAUSE_CONT);
