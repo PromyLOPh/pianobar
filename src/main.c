@@ -261,7 +261,7 @@ int main (int argc, char **argv) {
 			if (player.url != NULL) {
 				scrobbleSong.length = BarSamplesToSeconds (player.samplerate,
 						player.channels, player.sampleSizeN);
-				/* scrobble when >= 90% are played */
+				/* scrobble when >= nn% are played */
 				if (BarSamplesToSeconds (player.samplerate,
 						player.channels, player.sampleSizeCurr) * 100 /
 						scrobbleSong.length >=
