@@ -156,6 +156,8 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId);
 
 PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		PianoSong_t *song, PianoSongRating_t rating);
+PianoReturn_t PianoMoveSong (PianoHandle_t *ph, PianoStation_t *stationFrom,
+		PianoStation_t *stationTo, PianoSong_t *song);
 PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 		char *newName);
 PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station);

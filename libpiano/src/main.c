@@ -33,6 +33,10 @@ THE SOFTWARE.
 #include "crypt.h"
 #include "config.h"
 
+/* prototypes */
+PianoReturn_t PianoAddFeedback (PianoHandle_t *, char *, char *, char *,
+		char *, char *, PianoSongRating_t);
+
 /*	more "secure" free version; only use this function, not original free ()
  *	in this library
  *	@public no!!!
@@ -270,6 +274,50 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
  */
 PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 		PianoSong_t *song, PianoSongRating_t rating) {
+	PianoReturn_t ret;
+
+	ret = PianoAddFeedback (ph, station->id, song->musicId,
+			song->matchingSeed, song->userSeed, song->focusTraitId, rating);
+
+	if (ret == PIANO_RET_OK) {
+		song->rating = rating;
+	}
+
+	return ret;
+}
+
+/*	move song to another station
+ *	@param piano handle
+ *	@param move from
+ *	@param move here
+ *	@param song to move
+ */
+PianoReturn_t PianoMoveSong (PianoHandle_t *ph, PianoStation_t *stationFrom,
+		PianoStation_t *stationTo, PianoSong_t *song) {
+	PianoReturn_t ret;
+
+	/* ban from current station */
+	if ((ret = PianoAddFeedback (ph, stationFrom->id, song->musicId, "", "",
+			"", PIANO_RATE_BAN)) == PIANO_RET_OK) {
+		/* love at new station */
+		return PianoAddFeedback (ph, stationTo->id, song->musicId, "",
+				"", "", PIANO_RATE_LOVE);
+	}
+	return ret;
+}
+
+/*	add feedback
+ *	@param piano handle
+ *	@param station id
+ *	@param song id
+ *	@param song matching seed or NULL
+ *	@param song user seed or NULL
+ *	@param song focus trait id or NULL
+ *	@param rating
+ */
+PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, char *stationId,
+		char *songMusicId, char *songMatchingSeed, char *songUserSeed,
+		char *songFocusTraitId, PianoSongRating_t rating) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret = PIANO_RET_ERR;
@@ -286,24 +334,22 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
 			"<param><value><boolean>%i</boolean></value></param>"
 			"<param><value><boolean>0</boolean></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
-			station->id, song->musicId, song->matchingSeed, song->userSeed,
-			/* sometimes focusTraitId is not set, dunno why yet */
-			(song->focusTraitId == NULL) ? "" : song->focusTraitId,
+			stationId, songMusicId,
+			(songMatchingSeed == NULL) ? "" : songMatchingSeed,
+			(songUserSeed == NULL) ? "" : songUserSeed,
+			(songFocusTraitId == NULL) ? "" : songFocusTraitId,
 			(rating == PIANO_RATE_LOVE) ? 1 : 0);
 	requestStr = PianoEncryptString (xmlSendBuf);
 	snprintf (url, sizeof (url), PIANO_RPC_URL
 			"rid=%s&lid=%s&method=addFeedback&arg1=%s&arg2=%s"
 			"&arg3=%s&arg4=%s&arg5=%s&arg6=%s&arg7=false", ph->routeId,
-			ph->user.listenerId, station->id, song->musicId,
-			song->matchingSeed, song->userSeed,
-			(song->focusTraitId == NULL) ? "" : song->focusTraitId,
+			ph->user.listenerId, stationId, songMusicId,
+			(songMatchingSeed == NULL) ? "" : songMatchingSeed,
+			(songUserSeed == NULL) ? "" : songUserSeed,
+			(songFocusTraitId == NULL) ? "" : songFocusTraitId,
 			(rating == PIANO_RATE_LOVE) ? "true" : "false");
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseSimple (retStr);
-
-	if (ret == PIANO_RET_OK) {
-		song->rating = rating;
-	}
 
 	PianoFree (requestStr, 0);
 	PianoFree (retStr, 0);

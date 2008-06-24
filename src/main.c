@@ -320,6 +320,7 @@ int main (int argc, char **argv) {
 		struct pollfd polls = {fileno (stdin), POLLIN, POLLIN};
 		char buf, yesnoBuf;
 		char *lineBuf, *musicId;
+		PianoStation_t *moveStation;
 
 		if (poll (&polls, 1, 1000) > 0) {
 			read (fileno (stdin), &buf, sizeof (buf));
@@ -416,6 +417,21 @@ int main (int argc, char **argv) {
 
 				case 'n':
 					player.doQuit = 1;
+					break;
+
+				case 'm':
+					moveStation = BarUiSelectStation (&ph);
+					if (moveStation != NULL) {
+						printf ("Moving song to \"%s\"...", moveStation->name);
+						fflush (stdout);
+						if (PianoMoveSong (&ph, curStation, moveStation,
+								curSong) == PIANO_RET_OK) {
+							printf ("Ok.\n");
+							player.doQuit = 1;
+						} else {
+							printf ("Error.\n");
+						}
+					}
 					break;
 				
 				case 'p':
