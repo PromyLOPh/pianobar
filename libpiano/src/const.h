@@ -25,8 +25,11 @@ THE SOFTWARE.
 
 /* constants */
 
-#define PIANO_RPC_URL "http://www.pandora.com/radio/xmlrpc/v19?"
-#define PIANO_SECURE_RPC_URL "https://www.pandora.com/radio/xmlrpc/v19?"
+#define PIANO_PROTOCOL_VERSION "20"
+#define PIANO_RPC_URL "http://www.pandora.com/radio/xmlrpc/v" \
+		PIANO_PROTOCOL_VERSION "?"
+#define PIANO_SECURE_RPC_URL "https://www.pandora.com/radio/xmlrpc/v" \
+		PIANO_PROTOCOL_VERSION "?"
 #define PIANO_URL_BUFFER_SIZE 1024
 #define PIANO_HTTP_BUFFER_SIZE 100000
 
