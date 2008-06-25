@@ -101,7 +101,7 @@ struct PianoSong {
 	char *musicId;
 	char *title;
 	char *focusTraitId;
-	//char *identity;
+	char *identity;
 	//int score; /* only used for search results */
 	struct PianoSong *next;
 };
@@ -166,5 +166,6 @@ PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId);
 PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 		PianoStation_t *station, char *musicId);
+PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song);
 
 #endif /* _PIANO_H */

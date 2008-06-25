@@ -362,7 +362,8 @@ int main (int argc, char **argv) {
 							"p\tpause/continue\n"
 							"q\tquit\n"
 							"r\trename current station\n"
-							"s\tchange station\n");
+							"s\tchange station\n"
+							"t\ttired (ban song for 1 month)\n");
 					break;
 
 				case 'a':
@@ -494,6 +495,18 @@ int main (int argc, char **argv) {
 						printf ("Changed station to %s\n", curStation->name);
 					}
 					break;
+
+				case 't':
+					printf ("Putting song on shelf... ");
+					fflush (stdout);
+					if (PianoSongTired (&ph, curSong) == PIANO_RET_OK) {
+						printf ("Ok.\n");
+						player.doQuit = 1;
+					} else {
+						printf ("Error.\n");
+					}
+					break;
+
 			} /* end case */
 		} /* end poll */
 

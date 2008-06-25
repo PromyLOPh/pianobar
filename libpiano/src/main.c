@@ -140,6 +140,7 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
 		PianoFree (curSong->musicId, 0);
 		PianoFree (curSong->title, 0);
 		PianoFree (curSong->userSeed, 0);
+		PianoFree (curSong->identity, 0);
 		lastSong = curSong;
 		curSong = curSong->next;
 		PianoFree (lastSong, sizeof (*lastSong));
@@ -560,6 +561,38 @@ PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 
 	PianoFree (requestStr, 0);
 	PianoFree (retStr, 0);
+
+	return ret;
+}
+
+/*	ban a song temporary (for one month)
+ *	@param piano handle
+ *	@param song to be banned
+ *	@return _OK or error
+ */
+PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song) {
+	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char *requestStr, *retStr;
+	PianoReturn_t ret;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>listener.addTiredSong</methodName><params>"
+			"<param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			song->identity);
+	requestStr = PianoEncryptString (xmlSendBuf);
+
+	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s&"
+			"method=addTiredSong&arg1=%s", ph->routeId, ph->user.listenerId,
+			song->identity);
+
+	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
+	ret = PianoXmlParseSimple (retStr);
+
+	PianoFree (retStr, 0);
+	PianoFree (requestStr, 0);
 
 	return ret;
 }
