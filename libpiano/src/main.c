@@ -331,6 +331,7 @@ PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, char *stationId,
 			"<param><value><string>%s</string></value></param>"
 			"<param><value><string>%s</string></value></param>"
 			"<param><value><string>%s</string></value></param>"
+			"<param><value></value></param>"
 			"<param><value><boolean>%i</boolean></value></param>"
 			"<param><value><boolean>0</boolean></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
@@ -342,7 +343,7 @@ PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, char *stationId,
 	requestStr = PianoEncryptString (xmlSendBuf);
 	snprintf (url, sizeof (url), PIANO_RPC_URL
 			"rid=%s&lid=%s&method=addFeedback&arg1=%s&arg2=%s"
-			"&arg3=%s&arg4=%s&arg5=%s&arg6=%s&arg7=false", ph->routeId,
+			"&arg3=%s&arg4=%s&arg5=%s&arg6=&arg7=%s&arg8=false", ph->routeId,
 			ph->user.listenerId, stationId, songMusicId,
 			(songMatchingSeed == NULL) ? "" : songMatchingSeed,
 			(songUserSeed == NULL) ? "" : songUserSeed,
