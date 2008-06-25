@@ -85,7 +85,7 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 					(unsigned char *) player->buffer + player->bufferRead,
 					player->sampleSize[player->sampleSizeCurr]);
 			if (frameInfo.error != 0) {
-				printf ("error: %s\n\n",
+				printf (PACKAGE ": Decoding error: %s\n\n",
 						NeAACDecGetErrorMessage (frameInfo.error));
 				break;
 			}
@@ -93,6 +93,11 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 					frameInfo.samples*frameInfo.channels);
 			player->bufferRead += frameInfo.bytesconsumed;
 			player->sampleSizeCurr++;
+			/* going through this loop can take up to a few seconds =>
+			 * allow earlier thread abort */
+			if (player->doQuit) {
+				return 0;
+			}
 		}
 	} else {
 		if (player->mode == FIND_ESDS) {
