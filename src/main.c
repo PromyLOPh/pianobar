@@ -319,6 +319,7 @@ int main (int argc, char **argv) {
 					curSong = ph.playlist;
 					if (curSong == NULL) {
 						printf ("No tracks left\n");
+						curStation = NULL;
 					}
 				}
 				if (curSong != NULL) {
