@@ -33,31 +33,63 @@ THE SOFTWARE.
 #include <poll.h>
 #include <readline/readline.h>
 #include <time.h>
+#include <ctype.h>
 
 #include "terminal.h"
 #include "settings.h"
 #include "config.h"
 #include "player.h"
 
+/*	check whether complete string is numeric
+ *	@param the string
+ *	@return 1 = yes, 0 = not numeric
+ */
+char BarIsNumericStr (char *str) {
+	while (*str != '\0') {
+		if (isdigit (*str) == 0) {
+			return 0;
+		}
+		str++;
+	}
+	return 1;
+}
+
+/*	use readline to get integer value
+ *	@param prompt or NULL
+ *	@param returns integer
+ *	@return 1 = success, 0 = failure (not an integer, ...)
+ */
+char BarReadlineInt (char *prompt, int *retVal) {
+	char *buf;
+	char ret = 0;
+
+	if ((buf = readline (prompt)) != NULL && strlen (buf) > 0 &&
+			BarIsNumericStr (buf)) {
+		*retVal = atoi (buf);
+		ret = 1;
+	}
+	if (buf != NULL) {
+		free (buf);
+	}
+	return ret;
+}
+
 /*	let user pick one station
  *	@param piano handle
- *	@return pointer to selected station
+ *	@return pointer to selected station or NULL
  */
 PianoStation_t *BarUiSelectStation (PianoHandle_t *ph) {
 	PianoStation_t *curStation = NULL;
-	size_t i;
+	int i = 0;
 
 	printf ("which station do you want to listen to?\n");
-	i = 0;
 	curStation = ph->stations;
 	while (curStation != NULL) {
 		printf ("%2i) %s\n", i, curStation->name);
 		curStation = curStation->next;
 		i++;
 	}
-	printf ("Press c to abort.\n");
-
-	if (scanf ("%i", &i) < 1) {
+	if (!BarReadlineInt (NULL, &i)) {
 		return NULL;
 	}
 	curStation = ph->stations;
@@ -74,17 +106,15 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph) {
  */
 PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
 	PianoSong_t *tmpSong = NULL;
-	size_t i;
+	int i = 0;
 
 	tmpSong = startSong;
-	i = 0;
 	while (tmpSong != NULL) {
 		printf ("%2u) %s - %s\n", i, tmpSong->artist, tmpSong->title);
 		i++;
 		tmpSong = tmpSong->next;
 	}
-	printf ("Press c to abort.\n");
-	if (scanf ("%i", &i) < 1) {
+	if (!BarReadlineInt (NULL, &i)) {
 		return NULL;
 	}
 	tmpSong = startSong;
@@ -101,17 +131,15 @@ PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
  */
 PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
 	PianoArtist_t *tmpArtist = NULL;
-	size_t i;
+	int i = 0;
 
 	tmpArtist = startArtist;
-	i = 0;
 	while (tmpArtist != NULL) {
 		printf ("%2u) %s\n", i, tmpArtist->name);
 		i++;
 		tmpArtist = tmpArtist->next;
 	}
-	printf ("Press c to abort.\n");
-	if (scanf ("%i", &i) < 1) {
+	if (!BarReadlineInt (NULL, &i)) {
 		return NULL;
 	}
 	tmpArtist = startArtist;
@@ -251,12 +279,11 @@ int main (int argc, char **argv) {
 	/* little hack, needed to signal: hey! we need a playlist, but don't
 	 * free anything (there is nothing to be freed yet) */
 	memset (&player, 0, sizeof (player));
-	player.finishedPlayback = 1;
 
 	while (!doQuit) {
 		/* check whether player finished playing and start playing new
 		 * song */
-		if (player.finishedPlayback == 1) {
+		if (player.finishedPlayback == 1 || curSong == NULL) {
 			/* already played a song, clean up things */
 			if (player.url != NULL) {
 				scrobbleSong.length = BarSamplesToSeconds (player.samplerate,
