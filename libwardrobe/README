@@ -1,0 +1,5 @@
+libwardrobe
+===========
+
+libwardrobe handles track submissions to last.fm (scrobbling). It is part of
+the pianobar package.

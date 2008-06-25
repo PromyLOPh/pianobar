@@ -1,22 +1,15 @@
-pianobar/libpiano
-=================
+pianobar
+========
 
-libpiano is a shared library to access the xmlrpc api at pandora.com.
+pianobar is a pandora.com console client. It nearly does everything the flash
+client can do while it uses less resources and is (in my opinion) easier to
+use.
 
-pianobar will be a pandora.com music player.
+Your can get recent versions of this software at
 
-This software is not yet complete and only implements essential functions to
-connect to pandora, authenticate, getting a station- and playlist and play the
-first song from the first station. Currently you need to be a developer to get
-this piece of code working... But the code is well-documented, I think.
+http://github.com/PromyLOPh/pianobar/tree/master or
 
-XML-RPC API
-===========
-
-You might want to have a look at the api documentation. Currently only
-available in german, but this may change:
-
-http://uint16.ath.cx/web/pandora.com/api
+http://uint16.ath.cx/en/web/pandora.com/client
 
 Are you pandora.com? Read this!
 ===============================
@@ -24,9 +17,13 @@ Are you pandora.com? Read this!
 "Why are you doing this?" you might ask. This is my anwer: I love your service
 (recommendations are much better than those from last.fm, audio quality is much
 better, stationS that actually *learn* what I like, ...), but your flashplayer
-sucks! (25% CPU load and a browser window is too much for playing music) So I
-decided to write a free-to-use (even you could use it commercially!) library
-and player to access your service.
+is the worst thing I've ever seen (25% CPU load and a browser window are too
+much for playing music). So I decided to write a free-to-use (even you could
+use it commercially!) library and player to access your service.
+
+I know you have to pay your bills using ads on your website. At the moment this
+client is ad-free, but I would show text ads to support you. All I need is a
+api to retrieve those ads :)
 
 By the way: It's useless to change the encryption/decryption key. It won't take
 a week to get it working again, because the key is visible to every decompiler
