@@ -89,8 +89,9 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 						NeAACDecGetErrorMessage (frameInfo.error));
 				break;
 			}
+			/* ao_play needs bytes: 1 sample = 16 bits = 2 bytes */
 			ao_play (player->audioOutDevice, aacDecoded,
-					frameInfo.samples*frameInfo.channels);
+					frameInfo.samples * 16 / 8);
 			player->bufferRead += frameInfo.bytesconsumed;
 			player->sampleSizeCurr++;
 			/* going through this loop can take up to a few seconds =>
