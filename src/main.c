@@ -207,6 +207,11 @@ inline float BarSamplesToSeconds (float samplerate, float channels,
 	return channels * 1000.0 * samples / samplerate;
 }
 
+inline void BarUiMsg (char *msg) {
+	printf ("%s", msg);
+	fflush (stdout);
+}
+
 int main (int argc, char **argv) {
 	PianoHandle_t ph;
 	struct aacPlayer player;
@@ -218,7 +223,7 @@ int main (int argc, char **argv) {
 	WardrobeSong_t scrobbleSong;
 	WardrobeHandle_t wh;
 
-	printf ("Welcome to " PACKAGE_STRING "! Press ? for help.\n");
+	BarUiMsg ("Welcome to " PACKAGE_STRING "! Press ? for help.\n");
 
 	/* init some things */
 	curl_global_init (CURL_GLOBAL_SSL);
@@ -257,16 +262,20 @@ int main (int argc, char **argv) {
 
 	BarTermSetBuffer (0);
 
-	printf ("Login...\n");
+	BarUiMsg ("Login... ");
 	if (PianoConnect (&ph, bsettings.username, bsettings.password) !=
 			PIANO_RET_OK) {
-		printf ("Login failed. Check your username and password\n");
+		BarUiMsg ("Error.\n");
 		return 0;
+	} else {
+		BarUiMsg ("Ok.\n");
 	}
-	printf ("Get stations...\n");
+	BarUiMsg ("Get stations... ");
 	if (PianoGetStations (&ph) != PIANO_RET_OK) {
-		printf ("Error while fetching your stations.\n");
+		BarUiMsg ("Error.\n");
 		return 0;
+	} else {
+		BarUiMsg ("Ok.\n");
 	}
 
 	/* select station */
@@ -293,11 +302,12 @@ int main (int argc, char **argv) {
 						scrobbleSong.length >=
 						bsettings.lastfmScrobblePercent &&
 						bsettings.enableScrobbling) {
+					BarUiMsg ("Scrobbling song... ");
 					if (WardrobeSubmit (&wh, &scrobbleSong) ==
 							WARDROBE_RET_OK) {
-						printf ("Scrobbled. \n");
+						BarUiMsg ("Ok.\n");
 					} else {
-						printf ("Errror while scrobbling. \n");
+						printf ("Error.\n");
 					}
 				}
 				WardrobeSongDestroy (&scrobbleSong);
@@ -312,13 +322,15 @@ int main (int argc, char **argv) {
 					curSong = curSong->next;
 				}
 				if (curSong == NULL && curStation != NULL) {
-					printf ("Receiving new playlist\n");
+					BarUiMsg ("Receiving new playlist... ");
 					PianoDestroyPlaylist (&ph);
 					PianoGetPlaylist (&ph, curStation->id);
 					curSong = ph.playlist;
 					if (curSong == NULL) {
-						printf ("No tracks left\n");
+						BarUiMsg ("No tracks left.\n");
 						curStation = NULL;
+					} else {
+						BarUiMsg ("Ok.\n");
 					}
 				}
 				if (curSong != NULL) {
@@ -369,15 +381,14 @@ int main (int argc, char **argv) {
 				case 'a':
 					musicId = BarUiSelectMusicId (&ph);
 					if (musicId == NULL) {
-						printf ("Aborted.\n");
+						BarUiMsg ("Aborted.\n");
 					} else {
-						printf ("Adding music to station... ");
-						fflush (stdout);
+						BarUiMsg ("Adding music to station... ");
 						if (PianoStationAddMusic (&ph, curStation, musicId) ==
 								PIANO_RET_OK) {
-							printf ("Ok.\n");
+							BarUiMsg ("Ok.\n");
 						} else {
-							printf ("Error.\n");
+							BarUiMsg ("Error.\n");
 						}
 						free (musicId);
 					}
@@ -385,11 +396,12 @@ int main (int argc, char **argv) {
 
 				case 'b':
 					player.doQuit = 1;
+					BarUiMsg ("Banning song... ");
 					if (PianoRateTrack (&ph, curStation, curSong,
 							PIANO_RATE_BAN) == PIANO_RET_OK) {
-						printf ("Banned.\n");
+						BarUiMsg ("Ok.\n");
 					} else {
-						printf ("Error while banning track.\n");
+						BarUiMsg ("Error.\n");
 					}
 					/* pandora does this too, I think */
 					PianoDestroyPlaylist (&ph);
@@ -399,16 +411,15 @@ int main (int argc, char **argv) {
 				case 'c':
 					musicId = BarUiSelectMusicId (&ph);
 					if (musicId != NULL) {
-						printf ("Creating station... ");
-						fflush (stdout);
+						BarUiMsg ("Creating station... ");
 						if (PianoCreateStation (&ph, musicId) == PIANO_RET_OK) {
-							printf ("Ok.\n");
+							BarUiMsg ("Ok.\n");
 						} else {
-							printf ("Error.\n");
+							BarUiMsg ("Error.\n");
 						}
 						free (musicId);
 					} else {
-						printf ("Aborted.\n");
+						BarUiMsg ("Aborted.\n");
 					}
 					break;
 
@@ -417,29 +428,31 @@ int main (int argc, char **argv) {
 							curStation->name);
 					read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
 					if (yesnoBuf == 'y') {
+						BarUiMsg ("Deleting station... ");
 						if (PianoDeleteStation (&ph, curStation) ==
 								PIANO_RET_OK) {
 							player.doQuit = 1;
-							printf ("Deleted.\n");
+							BarUiMsg ("Ok.\n");
 							PianoDestroyPlaylist (&ph);
 							curSong = NULL;
 							curStation = NULL;
 						} else {
-							printf ("Error while deleting station.\n");
+							BarUiMsg ("Error.\n");
 						}
 					}
 					break;
 
 				case 'l':
 					if (curSong->rating == PIANO_RATE_LOVE) {
-						printf ("Already loved. No need to do this twice.\n");
+						BarUiMsg ("Already loved. No need to do this twice.\n");
 						break;
 					}
+					BarUiMsg ("Loving song... ");
 					if (PianoRateTrack (&ph, curStation, curSong,
 							PIANO_RATE_LOVE) == PIANO_RET_OK) {
-						printf ("Loved.\n");
+						BarUiMsg ("Ok.\n");
 					} else {
-						printf ("Error while loving track.\n");
+						BarUiMsg ("Error.\n");
 					}
 					break;
 
@@ -454,10 +467,10 @@ int main (int argc, char **argv) {
 						fflush (stdout);
 						if (PianoMoveSong (&ph, curStation, moveStation,
 								curSong) == PIANO_RET_OK) {
-							printf ("Ok.\n");
+							BarUiMsg ("Ok.\n");
 							player.doQuit = 1;
 						} else {
-							printf ("Error.\n");
+							BarUiMsg ("Error.\n");
 						}
 					}
 					break;
@@ -474,11 +487,12 @@ int main (int argc, char **argv) {
 				case 'r':
 					lineBuf = readline ("New name?\n");
 					if (lineBuf != NULL && strlen (lineBuf) > 0) {
+						BarUiMsg ("Renaming station... ");
 						if (PianoRenameStation (&ph, curStation, lineBuf) ==
 								PIANO_RET_OK) {
-							printf ("Renamed.\n");
+							BarUiMsg ("Ok.\n");
 						} else {
-							printf ("Error while renaming station.\n");
+							BarUiMsg ("Error.\n");
 						}
 					}
 					if (lineBuf != NULL) {
@@ -497,13 +511,12 @@ int main (int argc, char **argv) {
 					break;
 
 				case 't':
-					printf ("Putting song on shelf... ");
-					fflush (stdout);
+					BarUiMsg ("Putting song on shelf... ");
 					if (PianoSongTired (&ph, curSong) == PIANO_RET_OK) {
-						printf ("Ok.\n");
+						BarUiMsg ("Ok.\n");
 						player.doQuit = 1;
 					} else {
-						printf ("Error.\n");
+						BarUiMsg ("Error.\n");
 					}
 					break;
 
