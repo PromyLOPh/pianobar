@@ -287,11 +287,12 @@ int main (int argc, char **argv) {
 	/* little hack, needed to signal: hey! we need a playlist, but don't
 	 * free anything (there is nothing to be freed yet) */
 	memset (&player, 0, sizeof (player));
+	player.finishedPlayback = 1;
 
 	while (!doQuit) {
 		/* check whether player finished playing and start playing new
 		 * song */
-		if (player.finishedPlayback == 1 || curSong == NULL) {
+		if (player.finishedPlayback == 1) {
 			/* already played a song, clean up things */
 			if (player.url != NULL) {
 				scrobbleSong.length = BarSamplesToSeconds (player.samplerate,
@@ -312,7 +313,10 @@ int main (int argc, char **argv) {
 				}
 				WardrobeSongDestroy (&scrobbleSong);
 				free (player.url);
-				memset (&player, 0, sizeof (player));
+				/* we must _not_ NULL the whole player structure (because
+				 * of finishedPlayback which may be = 1), but url to
+				 * indicate we already freed things; very ugly... */
+				player.url = NULL;
 				pthread_join (playerThread, NULL);
 			}
 
@@ -321,7 +325,7 @@ int main (int argc, char **argv) {
 				if (curSong != NULL) {
 					curSong = curSong->next;
 				}
-				if (curSong == NULL && curStation != NULL) {
+				if (curSong == NULL) {
 					BarUiMsg ("Receiving new playlist... ");
 					PianoDestroyPlaylist (&ph);
 					PianoGetPlaylist (&ph, curStation->id);
@@ -344,7 +348,6 @@ int main (int argc, char **argv) {
 					scrobbleSong.title = strdup (curSong->title);
 					scrobbleSong.started = time (NULL);
 
-					/* FIXME: why do we need to zero everything again? */
 					memset (&player, 0, sizeof (player));
 					player.url = strdup (curSong->audioUrl);
 		
