@@ -202,7 +202,6 @@ char *BarUiSelectMusicId (PianoHandle_t *ph) {
 	return musicId;
 }
 
-/* FIXME: this is now correct */
 inline float BarSamplesToSeconds (float samplerate, float channels,
 		float samples) {
 	return channels * 1000.0 * samples / samplerate;
