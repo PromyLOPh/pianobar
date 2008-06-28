@@ -365,7 +365,7 @@ int main (int argc, char **argv) {
 			read (fileno (stdin), &buf, sizeof (buf));
 			switch (buf) {
 				case '?':
-					printf ("a\tadd music to current station\n"
+					printf ("\na\tadd music to current station\n"
 							"b\tban current song\n"
 							"c\tcreate new station\n"
 							"d\tdelete current station\n"
@@ -379,6 +379,10 @@ int main (int argc, char **argv) {
 					break;
 
 				case 'a':
+					if (curStation == NULL) {
+						BarUiMsg ("No station selected.\n");
+						break;
+					}
 					musicId = BarUiSelectMusicId (&ph);
 					if (musicId == NULL) {
 						BarUiMsg ("Aborted.\n");
@@ -395,11 +399,15 @@ int main (int argc, char **argv) {
 					break;
 
 				case 'b':
-					player.doQuit = 1;
+					if (curStation == NULL || curSong == NULL) {
+						BarUiMsg ("No song playing.\n");
+						break;
+					}
 					BarUiMsg ("Banning song... ");
 					if (PianoRateTrack (&ph, curStation, curSong,
 							PIANO_RATE_BAN) == PIANO_RET_OK) {
 						BarUiMsg ("Ok.\n");
+						player.doQuit = 1;
 					} else {
 						BarUiMsg ("Error.\n");
 					}
@@ -424,6 +432,10 @@ int main (int argc, char **argv) {
 					break;
 
 				case 'd':
+					if (curStation == NULL) {
+						BarUiMsg ("No station selected.\n");
+						break;
+					}
 					printf ("Really delete \"%s\"? [yn]\n",
 							curStation->name);
 					read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
@@ -443,6 +455,10 @@ int main (int argc, char **argv) {
 					break;
 
 				case 'l':
+					if (curStation == NULL || curSong == NULL) {
+						BarUiMsg ("No song playing.\n");
+						break;
+					}
 					if (curSong->rating == PIANO_RATE_LOVE) {
 						BarUiMsg ("Already loved. No need to do this twice.\n");
 						break;
@@ -461,9 +477,13 @@ int main (int argc, char **argv) {
 					break;
 
 				case 'm':
+					if (curStation == NULL || curSong == NULL) {
+						BarUiMsg ("No song playing.\n");
+						break;
+					}
 					moveStation = BarUiSelectStation (&ph);
 					if (moveStation != NULL) {
-						printf ("Moving song to \"%s\"...", moveStation->name);
+						printf ("Moving song to \"%s\"... ", moveStation->name);
 						fflush (stdout);
 						if (PianoMoveSong (&ph, curStation, moveStation,
 								curSong) == PIANO_RET_OK) {
@@ -485,6 +505,10 @@ int main (int argc, char **argv) {
 					break;
 
 				case 'r':
+					if (curStation == NULL) {
+						BarUiMsg ("No station selected.\n");
+						break;
+					}
 					lineBuf = readline ("New name?\n");
 					if (lineBuf != NULL && strlen (lineBuf) > 0) {
 						BarUiMsg ("Renaming station... ");
@@ -511,6 +535,10 @@ int main (int argc, char **argv) {
 					break;
 
 				case 't':
+					if (curStation == NULL || curSong == NULL) {
+						BarUiMsg ("No song playing.\n");
+						break;
+					}
 					BarUiMsg ("Putting song on shelf... ");
 					if (PianoSongTired (&ph, curSong) == PIANO_RET_OK) {
 						BarUiMsg ("Ok.\n");
