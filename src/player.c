@@ -74,7 +74,7 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	player->bufferFilled += size*nmemb;
 	player->bufferRead = 0;
 
-	if (player->mode == RECV_DATA) {
+	if (player->mode == PLAYER_RECV_DATA) {
 		char *aacDecoded;
 		NeAACDecFrameInfo frameInfo;
 
@@ -101,18 +101,18 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			}
 		}
 	} else {
-		if (player->mode == FIND_ESDS) {
+		if (player->mode == PLAYER_INITIALIZED) {
 			while (player->bufferRead+4 < player->bufferFilled) {
 				if (memcmp (player->buffer + player->bufferRead, "esds",
 						4) == 0) {
-					player->mode = FOUND_ESDS;
+					player->mode = PLAYER_FOUND_ESDS;
 					player->bufferRead += 4;
 					break;
 				}
 				player->bufferRead++;
 			}
 		}
-		if (player->mode == FOUND_ESDS) {
+		if (player->mode == PLAYER_FOUND_ESDS) {
 			/* FIXME: is this the correct way? */
 			/* we're gonna read 10 bytes */
 			while (player->bufferRead+1+4+5 < player->bufferFilled) {
@@ -140,17 +140,17 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 					format.byte_format = AO_FMT_LITTLE;
 					player->audioOutDevice = ao_open_live (audioOutDriver,
 							&format, NULL);
-					player->mode = AUDIO_INITIALIZED;
+					player->mode = PLAYER_AUDIO_INITIALIZED;
 					break;
 				}
 				player->bufferRead++;
 			}
 		}
-		if (player->mode == AUDIO_INITIALIZED) {
+		if (player->mode == PLAYER_AUDIO_INITIALIZED) {
 			while (player->bufferRead+4+8 < player->bufferFilled) {
 				if (memcmp (player->buffer + player->bufferRead, "stsz",
 						4) == 0) {
-					player->mode = FOUND_STSZ;
+					player->mode = PLAYER_FOUND_STSZ;
 					player->bufferRead += 4;
 					/* skip version and unknown */
 					player->bufferRead += 8;
@@ -160,7 +160,7 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			}
 		}
 		/* get frame sizes */
-		if (player->mode == FOUND_STSZ) {
+		if (player->mode == PLAYER_FOUND_STSZ) {
 			while (player->bufferRead+4 < player->bufferFilled) {
 				/* how many frames do we have? */
 				if (player->sampleSizeN == 0) {
@@ -182,17 +182,17 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 				}
 				/* all sizes read, nearly ready for data mode */
 				if (player->sampleSizeCurr >= player->sampleSizeN) {
-					player->mode = SAMPLESIZE_INITIALIZED;
+					player->mode = PLAYER_SAMPLESIZE_INITIALIZED;
 					break;
 				}
 			}
 		}
 		/* search for data atom and let the show begin... */
-		if (player->mode == SAMPLESIZE_INITIALIZED) {
+		if (player->mode == PLAYER_SAMPLESIZE_INITIALIZED) {
 			while (player->bufferRead+4 < player->bufferFilled) {
 				if (memcmp (player->buffer + player->bufferRead, "mdat",
 						4) == 0) {
-					player->mode = RECV_DATA;
+					player->mode = PLAYER_RECV_DATA;
 					player->sampleSizeCurr = 0;
 					player->bufferRead += 4;
 					break;
@@ -219,19 +219,25 @@ void *BarPlayerThread (void *data) {
 	struct aacPlayer *player = data;
 	NeAACDecConfigurationPtr conf;
 
+	/* init handles */
 	player->audioFd = curl_easy_init ();
 	player->aacHandle = NeAACDecOpen();
 
+	/* set aac conf */
 	conf = NeAACDecGetCurrentConfiguration(player->aacHandle);
 	conf->outputFormat = FAAD_FMT_16BIT;
     conf->downMatrix = 1;
 	NeAACDecSetConfiguration(player->aacHandle, conf);
 
+	/* init curl */
 	curl_easy_setopt (player->audioFd, CURLOPT_URL, player->url);
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION, BarPlayerCurlCb);
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, player);
 	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
 	curl_easy_setopt (player->audioFd, CURLOPT_CONNECTTIMEOUT, 60);
+
+	player->mode = PLAYER_INITIALIZED;
+
 	curl_easy_perform (player->audioFd);
 
 	NeAACDecClose(player->aacHandle);
@@ -241,7 +247,7 @@ void *BarPlayerThread (void *data) {
 		free (player->sampleSize);
 	}
 
-	player->finishedPlayback = 1;
+	player->mode = PLAYER_FINISHED_PLAYBACK;
 
 	return NULL;
 }

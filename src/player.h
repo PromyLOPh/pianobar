@@ -29,8 +29,10 @@ struct aacPlayer {
 	char buffer[CURL_MAX_WRITE_SIZE*2];
 	size_t bufferFilled;
 	size_t bufferRead;
-	enum {FIND_ESDS, FOUND_ESDS, AUDIO_INITIALIZED, FOUND_STSZ,
-			SAMPLESIZE_INITIALIZED, RECV_DATA} mode;
+	enum {PLAYER_FREED = 0, PLAYER_INITIALIZED, PLAYER_FOUND_ESDS,
+			PLAYER_AUDIO_INITIALIZED, PLAYER_FOUND_STSZ,
+			PLAYER_SAMPLESIZE_INITIALIZED, PLAYER_RECV_DATA,
+			PLAYER_FINISHED_PLAYBACK} mode;
 	/* stsz atom: sample sizes */
 	unsigned int *sampleSize;
 	size_t sampleSizeN;
@@ -42,7 +44,6 @@ struct aacPlayer {
 	/* audio out */
 	ao_device *audioOutDevice;
 	char *url;
-	char finishedPlayback;
 	char doQuit;
 	char doPause;
 	CURL *audioFd;

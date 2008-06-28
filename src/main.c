@@ -287,39 +287,36 @@ int main (int argc, char **argv) {
 	/* little hack, needed to signal: hey! we need a playlist, but don't
 	 * free anything (there is nothing to be freed yet) */
 	memset (&player, 0, sizeof (player));
-	player.finishedPlayback = 1;
 
 	while (!doQuit) {
+		/* already played a song, clean up things/scrobble song */
+		if (player.mode == PLAYER_FINISHED_PLAYBACK) {
+			scrobbleSong.length = BarSamplesToSeconds (player.samplerate,
+					player.channels, player.sampleSizeN);
+			/* scrobble when >= nn% are played */
+			if (BarSamplesToSeconds (player.samplerate,
+					player.channels, player.sampleSizeCurr) * 100 /
+					scrobbleSong.length >=
+					bsettings.lastfmScrobblePercent &&
+					bsettings.enableScrobbling) {
+				BarUiMsg ("Scrobbling song... ");
+				if (WardrobeSubmit (&wh, &scrobbleSong) ==
+						WARDROBE_RET_OK) {
+					BarUiMsg ("Ok.\n");
+				} else {
+					BarUiMsg ("Error.\n");
+				}
+			}
+			WardrobeSongDestroy (&scrobbleSong);
+			free (player.url);
+			pthread_join (playerThread, NULL);
+			memset (&player, 0, sizeof (player));
+		}
+
 		/* check whether player finished playing and start playing new
 		 * song */
-		if (player.finishedPlayback == 1) {
-			/* already played a song, clean up things */
-			if (player.url != NULL) {
-				scrobbleSong.length = BarSamplesToSeconds (player.samplerate,
-						player.channels, player.sampleSizeN);
-				/* scrobble when >= nn% are played */
-				if (BarSamplesToSeconds (player.samplerate,
-						player.channels, player.sampleSizeCurr) * 100 /
-						scrobbleSong.length >=
-						bsettings.lastfmScrobblePercent &&
-						bsettings.enableScrobbling) {
-					BarUiMsg ("Scrobbling song... ");
-					if (WardrobeSubmit (&wh, &scrobbleSong) ==
-							WARDROBE_RET_OK) {
-						BarUiMsg ("Ok.\n");
-					} else {
-						printf ("Error.\n");
-					}
-				}
-				WardrobeSongDestroy (&scrobbleSong);
-				free (player.url);
-				/* we must _not_ NULL the whole player structure (because
-				 * of finishedPlayback which may be = 1), but url to
-				 * indicate we already freed things; very ugly... */
-				player.url = NULL;
-				pthread_join (playerThread, NULL);
-			}
-
+		if (player.mode >= PLAYER_FINISHED_PLAYBACK ||
+				player.mode == PLAYER_FREED) {
 			if (curStation != NULL) {
 				/* what's next? */
 				if (curSong != NULL) {
@@ -527,8 +524,8 @@ int main (int argc, char **argv) {
 		} /* end poll */
 
 		/* show time */
-		if (player.finishedPlayback == 0 &&
-				player.mode >= SAMPLESIZE_INITIALIZED) {
+		if (player.mode >= PLAYER_SAMPLESIZE_INITIALIZED &&
+				player.mode < PLAYER_FINISHED_PLAYBACK) {
 			float songLength = BarSamplesToSeconds (player.samplerate,
 					player.channels, player.sampleSizeN);
 			float songRemaining = songLength -
