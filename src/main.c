@@ -375,7 +375,8 @@ int main (int argc, char **argv) {
 							"q\tquit\n"
 							"r\trename current station\n"
 							"s\tchange station\n"
-							"t\ttired (ban song for 1 month)\n");
+							"t\ttired (ban song for 1 month)\n"
+							"u\tupcoming songs\n");
 					break;
 
 				case 'a':
@@ -545,6 +546,20 @@ int main (int argc, char **argv) {
 						player.doQuit = 1;
 					} else {
 						BarUiMsg ("Error.\n");
+					}
+					break;
+
+				case 'u':
+					if (curStation == NULL || curSong == NULL) {
+						BarUiMsg ("No song playing.\n");
+						break;
+					}
+					BarUiMsg ("Next songs:\n");
+					PianoSong_t *nextSong = curSong->next;
+					while (nextSong != NULL) {
+						printf ("%s -- %s\n", nextSong->artist,
+								nextSong->title);
+						nextSong = nextSong->next;
 					}
 					break;
 
