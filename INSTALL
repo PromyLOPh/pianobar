@@ -8,11 +8,26 @@ Dependencies
 
 Versions may vary :) Just get the newest one:
 
-libao		http://www.xiph.org/ao/						(pianobar)
-libcurl		http://curl.haxx.se/						(libpiano, pianobar)
-libfaad2	http://www.audiocoding.com/downloads.html	(pianobar)
-libxml2		http://xmlsoft.org/							(libpiano)
-readline												(pianobar)
+pianobar
+++++++++
+
+libao				http://www.xiph.org/ao/
+libcurl with SSL	http://curl.haxx.se/
+libfaad2			http://www.audiocoding.com/downloads.html
+libxml2				http://xmlsoft.org/
+readline
+
+libpiano
+++++++++
+
+libcurl with SSL	http://curl.haxx.se/
+libxml2				http://xmlsoft.org/
+
+libwardrobe
++++++++++++
+
+
+libcurl				http://curl.haxx.se/
 
 Build
 -----
