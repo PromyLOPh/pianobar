@@ -409,12 +409,12 @@ int main (int argc, char **argv) {
 							PIANO_RATE_BAN) == PIANO_RET_OK) {
 						BarUiMsg ("Ok.\n");
 						player.doQuit = 1;
+						/* pandora does this too, I think */
+						PianoDestroyPlaylist (&ph);
+						curSong = NULL;
 					} else {
 						BarUiMsg ("Error.\n");
 					}
-					/* pandora does this too, I think */
-					PianoDestroyPlaylist (&ph);
-					curSong = NULL;
 					break;
 
 				case 'c':
