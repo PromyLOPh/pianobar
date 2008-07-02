@@ -596,3 +596,60 @@ PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song) {
 
 	return ret;
 }
+
+/*	set stations use by quickmix
+ *	@param piano handle
+ *	@return _OK or error
+ */
+PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph) {
+	char xmlSendBuf[10000], valueBuf[1000], urlArgBuf[1000],
+			url[PIANO_URL_BUFFER_SIZE];
+	char *requestStr, *retStr;
+	PianoReturn_t ret;
+	PianoStation_t *curStation = ph->stations;
+
+	memset (urlArgBuf, 0, sizeof (urlArgBuf));
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>station.setQuickMix</methodName><params>"
+			"<param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>RANDOM</string></value></param>"
+			"<param><value><array><data>", time (NULL), ph->user.authToken);
+	while (curStation != NULL) {
+		/* quick mix can't contain itself */
+		if (!curStation->useQuickMix || curStation->isQuickMix) {
+			curStation = curStation->next;
+			continue;
+		}
+		/* append to xml doc */
+		snprintf (valueBuf, sizeof (valueBuf),
+				"<value><string>%s</string></value>", curStation->id);
+		strncat (xmlSendBuf, valueBuf, sizeof (xmlSendBuf) -
+				strlen (xmlSendBuf) - 1);
+		/* append to url arg */
+		strncat (urlArgBuf, curStation->id, sizeof (urlArgBuf) -
+				strlen (urlArgBuf) - 1);
+		curStation = curStation->next;
+		/* if not last item: append "," */
+		if (curStation != NULL) {
+			strncat (urlArgBuf, "%2C", sizeof (urlArgBuf) -
+					strlen (urlArgBuf) - 1);
+		}
+	}
+	strncat (xmlSendBuf,
+			"</data></array></value></param></params></methodCall>",
+			sizeof (xmlSendBuf) - strlen (xmlSendBuf) - 1);
+	requestStr = PianoEncryptString (xmlSendBuf);
+
+	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s&"
+			"method=setQuickMix&arg1=RANDOM&arg2=%s", ph->routeId,
+			ph->user.listenerId, urlArgBuf);
+	
+	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
+	ret = PianoXmlParseSimple (retStr);
+
+	PianoFree (retStr, 0);
+	PianoFree (requestStr, 0);
+
+	return ret;
+}

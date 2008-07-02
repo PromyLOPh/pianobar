@@ -210,6 +210,8 @@ void PianoXmlParseStationsCb (char *key, xmlNode *value, void *data) {
 		station->name = strdup (valueStr);
 	} else if (strcmp ("stationId", key) == 0) {
 		station->id = strdup (valueStr);
+	} else if (strcmp ("isQuickMix", key) == 0) {
+		station->isQuickMix = (strcmp (valueStr, "1") == 0);
 	}
 }
 

@@ -85,7 +85,8 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph) {
 	printf ("which station do you want to listen to?\n");
 	curStation = ph->stations;
 	while (curStation != NULL) {
-		printf ("%2i) %s\n", i, curStation->name);
+		printf ("%2i) %s%s\n", i, curStation->name,
+				curStation->useQuickMix ? " (QuickMix)" : "");
 		curStation = curStation->next;
 		i++;
 	}
@@ -376,7 +377,8 @@ int main (int argc, char **argv) {
 							"r\trename current station\n"
 							"s\tchange station\n"
 							"t\ttired (ban song for 1 month)\n"
-							"u\tupcoming songs\n");
+							"u\tupcoming songs\n"
+							"x\tselect quickmix stations\n");
 					break;
 
 				case 'a':
@@ -560,6 +562,24 @@ int main (int argc, char **argv) {
 						printf ("%s -- %s\n", nextSong->artist,
 								nextSong->title);
 						nextSong = nextSong->next;
+					}
+					break;
+				
+				case 'x':
+					if (curStation->isQuickMix) {
+						PianoStation_t *selStation;
+						while ((selStation =
+								BarUiSelectStation (&ph)) != NULL) {
+							selStation->useQuickMix = !selStation->useQuickMix;
+						}
+						BarUiMsg ("Setting quickmix stations... ");
+						if (PianoSetQuickmix (&ph) == PIANO_RET_OK) {
+							BarUiMsg ("Ok.\n");
+						} else {
+							BarUiMsg ("Error.\n");
+						}
+					} else {
+						BarUiMsg ("Not a QuickMix station.\n");
 					}
 					break;
 

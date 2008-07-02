@@ -23,7 +23,7 @@ THE SOFTWARE.
 #ifndef _PIANO_H
 #define _PIANO_H
 
-/* this is our public API; don't expect this api to be stable, as long
+/* this is our public API; don't expect this api to be stable as long as
  * pandora does not provide a stable api
  * all strings _must_ be utf-8 encoded. i won't care, but pandora does. so
  * be nice and check the encoding of your strings. thanks :) */
@@ -61,7 +61,8 @@ struct PianoStation {
 	/* disabled: isNew */
 	/* disabled: transformType */
 	//char *idToken;
-	//char isQuickMix;
+	char isQuickMix;
+	char useQuickMix; /* station will be included in quickmix */
 	char *name;
 	char *id;
 	struct PianoStation *next;
@@ -167,5 +168,6 @@ PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId);
 PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 		PianoStation_t *station, char *musicId);
 PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song);
+PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph);
 
 #endif /* _PIANO_H */
