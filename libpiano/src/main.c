@@ -141,6 +141,7 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
 		PianoFree (curSong->title, 0);
 		PianoFree (curSong->userSeed, 0);
 		PianoFree (curSong->identity, 0);
+		PianoFree (curSong->stationId, 0);
 		lastSong = curSong;
 		curSong = curSong->next;
 		PianoFree (lastSong, sizeof (*lastSong));
@@ -652,4 +653,15 @@ PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph) {
 	PianoFree (requestStr, 0);
 
 	return ret;
+}
+
+PianoStation_t *PianoFindStationById (PianoStation_t *stations,
+		char *searchStation) {
+	while (stations != NULL) {
+		if (strcmp (stations->id, searchStation) == 0) {
+			return stations;
+		}
+		stations = stations->next;
+	}
+	return NULL;
 }

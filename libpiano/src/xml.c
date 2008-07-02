@@ -253,6 +253,8 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 		} else {
 			song->rating = PIANO_RATE_NONE;
 		}
+	} else if (strcmp ("stationId", key) == 0) {
+		song->stationId = strdup (valueStr);
 	}
 }
 

@@ -90,7 +90,7 @@ struct PianoSong {
 	/* disabled: artistExplorerUrl */
 	/* disabled: artRadio */
 	//char *audioEncoding; /* FIXME: should be enum: mp3 or aacplus */
-	//char *stationId;
+	char *stationId;
 	//char *album;
 	//char *artistMusicId;
 	char *userSeed;
@@ -169,5 +169,7 @@ PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 		PianoStation_t *station, char *musicId);
 PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song);
 PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph);
+PianoStation_t *PianoFindStationById (PianoStation_t *stations,
+		char *searchStation);
 
 #endif /* _PIANO_H */

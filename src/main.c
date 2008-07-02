@@ -336,9 +336,15 @@ int main (int argc, char **argv) {
 					}
 				}
 				if (curSong != NULL) {
-					printf ("\"%s\" by \"%s\"%s\n", curSong->title,
+					PianoStation_t *realStation =
+							PianoFindStationById (ph.stations,
+							curSong->stationId);
+					printf ("\"%s\" by \"%s\"%s%s%s\n", curSong->title,
 							curSong->artist, (curSong->rating ==
-							PIANO_RATE_LOVE) ? " (Loved)" : "");
+							PIANO_RATE_LOVE) ? " (Loved)" : "",
+							curStation->isQuickMix ? " @ ": "",
+							curStation->isQuickMix ? realStation->name :
+							"");
 					/* setup artist and song name for scrobbling (curSong
 					 * may be NULL later) */
 					WardrobeSongInit (&scrobbleSong);
