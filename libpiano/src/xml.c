@@ -548,33 +548,27 @@ PianoReturn_t PianoXmlParseSearch (char *searchXml,
  *	@return encoded string
  */
 char *PianoXmlEncodeString (const char *s) {
-	char *replacements[] = {"&&amp;", "'&apos;", "\"&quot;", "<&lt;", ">&gt;"};
-	char *s_new = NULL;
-	unsigned int s_new_n = 0;
-	unsigned int i;
-	char found = 0;
+	char *replacements[] = {"&&amp;", "'&apos;", "\"&quot;", "<&lt;",
+			">&gt;", NULL};
+	char **r;
+	char *sOut = calloc (strlen (s) * 5 + 1, sizeof (*sOut));
+	char found;
 
-	s_new_n = strlen (s) + 1;
-	s_new = calloc (s_new_n, 1);
-
-	while (*s) {
+	while (*s != '\0') {
+		r = replacements;
 		found = 0;
-		for (i = 0; i < sizeof (replacements) / sizeof (*replacements); i++) {
-			if (*s == replacements[i][0]) {
-				/* replacements[i]+1 is our replacement, and -1 'cause we
-				 * "overwrite" one byte */
-				s_new_n += strlen (replacements[i]+1)-1;
-				s_new = realloc (s_new, s_new_n);
-				strncat (s_new, replacements[i]+1, strlen (replacements[i]+1));
+		while (*r != NULL) {
+			if (*s == *r[0]) {
 				found = 1;
-				/* no need to look for other entities */
+				strcat (sOut, (*r) + 1);
 				break;
 			}
+			r++;
 		}
 		if (!found) {
-			strncat (s_new, s, 1);
+			strncat (sOut, s, 1);
 		}
 		s++;
 	}
-	return s_new;
+	return sOut;
 }
