@@ -426,7 +426,8 @@ int main (int argc, char **argv) {
 					musicId = BarUiSelectMusicId (&ph);
 					if (musicId != NULL) {
 						BarUiMsg ("Creating station... ");
-						if (PianoCreateStation (&ph, musicId) == PIANO_RET_OK) {
+						if (PianoCreateStation (&ph, "mi", musicId) ==
+								PIANO_RET_OK) {
 							BarUiMsg ("Ok.\n");
 						} else {
 							BarUiMsg ("Error.\n");

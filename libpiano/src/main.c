@@ -498,10 +498,12 @@ PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 /*	create new station on server
  *	@public yes
  *	@param piano handle
- *	@param music id from artist or track, you may obtain one by calling
- *			PianoSearchMusic
+ *	@param type: "mi" for music id (from music search) or "sh" for
+ *			shared station
+ *	@param id
  */
-PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId) {
+PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *type,
+		char *id) {
 	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
@@ -510,14 +512,14 @@ PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId) {
 			"<methodCall><methodName>station.createStation</methodName>"
 			"<params><param><value><int>%li</int></value></param>"
 			"<param><value><string>%s</string></value></param>"
-			"<param><value><string>mi%s</string></value></param>"
+			"<param><value><string>%s%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
-			musicId);
+			type, id);
 	requestStr = PianoEncryptString (xmlSendBuf);
 
 	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s"
-			"&method=createStation&arg1=mi%s", ph->routeId,
-			ph->user.listenerId, musicId);
+			"&method=createStation&arg1=%s%s", ph->routeId,
+			ph->user.listenerId, type, id);
 	
 	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	ret = PianoXmlParseCreateStation (ph, retStr);

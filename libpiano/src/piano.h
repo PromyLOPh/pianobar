@@ -164,7 +164,8 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station);
 PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 		PianoSearchResult_t *searchResult);
-PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *musicId);
+PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *type,
+		char *id);
 PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 		PianoStation_t *station, char *musicId);
 PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song);
