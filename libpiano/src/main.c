@@ -182,9 +182,13 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 	/* sync (is the return value used by pandora? for now: ignore result) */
 	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&method=sync",
 			ph->routeId);
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
+	ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
 	PianoFree (requestStr, 0);
 	PianoFree (retStr, 0);
+
+	if (ret != PIANO_RET_OK) {
+		return ret;
+	}
 
 	/* authenticate */
 	snprintf (requestStrPlain, sizeof (requestStrPlain), 
@@ -197,11 +201,13 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 	requestStr = PianoEncryptString (requestStrPlain);
 	snprintf (url, sizeof (url), PIANO_SECURE_RPC_URL "rid=%s"
 			"&method=authenticateListener", ph->routeId);
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseUserinfo (ph, retStr);
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseUserinfo (ph, retStr);
+		PianoFree (retStr, 0);
+	}
 
 	PianoFree (requestStr, 0);
-	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -224,9 +230,13 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 	snprintf (url, sizeof (url), PIANO_RPC_URL
 			"rid=%s&lid=%s&method=getStations", ph->routeId,
 			ph->user.listenerId);
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseStations (ph, retStr);
-	PianoFree (retStr, 0);
+
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseStations (ph, retStr);
+		PianoFree (retStr, 0);
+	}
+
 	PianoFree (requestStr, 0);
 
 	return ret;
@@ -259,10 +269,15 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
 			"rid=%s&lid=%s&method=getFragment&arg1=%s&arg2=15941546"
 			"&arg3=181840822&arg4=&arg5=&arg6=aacplus", ph->routeId,
 			ph->user.listenerId, stationId);
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParsePlaylist (ph, retStr);
-	PianoFree (retStr, 0);
+
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParsePlaylist (ph, retStr);
+		PianoFree (retStr, 0);
+	}
+
 	PianoFree (requestStr, 0);
+
 	return ret;
 }
 
@@ -351,11 +366,14 @@ PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, char *stationId,
 			(songUserSeed == NULL) ? "" : songUserSeed,
 			(songFocusTraitId == NULL) ? "" : songFocusTraitId,
 			(rating == PIANO_RATE_LOVE) ? "true" : "false");
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseSimple (retStr);
+
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseSimple (retStr);
+		PianoFree (retStr, 0);
+	}
 
 	PianoFree (requestStr, 0);
-	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -388,18 +406,19 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s"
 			"&method=setStationName&arg1=%s&arg2=%s", ph->routeId,
 			ph->user.listenerId, station->id, urlencodedNewName);
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseSimple (retStr);
-	
-	if (ret == PIANO_RET_OK) {
-		PianoFree (station->name, 0);
-		station->name = strdup (newName);
+
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		if ((ret = PianoXmlParseSimple (retStr)) == PIANO_RET_OK) {
+			PianoFree (station->name, 0);
+			station->name = strdup (newName);
+		}
+		PianoFree (retStr, 0);
 	}
 
 	curl_free (urlencodedNewName);
 	PianoFree (xmlencodedNewName, 0);
 	PianoFree (requestStr, 0);
-	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -426,31 +445,31 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s"
 			"&method=removeStation&arg1=%s", ph->routeId, ph->user.listenerId,
 			station->id);
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseSimple (retStr);
-
-	if (ret == PIANO_RET_OK) {
-		/* delete station from local station list */
-		PianoStation_t *curStation = ph->stations, *lastStation = NULL;
-		while (curStation != NULL) {
-			if (curStation == station) {
-				printf ("deleting station\n");
-				if (lastStation != NULL) {
-					lastStation->next = curStation->next;
-				} else {
-					/* first station in list */
-					ph->stations = curStation->next;
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		if ((ret = PianoXmlParseSimple (retStr)) == PIANO_RET_OK) {
+			/* delete station from local station list */
+			PianoStation_t *curStation = ph->stations, *lastStation = NULL;
+			while (curStation != NULL) {
+				if (curStation == station) {
+					printf ("deleting station\n");
+					if (lastStation != NULL) {
+						lastStation->next = curStation->next;
+					} else {
+						/* first station in list */
+						ph->stations = curStation->next;
+					}
+					PianoDestroyStation (curStation);
+					PianoFree (curStation, sizeof (*curStation));
 				}
-				PianoDestroyStation (curStation);
-				PianoFree (curStation, sizeof (*curStation));
+				lastStation = curStation;
+				curStation = curStation->next;
 			}
-			lastStation = curStation;
-			curStation = curStation->next;
 		}
+		PianoFree (retStr, 0);
 	}
 
 	PianoFree (requestStr, 0);
-	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -484,12 +503,14 @@ PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 			"method=search&arg1=%s", ph->routeId, ph->user.listenerId,
 			urlencodedSearchStr);
 	
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseSearch (retStr, searchResult);
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseSearch (retStr, searchResult);
+		PianoFree (retStr, 0);
+	}
 
 	curl_free (urlencodedSearchStr);
 	PianoFree (xmlencodedSearchStr, 0);
-	PianoFree (retStr, 0);
 	PianoFree (requestStr, 0);
 
 	return ret;
@@ -521,11 +542,13 @@ PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *type,
 			"&method=createStation&arg1=%s%s", ph->routeId,
 			ph->user.listenerId, type, id);
 	
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseCreateStation (ph, retStr);
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseCreateStation (ph, retStr);
+		PianoFree (retStr, 0);
+	}
 
 	PianoFree (requestStr, 0);
-	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -559,11 +582,13 @@ PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 			"&method=addSeed&arg1=%s&arg2=%s", ph->routeId,
 			ph->user.listenerId, station->id, musicId);
 	
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseAddSeed (ph, retStr, station);
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseAddSeed (ph, retStr, station);
+		PianoFree (retStr, 0);
+	}
 
 	PianoFree (requestStr, 0);
-	PianoFree (retStr, 0);
 
 	return ret;
 }
@@ -591,10 +616,12 @@ PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song) {
 			"method=addTiredSong&arg1=%s", ph->routeId, ph->user.listenerId,
 			song->identity);
 
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseSimple (retStr);
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseSimple (retStr);
+		PianoFree (retStr, 0);
+	}
 
-	PianoFree (retStr, 0);
 	PianoFree (requestStr, 0);
 
 	return ret;
@@ -648,10 +675,12 @@ PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph) {
 			"method=setQuickMix&arg1=RANDOM&arg2=%s", ph->routeId,
 			ph->user.listenerId, urlArgBuf);
 	
-	PianoHttpPost (ph->curlHandle, url, requestStr, &retStr);
-	ret = PianoXmlParseSimple (retStr);
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseSimple (retStr);
+		PianoFree (retStr, 0);
+	}
 
-	PianoFree (retStr, 0);
 	PianoFree (requestStr, 0);
 
 	return ret;

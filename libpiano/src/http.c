@@ -58,10 +58,12 @@ size_t PianoCurlRetToVar (void *ptr, size_t size, size_t nmemb, void *stream) {
  *	@param put received data here, memory is allocated by this function
  *	@return nothing yet
  */
-void PianoHttpPost (CURL *ch, char *url, char *postData, char **retData) {
+PianoReturn_t PianoHttpPost (CURL *ch, char *url, char *postData,
+		char **retData) {
 	struct curl_slist *headers = NULL;
 	/* Let's hope nothing will be bigger than this... */
 	char curlRet[PIANO_HTTP_BUFFER_SIZE];
+	PianoReturn_t ret;
 
 	headers = curl_slist_append (headers, "Content-Type: text/xml");
 
@@ -74,10 +76,16 @@ void PianoHttpPost (CURL *ch, char *url, char *postData, char **retData) {
 	memset (curlRet, 0, sizeof (curlRet));
 	curl_easy_setopt (ch, CURLOPT_WRITEDATA, curlRet);
 
-	curl_easy_perform (ch);
+	if (curl_easy_perform (ch) == CURLE_OK) {
+		ret = PIANO_RET_OK;
+		*retData = calloc (strlen (curlRet) + 1, sizeof (char));
+		strcpy (*retData, curlRet);
+	} else {
+		ret = PIANO_RET_NET_ERROR;
+		*retData = NULL;
+	}
 
 	curl_slist_free_all (headers);
 
-	*retData = calloc (strlen (curlRet) + 1, sizeof (char));
-	strcpy (*retData, curlRet);
+	return ret;
 }

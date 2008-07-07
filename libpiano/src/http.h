@@ -23,6 +23,9 @@ THE SOFTWARE.
 #ifndef _HTTP_H
 #define _HTTP_H
 
-void PianoHttpPost (CURL *ch, char *url, char *postData, char **retData);
+#include "piano.h"
+
+PianoReturn_t PianoHttpPost (CURL *ch, char *url, char *postData,
+		char **retData);
 
 #endif /* _HTTP_H */
