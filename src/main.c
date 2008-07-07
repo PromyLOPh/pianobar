@@ -164,7 +164,10 @@ char *BarUiSelectMusicId (PianoHandle_t *ph) {
 
 	lineBuf = readline ("Search for artist/title\n");
 	if (lineBuf != NULL && strlen (lineBuf) > 0) {
-		PianoSearchMusic (ph, lineBuf, &searchResult);
+		if (PianoSearchMusic (ph, lineBuf, &searchResult) != PIANO_RET_OK) {
+			free (lineBuf);
+			return NULL;
+		}
 		if (searchResult.songs != NULL && searchResult.artists != NULL) {
 			printf ("Is this an [a]rtist or [t]rack name? Press c to abort.\n");
 			read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
