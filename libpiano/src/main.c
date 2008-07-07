@@ -171,8 +171,11 @@ void PianoDestroy (PianoHandle_t *ph) {
  *	@param piano handle
  *	@param username (utf-8 encoded)
  *	@param password (plaintext, utf-8 encoded)
+ *	@param use ssl when logging in (1 = on, 0 = off), note that the password
+ *			is not hashed and will be sent as plain-text!
  */
-PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
+PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password,
+		char secureLogin) {
 	char url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr = PianoEncryptString ("<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>misc.sync</methodName>"
@@ -200,8 +203,8 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), user, password);
 	requestStr = PianoEncryptString (requestStrPlain);
-	snprintf (url, sizeof (url), PIANO_SECURE_RPC_URL "rid=%s"
-			"&method=authenticateListener", ph->routeId);
+	snprintf (url, sizeof (url), "%srid=%s&method=authenticateListener",
+			secureLogin ? PIANO_SECURE_RPC_URL : PIANO_RPC_URL, ph->routeId);
 
 	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
 			PIANO_RET_OK) {

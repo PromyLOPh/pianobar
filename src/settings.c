@@ -113,6 +113,12 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->lastfmPassword = strdup (val);
 		} else if (strcmp ("lastfm_scrobble_percent", key) == 0) {
 			settings->lastfmScrobblePercent = atoi (val);
+		} else if (strcmp ("disable_secure_login", key) == 0) {
+			if (strcmp (val, "1") == 0) {
+				settings->disableSecureLogin = 1;
+			} else {
+				settings->disableSecureLogin = 0;
+			}
 		}
 	}
 

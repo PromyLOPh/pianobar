@@ -99,6 +99,14 @@ needs an IP address specified in
 .B control_proxy
 
 .TP
+.B disable_secure_login = {1,0}
+If you have problems when loggin in and you know your control proxy definitively
+works try setting this option to
+.B 1.
+It disables the SSL secured login. Beware!
+.I Your password will be sent as plain-text!
+
+.TP
 .B lastfm_user = your_username
 If you want to send your played song to last.fm set this to your last.fm
 username.

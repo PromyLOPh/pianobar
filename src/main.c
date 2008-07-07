@@ -267,8 +267,8 @@ int main (int argc, char **argv) {
 	BarTermSetBuffer (0);
 
 	BarUiMsg ("Login... ");
-	if (PianoConnect (&ph, bsettings.username, bsettings.password) !=
-			PIANO_RET_OK) {
+	if (PianoConnect (&ph, bsettings.username, bsettings.password,
+			!bsettings.disableSecureLogin) != PIANO_RET_OK) {
 		BarUiMsg ("Error.\n");
 		return 0;
 	} else {

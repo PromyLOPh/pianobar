@@ -34,6 +34,7 @@ struct BarSettings {
 	char *lastfmPassword;
 	unsigned char lastfmScrobblePercent;
 	char enableScrobbling;
+	char disableSecureLogin;
 };
 
 typedef struct BarSettings BarSettings_t;
