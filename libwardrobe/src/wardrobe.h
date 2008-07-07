@@ -35,6 +35,7 @@ typedef struct {
 typedef struct {
 	char *artist;
 	char *title;
+	char *album;
 	time_t started;
 	time_t length;
 } WardrobeSong_t;

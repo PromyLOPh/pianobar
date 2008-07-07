@@ -342,8 +342,9 @@ int main (int argc, char **argv) {
 					PianoStation_t *realStation =
 							PianoFindStationById (ph.stations,
 							curSong->stationId);
-					printf ("\"%s\" by \"%s\"%s%s%s\n", curSong->title,
-							curSong->artist, (curSong->rating ==
+					printf ("\"%s\" by \"%s\" on \"%s\"%s%s%s\n",
+							curSong->title, curSong->artist, curSong->album,
+							(curSong->rating ==
 							PIANO_RATE_LOVE) ? " (Loved)" : "",
 							curStation->isQuickMix ? " @ ": "",
 							curStation->isQuickMix ? realStation->name :
@@ -353,6 +354,7 @@ int main (int argc, char **argv) {
 					WardrobeSongInit (&scrobbleSong);
 					scrobbleSong.artist = strdup (curSong->artist);
 					scrobbleSong.title = strdup (curSong->title);
+					scrobbleSong.album = strdup (curSong->album);
 					scrobbleSong.started = time (NULL);
 
 					memset (&player, 0, sizeof (player));

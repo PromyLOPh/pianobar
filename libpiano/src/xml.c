@@ -255,6 +255,8 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
 		}
 	} else if (strcmp ("stationId", key) == 0) {
 		song->stationId = strdup (valueStr);
+	} else if (strcmp ("albumTitle", key) == 0) {
+		song->album = strdup (valueStr);
 	}
 }
 

@@ -91,7 +91,7 @@ struct PianoSong {
 	/* disabled: artRadio */
 	//char *audioEncoding; /* FIXME: should be enum: mp3 or aacplus */
 	char *stationId;
-	//char *album;
+	char *album;
 	//char *artistMusicId;
 	char *userSeed;
 	/* disabled: albumExplorerUrl */

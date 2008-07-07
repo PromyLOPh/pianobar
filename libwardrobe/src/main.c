@@ -129,6 +129,7 @@ void WardrobeFree (void *ptr, size_t size) {
 void WardrobeSongDestroy (WardrobeSong_t *ws) {
 	WardrobeFree (ws->artist, 0);
 	WardrobeFree (ws->title, 0);
+	WardrobeFree (ws->album, 0);
 	memset (ws, 0, sizeof (*ws));
 }
 
@@ -207,16 +208,17 @@ WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
 		WardrobeSong_t *ws) {
 	char postContent[10000];
-	char *urlencArtist, *urlencTitle, *ret;
+	char *urlencArtist, *urlencTitle, *urlencAlbum, *ret;
 	WardrobeReturn_t fRet = WARDROBE_RET_ERR;
 
 	urlencArtist = curl_easy_escape (wh->ch, ws->artist, 0);
 	urlencTitle = curl_easy_escape (wh->ch, ws->title, 0);
+	urlencAlbum = curl_easy_escape (wh->ch, ws->album, 0);
 
 	snprintf (postContent, sizeof (postContent), "s=%s&a[0]=%s&t[0]=%s&"
-			"i[0]=%li&o[0]=P&r[0]=&l[0]=%li&b[0]=&n[0]=&m[0]=",
+			"i[0]=%li&o[0]=P&r[0]=&l[0]=%li&b[0]=%s&n[0]=&m[0]=",
 			wh->authToken, urlencArtist, urlencTitle, ws->started,
-			ws->length);
+			ws->length, urlencAlbum);
 
 	WardrobeHttpPost (wh->ch, wh->postUrl, postContent, &ret);
 	if (memcmp (ret, "OK", 2) == 0) {
@@ -227,6 +229,7 @@ WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
 
 	curl_free (urlencArtist);
 	curl_free (urlencTitle);
+	curl_free (urlencAlbum);
 	WardrobeFree (ret, 0);
 
 	return fRet;

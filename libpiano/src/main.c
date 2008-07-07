@@ -142,6 +142,7 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
 		PianoFree (curSong->userSeed, 0);
 		PianoFree (curSong->identity, 0);
 		PianoFree (curSong->stationId, 0);
+		PianoFree (curSong->album, 0);
 		lastSong = curSong;
 		curSong = curSong->next;
 		PianoFree (lastSong, sizeof (*lastSong));
@@ -201,6 +202,7 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password) {
 	requestStr = PianoEncryptString (requestStrPlain);
 	snprintf (url, sizeof (url), PIANO_SECURE_RPC_URL "rid=%s"
 			"&method=authenticateListener", ph->routeId);
+
 	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
 			PIANO_RET_OK) {
 		ret = PianoXmlParseUserinfo (ph, retStr);
