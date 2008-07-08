@@ -25,13 +25,20 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <time.h>
 
-#include "const.h"
 #include "main.h"
 #include "piano.h"
 #include "http.h"
 #include "xml.h"
 #include "crypt.h"
 #include "config.h"
+
+#define PIANO_PROTOCOL_VERSION "20"
+#define PIANO_RPC_URL "http://www.pandora.com/radio/xmlrpc/v" \
+		PIANO_PROTOCOL_VERSION "?"
+#define PIANO_SECURE_RPC_URL "https://www.pandora.com/radio/xmlrpc/v" \
+		PIANO_PROTOCOL_VERSION "?"
+#define PIANO_URL_BUFFER_SIZE 1024
+#define PIANO_SEND_BUFFER_SIZE 10000
 
 /* prototypes */
 PianoReturn_t PianoAddFeedback (PianoHandle_t *, char *, char *, char *,
@@ -180,7 +187,7 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password,
 	char *requestStr = PianoEncryptString ("<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>misc.sync</methodName>"
 			"<params></params></methodCall>");
-	char *retStr, requestStrPlain[10000];
+	char *retStr, requestStrPlain[PIANO_SEND_BUFFER_SIZE];
 	PianoReturn_t ret;
 
 	/* sync (is the return value used by pandora? for now: ignore result) */
@@ -222,7 +229,7 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password,
  *	@param piano handle filled with some authentication data by PianoConnect
  */
 PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
-	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
 
@@ -252,7 +259,7 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
  *	@param station id
  */
 PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
-	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
 
@@ -340,7 +347,7 @@ PianoReturn_t PianoMoveSong (PianoHandle_t *ph, PianoStation_t *stationFrom,
 PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, char *stationId,
 		char *songMusicId, char *songMatchingSeed, char *songUserSeed,
 		char *songFocusTraitId, PianoSongRating_t rating) {
-	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret = PIANO_RET_ERR;
 
@@ -392,7 +399,7 @@ PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, char *stationId,
  */
 PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 		char *newName) {
-	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr, *urlencodedNewName, *xmlencodedNewName;
 	PianoReturn_t ret = PIANO_RET_ERR;
 
@@ -434,7 +441,7 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
  *	@param station you want to delete
  */
 PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
-	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret = PIANO_RET_ERR;
 
@@ -489,7 +496,7 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
  */
 PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
 		PianoSearchResult_t *searchResult) {
-	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr, *xmlencodedSearchStr, *urlencodedSearchStr;
 	PianoReturn_t ret;
 
@@ -530,7 +537,7 @@ PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
  */
 PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *type,
 		char *id) {
-	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
 
@@ -569,7 +576,7 @@ PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *type,
  */
 PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 		PianoStation_t *station, char *musicId) {
-	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
 
@@ -604,7 +611,7 @@ PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
  *	@return _OK or error
  */
 PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song) {
-	char xmlSendBuf[10000], url[PIANO_URL_BUFFER_SIZE];
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
 
@@ -637,7 +644,7 @@ PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song) {
  *	@return _OK or error
  */
 PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph) {
-	char xmlSendBuf[10000], valueBuf[1000], urlArgBuf[1000],
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], valueBuf[1000], urlArgBuf[1000],
 			url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;

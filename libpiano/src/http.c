@@ -24,9 +24,9 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 
-#include "const.h"
 #include "http.h"
 
+#define PIANO_HTTP_BUFFER_SIZE 100000
 
 /* FIXME: curl has a receive limit, use it! */
 /*	callback for curl, writes data to buffer
