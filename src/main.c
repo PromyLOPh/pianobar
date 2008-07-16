@@ -418,7 +418,7 @@ int main (int argc, char **argv) {
 						break;
 					}
 					BarUiMsg ("Banning song... ");
-					if (PianoRateTrack (&ph, curStation, curSong,
+					if (PianoRateTrack (&ph, curSong,
 							PIANO_RATE_BAN) == PIANO_RET_OK) {
 						BarUiMsg ("Ok.\n");
 						player.doQuit = 1;
@@ -476,7 +476,7 @@ int main (int argc, char **argv) {
 						break;
 					}
 					BarUiMsg ("Loving song... ");
-					if (PianoRateTrack (&ph, curStation, curSong,
+					if (PianoRateTrack (&ph, curSong,
 							PIANO_RATE_LOVE) == PIANO_RET_OK) {
 						BarUiMsg ("Ok.\n");
 					} else {

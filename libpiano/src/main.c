@@ -297,15 +297,14 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
  *	not allowed)
  *	@public yes
  *	@param piano handle
- *	@param track will be added to this stations loved tracks list
  *	@param rate this track
  *	@param your rating
  */
-PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoStation_t *station,
-		PianoSong_t *song, PianoSongRating_t rating) {
+PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoSong_t *song,
+		PianoSongRating_t rating) {
 	PianoReturn_t ret;
 
-	ret = PianoAddFeedback (ph, station->id, song->musicId,
+	ret = PianoAddFeedback (ph, song->stationId, song->musicId,
 			song->matchingSeed, song->userSeed, song->focusTraitId, rating);
 
 	if (ret == PIANO_RET_OK) {
