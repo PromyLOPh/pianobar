@@ -105,7 +105,6 @@ void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
 }
 
 /*	free single station
- *	@public yes
  *	@param station
  */
 void PianoDestroyStation (PianoStation_t *station) {
@@ -117,17 +116,16 @@ void PianoDestroyStation (PianoStation_t *station) {
 /*	free complete station list
  *	@param piano handle
  */
-void PianoDestroyStations (PianoHandle_t *ph) {
+void PianoDestroyStations (PianoStation_t *stations) {
 	PianoStation_t *curStation, *lastStation;
 
-	curStation = ph->stations;
+	curStation = stations;
 	while (curStation != NULL) {
 		lastStation = curStation;
 		curStation = curStation->next;
 		PianoDestroyStation (lastStation);
 		PianoFree (lastStation, sizeof (*lastStation));
 	}
-	ph->stations = NULL;
 }
 
 /* FIXME: copy & waste */
@@ -169,7 +167,16 @@ void PianoDestroy (PianoHandle_t *ph) {
 	PianoFree (ph->user.authToken, 0);
 	PianoFree (ph->user.listenerId, 0);
 
-	PianoDestroyStations (ph);
+	PianoDestroyStations (ph->stations);
+	/* destroy genre stations */
+	PianoGenreCategory_t *curGenreCat = ph->genreStations, *lastGenreCat;
+	while (curGenreCat != NULL) {
+		PianoDestroyStations (curGenreCat->stations);
+		PianoFree (curGenreCat->name, 0);
+		lastGenreCat = curGenreCat;
+		curGenreCat = curGenreCat->next;
+		PianoFree (lastGenreCat, sizeof (*lastGenreCat));
+	}
 	PianoDestroyPlaylist (ph);
 	memset (ph, 0, sizeof (*ph));
 }
@@ -706,4 +713,25 @@ PianoStation_t *PianoFindStationById (PianoStation_t *stations,
 		stations = stations->next;
 	}
 	return NULL;
+}
+
+/*	receive genre stations
+ *	@param piano handle
+ *	@return _OK or error
+ */
+PianoReturn_t PianoGetGenreStations (PianoHandle_t *ph) {
+	char url[PIANO_URL_BUFFER_SIZE];
+	char *retStr;
+	PianoReturn_t ret;
+
+	snprintf (url, sizeof (url), "http://www.pandora.com/xml/genre?r=%li",
+			time (NULL));
+	
+	if ((ret = PianoHttpGet (ph->curlHandle, url, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseGenreExplorer (ph, retStr);
+		PianoFree (retStr, 0);
+	}
+
+	return ret;
 }

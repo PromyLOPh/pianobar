@@ -89,3 +89,31 @@ PianoReturn_t PianoHttpPost (CURL *ch, char *url, char *postData,
 
 	return ret;
 }
+
+/*	get data
+ *	@param initialized curl handle
+ *	@param call this url
+ *	@param put received data here, memory is allocated by this function
+ *	@return nothing yet
+ */
+PianoReturn_t PianoHttpGet (CURL *ch, char *url, char **retData) {
+	/* Let's hope nothing will be bigger than this... */
+	char curlRet[PIANO_HTTP_BUFFER_SIZE];
+	PianoReturn_t ret;
+
+	curl_easy_setopt (ch, CURLOPT_URL, url);
+	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, PianoCurlRetToVar);
+	memset (curlRet, 0, sizeof (curlRet));
+	curl_easy_setopt (ch, CURLOPT_WRITEDATA, curlRet);
+
+	if (curl_easy_perform (ch) == CURLE_OK) {
+		ret = PIANO_RET_OK;
+		*retData = calloc (strlen (curlRet) + 1, sizeof (char));
+		strcpy (*retData, curlRet);
+	} else {
+		ret = PIANO_RET_NET_ERROR;
+		*retData = NULL;
+	}
+
+	return ret;
+}

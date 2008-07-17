@@ -121,6 +121,15 @@ struct PianoArtist {
 
 typedef struct PianoArtist PianoArtist_t;
 
+
+struct PianoGenreCategory {
+	char *name;
+	PianoStation_t *stations;
+	struct PianoGenreCategory *next;
+};
+
+typedef struct PianoGenreCategory PianoGenreCategory_t;
+
 struct PianoHandle {
 	CURL *curlHandle;
 	char routeId[9];
@@ -128,6 +137,7 @@ struct PianoHandle {
 	/* linked lists */
 	PianoStation_t *stations;
 	PianoSong_t *playlist;
+	PianoGenreCategory_t *genreStations;
 };
 
 typedef struct PianoHandle PianoHandle_t;
@@ -149,8 +159,6 @@ void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
 void PianoDestroyPlaylist (PianoHandle_t *ph);
 void PianoDestroySearchResult (PianoSearchResult_t *searchResult);
-void PianoDestroyStation (PianoStation_t *station);
-void PianoDestroyStations (PianoHandle_t *ph);
 PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password,
 		char secureLogin);
 
@@ -174,5 +182,6 @@ PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song);
 PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph);
 PianoStation_t *PianoFindStationById (PianoStation_t *stations,
 		char *searchStation);
+PianoReturn_t PianoGetGenreStations (PianoHandle_t *ph);
 
 #endif /* _PIANO_H */

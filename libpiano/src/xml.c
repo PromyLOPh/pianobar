@@ -574,3 +574,88 @@ char *PianoXmlEncodeString (const char *s) {
 	}
 	return sOut;
 }
+
+PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph,
+		char *xmlContent) {
+	xmlNode *docRoot, *catNode, *genreNode, *attrNodeValue;
+	xmlDocPtr doc;
+	xmlAttr *attrNode;
+	PianoReturn_t ret;
+	PianoGenreCategory_t *tmpGenreCategory;
+	PianoStation_t *tmpStation;
+
+    if ((ret = PianoXmlInitDoc (xmlContent, &doc, &docRoot)) !=
+			PIANO_RET_OK) {
+        return ret;
+    }
+
+	/* get all <member> nodes */
+    for (catNode = docRoot->children; catNode; catNode = catNode->next) {
+        if (catNode->type == XML_ELEMENT_NODE &&
+				xmlStrEqual ((xmlChar *) "category", catNode->name)) {
+			tmpGenreCategory = calloc (1, sizeof (*tmpGenreCategory));
+			/* get category attributes */
+			for (attrNode = catNode->properties; attrNode;
+					attrNode = attrNode->next) {
+				for (attrNodeValue = attrNode->children; attrNodeValue;
+						attrNodeValue = attrNodeValue->next) {
+					if (attrNodeValue->type == XML_TEXT_NODE &&
+							xmlStrEqual (attrNode->name,
+							(xmlChar *) "categoryName")) {
+						tmpGenreCategory->name =
+								strdup ((char *) attrNodeValue->content);
+					}
+				}
+			}
+			/* get genre subnodes */
+			for (genreNode = catNode->children; genreNode;
+					genreNode = genreNode->next) {
+				if (genreNode->type == XML_ELEMENT_NODE &&
+						xmlStrEqual ((xmlChar *) "genre", genreNode->name)) {
+					tmpStation = calloc (1, sizeof (*tmpStation));
+					/* get genre attributes */
+					for (attrNode = genreNode->properties; attrNode;
+							attrNode = attrNode->next) {
+						for (attrNodeValue = attrNode->children; attrNodeValue;
+								attrNodeValue = attrNodeValue->next) {
+							if (attrNodeValue->type == XML_TEXT_NODE) {
+								if (xmlStrEqual (attrNode->name,
+										(xmlChar *) "name")) {
+									tmpStation->name = strdup ((char *) attrNodeValue->content);
+								} else if (xmlStrEqual (attrNode->name,
+										(xmlChar *) "stationId")) {
+									tmpStation->id = strdup ((char *) attrNodeValue->content);
+								}
+							}
+						}
+					}
+					/* append station */
+					if (tmpGenreCategory->stations == NULL) {
+						tmpGenreCategory->stations = tmpStation;
+					} else {
+						PianoStation_t *curStation =
+								tmpGenreCategory->stations;
+						while (curStation->next != NULL) {
+							curStation = curStation->next;
+						}
+						curStation->next = tmpStation;
+					}
+				}
+			}
+			/* append category */
+			if (ph->genreStations == NULL) {
+				ph->genreStations = tmpGenreCategory;
+			} else {
+				PianoGenreCategory_t *curCat = ph->genreStations;
+				while (curCat->next != NULL) {
+					curCat = curCat->next;
+				}
+				curCat->next = tmpGenreCategory;
+			}
+        }
+	}
+
+	xmlFreeDoc (doc);
+
+	return PIANO_RET_OK;
+}
