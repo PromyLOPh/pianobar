@@ -23,6 +23,7 @@ THE SOFTWARE.
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <byteswap.h>
 
 #include "crypt_key_output.h"
 #include "crypt_key_input.h"
@@ -42,7 +43,6 @@ void PianoHexToInts (char *strHex, unsigned int **retInts, size_t *retIntsN) {
 	/* FIXME: error handling: string too short, e.g. */
 	/* unsigned int = 4 bytes, 8 chars in hex */
 	for (i = 0; i < strlen (strHex); i += 8) {
-		memset (hexInt, 0, sizeof (hexInt));
 		memcpy (hexInt, strHex+i, sizeof (hexInt)-1);
 		sscanf (hexInt, "%x", &arrInts[i/8]);
 	}
@@ -99,9 +99,13 @@ void PianoDecipherInts (unsigned int *cipherInts, size_t cipherIntsN,
 char *PianoIntsToString (unsigned int *arrInts, size_t arrIntsN) {
 	char *strDecoded = calloc (arrIntsN * 4 + 1, sizeof (*strDecoded));
 	size_t i;
+	unsigned int *tmp;
 
 	for (i = 0; i < arrIntsN; i++) {
-		snprintf (&strDecoded[i*4], arrIntsN * 4, "%c%c%c%c", ((arrInts[i] >> 24) & 0xff), ((arrInts[i] >> 16) & 0xff), ((arrInts[i] >> 8) & 0xff), ((arrInts[i] >> 0) & 0xff));
+		/* map string to 4-byte int */
+		tmp = (unsigned int *) &strDecoded[i*4];
+		/* FIXME: big endian does not need to byteswap */
+		*tmp = bswap_32 (arrInts[i]);
 	}
 	return strDecoded;
 }
