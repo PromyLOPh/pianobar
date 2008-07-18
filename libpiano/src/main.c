@@ -470,7 +470,6 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 			PianoStation_t *curStation = ph->stations, *lastStation = NULL;
 			while (curStation != NULL) {
 				if (curStation == station) {
-					printf ("deleting station\n");
 					if (lastStation != NULL) {
 						lastStation->next = curStation->next;
 					} else {
