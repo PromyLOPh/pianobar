@@ -216,6 +216,71 @@ inline void BarUiMsg (char *msg) {
 	fflush (stdout);
 }
 
+/*	browse genre stations and create shared station
+ *	@param piano handle
+ */
+void BarStationFromGenre (PianoHandle_t *ph) {
+	int i;
+	PianoGenreCategory_t *curCat;
+	PianoStation_t *curStation;
+
+	/* receive genre stations list if not yet available */
+	if (ph->genreStations == NULL) {
+		BarUiMsg ("Receiving genre stations... ");
+		if (PianoGetGenreStations (ph) != PIANO_RET_OK) {
+			BarUiMsg ("Error.\n");
+			return;
+		} else {
+			BarUiMsg ("Ok.\n");
+		}
+	}
+
+	/* print all available categories */
+	curCat = ph->genreStations;
+	i = 0;
+	while (curCat != NULL) {
+		printf ("%2i) %s\n", i, curCat->name);
+		i++;
+		curCat = curCat->next;
+	}
+	/* select category or exit */
+	if (!BarReadlineInt (NULL, &i)) {
+		BarUiMsg ("Aborted.\n");
+		return;
+	}
+	curCat = ph->genreStations;
+	while (curCat != NULL && i > 0) {
+		curCat = curCat->next;
+		i--;
+	}
+	
+	/* print all available stations */
+	curStation = curCat->stations;
+	i = 0;
+	while (curStation != NULL) {
+		printf ("%2i) %s\n", i, curStation->name);
+		i++;
+		curStation = curStation->next;
+	}
+	if (!BarReadlineInt (NULL, &i)) {
+		BarUiMsg ("Aborted.\n");
+		return;
+	}
+	curStation = curCat->stations;
+	while (curStation != NULL && i > 0) {
+		curStation = curStation->next;
+		i--;
+	}
+	/* create station */
+	printf ("Adding shared station \"%s\"... ", curStation->name);
+	fflush (stdout);
+	if (PianoCreateStation (ph, "sh", curStation->id) != PIANO_RET_OK) {
+		BarUiMsg ("Error.\n");
+	} else {
+		BarUiMsg ("Ok.\n");
+	}
+}
+
 int main (int argc, char **argv) {
 	PianoHandle_t ph;
 	struct aacPlayer player;
@@ -464,6 +529,11 @@ int main (int argc, char **argv) {
 							BarUiMsg ("Error.\n");
 						}
 					}
+					break;
+
+				case 'g':
+					/* use genre station */
+					BarStationFromGenre (&ph);
 					break;
 
 				case 'l':
