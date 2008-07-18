@@ -636,12 +636,18 @@ int main (int argc, char **argv) {
 						BarUiMsg ("No song playing.\n");
 						break;
 					}
-					BarUiMsg ("Next songs:\n");
 					PianoSong_t *nextSong = curSong->next;
-					while (nextSong != NULL) {
-						printf ("%s -- %s\n", nextSong->artist,
-								nextSong->title);
-						nextSong = nextSong->next;
+					if (nextSong != NULL) {
+						int i = 0;
+						BarUiMsg ("Next songs:\n");
+						while (nextSong != NULL) {
+							printf ("%2i) \"%s\" by \"%s\"\n", i,
+									nextSong->title, nextSong->artist);
+							nextSong = nextSong->next;
+							i++;
+						}
+					} else {
+						BarUiMsg ("No songs in queue.\n");
 					}
 					break;
 				
