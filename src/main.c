@@ -446,6 +446,7 @@ int main (int argc, char **argv) {
 							"b\tban current song\n"
 							"c\tcreate new station\n"
 							"d\tdelete current station\n"
+							"g\tadd genre station\n"
 							"l\tlove current song\n"
 							"n\tnext song\n"
 							"p\tpause/continue\n"
