@@ -645,6 +645,10 @@ int main (int argc, char **argv) {
 					break;
 				
 				case 'x':
+					if (curStation == NULL) {
+						BarUiMsg ("No station selected.\n");
+						break;
+					}
 					if (curStation->isQuickMix) {
 						PianoStation_t *selStation;
 						while ((selStation =
