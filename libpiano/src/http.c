@@ -102,6 +102,9 @@ PianoReturn_t PianoHttpGet (CURL *ch, char *url, char **retData) {
 	PianoReturn_t ret;
 
 	curl_easy_setopt (ch, CURLOPT_URL, url);
+	/* remove, as not needed, but set (maybe) set by PianoHttpPost */
+	curl_easy_setopt (ch, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt (ch, CURLOPT_HTTPHEADER, NULL);
 	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, PianoCurlRetToVar);
 	memset (curlRet, 0, sizeof (curlRet));
 	curl_easy_setopt (ch, CURLOPT_WRITEDATA, curlRet);
