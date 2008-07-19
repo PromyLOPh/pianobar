@@ -23,6 +23,9 @@ THE SOFTWARE.
 #ifndef _MAIN_H
 #define _MAIN_H
 
+#include "piano.h"
+
 void PianoFree (void *ptr, size_t size);
+void PianoDestroyStation (PianoStation_t *station);
 
 #endif /* _MAIN_H */
