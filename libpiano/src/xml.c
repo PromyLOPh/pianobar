@@ -146,7 +146,7 @@ void PianoXmlStructParser (xmlNode *structRoot,
  *	@param xml document
  *	@param returns document pointer (needed to free memory later)
  *	@param returns document root
- *	@return _RET_ERR or _RET_OK
+ *	@return _OK or error
  */
 PianoReturn_t PianoXmlInitDoc (char *xml, xmlDocPtr *doc, xmlNode **docRoot) {
 	*doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
@@ -160,6 +160,7 @@ PianoReturn_t PianoXmlInitDoc (char *xml, xmlDocPtr *doc, xmlNode **docRoot) {
 	*docRoot = xmlDocGetRootElement (*doc);
 
 	if ((ret = PianoXmlIsFault (*docRoot)) != PIANO_RET_OK) {
+		xmlFreeDoc (*doc);
 		return ret;
 	}
 
