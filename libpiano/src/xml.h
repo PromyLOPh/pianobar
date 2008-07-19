@@ -36,6 +36,7 @@ PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
 		PianoStation_t *station);
 PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph,
 		char *xmlContent);
+PianoReturn_t PianoXmlParseTranformStation (char *searchXml);
 
 char *PianoXmlEncodeString (const char *s);
 

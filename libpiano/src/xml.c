@@ -212,6 +212,8 @@ void PianoXmlParseStationsCb (char *key, xmlNode *value, void *data) {
 		station->id = strdup (valueStr);
 	} else if (strcmp ("isQuickMix", key) == 0) {
 		station->isQuickMix = (strcmp (valueStr, "1") == 0);
+	} else if (strcmp ("isCreator", key) == 0) {
+		station->isCreator = (strcmp (valueStr, "1") == 0);
 	}
 }
 
@@ -655,6 +657,24 @@ PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph,
         }
 	}
 
+	xmlFreeDoc (doc);
+
+	return PIANO_RET_OK;
+}
+
+/*	dummy function, only checks for errors
+ *	@param xml doc
+ *	@return _OK or error
+ */
+PianoReturn_t PianoXmlParseTranformStation (char *searchXml) {
+	xmlNode *docRoot;
+	xmlDocPtr doc;
+	PianoReturn_t ret;
+
+	if ((ret = PianoXmlInitDoc (searchXml, &doc, &docRoot)) != PIANO_RET_OK) {
+		return ret;
+	}
+	
 	xmlFreeDoc (doc);
 
 	return PIANO_RET_OK;

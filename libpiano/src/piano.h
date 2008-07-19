@@ -53,7 +53,7 @@ struct PianoUserInfo {
 typedef struct PianoUserInfo PianoUserInfo_t;
 
 struct PianoStation {
-	//char isCreator;
+	char isCreator;
 	/* disabled: originalStationId */
 	//char **genre;
 	//unsigned int originalCreatorId;
@@ -183,5 +183,7 @@ PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph);
 PianoStation_t *PianoFindStationById (PianoStation_t *stations,
 		char *searchStation);
 PianoReturn_t PianoGetGenreStations (PianoHandle_t *ph);
+PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
+		PianoStation_t *station);
 
 #endif /* _PIANO_H */

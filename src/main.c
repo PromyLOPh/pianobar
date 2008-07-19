@@ -483,6 +483,16 @@ int main (int argc, char **argv) {
 						BarUiMsg ("No song playing.\n");
 						break;
 					}
+					if (!curStation->isCreator) {
+						BarUiMsg ("Transforming station... ");
+						if (PianoTransformShared (&ph, curStation) ==
+								PIANO_RET_OK) {
+							BarUiMsg ("Ok.\n");
+						} else {
+							BarUiMsg ("Error.\n");
+							break;
+						}
+					}
 					BarUiMsg ("Banning song... ");
 					if (PianoRateTrack (&ph, curSong,
 							PIANO_RATE_BAN) == PIANO_RET_OK) {
@@ -545,6 +555,16 @@ int main (int argc, char **argv) {
 					if (curSong->rating == PIANO_RATE_LOVE) {
 						BarUiMsg ("Already loved. No need to do this twice.\n");
 						break;
+					}
+					if (!curStation->isCreator) {
+						BarUiMsg ("Transforming station... ");
+						if (PianoTransformShared (&ph, curStation) ==
+								PIANO_RET_OK) {
+							BarUiMsg ("Ok.\n");
+						} else {
+							BarUiMsg ("Error.\n");
+							break;
+						}
 					}
 					BarUiMsg ("Loving song... ");
 					if (PianoRateTrack (&ph, curSong,

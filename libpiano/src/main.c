@@ -734,3 +734,44 @@ PianoReturn_t PianoGetGenreStations (PianoHandle_t *ph) {
 
 	return ret;
 }
+
+/*	make shared stations private, needed to rate songs played on shared
+ *	stations
+ *	@param piano handle
+ *	@param station to transform
+ *	@return _OK or error
+ */
+PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
+		PianoStation_t *station) {
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
+	char *requestStr, *retStr;
+	PianoReturn_t ret;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>station.transformShared</methodName>"
+			"<params><param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			station->id);
+	requestStr = PianoEncryptString (xmlSendBuf);
+
+	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s&"
+			"method=transformShared&arg1=%s", ph->routeId, ph->user.listenerId,
+			station->id);
+	
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseTranformStation (retStr);
+		/* though this call returns a bunch of "new" data only this one is
+		 * changed and important (at the moment) */
+		if (ret == PIANO_RET_OK) {
+			station->isCreator = 1;
+		}
+		PianoFree (retStr, 0);
+	}
+
+	PianoFree (requestStr, 0);
+
+	return ret;
+}
