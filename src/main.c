@@ -404,13 +404,17 @@ int main (int argc, char **argv) {
 				if (curSong == NULL) {
 					BarUiMsg ("Receiving new playlist... ");
 					PianoDestroyPlaylist (&ph);
-					PianoGetPlaylist (&ph, curStation->id);
-					curSong = ph.playlist;
-					if (curSong == NULL) {
-						BarUiMsg ("No tracks left.\n");
-						curStation = NULL;
+					if (PianoGetPlaylist (&ph, curStation->id) !=
+							PIANO_RET_OK) {
+						BarUiMsg ("Error.\n");
 					} else {
-						BarUiMsg ("Ok.\n");
+						curSong = ph.playlist;
+						if (curSong == NULL) {
+							BarUiMsg ("No tracks left.\n");
+							curStation = NULL;
+						} else {
+							BarUiMsg ("Ok.\n");
+						}
 					}
 				}
 				if (curSong != NULL) {
