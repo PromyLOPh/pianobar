@@ -407,6 +407,7 @@ int main (int argc, char **argv) {
 					if (PianoGetPlaylist (&ph, curStation->id) !=
 							PIANO_RET_OK) {
 						BarUiMsg ("Error.\n");
+						curStation = NULL;
 					} else {
 						curSong = ph.playlist;
 						if (curSong == NULL) {
