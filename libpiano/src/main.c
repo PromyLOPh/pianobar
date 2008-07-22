@@ -74,6 +74,7 @@ void PianoInit (PianoHandle_t *ph) {
 	snprintf (ph->routeId, sizeof (ph->routeId), "%07liP", time (NULL)>>8);
 	curl_easy_setopt (ph->curlHandle, CURLOPT_USERAGENT, PACKAGE_STRING);
 	curl_easy_setopt (ph->curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
+	curl_easy_setopt (ph->curlHandle, CURLOPT_TIMEOUT, 60);
 }
 
 /*	free complete search result
