@@ -78,11 +78,10 @@ char BarReadlineInt (char *prompt, int *retVal) {
  *	@param piano handle
  *	@return pointer to selected station or NULL
  */
-PianoStation_t *BarUiSelectStation (PianoHandle_t *ph) {
+PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, char *prompt) {
 	PianoStation_t *curStation = NULL;
 	int i = 0;
 
-	printf ("which station do you want to listen to?\n");
 	curStation = ph->stations;
 	while (curStation != NULL) {
 		printf ("%2i) %s%s\n", i, curStation->name,
@@ -90,7 +89,7 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph) {
 		curStation = curStation->next;
 		i++;
 	}
-	if (!BarReadlineInt (NULL, &i)) {
+	if (!BarReadlineInt (prompt, &i)) {
 		return NULL;
 	}
 	curStation = ph->stations;
@@ -348,7 +347,7 @@ int main (int argc, char **argv) {
 	}
 
 	/* select station */
-	curStation = BarUiSelectStation (&ph);
+	curStation = BarUiSelectStation (&ph, "Select station: ");
 	if (curStation != NULL) {
 		printf ("Playing station \"%s\"\n", curStation->name);
 	}
@@ -584,7 +583,7 @@ int main (int argc, char **argv) {
 						BarUiMsg ("No song playing.\n");
 						break;
 					}
-					moveStation = BarUiSelectStation (&ph);
+					moveStation = BarUiSelectStation (&ph, "Move song to station: ");
 					if (moveStation != NULL) {
 						printf ("Moving song to \"%s\"... ", moveStation->name);
 						fflush (stdout);
@@ -631,7 +630,7 @@ int main (int argc, char **argv) {
 					player.doQuit = 1;
 					PianoDestroyPlaylist (&ph);
 					curSong = NULL;
-					curStation = BarUiSelectStation (&ph);
+					curStation = BarUiSelectStation (&ph, "Select station: ");
 					if (curStation != NULL) {
 						printf ("Changed station to %s\n", curStation->name);
 					}
@@ -679,7 +678,7 @@ int main (int argc, char **argv) {
 					if (curStation->isQuickMix) {
 						PianoStation_t *selStation;
 						while ((selStation =
-								BarUiSelectStation (&ph)) != NULL) {
+								BarUiSelectStation (&ph, "Toggle quickmix for station: ")) != NULL) {
 							selStation->useQuickMix = !selStation->useQuickMix;
 						}
 						BarUiMsg ("Setting quickmix stations... ");
