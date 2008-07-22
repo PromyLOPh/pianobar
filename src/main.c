@@ -40,6 +40,8 @@ THE SOFTWARE.
 #include "config.h"
 #include "player.h"
 
+inline void BarUiMsg (char *msg);
+
 /*	check whether complete string is numeric
  *	@param the string
  *	@return 1 = yes, 0 = not numeric
@@ -114,7 +116,7 @@ PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
 		i++;
 		tmpSong = tmpSong->next;
 	}
-	if (!BarReadlineInt (NULL, &i)) {
+	if (!BarReadlineInt ("Select song: ", &i)) {
 		return NULL;
 	}
 	tmpSong = startSong;
@@ -139,7 +141,7 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
 		i++;
 		tmpArtist = tmpArtist->next;
 	}
-	if (!BarReadlineInt (NULL, &i)) {
+	if (!BarReadlineInt ("Select artist: ", &i)) {
 		return NULL;
 	}
 	tmpArtist = startArtist;
@@ -161,14 +163,17 @@ char *BarUiSelectMusicId (PianoHandle_t *ph) {
 	PianoArtist_t *tmpArtist;
 	PianoSong_t *tmpSong;
 
-	lineBuf = readline ("Search for artist/title\n");
+	lineBuf = readline ("Search for artist/title: ");
 	if (lineBuf != NULL && strlen (lineBuf) > 0) {
+		BarUiMsg ("Searching... ");
 		if (PianoSearchMusic (ph, lineBuf, &searchResult) != PIANO_RET_OK) {
+			BarUiMsg ("Error.\n");
 			free (lineBuf);
 			return NULL;
 		}
+		BarUiMsg ("\r");
 		if (searchResult.songs != NULL && searchResult.artists != NULL) {
-			printf ("Is this an [a]rtist or [t]rack name? Press c to abort.\n");
+			BarUiMsg ("Is this an [a]rtist or [t]rack name? Press c to abort.\n");
 			read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
 			if (yesnoBuf == 'a') {
 				tmpArtist = BarUiSelectArtist (searchResult.artists);
@@ -180,23 +185,29 @@ char *BarUiSelectMusicId (PianoHandle_t *ph) {
 				if (tmpSong != NULL) {
 					musicId = strdup (tmpSong->musicId);
 				}
+			} else {
+				BarUiMsg ("Aborted.\n");
 			}
 		} else if (searchResult.songs != NULL) {
-			printf ("Select song\n");
 			tmpSong = BarUiSelectSong (searchResult.songs);
 			if (tmpSong != NULL) {
 				musicId = strdup (tmpSong->musicId);
+			} else {
+				BarUiMsg ("Aborted.\n");
 			}
 		} else if (searchResult.artists != NULL) {
-			printf ("Select artist\n");
 			tmpArtist = BarUiSelectArtist (searchResult.artists);
 			if (tmpArtist != NULL) {
 				musicId = strdup (tmpArtist->musicId);
+			} else {
+				BarUiMsg ("Aborted.\n");
 			}
 		} else {
-			printf ("Nothing found...\n");
+			BarUiMsg ("Nothing found...\n");
 		}
 		PianoDestroySearchResult (&searchResult);
+	} else {
+		BarUiMsg ("Aborted.\n");
 	}
 	if (lineBuf != NULL) {
 		free (lineBuf);
@@ -464,8 +475,6 @@ int main (int argc, char **argv) {
 					}
 					musicId = BarUiSelectMusicId (&ph);
 					if (musicId == NULL) {
-						BarUiMsg ("Aborted.\n");
-					} else {
 						BarUiMsg ("Adding music to station... ");
 						if (PianoStationAddMusic (&ph, curStation, musicId) ==
 								PIANO_RET_OK) {
@@ -513,8 +522,6 @@ int main (int argc, char **argv) {
 							BarUiMsg ("Error.\n");
 						}
 						free (musicId);
-					} else {
-						BarUiMsg ("Aborted.\n");
 					}
 					break;
 
