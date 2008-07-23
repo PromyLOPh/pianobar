@@ -186,5 +186,6 @@ PianoStation_t *PianoFindStationById (PianoStation_t *stations,
 PianoReturn_t PianoGetGenreStations (PianoHandle_t *ph);
 PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
 		PianoStation_t *station);
+const char *PianoErrorToStr (PianoReturn_t ret);
 
 #endif /* _PIANO_H */

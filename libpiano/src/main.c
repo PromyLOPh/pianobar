@@ -778,3 +778,39 @@ PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
 
 	return ret;
 }
+
+/*	convert return value to human-readable string
+ *	@param enum
+ *	@return error string
+ */
+const char *PianoErrorToStr (PianoReturn_t ret) {
+	switch (ret) {
+		case PIANO_RET_OK:
+			return "Everything is fine :)";
+			break;
+
+		case PIANO_RET_ERR:
+			return "Unknown.";
+			break;
+
+		case PIANO_RET_XML_INVALID:
+			return "Invalid XML.";
+			break;
+
+		case PIANO_RET_AUTH_TOKEN_INVALID:
+			return "Invalid auth token.";
+			break;
+		
+		case PIANO_RET_AUTH_USER_PASSWORD_INVALID:
+			return "Username and/or password not correct.";
+			break;
+
+		case PIANO_RET_NET_ERROR:
+			return "Connection failed.";
+			break;
+
+		default:
+			return "No error message available.";
+			break;
+	}
+}
