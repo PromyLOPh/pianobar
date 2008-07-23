@@ -48,6 +48,15 @@ inline void BarUiMsg (const char *msg) {
 	fflush (stdout);
 }
 
+inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret) {
+	if (ret != PIANO_RET_OK) {
+		printf ("Error: %s\n", PianoErrorToStr (ret));
+	} else {
+		printf ("Ok.\n");
+	}
+	return ret;
+}
+
 /*	check whether complete string is numeric
  *	@param the string
  *	@return 1 = yes, 0 = not numeric
@@ -173,8 +182,8 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 	lineBuf = readline ("Search for artist/title: ");
 	if (lineBuf != NULL && strlen (lineBuf) > 0) {
 		BarUiMsg ("Searching... ");
-		if (PianoSearchMusic (ph, lineBuf, &searchResult) != PIANO_RET_OK) {
-			BarUiMsg ("Error.\n");
+		if (BarUiPrintPianoStatus (PianoSearchMusic (ph, lineBuf,
+				&searchResult)) != PIANO_RET_OK) {
 			free (lineBuf);
 			return NULL;
 		}
@@ -239,11 +248,9 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 	/* receive genre stations list if not yet available */
 	if (ph->genreStations == NULL) {
 		BarUiMsg ("Receiving genre stations... ");
-		if (PianoGetGenreStations (ph) != PIANO_RET_OK) {
-			BarUiMsg ("Error.\n");
+		if (BarUiPrintPianoStatus (PianoGetGenreStations (ph)) !=
+				PIANO_RET_OK) {
 			return;
-		} else {
-			BarUiMsg ("Ok.\n");
 		}
 	}
 
@@ -286,11 +293,7 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 	/* create station */
 	printf ("Adding shared station \"%s\"... ", curStation->name);
 	fflush (stdout);
-	if (PianoCreateStation (ph, "sh", curStation->id) != PIANO_RET_OK) {
-		BarUiMsg ("Error.\n");
-	} else {
-		BarUiMsg ("Ok.\n");
-	}
+	BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", curStation->id));
 }
 
 int main (int argc, char **argv) {
@@ -344,19 +347,14 @@ int main (int argc, char **argv) {
 	BarTermSetBuffer (0);
 
 	BarUiMsg ("Login... ");
-	if (PianoConnect (&ph, bsettings.username, bsettings.password,
-			!bsettings.disableSecureLogin) != PIANO_RET_OK) {
-		BarUiMsg ("Error.\n");
+	if (BarUiPrintPianoStatus (PianoConnect (&ph, bsettings.username,
+			bsettings.password, !bsettings.disableSecureLogin)) !=
+			PIANO_RET_OK) {
 		return 0;
-	} else {
-		BarUiMsg ("Ok.\n");
 	}
 	BarUiMsg ("Get stations... ");
-	if (PianoGetStations (&ph) != PIANO_RET_OK) {
-		BarUiMsg ("Error.\n");
+	if (BarUiPrintPianoStatus (PianoGetStations (&ph)) != PIANO_RET_OK) {
 		return 0;
-	} else {
-		BarUiMsg ("Ok.\n");
 	}
 
 	/* select station */
@@ -380,12 +378,14 @@ int main (int argc, char **argv) {
 					scrobbleSong.length >=
 					bsettings.lastfmScrobblePercent &&
 					bsettings.enableScrobbling) {
+				WardrobeReturn_t wRet;
+
 				BarUiMsg ("Scrobbling song... ");
-				if (WardrobeSubmit (&wh, &scrobbleSong) ==
+				if ((wRet = WardrobeSubmit (&wh, &scrobbleSong)) ==
 						WARDROBE_RET_OK) {
 					BarUiMsg ("Ok.\n");
 				} else {
-					BarUiMsg ("Error.\n");
+					printf ("Error: %s\n", WardrobeErrorToString (wRet));
 				}
 			}
 			WardrobeSongDestroy (&scrobbleSong);
@@ -406,17 +406,14 @@ int main (int argc, char **argv) {
 				if (curSong == NULL) {
 					BarUiMsg ("Receiving new playlist... ");
 					PianoDestroyPlaylist (&ph);
-					if (PianoGetPlaylist (&ph, curStation->id) !=
-							PIANO_RET_OK) {
-						BarUiMsg ("Error.\n");
+					if (BarUiPrintPianoStatus (PianoGetPlaylist (&ph,
+							curStation->id)) != PIANO_RET_OK) {
 						curStation = NULL;
 					} else {
 						curSong = ph.playlist;
 						if (curSong == NULL) {
 							BarUiMsg ("No tracks left.\n");
 							curStation = NULL;
-						} else {
-							BarUiMsg ("Ok.\n");
 						}
 					}
 				}
@@ -483,12 +480,8 @@ int main (int argc, char **argv) {
 					musicId = BarUiSelectMusicId (&ph);
 					if (musicId == NULL) {
 						BarUiMsg ("Adding music to station... ");
-						if (PianoStationAddMusic (&ph, curStation, musicId) ==
-								PIANO_RET_OK) {
-							BarUiMsg ("Ok.\n");
-						} else {
-							BarUiMsg ("Error.\n");
-						}
+						BarUiPrintPianoStatus (PianoStationAddMusic (&ph,
+								curStation, musicId));
 						free (musicId);
 					}
 					break;
@@ -500,21 +493,15 @@ int main (int argc, char **argv) {
 					}
 					if (!curStation->isCreator) {
 						BarUiMsg ("Transforming station... ");
-						if (PianoTransformShared (&ph, curStation) ==
-								PIANO_RET_OK) {
-							BarUiMsg ("Ok.\n");
-						} else {
-							BarUiMsg ("Error.\n");
+						if (BarUiPrintPianoStatus (PianoTransformShared (&ph,
+								curStation)) != PIANO_RET_OK) {
 							break;
 						}
 					}
 					BarUiMsg ("Banning song... ");
-					if (PianoRateTrack (&ph, curSong,
-							PIANO_RATE_BAN) == PIANO_RET_OK) {
-						BarUiMsg ("Ok.\n");
+					if (BarUiPrintPianoStatus (PianoRateTrack (&ph, curSong,
+							PIANO_RATE_BAN)) == PIANO_RET_OK) {
 						player.doQuit = 1;
-					} else {
-						BarUiMsg ("Error.\n");
 					}
 					break;
 
@@ -522,12 +509,8 @@ int main (int argc, char **argv) {
 					musicId = BarUiSelectMusicId (&ph);
 					if (musicId != NULL) {
 						BarUiMsg ("Creating station... ");
-						if (PianoCreateStation (&ph, "mi", musicId) ==
-								PIANO_RET_OK) {
-							BarUiMsg ("Ok.\n");
-						} else {
-							BarUiMsg ("Error.\n");
-						}
+						BarUiPrintPianoStatus (PianoCreateStation (&ph,
+								"mi", musicId));
 						free (musicId);
 					}
 					break;
@@ -542,15 +525,12 @@ int main (int argc, char **argv) {
 					read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
 					if (yesnoBuf == 'y') {
 						BarUiMsg ("Deleting station... ");
-						if (PianoDeleteStation (&ph, curStation) ==
-								PIANO_RET_OK) {
+						if (BarUiPrintPianoStatus (PianoDeleteStation (&ph,
+								curStation)) == PIANO_RET_OK) {
 							player.doQuit = 1;
-							BarUiMsg ("Ok.\n");
 							PianoDestroyPlaylist (&ph);
 							curSong = NULL;
 							curStation = NULL;
-						} else {
-							BarUiMsg ("Error.\n");
 						}
 					}
 					break;
@@ -571,21 +551,14 @@ int main (int argc, char **argv) {
 					}
 					if (!curStation->isCreator) {
 						BarUiMsg ("Transforming station... ");
-						if (PianoTransformShared (&ph, curStation) ==
-								PIANO_RET_OK) {
-							BarUiMsg ("Ok.\n");
-						} else {
-							BarUiMsg ("Error.\n");
+						if (BarUiPrintPianoStatus (PianoTransformShared (&ph,
+								curStation)) != PIANO_RET_OK) {
 							break;
 						}
 					}
 					BarUiMsg ("Loving song... ");
-					if (PianoRateTrack (&ph, curSong,
-							PIANO_RATE_LOVE) == PIANO_RET_OK) {
-						BarUiMsg ("Ok.\n");
-					} else {
-						BarUiMsg ("Error.\n");
-					}
+					BarUiPrintPianoStatus (PianoRateTrack (&ph, curSong,
+							PIANO_RATE_LOVE));
 					break;
 
 				case 'n':
@@ -601,12 +574,10 @@ int main (int argc, char **argv) {
 					if (moveStation != NULL) {
 						printf ("Moving song to \"%s\"... ", moveStation->name);
 						fflush (stdout);
-						if (PianoMoveSong (&ph, curStation, moveStation,
-								curSong) == PIANO_RET_OK) {
-							BarUiMsg ("Ok.\n");
+						if (BarUiPrintPianoStatus (PianoMoveSong (&ph,
+								curStation, moveStation, curSong)) ==
+								PIANO_RET_OK) {
 							player.doQuit = 1;
-						} else {
-							BarUiMsg ("Error.\n");
 						}
 					}
 					break;
@@ -628,12 +599,8 @@ int main (int argc, char **argv) {
 					lineBuf = readline ("New name?\n");
 					if (lineBuf != NULL && strlen (lineBuf) > 0) {
 						BarUiMsg ("Renaming station... ");
-						if (PianoRenameStation (&ph, curStation, lineBuf) ==
-								PIANO_RET_OK) {
-							BarUiMsg ("Ok.\n");
-						} else {
-							BarUiMsg ("Error.\n");
-						}
+						BarUiPrintPianoStatus (PianoRenameStation (&ph,
+								curStation, lineBuf));
 					}
 					if (lineBuf != NULL) {
 						free (lineBuf);
@@ -656,11 +623,9 @@ int main (int argc, char **argv) {
 						break;
 					}
 					BarUiMsg ("Putting song on shelf... ");
-					if (PianoSongTired (&ph, curSong) == PIANO_RET_OK) {
-						BarUiMsg ("Ok.\n");
+					if (BarUiPrintPianoStatus (PianoSongTired (&ph,
+							curSong)) == PIANO_RET_OK) {
 						player.doQuit = 1;
-					} else {
-						BarUiMsg ("Error.\n");
 					}
 					break;
 
@@ -691,16 +656,12 @@ int main (int argc, char **argv) {
 					}
 					if (curStation->isQuickMix) {
 						PianoStation_t *selStation;
-						while ((selStation =
-								BarUiSelectStation (&ph, "Toggle quickmix for station: ")) != NULL) {
+						while ((selStation = BarUiSelectStation (&ph,
+								"Toggle quickmix for station: ")) != NULL) {
 							selStation->useQuickMix = !selStation->useQuickMix;
 						}
 						BarUiMsg ("Setting quickmix stations... ");
-						if (PianoSetQuickmix (&ph) == PIANO_RET_OK) {
-							BarUiMsg ("Ok.\n");
-						} else {
-							BarUiMsg ("Error.\n");
-						}
+						BarUiPrintPianoStatus (PianoSetQuickmix (&ph));
 					} else {
 						BarUiMsg ("Not a QuickMix station.\n");
 					}
