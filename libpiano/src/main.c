@@ -41,8 +41,8 @@ THE SOFTWARE.
 #define PIANO_SEND_BUFFER_SIZE 10000
 
 /* prototypes */
-PianoReturn_t PianoAddFeedback (PianoHandle_t *, char *, char *, char *,
-		char *, char *, PianoSongRating_t);
+PianoReturn_t PianoAddFeedback (PianoHandle_t *, const char *, const char *,
+		const char *, const char *, const char *, PianoSongRating_t);
 
 /*	more "secure" free version; only use this function, not original free ()
  *	in this library
@@ -189,8 +189,8 @@ void PianoDestroy (PianoHandle_t *ph) {
  *	@param use ssl when logging in (1 = on, 0 = off), note that the password
  *			is not hashed and will be sent as plain-text!
  */
-PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password,
-		char secureLogin) {
+PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
+		const char *password, char secureLogin) {
 	char url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr = PianoEncryptString ("<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>misc.sync</methodName>"
@@ -266,7 +266,7 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
  *	@param piano handle
  *	@param station id
  */
-PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId) {
+PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
@@ -328,8 +328,9 @@ PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoSong_t *song,
  *	@param move here
  *	@param song to move
  */
-PianoReturn_t PianoMoveSong (PianoHandle_t *ph, PianoStation_t *stationFrom,
-		PianoStation_t *stationTo, PianoSong_t *song) {
+PianoReturn_t PianoMoveSong (PianoHandle_t *ph,
+		const PianoStation_t *stationFrom, const PianoStation_t *stationTo,
+		const PianoSong_t *song) {
 	PianoReturn_t ret;
 
 	/* ban from current station */
@@ -351,9 +352,10 @@ PianoReturn_t PianoMoveSong (PianoHandle_t *ph, PianoStation_t *stationFrom,
  *	@param song focus trait id or NULL
  *	@param rating
  */
-PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, char *stationId,
-		char *songMusicId, char *songMatchingSeed, char *songUserSeed,
-		char *songFocusTraitId, PianoSongRating_t rating) {
+PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, const char *stationId,
+		const char *songMusicId, const char *songMatchingSeed,
+		const char *songUserSeed, const char *songFocusTraitId,
+		PianoSongRating_t rating) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret = PIANO_RET_ERR;
@@ -405,7 +407,7 @@ PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, char *stationId,
  *	@return
  */
 PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
-		char *newName) {
+		const char *newName) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr, *urlencodedNewName, *xmlencodedNewName;
 	PianoReturn_t ret = PIANO_RET_ERR;
@@ -500,8 +502,8 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
  *	@param utf-8 search string
  *	@param return search result
  */
-PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
-		PianoSearchResult_t *searchResult) {
+PianoReturn_t PianoSearchMusic (const PianoHandle_t *ph,
+		const char *searchStr, PianoSearchResult_t *searchResult) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr, *xmlencodedSearchStr, *urlencodedSearchStr;
 	PianoReturn_t ret;
@@ -541,8 +543,8 @@ PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
  *			shared station
  *	@param id
  */
-PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *type,
-		char *id) {
+PianoReturn_t PianoCreateStation (PianoHandle_t *ph, const char *type,
+		const char *id) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
@@ -581,7 +583,7 @@ PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *type,
  *	@param music id; can be obtained with PianoSearchMusic ()
  */
 PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
-		PianoStation_t *station, char *musicId) {
+		PianoStation_t *station, const char *musicId) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
@@ -616,7 +618,7 @@ PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
  *	@param song to be banned
  *	@return _OK or error
  */
-PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song) {
+PianoReturn_t PianoSongTired (PianoHandle_t *ph, const PianoSong_t *song) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
@@ -705,7 +707,7 @@ PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph) {
 }
 
 PianoStation_t *PianoFindStationById (PianoStation_t *stations,
-		char *searchStation) {
+		const char *searchStation) {
 	while (stations != NULL) {
 		if (strcmp (stations->id, searchStation) == 0) {
 			return stations;

@@ -49,5 +49,5 @@ void WardrobeSongInit (WardrobeSong_t *ws);
 void WardrobeSongDestroy (WardrobeSong_t *ws);
 void WardrobeDestroy (WardrobeHandle_t *wh);
 WardrobeReturn_t WardrobeSubmit (WardrobeHandle_t *wh,
-		WardrobeSong_t *ws);
-char *WardrobeErrorToString (WardrobeReturn_t ret);
+		const WardrobeSong_t *ws);
+const char *WardrobeErrorToString (WardrobeReturn_t ret);

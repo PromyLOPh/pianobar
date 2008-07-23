@@ -25,8 +25,8 @@ THE SOFTWARE.
 
 #include "piano.h"
 
-PianoReturn_t PianoHttpPost (CURL *ch, char *url, char *postData,
+PianoReturn_t PianoHttpPost (CURL *ch, const char *url, const char *postData,
 		char **retData);
-PianoReturn_t PianoHttpGet (CURL *ch, char *url, char **retData);
+PianoReturn_t PianoHttpGet (CURL *ch, const char *url, char **retData);
 
 #endif /* _HTTP_H */

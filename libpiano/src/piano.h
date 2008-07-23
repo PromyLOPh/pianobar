@@ -159,29 +159,30 @@ void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
 void PianoDestroyPlaylist (PianoHandle_t *ph);
 void PianoDestroySearchResult (PianoSearchResult_t *searchResult);
-PianoReturn_t PianoConnect (PianoHandle_t *ph, char *user, char *password,
-		char secureLogin);
+PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
+		const char *password, char secureLogin);
 
 PianoReturn_t PianoGetStations (PianoHandle_t *ph);
-PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, char *stationId);
+PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId);
 
 PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoSong_t *song,
 		PianoSongRating_t rating);
-PianoReturn_t PianoMoveSong (PianoHandle_t *ph, PianoStation_t *stationFrom,
-		PianoStation_t *stationTo, PianoSong_t *song);
+PianoReturn_t PianoMoveSong (PianoHandle_t *ph,
+		const PianoStation_t *stationFrom, const PianoStation_t *stationTo,
+		const PianoSong_t *song);
 PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
-		char *newName);
+		const char *newName);
 PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station);
-PianoReturn_t PianoSearchMusic (PianoHandle_t *ph, char *searchStr,
-		PianoSearchResult_t *searchResult);
-PianoReturn_t PianoCreateStation (PianoHandle_t *ph, char *type,
-		char *id);
+PianoReturn_t PianoSearchMusic (const PianoHandle_t *ph,
+		const char *searchStr, PianoSearchResult_t *searchResult);
+PianoReturn_t PianoCreateStation (PianoHandle_t *ph, const char *type,
+		const char *id);
 PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
-		PianoStation_t *station, char *musicId);
-PianoReturn_t PianoSongTired (PianoHandle_t *ph, PianoSong_t *song);
+		PianoStation_t *station, const char *musicId);
+PianoReturn_t PianoSongTired (PianoHandle_t *ph, const PianoSong_t *song);
 PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph);
 PianoStation_t *PianoFindStationById (PianoStation_t *stations,
-		char *searchStation);
+		const char *searchStation);
 PianoReturn_t PianoGetGenreStations (PianoHandle_t *ph);
 PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
 		PianoStation_t *station);

@@ -34,7 +34,8 @@ THE SOFTWARE.
  *	@param but only up to this size
  *	@return nothing
  */
-void BarGetXdgConfigDir (char *filename, char *retDir, size_t retDirN) {
+void BarGetXdgConfigDir (const char *filename, char *retDir,
+		size_t retDirN) {
 	char *xdgConfigDir = NULL;
 
 	if ((xdgConfigDir = getenv ("XDG_CONFIG_HOME")) != NULL &&

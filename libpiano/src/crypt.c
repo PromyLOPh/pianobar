@@ -35,7 +35,8 @@ THE SOFTWARE.
  *	@param return size of array
  *	@return nothing, yet
  */
-void PianoHexToInts (char *strHex, unsigned int **retInts, size_t *retIntsN) {
+void PianoHexToInts (const char *strHex, unsigned int **retInts,
+		size_t *retIntsN) {
 	size_t i;
 	char hexInt[9];
 	unsigned int *arrInts = calloc (strlen (strHex) / 8, sizeof (*arrInts));
@@ -56,7 +57,7 @@ void PianoHexToInts (char *strHex, unsigned int **retInts, size_t *retIntsN) {
  *	@param decrypt-me-length
  *	@param return plain ints array
  */
-void PianoDecipherInts (unsigned int *cipherInts, size_t cipherIntsN,
+void PianoDecipherInts (const unsigned int *cipherInts, size_t cipherIntsN,
 		unsigned int **retPlainInts) {
 	unsigned int *plainInts = calloc (cipherIntsN, sizeof (*plainInts));
 	size_t i, j;
@@ -96,7 +97,7 @@ void PianoDecipherInts (unsigned int *cipherInts, size_t cipherIntsN,
  *	@param length of array
  *	@return the string
  */
-char *PianoIntsToString (unsigned int *arrInts, size_t arrIntsN) {
+char *PianoIntsToString (const unsigned int *arrInts, size_t arrIntsN) {
 	char *strDecoded = calloc (arrIntsN * 4 + 1, sizeof (*strDecoded));
 	size_t i;
 	unsigned int *tmp;
@@ -114,7 +115,7 @@ char *PianoIntsToString (unsigned int *arrInts, size_t arrIntsN) {
  *	@param hex string
  *	@return decrypted string
  */
-char *PianoDecryptString (char *strInput) {
+char *PianoDecryptString (const char *strInput) {
 	unsigned int *cipherInts, *plainInts;
 	size_t cipherIntsN;
 	char *strDecrypted;
@@ -135,7 +136,7 @@ char *PianoDecryptString (char *strInput) {
  *	@param returns size of int array
  *	@return nothing
  */
-void PianoBytesToInts (char *strInput, unsigned int **retArrInts,
+void PianoBytesToInts (const char *strInput, unsigned int **retArrInts,
 		size_t *retArrIntsN) {
 	size_t i, j, neededStrLen = strlen (strInput);
 	unsigned int *arrInts;
@@ -171,7 +172,7 @@ void PianoBytesToInts (char *strInput, unsigned int **retArrInts,
  *	@param how many ints
  *	@param returns crypted ints; memory is allocated by this function
  */
-void PianoEncipherInts (unsigned int *plainInts, size_t plainIntsN,
+void PianoEncipherInts (const unsigned int *plainInts, size_t plainIntsN,
 		unsigned int **retCipherInts) {
 	unsigned int *cipherInts = calloc (plainIntsN, sizeof (*cipherInts));
 	size_t i, j;
@@ -211,7 +212,7 @@ void PianoEncipherInts (unsigned int *plainInts, size_t plainIntsN,
  *	@param size of array
  *	@return string; memory is allocated here, don't forget to free it
  */
-char *PianoIntsToHexString (unsigned int *arrInts, size_t arrIntsN) {
+char *PianoIntsToHexString (const unsigned int *arrInts, size_t arrIntsN) {
 	/* 4 bytes as hex (= 8 chars) */
 	char *hexStr = calloc (arrIntsN * 4 * 2 + 1, sizeof (*hexStr));
 	size_t i;
@@ -226,7 +227,7 @@ char *PianoIntsToHexString (unsigned int *arrInts, size_t arrIntsN) {
  *	@param encrypt this
  *	@return encrypted, hex-encoded string
  */
-char *PianoEncryptString (char *strInput) {
+char *PianoEncryptString (const char *strInput) {
 	unsigned int *plainInts, *cipherInts;
 	size_t plainIntsN;
 	char *strHex;

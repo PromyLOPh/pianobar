@@ -63,7 +63,7 @@ size_t WardrobeCurlRetToVar (void *ptr, size_t size, size_t nmemb,
  *	@param put received data here, memory is allocated by this function
  *	@return nothing yet
  */
-void WardrobeHttpGet (CURL *ch, char *url, char **retData) {
+void WardrobeHttpGet (CURL *ch, const char *url, char **retData) {
 	/* Let's hope nothing will be bigger than this... */
 	char curlRet[WARDROBE_HTTP_BUFFER_SIZE];
 
@@ -85,7 +85,8 @@ void WardrobeHttpGet (CURL *ch, char *url, char **retData) {
  *	@param put received data here, memory is allocated by this function
  *	@return nothing yet
  */
-void WardrobeHttpPost (CURL *ch, char *url, char *postData, char **retData) {
+void WardrobeHttpPost (CURL *ch, const char *url, const char *postData,
+		char **retData) {
 	/* Let's hope nothing will be bigger than this... */
 	char curlRet[WARDROBE_HTTP_BUFFER_SIZE];
 
@@ -206,7 +207,7 @@ WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
  *	@return _OK or error
  */
 WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
-		WardrobeSong_t *ws) {
+		const WardrobeSong_t *ws) {
 	char postContent[10000];
 	char *urlencArtist, *urlencTitle, *urlencAlbum, *ret;
 	WardrobeReturn_t fRet = WARDROBE_RET_ERR;
@@ -242,7 +243,7 @@ WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
  *	@return _OK or error
  */
 WardrobeReturn_t WardrobeSubmit (WardrobeHandle_t *wh,
-		WardrobeSong_t *ws) {
+		const WardrobeSong_t *ws) {
 	size_t i;
 	WardrobeReturn_t fRet = WARDROBE_RET_ERR;
 
@@ -262,37 +263,40 @@ WardrobeReturn_t WardrobeSubmit (WardrobeHandle_t *wh,
 	return fRet;
 }
 
-/*	return dynamic allocated error string, don't forget to free it
+/*	error string
  *	@param error int
  *	@return human readable error string or NULL on error
  */
-char *WardrobeErrorToString (WardrobeReturn_t ret) {
+const char *WardrobeErrorToString (WardrobeReturn_t ret) {
 	switch (ret) {
 		case WARDROBE_RET_ERR:
-			return strdup ("Unknown error.\n");
+			return "Unknown error.";
 			break;
 
 		case WARDROBE_RET_OK:
-			return strdup ("Everything's fine :)\n");
+			return "Everything's fine :)";
 			break;
 
 		case WARDROBE_RET_CLIENT_BANNED:
-			return strdup ("Client banned. Try to update your software.\n");
+			return "Client banned. Try to update your software.";
 			break;
 			
 		case WARDROBE_RET_BADAUTH:
-			return strdup ("Wrong username or password.\n");
+			return "Wrong username or password.";
 			break;
 		
 		case WARDROBE_RET_BADTIME:
-			return strdup ("System time wrong. Check your system time and "
-					"correct it.\n");
+			return "System time wrong. Check your system time and "
+					"correct it.";
 			break;
 		
 		case WARDROBE_RET_BADSESSION:
-			return strdup ("Bad session. Try to login again.\n");
+			return "Bad session. Try to login again.";
+			break;
+
+		default:
+			return "Unknown Error.";
 			break;
 	}
-	return NULL;
 }
 

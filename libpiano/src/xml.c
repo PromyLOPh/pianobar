@@ -31,13 +31,14 @@ THE SOFTWARE.
 #include "config.h"
 #include "main.h"
 
-void PianoXmlStructParser (xmlNode *structRoot,
-		void (*callback) (char *, xmlNode *, void *), void *data);
-char *PianoXmlGetNodeText (xmlNode *node);
+void PianoXmlStructParser (const xmlNode *structRoot,
+		void (*callback) (const char *, const xmlNode *, void *),
+		void *data);
+char *PianoXmlGetNodeText (const xmlNode *node);
 
 /*	parse fault and get fault type
  */
-void PianoXmlIsFaultCb (char *key, xmlNode *value, void *data) {
+void PianoXmlIsFaultCb (const char *key, const xmlNode *value, void *data) {
 	PianoReturn_t *ret = data;
 	char *valueStr = PianoXmlGetNodeText (value);
 	char *matchStart, *matchEnd, *matchStr;
@@ -77,7 +78,7 @@ void PianoXmlIsFaultCb (char *key, xmlNode *value, void *data) {
  *	@param document root of xml doc
  *	@return _RET_OK or fault code (_RET_*)
  */
-PianoReturn_t PianoXmlIsFault (xmlNode *docRoot) {
+PianoReturn_t PianoXmlIsFault (const xmlNode *docRoot) {
 	xmlNode *faultStruct;
 	PianoReturn_t ret;
 
@@ -110,8 +111,8 @@ PianoReturn_t PianoXmlIsFault (xmlNode *docRoot) {
  *			freed soon
  *	@param extra data for callback
  */
-void PianoXmlStructParser (xmlNode *structRoot,
-		void (*callback) (char *, xmlNode *, void *), void *data) {
+void PianoXmlStructParser (const xmlNode *structRoot,
+		void (*callback) (const char *, const xmlNode *, void *), void *data) {
 
 	xmlNode *curNode, *memberNode, *valueNode;
 	xmlChar *key;
@@ -148,7 +149,8 @@ void PianoXmlStructParser (xmlNode *structRoot,
  *	@param returns document root
  *	@return _OK or error
  */
-PianoReturn_t PianoXmlInitDoc (char *xml, xmlDocPtr *doc, xmlNode **docRoot) {
+PianoReturn_t PianoXmlInitDoc (const char *xml, xmlDocPtr *doc,
+		xmlNode **docRoot) {
 	*doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
 	PianoReturn_t ret;
 
@@ -171,7 +173,7 @@ PianoReturn_t PianoXmlInitDoc (char *xml, xmlDocPtr *doc, xmlNode **docRoot) {
  *	or <int> subnodes, just ignore them
  *	@param xml node <value>
  */
-char *PianoXmlGetNodeText (xmlNode *node) {
+char *PianoXmlGetNodeText (const xmlNode *node) {
 	/* FIXME: this is not the correct way; we should check the node type
 	 * as well */
 	if (node->content != NULL) {
@@ -189,7 +191,8 @@ char *PianoXmlGetNodeText (xmlNode *node) {
  *	@param pointer to userinfo structure
  *	@return nothing
  */
-void PianoXmlParseUserinfoCb (char *key, xmlNode *value, void *data) {
+void PianoXmlParseUserinfoCb (const char *key, const xmlNode *value,
+		void *data) {
 	PianoUserInfo_t *user = data;
 	char *valueStr = PianoXmlGetNodeText (value);
 
@@ -203,7 +206,8 @@ void PianoXmlParseUserinfoCb (char *key, xmlNode *value, void *data) {
 	}
 }
 
-void PianoXmlParseStationsCb (char *key, xmlNode *value, void *data) {
+void PianoXmlParseStationsCb (const char *key, const xmlNode *value,
+		void *data) {
 	PianoStation_t *station = data;
 	char *valueStr = PianoXmlGetNodeText (value);
 
@@ -219,7 +223,8 @@ void PianoXmlParseStationsCb (char *key, xmlNode *value, void *data) {
 }
 
 /* FIXME: copy & waste */
-void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
+void PianoXmlParsePlaylistCb (const char *key, const xmlNode *value,
+		void *data) {
 	PianoSong_t *song = data;
 	char *valueStr = PianoXmlGetNodeText (value);
 
@@ -268,7 +273,7 @@ void PianoXmlParsePlaylistCb (char *key, xmlNode *value, void *data) {
  *	@param utf-8 string
  *	@return _RET_OK or error
  */
-PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
+PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, const char *xml) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
 	PianoReturn_t ret;
@@ -290,7 +295,7 @@ PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
  *	@param xml returned by pandora
  *	@return _RET_OK or error
  */
-PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
+PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml) {
 	xmlNode *docRoot, *curNode;
 	xmlDocPtr doc;
 	PianoReturn_t ret;
@@ -329,7 +334,8 @@ PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
  *	@param xml document
  *	@return nothing yet
  */
-PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
+PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph,
+		const char *xml) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
 	PianoStation_t *tmpStation;
@@ -365,7 +371,7 @@ PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
  *	@param xml document
  *	@param update this station
  */
-PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
+PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, const char *xml,
 		PianoStation_t *station) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
@@ -389,7 +395,7 @@ PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
  *	@param piano handle
  *	@param xml document
  */
-PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
+PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, const char *xml) {
 	xmlNode *docRoot, *curNode;
 	xmlDocPtr doc;
 	PianoReturn_t ret;
@@ -430,7 +436,7 @@ PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
  *	@param xml string
  *	@return
  */
-PianoReturn_t PianoXmlParseSimple (char *xml) {
+PianoReturn_t PianoXmlParseSimple (const char *xml) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
 	PianoReturn_t ret;
@@ -453,7 +459,8 @@ PianoReturn_t PianoXmlParseSimple (char *xml) {
 
 /*	xml struct parser callback, used in PianoXmlParseSearchCb
  */
-void PianoXmlParseSearchArtistCb (char *key, xmlNode *value, void *data) {
+void PianoXmlParseSearchArtistCb (const char *key, const xmlNode *value,
+		void *data) {
 	PianoArtist_t *artist = data;
 	char *valueStr = PianoXmlGetNodeText (value);
 
@@ -467,7 +474,8 @@ void PianoXmlParseSearchArtistCb (char *key, xmlNode *value, void *data) {
 /*	callback for xml struct parser used in PianoXmlParseSearch, "switch" for
  *	PianoXmlParseSearchArtistCb and PianoXmlParsePlaylistCb
  */
-void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
+void PianoXmlParseSearchCb (const char *key, const xmlNode *value,
+		void *data) {
 	PianoSearchResult_t *searchResult = data;
 
 	if (strcmp ("artists", key) == 0) {
@@ -528,7 +536,7 @@ void PianoXmlParseSearchCb (char *key, xmlNode *value, void *data) {
  *	@param returns search result
  *	@return nothing yet
  */
-PianoReturn_t PianoXmlParseSearch (char *searchXml,
+PianoReturn_t PianoXmlParseSearch (const char *searchXml,
 		PianoSearchResult_t *searchResult) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
@@ -579,7 +587,7 @@ char *PianoXmlEncodeString (const char *s) {
 }
 
 PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph,
-		char *xmlContent) {
+		const char *xmlContent) {
 	xmlNode *docRoot, *catNode, *genreNode, *attrNodeValue;
 	xmlDocPtr doc;
 	xmlAttr *attrNode;
@@ -667,7 +675,7 @@ PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph,
  *	@param xml doc
  *	@return _OK or error
  */
-PianoReturn_t PianoXmlParseTranformStation (char *searchXml) {
+PianoReturn_t PianoXmlParseTranformStation (const char *searchXml) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
 	PianoReturn_t ret;

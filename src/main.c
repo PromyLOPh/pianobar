@@ -40,13 +40,19 @@ THE SOFTWARE.
 #include "config.h"
 #include "player.h"
 
-inline void BarUiMsg (char *msg);
+/*	output message and flush stdout
+ *	@param message
+ */
+inline void BarUiMsg (const char *msg) {
+	printf ("%s", msg);
+	fflush (stdout);
+}
 
 /*	check whether complete string is numeric
  *	@param the string
  *	@return 1 = yes, 0 = not numeric
  */
-char BarIsNumericStr (char *str) {
+char BarIsNumericStr (const char *str) {
 	while (*str != '\0') {
 		if (isdigit (*str) == 0) {
 			return 0;
@@ -61,7 +67,7 @@ char BarIsNumericStr (char *str) {
  *	@param returns integer
  *	@return 1 = success, 0 = failure (not an integer, ...)
  */
-char BarReadlineInt (char *prompt, int *retVal) {
+char BarReadlineInt (const char *prompt, int *retVal) {
 	char *buf;
 	char ret = 0;
 
@@ -80,7 +86,8 @@ char BarReadlineInt (char *prompt, int *retVal) {
  *	@param piano handle
  *	@return pointer to selected station or NULL
  */
-PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, char *prompt) {
+PianoStation_t *BarUiSelectStation (PianoHandle_t *ph,
+		const char *prompt) {
 	PianoStation_t *curStation = NULL;
 	int i = 0;
 
@@ -156,7 +163,7 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
  *	@param piano handle
  *	@return musicId or NULL on abort/error
  */
-char *BarUiSelectMusicId (PianoHandle_t *ph) {
+char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 	char *musicId = NULL, *lineBuf;
 	char yesnoBuf;
 	PianoSearchResult_t searchResult;
@@ -219,11 +226,6 @@ char *BarUiSelectMusicId (PianoHandle_t *ph) {
 inline float BarSamplesToSeconds (float samplerate, float channels,
 		float samples) {
 	return channels * 1000.0 * samples / samplerate;
-}
-
-inline void BarUiMsg (char *msg) {
-	printf ("%s", msg);
-	fflush (stdout);
 }
 
 /*	browse genre stations and create shared station
