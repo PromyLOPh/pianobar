@@ -1,8 +1,6 @@
 Install
 =======
 
-Do not install this application yet!
-
 Dependencies
 ------------
 
@@ -12,9 +10,8 @@ pianobar
 ++++++++
 
 libao				http://www.xiph.org/ao/
-libcurl with SSL	http://curl.haxx.se/
+libcurl				http://curl.haxx.se/
 libfaad2			http://www.audiocoding.com/downloads.html
-libxml2				http://xmlsoft.org/
 readline
 
 libpiano
@@ -26,7 +23,6 @@ libxml2				http://xmlsoft.org/
 libwardrobe
 +++++++++++
 
-
 libcurl				http://curl.haxx.se/
 
 Build
@@ -35,7 +31,8 @@ Build
 ./autogen.sh
 ./configure
 make
+make install
 
-Just run the client from this source directory
+Or run the client from this source directory
  
 ./src/pianobar
