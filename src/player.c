@@ -105,8 +105,7 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			int tmpReplayBuf;
 			size_t i;
 			for (i = 0; i < frameInfo.samples; i++) {
-				tmpReplayBuf = (float) (replayBuf[i]) *
-						computeReplayGainScale (player->gain);
+				tmpReplayBuf = (float) replayBuf[i] * player->scale;
 				/* avoid clipping */
 				if (tmpReplayBuf > INT16_MAX) {
 					replayBuf[i] = INT16_MAX;
@@ -249,6 +248,9 @@ void *BarPlayerThread (void *data) {
 	/* init handles */
 	player->audioFd = curl_easy_init ();
 	player->aacHandle = NeAACDecOpen();
+	
+	/* init replaygain */
+	player->scale = computeReplayGainScale (player->gain);
 
 	/* set aac conf */
 	conf = NeAACDecGetCurrentConfiguration(player->aacHandle);

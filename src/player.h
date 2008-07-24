@@ -42,6 +42,7 @@ struct aacPlayer {
 	unsigned long samplerate;
 	unsigned char channels;
 	float gain;
+	float scale;
 	/* audio out */
 	ao_device *audioOutDevice;
 	char *url;
