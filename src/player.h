@@ -41,6 +41,7 @@ struct aacPlayer {
 	NeAACDecHandle aacHandle;
 	unsigned long samplerate;
 	unsigned char channels;
+	float gain;
 	/* audio out */
 	ao_device *audioOutDevice;
 	char *url;

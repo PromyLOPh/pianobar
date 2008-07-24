@@ -22,6 +22,8 @@ THE SOFTWARE.
 
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
+#include <stdint.h>
 
 #include "player.h"
 #include "config.h"
@@ -38,6 +40,16 @@ unsigned int BarChangeByteorderUI32 (char buf[4]) {
 	ret |= buf[2] << 8 & 0xffff;
 	ret |= buf[3] << 0 & 0xff;
 	return ret;
+}
+
+/*	compute replaygain scale factor
+ *	algo taken from here: http://www.dsprelated.com/showmessage/29246/1.php
+ *	mpd does the same
+ *	@param apply this gain
+ *	@return this * yourvalue = newgain value
+ */
+inline float computeReplayGainScale (float applyGain) {
+	return pow (10.0, applyGain / 20.0);
 }
 
 /*	our heart: plays streamed music
@@ -88,6 +100,21 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 				printf (PACKAGE ": Decoding error: %s\n\n",
 						NeAACDecGetErrorMessage (frameInfo.error));
 				break;
+			}
+			short int *replayBuf = (short int *) aacDecoded;
+			int tmpReplayBuf;
+			size_t i;
+			for (i = 0; i < frameInfo.samples; i++) {
+				tmpReplayBuf = (float) (replayBuf[i]) *
+						computeReplayGainScale (player->gain);
+				/* avoid clipping */
+				if (tmpReplayBuf > INT16_MAX) {
+					replayBuf[i] = INT16_MAX;
+				} else if (tmpReplayBuf < INT16_MIN) {
+					replayBuf[i] = INT16_MIN;
+				} else {
+					replayBuf[i] = tmpReplayBuf;
+				}
 			}
 			/* ao_play needs bytes: 1 sample = 16 bits = 2 bytes */
 			ao_play (player->audioOutDevice, aacDecoded,

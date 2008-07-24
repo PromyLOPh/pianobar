@@ -80,7 +80,7 @@ struct PianoSong {
 	/* disabled: isSeed */
 	/* disabled: artistFansURL */
 	/* disabled: songExplorerUrl */
-	//float fileGain;
+	float fileGain;
 	/* disabled: songDetailURL */
 	/* disabled: albumDetailURL */
 	//char *webId;

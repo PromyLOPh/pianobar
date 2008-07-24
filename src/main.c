@@ -438,6 +438,7 @@ int main (int argc, char **argv) {
 
 					memset (&player, 0, sizeof (player));
 					player.url = strdup (curSong->audioUrl);
+					player.gain = curSong->fileGain;
 		
 					/* start player */
 					pthread_create (&playerThread, NULL, BarPlayerThread,

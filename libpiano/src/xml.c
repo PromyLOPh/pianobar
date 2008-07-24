@@ -265,6 +265,8 @@ void PianoXmlParsePlaylistCb (const char *key, const xmlNode *value,
 		song->stationId = strdup (valueStr);
 	} else if (strcmp ("albumTitle", key) == 0) {
 		song->album = strdup (valueStr);
+	} else if (strcmp ("fileGain", key) == 0) {
+		song->fileGain = atof (valueStr);
 	}
 }
 
