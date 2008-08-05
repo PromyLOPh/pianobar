@@ -292,6 +292,39 @@ PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, const char *xml) {
 	return PIANO_RET_OK;
 }
 
+void PianoXmlParseQuickMixStationsCb (const char *key, const xmlNode *value,
+		void *data) {
+	char ***retIds = data;
+	char **ids = NULL;
+	size_t idsN = 0;
+	xmlNode *curNode;
+
+	if (strcmp ("quickMixStationIds", key) == 0) {
+		for (curNode = value->children->children; curNode;
+				curNode = curNode->next) {
+			if (curNode->type == XML_ELEMENT_NODE &&
+					xmlStrEqual ((xmlChar *) "value", curNode->name)) {
+				idsN++;
+				if (ids == NULL) {
+					ids = calloc (idsN, sizeof (*ids));
+				} else {
+					ids = realloc (ids, idsN * sizeof (*ids));
+				}
+				ids[idsN-1] = strdup (PianoXmlGetNodeText (curNode));
+			}
+		}
+		/* append NULL: list ends here */
+		idsN++;
+		if (ids == NULL) {
+			ids = calloc (idsN, sizeof (*ids));
+		} else {
+			ids = realloc (ids, idsN * sizeof (*ids));
+		}
+		ids[idsN-1] = NULL;
+	}
+	*retIds = ids;
+}
+
 /*	parse stations returned by pandora
  *	@param piano handle
  *	@param xml returned by pandora
@@ -301,6 +334,7 @@ PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml) {
 	xmlNode *docRoot, *curNode;
 	xmlDocPtr doc;
 	PianoReturn_t ret;
+	char **quickMixIds = NULL, **curQuickMixId = NULL;
 
 	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
 		return ret;
@@ -314,6 +348,11 @@ PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml) {
 			PianoStation_t *tmpStation = calloc (1, sizeof (*tmpStation));
 			PianoXmlStructParser (curNode->children,
 					PianoXmlParseStationsCb, tmpStation);
+			/* get stations selected for quickmix */
+			if (tmpStation->isQuickMix) {
+				PianoXmlStructParser (curNode->children,
+						PianoXmlParseQuickMixStationsCb, &quickMixIds);
+			}
 			/* start new linked list or append */
 			if (ph->stations == NULL) {
 				ph->stations = tmpStation;
@@ -326,6 +365,18 @@ PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml) {
 			}
 		}
 	}
+	/* set quickmix flags after all stations are read */
+	curQuickMixId = quickMixIds;
+	while (*curQuickMixId != NULL) {
+		PianoStation_t *curStation = PianoFindStationById (ph->stations,
+				*curQuickMixId);
+		if (curStation != NULL) {
+			curStation->useQuickMix = 1;
+		}
+		free (*curQuickMixId);
+		curQuickMixId++;
+	}
+	free (quickMixIds);
 
 	xmlFreeDoc (doc);
 	return PIANO_RET_OK;
