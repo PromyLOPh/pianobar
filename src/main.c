@@ -102,8 +102,11 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph,
 
 	curStation = ph->stations;
 	while (curStation != NULL) {
-		printf ("%2i) %s%s\n", i, curStation->name,
-				curStation->useQuickMix ? " (QuickMix)" : "");
+		printf ("%2i) %c%c%c %s\n", i,
+				curStation->useQuickMix ? 'q' : ' ',
+				curStation->isQuickMix ? 'Q' : ' ',
+				!curStation->isCreator ? 'S' : ' ',
+				curStation->name);
 		curStation = curStation->next;
 		i++;
 	}
