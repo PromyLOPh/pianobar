@@ -617,7 +617,8 @@ char *PianoXmlEncodeString (const char *s) {
 	char *replacements[] = {"&&amp;", "'&apos;", "\"&quot;", "<&lt;",
 			">&gt;", NULL};
 	char **r;
-	char *sOut = calloc (strlen (s) * 5 + 1, sizeof (*sOut));
+	char *sOut = calloc (strlen (s) * 5 + 1, sizeof (*sOut)),
+			*sOutCurr = sOut;
 	char found;
 
 	while (*s != '\0') {
@@ -626,13 +627,15 @@ char *PianoXmlEncodeString (const char *s) {
 		while (*r != NULL) {
 			if (*s == *r[0]) {
 				found = 1;
-				strcat (sOut, (*r) + 1);
+				strcat (sOutCurr, (*r) + 1);
+				sOutCurr += strlen ((*r) + 1);
 				break;
 			}
 			r++;
 		}
 		if (!found) {
-			strncat (sOut, s, 1);
+			*sOutCurr = *s;
+			sOutCurr++;
 		}
 		s++;
 	}

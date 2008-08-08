@@ -39,12 +39,13 @@ THE SOFTWARE.
 size_t PianoCurlRetToVar (void *ptr, size_t size, size_t nmemb, void *stream) {
 	char *charPtr = ptr;
 	char *streamPtr = stream;
+	size_t streamPtrN = strlen (streamPtr);
 
-	if (strlen (streamPtr) + nmemb > PIANO_HTTP_BUFFER_SIZE) {
+	if (streamPtrN + nmemb > PIANO_HTTP_BUFFER_SIZE) {
 		printf ("buffer overflow...\n");
 		return 0;
 	} else {
-		memcpy (streamPtr+strlen(streamPtr), charPtr, size*nmemb);
+		memcpy (streamPtr+streamPtrN, charPtr, size*nmemb);
 		return size*nmemb;
 	}
 }
@@ -78,8 +79,7 @@ PianoReturn_t PianoHttpPost (CURL *ch, const char *url, const char *postData,
 
 	if (curl_easy_perform (ch) == CURLE_OK) {
 		ret = PIANO_RET_OK;
-		*retData = calloc (strlen (curlRet) + 1, sizeof (char));
-		strcpy (*retData, curlRet);
+		*retData = strdup (curlRet);
 	} else {
 		ret = PIANO_RET_NET_ERROR;
 		*retData = NULL;
@@ -111,8 +111,7 @@ PianoReturn_t PianoHttpGet (CURL *ch, const char *url, char **retData) {
 
 	if (curl_easy_perform (ch) == CURLE_OK) {
 		ret = PIANO_RET_OK;
-		*retData = calloc (strlen (curlRet) + 1, sizeof (char));
-		strcpy (*retData, curlRet);
+		*retData = strdup (curlRet);
 	} else {
 		ret = PIANO_RET_NET_ERROR;
 		*retData = NULL;

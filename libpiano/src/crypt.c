@@ -37,19 +37,19 @@ THE SOFTWARE.
  */
 void PianoHexToInts (const char *strHex, unsigned int **retInts,
 		size_t *retIntsN) {
-	size_t i;
+	size_t i, strHexN = strlen (strHex);
 	char hexInt[9];
-	unsigned int *arrInts = calloc (strlen (strHex) / 8, sizeof (*arrInts));
+	unsigned int *arrInts = calloc (strHexN / 8, sizeof (*arrInts));
 
 	/* FIXME: error handling: string too short, e.g. */
 	/* unsigned int = 4 bytes, 8 chars in hex */
-	for (i = 0; i < strlen (strHex); i += 8) {
+	for (i = 0; i < strHexN; i += 8) {
 		memcpy (hexInt, strHex+i, sizeof (hexInt)-1);
 		sscanf (hexInt, "%x", &arrInts[i/8]);
 	}
 	*retInts = arrInts;
 	/* FIXME: copy & waste */
-	*retIntsN = strlen (strHex) / 8, sizeof (*arrInts);
+	*retIntsN = strHexN / 8, sizeof (*arrInts);
 }
 
 /*	decipher int array; reverse engineered from pandora source
@@ -138,12 +138,12 @@ char *PianoDecryptString (const char *strInput) {
  */
 void PianoBytesToInts (const char *strInput, unsigned int **retArrInts,
 		size_t *retArrIntsN) {
-	size_t i, j, neededStrLen = strlen (strInput);
+	size_t i, j, neededStrLen, strInputN = strlen (strInput);
 	unsigned int *arrInts;
 	char shift;
 
 	/* blowfish encrypts two 4 byte blocks */
-	neededStrLen = strlen (strInput);
+	neededStrLen = strInputN;
 	if (neededStrLen % 8 != 0) {
 		/* substract overhead and add full 8 byte block */
 		neededStrLen = neededStrLen - (neededStrLen % 8) + 8;
@@ -155,9 +155,9 @@ void PianoBytesToInts (const char *strInput, unsigned int **retArrInts,
 	shift = 24;
 	i = 0;
 	j = 0;
-	while (i < strlen (strInput)) {
+	while (i < strInputN) {
 		shift = 24;
-		while (shift >= 0 && i < strlen (strInput)) {
+		while (shift >= 0 && i < strInputN) {
 			arrInts[i/4] |= strInput[i] << shift;
 			shift -= 8;
 			i++;
