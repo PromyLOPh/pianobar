@@ -544,6 +544,33 @@ int main (int argc, char **argv) {
 					BarStationFromGenre (&ph);
 					break;
 
+				case 'i':
+					if (curStation == NULL || curSong == NULL) {
+						BarUiMsg ("No song playing.\n");
+						break;
+					}
+					/* print debug-alike infos */
+					printf ("Song infos:\n"
+							"album:\t%s\n"
+							"artist:\t%s\n"
+							"audioUrl:\t%s\n"
+							"fileGain:\t%f\n"
+							"focusTraitId:\t%s\n"
+							"identity:\t%s\n"
+							"matchingSeed:\t%s\n"
+							"musicId:\t%s\n"
+							"rating:\t%i\n"
+							"stationId:\t%s\n"
+							"title:\t%s\n"
+							"userSeed:\t%s\n",
+							curSong->album, curSong->artist, curSong->audioUrl,
+							curSong->fileGain, curSong->focusTraitId,
+							curSong->identity, curSong->matchingSeed,
+							curSong->musicId, curSong->rating,
+							curSong->stationId, curSong->title,
+							curSong->userSeed);
+					break;
+
 				case 'l':
 					if (curStation == NULL || curSong == NULL) {
 						BarUiMsg ("No song playing.\n");
