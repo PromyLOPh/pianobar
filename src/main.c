@@ -91,34 +91,92 @@ char BarReadlineInt (const char *prompt, int *retVal) {
 	return ret;
 }
 
+/* sort linked list (station); attention: this is a
+ * "i-had-no-clue-what-to-do-algo", but it works.
+ * @param stations
+ * @return NULL-terminated array with sorted stations
+ */
+PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations) {
+	PianoStation_t *currStation, **sortedStations, **currSortedStation;
+	PianoStation_t *oldStation, *veryOldStation;
+	size_t unsortedStationsN = 0;
+	char inserted;
+
+	/* get size */
+	currStation = unsortedStations;
+	while (currStation != NULL) {
+		unsortedStationsN++;
+		currStation = currStation->next;
+	}
+	sortedStations = calloc (unsortedStationsN+1, sizeof (*sortedStations));
+
+	currStation = unsortedStations;
+	while (currStation != NULL) {
+		currSortedStation = sortedStations;
+		inserted = 0;
+		while (*currSortedStation != NULL && !inserted) {
+			/* item has to be inserted _before_ current item? */
+			/* FIXME: this doesn't handle multibyte chars correctly */
+			if (strcasecmp (currStation->name,
+					(*currSortedStation)->name) < 0) {
+				oldStation = *currSortedStation;
+				*currSortedStation = currStation;
+				currSortedStation++;
+				/* move items */
+				while (*currSortedStation != NULL) {
+					veryOldStation = *currSortedStation;
+					*currSortedStation = oldStation;
+					oldStation = veryOldStation;
+					currSortedStation++;
+				}
+				/* append last item */
+				if (oldStation != NULL) {
+					*currSortedStation = oldStation;
+				}
+				inserted = 1;
+			}
+			currSortedStation++;
+		}
+		/* item could not be inserted: append */
+		if (!inserted) {
+			*currSortedStation = currStation;
+		}
+		currStation = currStation->next;
+	}
+	return sortedStations;
+}
+
 /*	let user pick one station
  *	@param piano handle
  *	@return pointer to selected station or NULL
  */
 PianoStation_t *BarUiSelectStation (PianoHandle_t *ph,
 		const char *prompt) {
-	PianoStation_t *curStation = NULL;
+	PianoStation_t **ss = NULL, **ssCurr = NULL;
 	int i = 0;
 
-	curStation = ph->stations;
-	while (curStation != NULL) {
+	ss = BarSortedStations (ph->stations);
+	ssCurr = ss;
+	while (*ssCurr != NULL) {
 		printf ("%2i) %c%c%c %s\n", i,
-				curStation->useQuickMix ? 'q' : ' ',
-				curStation->isQuickMix ? 'Q' : ' ',
-				!curStation->isCreator ? 'S' : ' ',
-				curStation->name);
-		curStation = curStation->next;
+				(*ssCurr)->useQuickMix ? 'q' : ' ',
+				(*ssCurr)->isQuickMix ? 'Q' : ' ',
+				!(*ssCurr)->isCreator ? 'S' : ' ',
+				(*ssCurr)->name);
+		ssCurr++;
 		i++;
 	}
+
 	if (!BarReadlineInt (prompt, &i)) {
 		return NULL;
 	}
-	curStation = ph->stations;
-	while (curStation != NULL && i > 0) {
-		curStation = curStation->next;
+	ssCurr = ss;
+	while (*ssCurr != NULL && i > 0) {
+		ssCurr++;
 		i--;
 	}
-	return curStation;
+	free (ss);
+	return *ssCurr;
 }
 
 /*	let user pick one song
