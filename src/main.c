@@ -511,7 +511,7 @@ int main (int argc, char **argv) {
 		/* in the meantime: wait for user actions */
 		struct pollfd polls = {fileno (stdin), POLLIN, POLLIN};
 		char buf, yesnoBuf;
-		char *lineBuf, *musicId;
+		char *lineBuf, *musicId, *explanation;
 		PianoStation_t *moveStation;
 
 		if (poll (&polls, 1, 1000) > 0) {
@@ -522,6 +522,7 @@ int main (int argc, char **argv) {
 							"b\tban current song\n"
 							"c\tcreate new station\n"
 							"d\tdelete current station\n"
+							"e\texplain why this song is played\n"
 							"g\tadd genre station\n"
 							"l\tlove current song\n"
 							"n\tnext song\n"
@@ -594,6 +595,19 @@ int main (int argc, char **argv) {
 							curSong = NULL;
 							curStation = NULL;
 						}
+					}
+					break;
+
+				case 'e':
+					if (curSong == NULL) {
+						BarUiMsg ("No song playing.\n");
+						break;
+					}
+					BarUiMsg ("Receiving explanation... ");
+					if (BarUiPrintPianoStatus (PianoExplain (&ph, curSong,
+							&explanation)) == PIANO_RET_OK) {
+						printf ("%s\n", explanation);
+						free (explanation);
 					}
 					break;
 

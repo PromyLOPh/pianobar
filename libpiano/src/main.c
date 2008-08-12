@@ -779,6 +779,37 @@ PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
 	return ret;
 }
 
+PianoReturn_t PianoExplain (const PianoHandle_t *ph, const PianoSong_t *song,
+		char **retExplain) {
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
+	char *requestStr, *retStr;
+	PianoReturn_t ret;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>playlist.narrative</methodName>"
+			"<params><param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			song->stationId, song->musicId);
+	requestStr = PianoEncryptString (xmlSendBuf);
+	
+	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&lid=%s&"
+			"method=method=narrative&arg1=%s&arg2=%s", ph->routeId,
+			ph->user.listenerId, song->stationId, song->musicId);
+	
+	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseNarrative (retStr, retExplain);
+		PianoFree (retStr, 0);
+	}
+
+	PianoFree (requestStr, 0);
+
+	return ret;
+}
+
 /*	convert return value to human-readable string
  *	@param enum
  *	@return error string

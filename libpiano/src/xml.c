@@ -744,3 +744,20 @@ PianoReturn_t PianoXmlParseTranformStation (const char *searchXml) {
 
 	return PIANO_RET_OK;
 }
+
+PianoReturn_t PianoXmlParseNarrative (const char *xml, char **retNarrative) {
+	xmlNode *docRoot;
+	xmlDocPtr doc;
+	PianoReturn_t ret;
+
+	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+		return ret;
+	}
+
+	xmlNode *val = docRoot->children->children->children->children;
+	*retNarrative = strdup ((char *) val->content);
+
+	xmlFreeDoc (doc);
+
+	return ret;
+}
