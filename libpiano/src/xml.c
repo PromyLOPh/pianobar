@@ -745,6 +745,11 @@ PianoReturn_t PianoXmlParseTranformStation (const char *searchXml) {
 	return PIANO_RET_OK;
 }
 
+/*	parses "why did you play ...?" answer
+ *	@param xml
+ *	@param returns the answer
+ *	@return _OK or error
+ */
 PianoReturn_t PianoXmlParseNarrative (const char *xml, char **retNarrative) {
 	xmlNode *docRoot;
 	xmlDocPtr doc;
@@ -754,6 +759,7 @@ PianoReturn_t PianoXmlParseNarrative (const char *xml, char **retNarrative) {
 		return ret;
 	}
 
+	/* <methodResponse> <params> <param> <value> $textnode */
 	xmlNode *val = docRoot->children->children->children->children;
 	*retNarrative = strdup ((char *) val->content);
 

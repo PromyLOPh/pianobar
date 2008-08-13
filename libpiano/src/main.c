@@ -779,6 +779,12 @@ PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
 	return ret;
 }
 
+/*	"why dit you play this song?"
+ *	@param piano handle
+ *	@param song (from playlist)
+ *	@param return allocated string; you have to free it yourself
+ *	@return _OK or error
+ */
 PianoReturn_t PianoExplain (const PianoHandle_t *ph, const PianoSong_t *song,
 		char **retExplain) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
