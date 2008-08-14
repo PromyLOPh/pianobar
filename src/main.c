@@ -152,7 +152,7 @@ PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations) {
  */
 PianoStation_t *BarUiSelectStation (PianoHandle_t *ph,
 		const char *prompt) {
-	PianoStation_t **ss = NULL, **ssCurr = NULL;
+	PianoStation_t **ss = NULL, **ssCurr = NULL, *retStation;
 	int i = 0;
 
 	ss = BarSortedStations (ph->stations);
@@ -175,8 +175,9 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph,
 		ssCurr++;
 		i--;
 	}
+	retStation = *ssCurr;
 	free (ss);
-	return *ssCurr;
+	return retStation;
 }
 
 /*	let user pick one song
