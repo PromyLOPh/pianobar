@@ -48,8 +48,7 @@ void PianoHexToInts (const char *strHex, unsigned int **retInts,
 		sscanf (hexInt, "%x", &arrInts[i/8]);
 	}
 	*retInts = arrInts;
-	/* FIXME: copy & waste */
-	*retIntsN = strHexN / 8, sizeof (*arrInts);
+	*retIntsN = strHexN / 8;
 }
 
 /*	decipher int array; reverse engineered from pandora source
