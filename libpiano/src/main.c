@@ -277,8 +277,8 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId) {
 			"<params><param><value><int>%li</int></value></param>"
 			"<param><value><string>%s</string></value></param>"
 			"<param><value><string>%s</string></value></param>"
-			"<param><value><string>15941546</string></value></param>"
-			"<param><value><string>181840822</string></value></param>"
+			"<param><value><string>0</string></value></param>"
+			"<param><value><string>0</string></value></param>"
 			"<param><value><string></string></value></param>"
 			"<param><value><string></string></value></param>"
 			"<param><value><string>aacplus</string></value></param>"
@@ -286,8 +286,8 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId) {
 			stationId);
 	requestStr = PianoEncryptString (xmlSendBuf);
 	snprintf (url, sizeof (url), PIANO_RPC_URL
-			"rid=%s&lid=%s&method=getFragment&arg1=%s&arg2=15941546"
-			"&arg3=181840822&arg4=&arg5=&arg6=aacplus", ph->routeId,
+			"rid=%s&lid=%s&method=getFragment&arg1=%s&arg2=0"
+			"&arg3=0&arg4=&arg5=&arg6=aacplus", ph->routeId,
 			ph->user.listenerId, stationId);
 
 	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
