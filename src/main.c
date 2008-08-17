@@ -358,6 +358,23 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 	BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", curStation->id));
 }
 
+/*	transform station if necessary to allow changes like rename, rate, ...
+ *	@param piano handle
+ *	@param transform this station
+ *	@return 0 = error, 1 = everything went well
+ */
+int BarTransformIfShared (PianoHandle_t *ph, PianoStation_t *station) {
+	/* shared stations must be transformed */
+	if (!station->isCreator) {
+		BarUiMsg ("Transforming station... ");
+		if (BarUiPrintPianoStatus (PianoTransformShared (ph, station)) !=
+				PIANO_RET_OK) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int main (int argc, char **argv) {
 	PianoHandle_t ph;
 	struct aacPlayer player;
@@ -543,6 +560,9 @@ int main (int argc, char **argv) {
 					}
 					musicId = BarUiSelectMusicId (&ph);
 					if (musicId == NULL) {
+						if (!BarTransformIfShared (&ph, curStation)) {
+							break;
+						}
 						BarUiMsg ("Adding music to station... ");
 						BarUiPrintPianoStatus (PianoStationAddMusic (&ph,
 								curStation, musicId));
@@ -555,12 +575,8 @@ int main (int argc, char **argv) {
 						BarUiMsg ("No song playing.\n");
 						break;
 					}
-					if (!curStation->isCreator) {
-						BarUiMsg ("Transforming station... ");
-						if (BarUiPrintPianoStatus (PianoTransformShared (&ph,
-								curStation)) != PIANO_RET_OK) {
-							break;
-						}
+					if (!BarTransformIfShared (&ph, curStation)) {
+						break;
 					}
 					BarUiMsg ("Banning song... ");
 					if (BarUiPrintPianoStatus (PianoRateTrack (&ph, curSong,
@@ -653,12 +669,8 @@ int main (int argc, char **argv) {
 						BarUiMsg ("Already loved. No need to do this twice.\n");
 						break;
 					}
-					if (!curStation->isCreator) {
-						BarUiMsg ("Transforming station... ");
-						if (BarUiPrintPianoStatus (PianoTransformShared (&ph,
-								curStation)) != PIANO_RET_OK) {
-							break;
-						}
+					if (!BarTransformIfShared (&ph, curStation)) {
+						break;
 					}
 					BarUiMsg ("Loving song... ");
 					BarUiPrintPianoStatus (PianoRateTrack (&ph, curSong,
@@ -676,6 +688,10 @@ int main (int argc, char **argv) {
 					}
 					moveStation = BarUiSelectStation (&ph, "Move song to station: ");
 					if (moveStation != NULL) {
+						if (!BarTransformIfShared (&ph, curStation) ||
+								!BarTransformIfShared (&ph, moveStation)) {
+							break;
+						}
 						printf ("Moving song to \"%s\"... ", moveStation->name);
 						fflush (stdout);
 						if (BarUiPrintPianoStatus (PianoMoveSong (&ph,
@@ -702,6 +718,9 @@ int main (int argc, char **argv) {
 					}
 					lineBuf = readline ("New name?\n");
 					if (lineBuf != NULL && strlen (lineBuf) > 0) {
+						if (!BarTransformIfShared (&ph, curStation)) {
+							break;
+						}
 						BarUiMsg ("Renaming station... ");
 						BarUiPrintPianoStatus (PianoRenameStation (&ph,
 								curStation, lineBuf));
@@ -724,6 +743,9 @@ int main (int argc, char **argv) {
 				case 't':
 					if (curStation == NULL || curSong == NULL) {
 						BarUiMsg ("No song playing.\n");
+						break;
+					}
+					if (!BarTransformIfShared (&ph, curStation)) {
 						break;
 					}
 					BarUiMsg ("Putting song on shelf... ");
