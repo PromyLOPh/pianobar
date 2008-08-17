@@ -846,6 +846,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Connection failed.";
 			break;
 
+		case PIANO_RET_NOT_AUTHORIZED:
+			return "Not authorized.";
+			break;
+
 		default:
 			return "No error message available.";
 			break;

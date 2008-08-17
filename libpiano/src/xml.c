@@ -62,6 +62,9 @@ void PianoXmlIsFaultCb (const char *key, const xmlNode *value, void *data) {
 					} else if (strcmp ("AUTH_INVALID_USERNAME_PASSWORD",
 							matchStr) == 0) {
 						*ret = PIANO_RET_AUTH_USER_PASSWORD_INVALID;
+					} else if (strcmp ("LISTENER_NOT_AUTHORIZED",
+							matchStr) == 0) {
+						*ret = PIANO_RET_NOT_AUTHORIZED;
 					} else {
 						*ret = PIANO_RET_ERR;
 						printf (PACKAGE ": Unknown error %s in %s\n",
