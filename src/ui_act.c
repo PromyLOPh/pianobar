@@ -30,6 +30,8 @@ THE SOFTWARE.
 #include "ui.h"
 #include "ui_act.h"
 
+/*	print current shortcut configuration
+ */
 void BarUiActHelp (BAR_KS_ARGS) {
 	BarKeyShortcut_t *curShortcut = settings->keys;
 
@@ -42,6 +44,8 @@ void BarUiActHelp (BAR_KS_ARGS) {
 	}
 }
 
+/*	add more music to current station
+ */
 void BarUiActAddMusic (BAR_KS_ARGS) {
 	char *musicId;
 	if (*curStation == NULL) {
@@ -60,6 +64,8 @@ void BarUiActAddMusic (BAR_KS_ARGS) {
 	}
 }
 
+/*	ban song
+ */
 void BarUiActBanSong (BAR_KS_ARGS) {
 	if (*curStation == NULL || *curSong == NULL) {
 		BarUiMsg ("No song playing.\n");
@@ -75,6 +81,8 @@ void BarUiActBanSong (BAR_KS_ARGS) {
 	}
 }
 
+/*	create new station
+ */
 void BarUiActCreateStation (BAR_KS_ARGS) {
 	char *musicId;
 	musicId = BarUiSelectMusicId (ph);
@@ -85,6 +93,8 @@ void BarUiActCreateStation (BAR_KS_ARGS) {
 	}
 }
 
+/*	delete current station
+ */
 void BarUiActDeleteStation (BAR_KS_ARGS) {
 	char yesNoBuf;
 
@@ -106,6 +116,8 @@ void BarUiActDeleteStation (BAR_KS_ARGS) {
 	}
 }
 
+/*	explain pandora's song choice
+ */
 void BarUiActExplain (BAR_KS_ARGS) {
 	char *explanation;
 
@@ -121,11 +133,15 @@ void BarUiActExplain (BAR_KS_ARGS) {
 	}
 }
 
+/*	choose genre station and add it as shared station
+ */
 void BarUiActStationFromGenre (BAR_KS_ARGS) {
 	/* use genre station */
 	BarStationFromGenre (ph);
 }
 
+/*	print verbose song information
+ */
 void BarUiActSongInfo (BAR_KS_ARGS) {
 	if (*curStation == NULL || *curSong == NULL) {
 		BarUiMsg ("No song playing.\n");
@@ -153,6 +169,8 @@ void BarUiActSongInfo (BAR_KS_ARGS) {
 			(*curSong)->userSeed);
 }
 
+/*	rate current song
+ */
 void BarUiActLoveSong (BAR_KS_ARGS) {
 	if (*curStation == NULL || *curSong == NULL) {
 		BarUiMsg ("No song playing.\n");
@@ -169,10 +187,14 @@ void BarUiActLoveSong (BAR_KS_ARGS) {
 	BarUiPrintPianoStatus (PianoRateTrack (ph, *curSong, PIANO_RATE_LOVE));
 }
 
+/*	skip song
+ */
 void BarUiActSkipSong (BAR_KS_ARGS) {
 	player->doQuit = 1;
 }
 
+/*	move song to different station
+ */
 void BarUiActMoveSong (BAR_KS_ARGS) {
 	PianoStation_t *moveStation;
 
@@ -195,10 +217,14 @@ void BarUiActMoveSong (BAR_KS_ARGS) {
 	}
 }
 
+/*	pause
+ */
 void BarUiActPause (BAR_KS_ARGS) {
 	player->doPause = !player->doPause;
 }
 
+/*	rename current station
+ */
 void BarUiActRenameStation (BAR_KS_ARGS) {
 	char *lineBuf;
 
@@ -219,6 +245,8 @@ void BarUiActRenameStation (BAR_KS_ARGS) {
 	}
 }
 
+/*	play another station
+ */
 void BarUiActSelectStation (BAR_KS_ARGS) {
 	player->doQuit = 1;
 	PianoDestroyPlaylist (ph);
@@ -229,6 +257,8 @@ void BarUiActSelectStation (BAR_KS_ARGS) {
 	}
 }
 
+/*	ban song for 1 month
+ */
 void BarUiActTempBanSong (BAR_KS_ARGS) {
 	if (*curStation == NULL || *curSong == NULL) {
 		BarUiMsg ("No song playing.\n");
@@ -244,6 +274,8 @@ void BarUiActTempBanSong (BAR_KS_ARGS) {
 	}
 }
 
+/*	print upcoming songs
+ */
 void BarUiActPrintUpcoming (BAR_KS_ARGS) {
 	if (*curStation == NULL || *curSong == NULL) {
 		BarUiMsg ("No song playing.\n");
@@ -264,6 +296,9 @@ void BarUiActPrintUpcoming (BAR_KS_ARGS) {
 	}
 }
 
+/*	if current station is a quickmix: select stations that are played in
+ *	quickmix
+ */
 void BarUiActSelectQuickMix (BAR_KS_ARGS) {
 	if (*curStation == NULL) {
 		BarUiMsg ("No station selected.\n");
@@ -282,6 +317,8 @@ void BarUiActSelectQuickMix (BAR_KS_ARGS) {
 	}
 }
 
+/*	quit
+ */
 void BarUiActQuit (BAR_KS_ARGS) {
 	*doQuit = 1;
 	player->doQuit = 1;
