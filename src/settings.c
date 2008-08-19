@@ -63,13 +63,17 @@ void BarSettingsInit (BarSettings_t *settings) {
 }
 
 void BarSettingsDestroy (BarSettings_t *settings) {
-	BarKeyShortcut_t *curShortcut, *lastShortcut;
+	BarKeyShortcut_t *curShortcut = settings->keys, *lastShortcut;
 
 	while (curShortcut != NULL) {
 		lastShortcut = curShortcut;
 		curShortcut = curShortcut->next;
-		free (lastShortcut->description);
-		free (lastShortcut->configKey);
+		if (lastShortcut->description != NULL) {
+			free (lastShortcut->description);
+		}
+		if (lastShortcut->configKey != NULL) {
+			free (lastShortcut->configKey);
+		}
 		free (lastShortcut);
 	}
 	free (settings->controlProxy);
