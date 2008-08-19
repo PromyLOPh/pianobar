@@ -23,6 +23,7 @@ THE SOFTWARE.
 /* everything that interacts with the user */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <readline/readline.h>
@@ -344,19 +345,3 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 	BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", curStation->id));
 }
 
-/*	transform station if necessary to allow changes like rename, rate, ...
- *	@param piano handle
- *	@param transform this station
- *	@return 0 = error, 1 = everything went well
- */
-int BarTransformIfShared (PianoHandle_t *ph, PianoStation_t *station) {
-	/* shared stations must be transformed */
-	if (!station->isCreator) {
-		BarUiMsg ("Transforming station... ");
-		if (BarUiPrintPianoStatus (PianoTransformShared (ph, station)) !=
-				PIANO_RET_OK) {
-			return 0;
-		}
-	}
-	return 1;
-}

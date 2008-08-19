@@ -23,6 +23,7 @@ THE SOFTWARE.
 /* functions responding to user's keystrokes */
 
 #include <string.h>
+#include <unistd.h>
 /* needed by readline */
 #include <stdio.h>
 #include <readline/readline.h>
@@ -37,6 +38,23 @@ THE SOFTWARE.
 #define RETURN_IF_NO_SONG if (*curStation == NULL || *curSong == NULL) { \
 		BarUiMsg ("No song playing.\n"); \
 		return; }
+
+/*	transform station if necessary to allow changes like rename, rate, ...
+ *	@param piano handle
+ *	@param transform this station
+ *	@return 0 = error, 1 = everything went well
+ */
+int BarTransformIfShared (PianoHandle_t *ph, PianoStation_t *station) {
+	/* shared stations must be transformed */
+	if (!station->isCreator) {
+		BarUiMsg ("Transforming station... ");
+		if (BarUiPrintPianoStatus (PianoTransformShared (ph, station)) !=
+				PIANO_RET_OK) {
+			return 0;
+		}
+	}
+	return 1;
+}
 
 /*	print current shortcut configuration
  */
