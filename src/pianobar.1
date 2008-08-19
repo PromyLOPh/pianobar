@@ -11,74 +11,6 @@ pianobar \- console pandora.com music player
 is a lightweight console music player for the personalized online radio
 pandora.com.
 
-.SH USAGE
-Press one of these keys while running
-.B pianobar.
-
-.TP
-.B a
-Add more music to current station. You will be asked for a search string. Just
-follow the instructions.
-
-.TP
-.B b
-Ban current track. It will not be played again and can only removed using the
-pandora.com web interface.
-
-.TP
-.B c
-Create new station. You have to enter a search string and select the song or
-artist of your choice.
-
-.TP
-.B d
-Delete current station.
-
-.TP
-.B e
-Explain why this song is played.
-
-.TP
-.B g
-Add genre station provided by pandora.
-
-.TP
-.B l
-Love currently played song.
-
-.TP
-.B n
-Skip current song.
-
-.TP
-.B p
-Pause/Continue
-
-.TP
-.B q
-Quit
-.B pianobar.
-
-.TP
-.B r
-Rename currently played station.
-
-.TP
-.B s
-Play another station.
-
-.TP
-.B t
-Ban song for one month.
-
-.TP
-.B u
-Show next songs in playlist.
-
-.TP
-.B x
-Select quickmix stations.
-
 .SH FILES
 .I $XDG_CONFIG_HOME/pianobar/config
 or
@@ -90,26 +22,97 @@ Per-user configuration file. See
 .SH CONFIGURATION
 The configuration file consists of simple
 .B key = value
-lines. Each terminated with a newline (\\n) character. Keys and values are both
-case sensitive.
+lines. Each terminated with a newline (\\n) character. Keys and values are both case sensitive. act_*-keys control 
+.B pianobar's
+key-bindings.
+
+.TP
+.B act_help = ?
+Show keybindings.
+
+.TP
+.B act_songlove = +
+Love currently played song.
+
+.TP
+.B act_songban = -
+Ban current track. It will not be played again and can only removed using the pandora.com web interface.
+
+.TP
+.B act_stationaddmusic = a
+Add more music to current station. You will be asked for a search string. Just follow the instructions.
+
+.TP
+.B act_stationcreate = c
+Create new station. You have to enter a search string and select the song or artist of your choice.
+
+.TP
+.B act_stationdelete = d
+Delete current station.
+
+.TP
+.B act_songexplain = e
+Explain why this song is played.
+
+.TP
+.B act_stationaddbygenre = g
+Add genre station provided by pandora.
+
+.TP
+.B act_songinfo = i
+Print detailed information about currently played song.
+
+.TP
+.B act_songmove = m
+Move current song to another station
+
+.TP
+.B act_songnext = n
+Skip current song.
+
+.TP
+.B act_songpause = p
+Pause/Continue
+
+.TP
+.B act_quit = q
+Quit
+.B pianobar.
+
+.TP
+.B act_stationrename = r
+Rename currently played station.
+
+.TP
+.B act_stationchange = s
+Select another station.
+
+.TP
+.B act_songtired = t
+Ban song for one month.
+
+.TP
+.B act_upcoming = u
+Show next songs in playlist.
+
+.TP
+.B act_stationselectquickmix = x
+Select quickmix stations.
 
 .TP
 .B control_proxy = host:port
-Non-american users need a proxy to use pandora.com. Only the xmlrpc
-interface will use this proxy. The music is streamed directly.
+Non-american users need a proxy to use pandora.com. Only the xmlrpc interface will use this proxy. The music is streamed directly.
 
 .TP
 .B control_proxy_type = {http,socks4,socks4a,socks5}
-If you want to use a proxy you need to specify the proxy type you're going to
-use. Note that
+If you want to use a proxy you need to specify the proxy type you're going to use. Note that
 .B socks5
 needs an IP address specified in
 .B control_proxy
 
 .TP
 .B disable_secure_login = {1,0}
-If you have problems when loggin in and you know your control proxy definitively
-works try setting this option to
+If you have problems when loggin in and you know your control proxy definitively works try setting this option to
 .B 1.
 It disables the SSL secured login. Beware!
 .I Your password will be sent as plain-text!
