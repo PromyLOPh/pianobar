@@ -20,43 +20,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _SETTINGS_H
-#define _SETTINGS_H
+#ifndef _UI_ACT_H
+#define _UI_ACT_H
 
-#include <curl/curl.h>
-#include <piano.h>
+#include "settings.h"
 
-#include "player.h"
+void BarUiActHelp (BAR_KS_ARGS);
+void BarUiActAddMusic (BAR_KS_ARGS);
+void BarUiActBanSong (BAR_KS_ARGS);
+void BarUiActCreateStation (BAR_KS_ARGS);
+void BarUiActDeleteStation (BAR_KS_ARGS);
+void BarUiActExplain (BAR_KS_ARGS);
+void BarUiActStationFromGenre (BAR_KS_ARGS);
+void BarUiActSongInfo (BAR_KS_ARGS);
+void BarUiActLoveSong (BAR_KS_ARGS);
+void BarUiActSkipSong (BAR_KS_ARGS);
+void BarUiActMoveSong (BAR_KS_ARGS);
+void BarUiActPause (BAR_KS_ARGS);
+void BarUiActRenameStation (BAR_KS_ARGS);
+void BarUiActSelectStation (BAR_KS_ARGS);
+void BarUiActTempBanSong (BAR_KS_ARGS);
+void BarUiActPrintUpcoming (BAR_KS_ARGS);
+void BarUiActSelectQuickMix (BAR_KS_ARGS);
+void BarUiActQuit (BAR_KS_ARGS);
 
-#define BAR_KS_ARGS PianoHandle_t *ph, struct aacPlayer *player, \
-		struct BarSettings *settings, PianoSong_t **curSong, \
-		PianoStation_t **curStation, char *doQuit
-
-struct BarSettings {
-	char *username;
-	char *password;
-	char *controlProxy; /* non-american listeners need this */
-	curl_proxytype controlProxyType;
-	char *lastfmUser;
-	char *lastfmPassword;
-	unsigned char lastfmScrobblePercent;
-	char enableScrobbling;
-	char disableSecureLogin;
-	struct BarKeyShortcut {
-		char key;
-		void (*cmd) (BAR_KS_ARGS);
-		char *description;
-		char *configKey;
-		struct BarKeyShortcut *next;
-	} *keys;
-};
-
-typedef struct BarSettings BarSettings_t;
-typedef struct BarKeyShortcut BarKeyShortcut_t;
-
-void BarSettingsInit (BarSettings_t *settings);
-void BarSettingsDestroy (BarSettings_t *settings);
-
-void BarSettingsRead (BarSettings_t *settings);
-
-#endif /* _SETTINGS_H */
+#endif /* _UI_ACT_H */

@@ -20,6 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifndef _PLAYER_H
+#define _PLAYER_H
+
 #include <curl/curl.h>
 #include <neaacdec.h>
 #include <ao/ao.h>
@@ -53,3 +56,4 @@ struct aacPlayer {
 
 void *BarPlayerThread (void *data);
 
+#endif /* _PLAYER_H */

@@ -20,12 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+/* application settings */
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "settings.h"
 #include "config.h"
+#include "ui_act.h"
 
 /*	tries to guess your config dir; somehow conforming to
  *	http://standards.freedesktop.org/basedir-spec/basedir-spec-0.6.html
@@ -60,6 +63,15 @@ void BarSettingsInit (BarSettings_t *settings) {
 }
 
 void BarSettingsDestroy (BarSettings_t *settings) {
+	BarKeyShortcut_t *curShortcut, *lastShortcut;
+
+	while (curShortcut != NULL) {
+		lastShortcut = curShortcut;
+		curShortcut = curShortcut->next;
+		free (lastShortcut->description);
+		free (lastShortcut->configKey);
+		free (lastShortcut);
+	}
 	free (settings->controlProxy);
 	free (settings->username);
 	free (settings->password);
@@ -68,17 +80,79 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	memset (settings, 0, sizeof (*settings));
 }
 
+void BarSettingsAppendKey (BarKeyShortcut_t *shortcut,
+		BarSettings_t *settings) {
+	BarKeyShortcut_t *tmp = calloc (1, sizeof (*tmp));
+
+	/* copy shortcut */
+	memcpy (tmp, shortcut, sizeof (*tmp));
+	if (shortcut->description != NULL) {
+		tmp->description = strdup (shortcut->description);
+	}
+	if (shortcut->configKey != NULL) {
+		tmp->configKey = strdup (shortcut->configKey);
+	}
+
+	if (settings->keys == NULL) {
+		settings->keys = tmp;
+	} else {
+		BarKeyShortcut_t *curShortcut = settings->keys;
+		while (curShortcut->next != NULL) {
+			curShortcut = curShortcut->next;
+		}
+		curShortcut->next = tmp;
+	}
+}
+
 /*	read app settings from file; format is: key = value\n
  *	@param where to save these settings
  *	@return nothing yet
  */
 void BarSettingsRead (BarSettings_t *settings) {
+	/* FIXME: what is the max length of a path? */
 	char configfile[1024], key[256], val[256];
 	FILE *configfd;
+	BarKeyShortcut_t defaultKeys[] = {
+			{'?', BarUiActHelp, NULL, "act_help", NULL},
+			{'+', BarUiActLoveSong, "love current song", "act_songlove",
+				NULL},
+			{'-', BarUiActBanSong, "ban current song", "act_songban", NULL},
+			{'a', BarUiActAddMusic, "add music to current station",
+				"act_stationaddmusic", NULL},
+			{'c', BarUiActCreateStation, "create new station",
+				"act_stationcreate", NULL},
+			{'d', BarUiActDeleteStation, "delete current station",
+				"act_stationdelete", NULL},
+			{'e', BarUiActExplain, "explain why this song is played",
+				"act_songexplain", NULL},
+			{'g', BarUiActStationFromGenre, "add genre station",
+				"act_stationaddbygenre", NULL},
+			{'i', BarUiActSongInfo,
+				"print verbose information about current song",
+				"act_songinfo", NULL},
+			{'m', BarUiActMoveSong, "move song to different station",
+				"act_songmove", NULL},
+			{'n', BarUiActSkipSong, "next song", "act_songnext", NULL},
+			{'p', BarUiActPause, "pause/continue", "act_songpause", NULL},
+			{'q', BarUiActQuit, "quit", "act_quit", NULL},
+			{'r', BarUiActRenameStation, "rename current station",
+				"act_stationrename", NULL},
+			{'s', BarUiActSelectStation, "change station",
+				"act_stationchange", NULL},
+			{'t', BarUiActTempBanSong, "tired (ban song for 1 month)",
+				"act_songtired", NULL},
+			{'u', BarUiActPrintUpcoming, "upcoming songs", "act_upcoming",
+				NULL},
+			{'x', BarUiActSelectQuickMix, "select quickmix stations",
+				"act_stationselectquickmix", NULL},
+			};
+	BarKeyShortcut_t *curShortcut;
+	size_t i;
 
 	BarGetXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
 	if ((configfd = fopen (configfile, "r")) == NULL) {
 		printf ("config file at %s not found\n", configfile);
+		/* FIXME: what about setting default values? */
 		return;
 	}
 
@@ -120,6 +194,15 @@ void BarSettingsRead (BarSettings_t *settings) {
 			} else {
 				settings->disableSecureLogin = 0;
 			}
+		} else if (memcmp ("act_", key, 4) == 0) {
+			/* keyboard shortcuts */
+			for (i = 0; i < sizeof (defaultKeys) / sizeof (*defaultKeys);
+					i++) {
+				if (strcmp (defaultKeys[i].configKey, key) == 0) {
+					defaultKeys[i].key = val[0];
+					BarSettingsAppendKey (&defaultKeys[i], settings);
+				}
+			}
 		}
 	}
 
@@ -129,9 +212,26 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->lastfmScrobblePercent > 100) {
 		settings->lastfmScrobblePercent = 50;
 	}
+
 	/* only scrobble tracks if username and password are set */
 	if (settings->lastfmUser != NULL && settings->lastfmPassword != NULL) {
 		settings->enableScrobbling = 1;
+	}
+
+	/* all actions available? append default actions if necessary */
+	for (i = 0; i < sizeof (defaultKeys) / sizeof (*defaultKeys); i++) {
+		char shortcutAvailable = 0;
+		curShortcut = settings->keys;
+		while (curShortcut != NULL) {
+			if (curShortcut->cmd == defaultKeys[i].cmd) {
+				shortcutAvailable = 1;
+				break;
+			}
+			curShortcut = curShortcut->next;
+		}
+		if (!shortcutAvailable) {
+			BarSettingsAppendKey (&defaultKeys[i], settings);
+		}
 	}
 
 	fclose (configfd);

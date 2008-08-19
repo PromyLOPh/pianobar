@@ -20,43 +20,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _SETTINGS_H
-#define _SETTINGS_H
+#ifndef _UI_H
+#define _UI_H
 
-#include <curl/curl.h>
 #include <piano.h>
 
-#include "player.h"
+inline void BarUiMsg (const char *msg);
+inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret);
+PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt);
+PianoSong_t *BarUiSelectSong (PianoSong_t *startSong);
+PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist);
+char *BarUiSelectMusicId (const PianoHandle_t *ph);
+void BarStationFromGenre (PianoHandle_t *ph);
 
-#define BAR_KS_ARGS PianoHandle_t *ph, struct aacPlayer *player, \
-		struct BarSettings *settings, PianoSong_t **curSong, \
-		PianoStation_t **curStation, char *doQuit
-
-struct BarSettings {
-	char *username;
-	char *password;
-	char *controlProxy; /* non-american listeners need this */
-	curl_proxytype controlProxyType;
-	char *lastfmUser;
-	char *lastfmPassword;
-	unsigned char lastfmScrobblePercent;
-	char enableScrobbling;
-	char disableSecureLogin;
-	struct BarKeyShortcut {
-		char key;
-		void (*cmd) (BAR_KS_ARGS);
-		char *description;
-		char *configKey;
-		struct BarKeyShortcut *next;
-	} *keys;
-};
-
-typedef struct BarSettings BarSettings_t;
-typedef struct BarKeyShortcut BarKeyShortcut_t;
-
-void BarSettingsInit (BarSettings_t *settings);
-void BarSettingsDestroy (BarSettings_t *settings);
-
-void BarSettingsRead (BarSettings_t *settings);
-
-#endif /* _SETTINGS_H */
+#endif /* _UI_H */
