@@ -32,7 +32,7 @@ THE SOFTWARE.
 #include "crypt.h"
 #include "config.h"
 
-#define PIANO_PROTOCOL_VERSION "20"
+#define PIANO_PROTOCOL_VERSION "21"
 #define PIANO_RPC_URL "http://www.pandora.com/radio/xmlrpc/v" \
 		PIANO_PROTOCOL_VERSION "?"
 #define PIANO_SECURE_RPC_URL "https://www.pandora.com/radio/xmlrpc/v" \
@@ -198,6 +198,9 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
 	char *retStr, requestStrPlain[PIANO_SEND_BUFFER_SIZE];
 	PianoReturn_t ret;
 
+	printf ("\n==========\n" PACKAGE_NAME ": Pandora changed their blowfish "
+			"encryption key. You will not be able to connect to pandora.\n"
+			"==========\n");
 	/* sync (is the return value used by pandora? for now: ignore result) */
 	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&method=sync",
 			ph->routeId);
