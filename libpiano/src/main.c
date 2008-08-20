@@ -853,6 +853,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Not authorized.";
 			break;
 
+		case PIANO_RET_PROTOCOL_INCOMPATIBLE:
+			return "Protocol incompatible. Please upgrade " PACKAGE_NAME ".";
+			break;
+
 		default:
 			return "No error message available.";
 			break;
