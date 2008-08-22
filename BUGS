@@ -6,7 +6,10 @@ Report bugs to: PromyLOPh@gmail.com
 Already found
 -------------
 
-- Sometimes songs are not played completely (skipped in the middle);
-  curl returns CURLE_PARTIAL_FILE (file larger/smller than expected): Could be
-  a server issue and solved by requesting the missing parts of the file
-  via HTTP partial request (content-range)
+#1
+Sometimes songs are not played completely (skipped in the middle); curl returns
+CURLE_PARTIAL_FILE (file larger/smller than expected): This *is* a server-side
+issue and cannot resolved by requesting the remaining parts of the audio file,
+because the server does not support partial file requests. The only way to
+resolve this is to download the songs, instead of assuming, that pandora
+streams its music. They shouldn't be surprised about their traffic bills...
