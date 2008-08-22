@@ -1,14 +1,18 @@
 pianobar
 ========
 
-pianobar is a pandora.com console client. It nearly does everything the flash
-client can do while it uses less resources and is (in my opinion) easier to
-use.
+pianobar is a console client for the personalized web radio pandora
+(http://www.pandora.com). It features these functionalities:
+
+- play and manage (create, add more music, delete, rename, ...) your stations
+- rate played songs and let pandora explain why they were selected
+- show upcoming songs
+- configure key bindings
+- last.fm scrobbling support
+- proxy support for listeners outside the USA
 
 Your can get recent versions of this software at
-
 http://github.com/PromyLOPh/pianobar/tree/master or
-
 http://uint16.ath.cx/software/pandora_client.en.html
 
 Are you pandora.com? Read this!
