@@ -198,9 +198,11 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
 	char *retStr, requestStrPlain[PIANO_SEND_BUFFER_SIZE];
 	PianoReturn_t ret;
 
+#if 0
 	printf ("\n==========\n" PACKAGE_NAME ": Pandora changed their blowfish "
 			"encryption key. You will not be able to connect to pandora.\n"
 			"==========\n");
+#endif
 	/* sync (is the return value used by pandora? for now: ignore result) */
 	snprintf (url, sizeof (url), PIANO_RPC_URL "rid=%s&method=sync",
 			ph->routeId);
