@@ -1,8 +1,11 @@
+# initizalize
+AC_PREREQ(2.62)
 AC_INIT([pianobar], [0.1], [PromyLOPh@gmail.com])
 AC_CONFIG_SRCDIR([src/main.c])
 AM_CONFIG_HEADER([src/config.h])
 AM_INIT_AUTOMAKE([-Wall])
 
+# progs
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_SANITY_CHECK
@@ -10,6 +13,7 @@ AM_PROG_LIBTOOL
 
 PKG_PROG_PKG_CONFIG
 
+# libs
 PKG_CHECK_MODULES(LIBCURL, libcurl >= 7.18.0)
 AC_SUBST(LIBCURL_CFLAGS)
 AC_SUBST(LIBCURL_LIBS)
@@ -28,14 +32,23 @@ AC_SUBST(LIBFAAD_LIBS)
 AC_CHECK_LIB([readline], [readline], [LIBREADLINE_LIBS=-lreadline], AC_MSG_ERROR([readline is required. See INSTALL]))
 AC_SUBST(LIBREADLINE_LIBS)
 
-# FIXME: check for pthread
+AC_CHECK_LIB([m], [pow], [LIBM_LIBS=-lm], AC_MSG_ERROR([libm is required.]))
+AC_SUBST(LIBM_LIBS)
 
-AC_CHECK_HEADERS([stdlib.h string.h])
+AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD_LIBS=-lpthread], AC_MSG_ERROR([libpthread is required.]))
+AC_SUBST(LIBPTHREAD_LIBS)
 
-AC_CHECK_FUNCS([memset])
+# headers
+AC_CHECK_HEADERS([stdlib.h string.h stdint.h termios.h unistd.h])
 
+# libc funcs
+AC_CHECK_FUNCS([memset memmove strcasecmp])
+
+# compiler characteristics
+AC_C_INLINE
 AC_TYPE_SIZE_T
 
+# output
 AC_CONFIG_FILES(Makefile src/Makefile)
 AC_CONFIG_SUBDIRS([libpiano libwardrobe])
 
