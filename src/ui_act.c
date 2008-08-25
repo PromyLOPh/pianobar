@@ -191,10 +191,6 @@ void BarUiActSongInfo (BAR_KS_ARGS) {
 void BarUiActLoveSong (BAR_KS_ARGS) {
 	RETURN_IF_NO_SONG;
 
-	if ((*curSong)->rating == PIANO_RATE_LOVE) {
-		BarUiMsg ("Already loved. No need to do this twice.\n");
-		return;
-	}
 	if (!BarTransformIfShared (ph, *curStation)) {
 		return;
 	}
