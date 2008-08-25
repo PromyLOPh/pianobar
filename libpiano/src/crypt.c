@@ -45,6 +45,7 @@ void PianoHexToInts (const char *strHex, unsigned int **retInts,
 	/* unsigned int = 4 bytes, 8 chars in hex */
 	for (i = 0; i < strHexN; i += 8) {
 		memcpy (hexInt, strHex+i, sizeof (hexInt)-1);
+		hexInt[sizeof (hexInt) - 1] = 0;
 		sscanf (hexInt, "%x", &arrInts[i/8]);
 	}
 	*retInts = arrInts;
