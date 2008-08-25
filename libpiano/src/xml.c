@@ -238,15 +238,16 @@ void PianoXmlParsePlaylistCb (const char *key, const xmlNode *value,
 		/* last 48 chars of audioUrl are encrypted, but they put the key
 		 * into the door's lock; dumb pandora... */
 		const char urlTailN = 48;
-		char *urlTail, *urlTailCrypted = valueStr + (strlen (valueStr) - urlTailN);
+		const size_t valueStrN = strlen (valueStr);
+		char *urlTail = NULL,
+				*urlTailCrypted = &valueStr[valueStrN - urlTailN];
 		urlTail = PianoDecryptString (urlTailCrypted);
-		song->audioUrl = calloc (strlen (valueStr) + 1, sizeof (char));
-		strncpy (song->audioUrl, valueStr, strlen (valueStr) - urlTailN);
+		song->audioUrl = calloc (valueStrN + 1, sizeof (*song->audioUrl));
+		memcpy (song->audioUrl, valueStr, valueStrN - urlTailN);
 		/* FIXME: the key seems to be broken... so ignore 8 x 0x08 postfix;
 		 * urlTailN/2 because the encrypted hex string is now decoded */
-		strncat (song->audioUrl, urlTail, (urlTailN/2)-8);
-		PianoFree (urlTail, 0);
-
+		memcpy (&song->audioUrl[valueStrN - urlTailN], urlTail, urlTailN/2 - 8);
+		PianoFree (urlTail, urlTailN/2);
 	} else if (strcmp ("artistSummary", key) == 0) {
 		song->artist = strdup (valueStr);
 	} else if (strcmp ("musicId", key) == 0) {

@@ -28,7 +28,6 @@ THE SOFTWARE.
 
 #define PIANO_HTTP_BUFFER_SIZE 100000
 
-/* FIXME: curl has a receive limit, use it! */
 /*	callback for curl, writes data to buffer
  *	@param received data
  *	@param block size
@@ -37,15 +36,14 @@ THE SOFTWARE.
  *	@return written bytes
  */
 size_t PianoCurlRetToVar (void *ptr, size_t size, size_t nmemb, void *stream) {
-	char *charPtr = ptr;
 	char *streamPtr = stream;
 	size_t streamPtrN = strlen (streamPtr);
 
-	if (streamPtrN + nmemb > PIANO_HTTP_BUFFER_SIZE) {
+	if ((streamPtrN + nmemb) > (PIANO_HTTP_BUFFER_SIZE - 1)) {
 		printf ("buffer overflow...\n");
 		return 0;
 	} else {
-		memcpy (streamPtr+streamPtrN, charPtr, size*nmemb);
+		memcpy (&streamPtr[streamPtrN], ptr, size*nmemb);
 		return size*nmemb;
 	}
 }
