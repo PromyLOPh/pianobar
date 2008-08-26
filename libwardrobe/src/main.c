@@ -45,14 +45,13 @@ void WardrobeSongInit (WardrobeSong_t *ws) {
  */
 size_t WardrobeCurlRetToVar (void *ptr, size_t size, size_t nmemb,
 		void *stream) {
-	char *charPtr = ptr;
 	char *streamPtr = stream;
 
-	if (strlen (streamPtr) + nmemb > WARDROBE_HTTP_BUFFER_SIZE) {
+	if ((strlen (streamPtr) + nmemb) > (WARDROBE_HTTP_BUFFER_SIZE - 1)) {
 		printf ("buffer overflow...\n");
 		return 0;
 	} else {
-		memcpy (streamPtr+strlen(streamPtr), charPtr, size*nmemb);
+		memcpy (streamPtr+strlen(streamPtr), ptr, size*nmemb);
 		return size*nmemb;
 	}
 }
@@ -70,6 +69,7 @@ void WardrobeHttpGet (CURL *ch, const char *url, char **retData) {
 	memset (curlRet, 0, sizeof (curlRet));
 
 	curl_easy_setopt (ch, CURLOPT_URL, url);
+	curl_easy_setopt (ch, CURLOPT_HTTPGET, 1L);
 	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, WardrobeCurlRetToVar);
 	curl_easy_setopt (ch, CURLOPT_WRITEDATA, curlRet);
 
@@ -149,7 +149,6 @@ void WardrobeDestroy (WardrobeHandle_t *wh) {
  *	@return _OK or error
  */
 WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
-	/* we'll use gmt */
 	char url[1024], tmp[100], *tmpDigest, *pwDigest, *ret;
 	WardrobeReturn_t fRet = WARDROBE_RET_ERR;
 	time_t currTStamp = time (NULL);
