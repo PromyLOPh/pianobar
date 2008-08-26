@@ -1,6 +1,6 @@
 bin_PROGRAMS = pianobar
 
-pianobar_SOURCES = main.c main.h terminal.c terminal.h settings.c settings.h \
+pianobar_SOURCES = main.c terminal.c terminal.h settings.c settings.h \
 		player.c player.h ui.c ui.h ui_act.c ui_act.h
 pianobar_CPPFLAGS = ${LIBCURL_CFLAGS} ${LIBAO_CFLAGS} ${LIBXML_CFLAGS} \
 		-I../libpiano/src -I../libwardrobe/src
