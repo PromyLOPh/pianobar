@@ -71,7 +71,7 @@ void WardrobeHttpGet (CURL *ch, const char *url, char **retData) {
 	curl_easy_setopt (ch, CURLOPT_URL, url);
 	curl_easy_setopt (ch, CURLOPT_HTTPGET, 1L);
 	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, WardrobeCurlRetToVar);
-	curl_easy_setopt (ch, CURLOPT_WRITEDATA, curlRet);
+	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) curlRet);
 
 	curl_easy_perform (ch);
 
@@ -94,7 +94,7 @@ void WardrobeHttpPost (CURL *ch, const char *url, const char *postData,
 	curl_easy_setopt (ch, CURLOPT_URL, url);
 	curl_easy_setopt (ch, CURLOPT_POSTFIELDS, postData);
 	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, WardrobeCurlRetToVar);
-	curl_easy_setopt (ch, CURLOPT_WRITEDATA, curlRet);
+	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) curlRet);
 
 	curl_easy_perform (ch);
 

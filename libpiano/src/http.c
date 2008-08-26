@@ -73,7 +73,7 @@ PianoReturn_t PianoHttpPost (CURL *ch, const char *url, const char *postData,
 	/* don't verify certificate for now, it's easier ;) */
 	curl_easy_setopt (ch, CURLOPT_SSL_VERIFYPEER, 0);
 	memset (curlRet, 0, sizeof (curlRet));
-	curl_easy_setopt (ch, CURLOPT_WRITEDATA, curlRet);
+	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) curlRet);
 
 	if (curl_easy_perform (ch) == CURLE_OK) {
 		ret = PIANO_RET_OK;
@@ -105,7 +105,7 @@ PianoReturn_t PianoHttpGet (CURL *ch, const char *url, char **retData) {
 	curl_easy_setopt (ch, CURLOPT_HTTPHEADER, NULL);
 	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, PianoCurlRetToVar);
 	memset (curlRet, 0, sizeof (curlRet));
-	curl_easy_setopt (ch, CURLOPT_WRITEDATA, curlRet);
+	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) curlRet);
 
 	if (curl_easy_perform (ch) == CURLE_OK) {
 		ret = PIANO_RET_OK;

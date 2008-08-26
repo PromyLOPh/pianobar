@@ -263,7 +263,7 @@ void *BarPlayerThread (void *data) {
 	/* init curl */
 	curl_easy_setopt (player->audioFd, CURLOPT_URL, player->url);
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION, BarPlayerCurlCb);
-	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, player);
+	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, (void *) player);
 	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
 	curl_easy_setopt (player->audioFd, CURLOPT_CONNECTTIMEOUT, 60);
 
