@@ -26,23 +26,10 @@ THE SOFTWARE.
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
+#include <byteswap.h>
 
 #include "player.h"
 #include "config.h"
-
-/*	LE to BE and reverse
- *	@param unsigned int
- *	@return byteswapped unsigned int
- */
-unsigned int BarChangeByteorderUI32 (char buf[4]) {
-	unsigned int ret = 0;
-
-	ret = buf[0] << 24 & 0xffffffff;
-	ret |= buf[1] << 16 & 0xffffff;
-	ret |= buf[2] << 8 & 0xffff;
-	ret |= buf[3] << 0 & 0xff;
-	return ret;
-}
 
 /*	compute replaygain scale factor
  *	algo taken from here: http://www.dsprelated.com/showmessage/29246/1.php
@@ -192,9 +179,8 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 				/* how many frames do we have? */
 				if (player->sampleSizeN == 0) {
 					/* mp4 uses big endian, convert */
-					player->sampleSizeN =
-							BarChangeByteorderUI32 (player->buffer +
-							player->bufferRead);
+					player->sampleSizeN = bswap_32 (*((int *) (player->buffer +
+							player->bufferRead)));
 					player->sampleSize = calloc (player->sampleSizeN,
 							sizeof (player->sampleSizeN));
 					player->bufferRead += 4;
@@ -202,8 +188,8 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 					break;
 				} else {
 					player->sampleSize[player->sampleSizeCurr] =
-							BarChangeByteorderUI32 (player->buffer +
-							player->bufferRead);
+							bswap_32 (*((int *) (player->buffer +
+							player->bufferRead)));
 					player->sampleSizeCurr++;
 					player->bufferRead += 4;
 				}
