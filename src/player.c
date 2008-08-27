@@ -89,8 +89,10 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	player->bufferRead = 0;
 
 	if (player->mode == PLAYER_RECV_DATA) {
-		char *aacDecoded;
+		short int *aacDecoded;
 		NeAACDecFrameInfo frameInfo;
+		int tmpReplayBuf;
+		size_t i;
 
 		while ((player->bufferFilled - player->bufferRead) >
 				player->sampleSize[player->sampleSizeCurr]) {
@@ -103,22 +105,19 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 						NeAACDecGetErrorMessage (frameInfo.error));
 				break;
 			}
-			short int *replayBuf = (short int *) aacDecoded;
-			int tmpReplayBuf;
-			size_t i;
 			for (i = 0; i < frameInfo.samples; i++) {
-				tmpReplayBuf = (float) replayBuf[i] * player->scale;
+				tmpReplayBuf = (float) aacDecoded[i] * player->scale;
 				/* avoid clipping */
 				if (tmpReplayBuf > INT16_MAX) {
-					replayBuf[i] = INT16_MAX;
+					aacDecoded[i] = INT16_MAX;
 				} else if (tmpReplayBuf < INT16_MIN) {
-					replayBuf[i] = INT16_MIN;
+					aacDecoded[i] = INT16_MIN;
 				} else {
-					replayBuf[i] = tmpReplayBuf;
+					aacDecoded[i] = tmpReplayBuf;
 				}
 			}
 			/* ao_play needs bytes: 1 sample = 16 bits = 2 bytes */
-			ao_play (player->audioOutDevice, aacDecoded,
+			ao_play (player->audioOutDevice, (char *) aacDecoded,
 					frameInfo.samples * 16 / 8);
 			player->bufferRead += frameInfo.bytesconsumed;
 			player->sampleSizeCurr++;
