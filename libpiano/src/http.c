@@ -26,7 +26,10 @@ THE SOFTWARE.
 
 #include "http.h"
 
-#define PIANO_HTTP_BUFFER_SIZE 100000
+struct PianoHttpBuffer {
+	size_t size; /* size of string without NUL-byte */
+	char *buf; /* NUL-terminated string */
+};
 
 /*	callback for curl, writes data to buffer
  *	@param received data
@@ -35,17 +38,21 @@ THE SOFTWARE.
  *	@param write data into this buffer
  *	@return written bytes
  */
-size_t PianoCurlRetToVar (void *ptr, size_t size, size_t nmemb, void *stream) {
-	char *streamPtr = stream;
-	size_t streamPtrN = strlen (streamPtr);
+size_t PianoCurlRetToVar (void *ptr, size_t size, size_t nmemb,
+		void *stream) {
+	struct PianoHttpBuffer *curlRet = stream;
 
-	if ((streamPtrN + nmemb) > (PIANO_HTTP_BUFFER_SIZE - 1)) {
-		printf ("buffer overflow...\n");
-		return 0;
+	if (curlRet->buf == NULL) {
+		curlRet->buf = malloc (nmemb + 1);
+		curlRet->size = 0;
 	} else {
-		memcpy (&streamPtr[streamPtrN], ptr, size*nmemb);
-		return size*nmemb;
+		curlRet->buf = realloc (curlRet->buf, curlRet->size + nmemb + 1);
 	}
+	memcpy (curlRet->buf + curlRet->size, ptr, size*nmemb);
+	curlRet->size += nmemb;
+	curlRet->buf[curlRet->size] = 0;
+
+	return size*nmemb;
 }
 
 /* FIXME: we may use a callback given by the library client here. would be
@@ -60,8 +67,7 @@ size_t PianoCurlRetToVar (void *ptr, size_t size, size_t nmemb, void *stream) {
 PianoReturn_t PianoHttpPost (CURL *ch, const char *url, const char *postData,
 		char **retData) {
 	struct curl_slist *headers = NULL;
-	/* Let's hope nothing will be bigger than this... */
-	char curlRet[PIANO_HTTP_BUFFER_SIZE];
+	struct PianoHttpBuffer curlRet = {0, NULL};
 	PianoReturn_t ret;
 
 	headers = curl_slist_append (headers, "Content-Type: text/xml");
@@ -72,12 +78,11 @@ PianoReturn_t PianoHttpPost (CURL *ch, const char *url, const char *postData,
 	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, PianoCurlRetToVar);
 	/* don't verify certificate for now, it's easier ;) */
 	curl_easy_setopt (ch, CURLOPT_SSL_VERIFYPEER, 0);
-	memset (curlRet, 0, sizeof (curlRet));
-	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) curlRet);
+	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) &curlRet);
 
 	if (curl_easy_perform (ch) == CURLE_OK) {
 		ret = PIANO_RET_OK;
-		*retData = strdup (curlRet);
+		*retData = curlRet.buf;
 	} else {
 		ret = PIANO_RET_NET_ERROR;
 		*retData = NULL;
@@ -95,21 +100,18 @@ PianoReturn_t PianoHttpPost (CURL *ch, const char *url, const char *postData,
  *	@return nothing yet
  */
 PianoReturn_t PianoHttpGet (CURL *ch, const char *url, char **retData) {
-	/* Let's hope nothing will be bigger than this... */
-	char curlRet[PIANO_HTTP_BUFFER_SIZE];
+	struct PianoHttpBuffer curlRet = {0, NULL};
 	PianoReturn_t ret;
 
 	curl_easy_setopt (ch, CURLOPT_URL, url);
-	/* remove, as not needed, but set (maybe) set by PianoHttpPost */
 	curl_easy_setopt (ch, CURLOPT_HTTPGET, 1L);
 	curl_easy_setopt (ch, CURLOPT_HTTPHEADER, NULL);
 	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, PianoCurlRetToVar);
-	memset (curlRet, 0, sizeof (curlRet));
-	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) curlRet);
+	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) &curlRet);
 
 	if (curl_easy_perform (ch) == CURLE_OK) {
 		ret = PIANO_RET_OK;
-		*retData = strdup (curlRet);
+		*retData = curlRet.buf;
 	} else {
 		ret = PIANO_RET_NET_ERROR;
 		*retData = NULL;
