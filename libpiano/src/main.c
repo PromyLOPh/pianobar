@@ -486,6 +486,7 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 					}
 					PianoDestroyStation (curStation);
 					PianoFree (curStation, sizeof (*curStation));
+					break;
 				}
 				lastStation = curStation;
 				curStation = curStation->next;
