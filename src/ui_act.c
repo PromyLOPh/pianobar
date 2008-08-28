@@ -78,7 +78,7 @@ void BarUiActAddMusic (BAR_KS_ARGS) {
 	RETURN_IF_NO_STATION;
 
 	musicId = BarUiSelectMusicId (ph);
-	if (musicId == NULL) {
+	if (musicId != NULL) {
 		if (!BarTransformIfShared (ph, *curStation)) {
 			return;
 		}
