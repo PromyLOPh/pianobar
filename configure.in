@@ -1,6 +1,6 @@
 # initizalize
 AC_PREREQ(2.62)
-AC_INIT([pianobar], [0.1], [PromyLOPh@gmail.com])
+AC_INIT([pianobar], [0.1], [PromyLOPh@lavabit.com])
 AC_CONFIG_SRCDIR([src/main.c])
 AM_CONFIG_HEADER([src/config.h])
 AM_INIT_AUTOMAKE([-Wall])
