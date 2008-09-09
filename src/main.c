@@ -204,7 +204,10 @@ int main (int argc, char **argv) {
 		}
 
 		/* in the meantime: wait for user actions */
-		if (poll (&polls, 1, 1000) > 0) {
+		/* FIXME: uhm, this may work, but I guess there's a better solution. */
+		if (poll (&polls, 1, (player.mode >= PLAYER_INITIALIZED &&
+				player.mode < PLAYER_FINISHED_PLAYBACK &&
+				player.doPause == 0 ? 1000 : -1)) > 0) {
 			read (fileno (stdin), &buf, sizeof (buf));
 			curShortcut = settings.keys;
 			while (curShortcut != NULL) {
