@@ -31,6 +31,20 @@ THE SOFTWARE.
 #include "player.h"
 #include "config.h"
 
+/* FIXME: not the best solution to poll every second, but the easiest
+ * one I know... (pthread's conditions could be another solution) */
+#define QUIT_PAUSE_CHECK \
+	if (player->doQuit) { \
+		return 0; \
+	} \
+	if (player->doPause) { \
+		curl_easy_pause (player->audioFd, CURLPAUSE_ALL); \
+		while (player->doPause && !player->doQuit) { \
+			sleep (1); \
+		} \
+		curl_easy_pause (player->audioFd, CURLPAUSE_CONT); \
+	}
+
 /*	compute replaygain scale factor
  *	algo taken from here: http://www.dsprelated.com/showmessage/29246/1.php
  *	mpd does the same
@@ -52,19 +66,7 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	char *data = ptr;
 	struct aacPlayer *player = stream;
 
-	if (player->doQuit) {
-		return 0;
-	}
-	
-	/* FIXME: not the best solution to poll every second, but the easiest
-	 * one I know... (pthread's conditions could be another solution) */
-	if (player->doPause) {
-		curl_easy_pause (player->audioFd, CURLPAUSE_ALL);
-		while (player->doPause && !player->doQuit) {
-			sleep (1);
-		}
-		curl_easy_pause (player->audioFd, CURLPAUSE_CONT);
-	}
+	QUIT_PAUSE_CHECK;
 
 	/* fill buffer */
 	if (player->bufferFilled + size*nmemb > sizeof (player->buffer)) {
@@ -110,9 +112,7 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			player->sampleSizeCurr++;
 			/* going through this loop can take up to a few seconds =>
 			 * allow earlier thread abort */
-			if (player->doQuit) {
-				return 0;
-			}
+			QUIT_PAUSE_CHECK;
 		}
 	} else {
 		if (player->mode == PLAYER_INITIALIZED) {
