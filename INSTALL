@@ -13,6 +13,7 @@ libao				http://www.xiph.org/ao/
 libcurl				http://curl.haxx.se/
 libfaad2			http://www.audiocoding.com/downloads.html
 readline
+UTF-8 console/locale!
 
 libpiano
 ++++++++
