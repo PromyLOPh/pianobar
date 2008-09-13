@@ -83,6 +83,7 @@ int main (int argc, char **argv) {
 		BarTermSetEcho (0);
 		settings.password = readline ("Password: ");
 		BarTermSetEcho (1);
+		printf ("\n");
 	}
 
 	if (settings.enableScrobbling) {
