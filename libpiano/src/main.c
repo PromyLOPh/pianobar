@@ -860,6 +860,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Protocol incompatible. Please upgrade " PACKAGE_NAME ".";
 			break;
 
+		case PIANO_RET_READONLY_MODE:
+			return "Request cannot be completed at this time, please try "
+					"again later.";
+
 		default:
 			return "No error message available.";
 			break;

@@ -68,6 +68,8 @@ void PianoXmlIsFaultCb (const char *key, const xmlNode *value, void *data) {
 					} else if (strcmp ("INCOMPATIBLE_VERSION",
 							matchStr) == 0) {
 						*ret = PIANO_RET_PROTOCOL_INCOMPATIBLE;
+					} else if (strcmp ("READONLY_MODE", matchStr) == 0) {
+						*ret = PIANO_RET_READONLY_MODE;
 					} else {
 						*ret = PIANO_RET_ERR;
 						printf (PACKAGE ": Unknown error %s in %s\n",
