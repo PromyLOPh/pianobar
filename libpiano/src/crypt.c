@@ -38,15 +38,12 @@ THE SOFTWARE.
 void PianoHexToInts (const char *strHex, unsigned int **retInts,
 		size_t *retIntsN) {
 	size_t i, strHexN = strlen (strHex);
-	char hexInt[9];
 	unsigned int *arrInts = calloc (strHexN / 8, sizeof (*arrInts));
 
-	/* FIXME: error handling: string too short, e.g. */
 	/* unsigned int = 4 bytes, 8 chars in hex */
-	for (i = 0; i < strHexN; i += 8) {
-		memcpy (hexInt, strHex+i, sizeof (hexInt)-1);
-		hexInt[sizeof (hexInt) - 1] = 0;
-		sscanf (hexInt, "%x", &arrInts[i/8]);
+	for (i = 0; i < strHexN; i++) {
+		arrInts[i/8] |= ((strHex[i] < 'a' ? strHex[i]: strHex[i] + 9) &
+				0x0f) << (7*4 - i*4);
 	}
 	*retInts = arrInts;
 	*retIntsN = strHexN / 8;
