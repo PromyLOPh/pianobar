@@ -149,7 +149,6 @@ void PianoBytesToInts (const char *strInput, unsigned int **retArrInts,
 
 	/* we must not read beyond the end of the string, so be a bit
 	 * paranoid */
-	shift = 24;
 	i = 0;
 	j = 0;
 	while (i < strInputN) {
@@ -212,10 +211,17 @@ void PianoEncipherInts (const unsigned int *plainInts, size_t plainIntsN,
 char *PianoIntsToHexString (const unsigned int *arrInts, size_t arrIntsN) {
 	/* 4 bytes as hex (= 8 chars) */
 	char *hexStr = calloc (arrIntsN * 4 * 2 + 1, sizeof (*hexStr));
-	size_t i;
+	size_t i, writePos;
+	unsigned char *intMap = (unsigned char *) arrInts;
+	size_t intMapN = arrIntsN * sizeof (*arrInts);
 
-	for (i = 0; i < arrIntsN; i++) {
-		snprintf (hexStr+i*4*2, arrIntsN * 4 * 2 + 1, "%08x", arrInts[i]);
+	for (i = 0; i < intMapN; i++) {
+		/* we need to swap the bytes again */
+		writePos = i + (4 - (i % 4) * 2) - 1;
+		hexStr[writePos*2] = (intMap[i] & 0xf0) < 0xa0 ? (intMap[i] >> 4) +
+				'0' : (intMap[i] >> 4) + 'a' - 10;
+		hexStr[writePos*2+1] = (intMap[i] & 0x0f) < 0x0a ? (intMap[i] & 0x0f) +
+				'0' : (intMap[i] & 0x0f) + 'a' - 10;
 	}
 	return hexStr;
 }
