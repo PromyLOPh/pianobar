@@ -36,6 +36,7 @@ struct aacPlayer {
 			PLAYER_AUDIO_INITIALIZED, PLAYER_FOUND_STSZ,
 			PLAYER_SAMPLESIZE_INITIALIZED, PLAYER_RECV_DATA,
 			PLAYER_FINISHED_PLAYBACK} mode;
+	size_t bytesReceived;
 	/* stsz atom: sample sizes */
 	unsigned int *sampleSize;
 	size_t sampleSizeN;

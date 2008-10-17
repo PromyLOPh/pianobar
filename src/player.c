@@ -76,6 +76,7 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	memcpy (player->buffer+player->bufferFilled, data, size*nmemb);
 	player->bufferFilled += size*nmemb;
 	player->bufferRead = 0;
+	player->bytesReceived += size*nmemb;
 
 	if (player->mode == PLAYER_RECV_DATA) {
 		short int *aacDecoded;
@@ -231,6 +232,9 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 void *BarPlayerThread (void *data) {
 	struct aacPlayer *player = data;
 	NeAACDecConfigurationPtr conf;
+	struct curl_slist *extraHeader = NULL;
+	char rangeHeader[255];
+	CURLcode curlRet = 0;
 
 	/* init handles */
 	player->audioFd = curl_easy_init ();
@@ -254,7 +258,21 @@ void *BarPlayerThread (void *data) {
 
 	player->mode = PLAYER_INITIALIZED;
 
-	curl_easy_perform (player->audioFd);
+	/* This loop should work around song abortions by requesting the
+	 * missing part of the song */
+	do {
+		/* if curl failed, setup new headers _everytime_ (the range changed) */
+		if (curlRet == CURLE_PARTIAL_FILE) {
+			snprintf (rangeHeader, sizeof (rangeHeader),
+					"Range: bytes=%i-", player->bytesReceived);
+			extraHeader = curl_slist_append (extraHeader, rangeHeader);
+			curl_easy_setopt (player->audioFd, CURLOPT_HTTPHEADER,
+					extraHeader);
+		}
+		curlRet = curl_easy_perform (player->audioFd);
+		curl_slist_free_all (extraHeader);
+		extraHeader = NULL;
+	} while (curlRet == CURLE_PARTIAL_FILE);
 
 	NeAACDecClose(player->aacHandle);
 	ao_close(player->audioOutDevice);
