@@ -12,6 +12,7 @@ pianobar
 libao				http://www.xiph.org/ao/
 libcurl				http://curl.haxx.se/
 libfaad2			http://www.audiocoding.com/downloads.html
+pthreads
 readline
 UTF-8 console/locale!
 
@@ -34,6 +35,10 @@ Build
 make
 make install
 
-Or run the client from this source directory
+If the build or configure process fails try something like this (you may have
+to adjust the paths):
+LDFLAGS+=" -L/usr/pkg/lib" CFLAGS+=" -I/usr/pkg/include/faad2" ./configure
+
+You can run the client directly from the source directory:
  
 ./src/pianobar
