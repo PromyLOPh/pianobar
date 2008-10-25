@@ -23,11 +23,13 @@ THE SOFTWARE.
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <byteswap.h>
 
 #include "crypt_key_output.h"
 #include "crypt_key_input.h"
 #include "main.h"
+
+#define byteswap32(x) (((x >> 24) & 0x000000ff) | ((x >> 8) & 0x0000ff00) | \
+		((x << 8) & 0x00ff0000) | ((x << 24) & 0xff000000))
 
 /*	hex string to array of unsigned int values
  *	@param hex string
@@ -103,7 +105,7 @@ char *PianoIntsToString (const unsigned int *arrInts, size_t arrIntsN) {
 		/* map string to 4-byte int */
 		tmp = (unsigned int *) &strDecoded[i*4];
 		/* FIXME: big endian does not need to byteswap */
-		*tmp = bswap_32 (arrInts[i]);
+		*tmp = byteswap32 (arrInts[i]);
 	}
 	return strDecoded;
 }

@@ -26,10 +26,12 @@ THE SOFTWARE.
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
-#include <byteswap.h>
 
 #include "player.h"
 #include "config.h"
+
+#define byteswap32(x) (((x >> 24) & 0x000000ff) | ((x >> 8) & 0x0000ff00) | \
+		((x << 8) & 0x00ff0000) | ((x << 24) & 0xff000000))
 
 /* FIXME: not the best solution to poll every second, but the easiest
  * one I know... (pthread's conditions could be another solution) */
@@ -180,7 +182,8 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 				/* how many frames do we have? */
 				if (player->sampleSizeN == 0) {
 					/* mp4 uses big endian, convert */
-					player->sampleSizeN = bswap_32 (*((int *) (player->buffer +
+					player->sampleSizeN =
+							byteswap32 (*((int *) (player->buffer +
 							player->bufferRead)));
 					player->sampleSize = calloc (player->sampleSizeN,
 							sizeof (player->sampleSizeN));
@@ -189,7 +192,7 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 					break;
 				} else {
 					player->sampleSize[player->sampleSizeCurr] =
-							bswap_32 (*((int *) (player->buffer +
+							byteswap32 (*((int *) (player->buffer +
 							player->bufferRead)));
 					player->sampleSizeCurr++;
 					player->bufferRead += 4;
