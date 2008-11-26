@@ -14,22 +14,3 @@ pianobar is a console client for the personalized web radio pandora
 Your can get recent versions of this software at
 http://github.com/PromyLOPh/pianobar/tree/master or
 http://uint16.ath.cx/software/pandora_client.en.html
-
-Are you pandora.com? Read this!
-===============================
-
-"Why are you doing this?" you might ask. This is my anwer: I love your service
-(recommendations are much better than those from last.fm, audio quality is much
-better, stationS that actually *learn* what I like, ...), but your flashplayer
-is the worst thing I've ever seen (25% CPU load and a browser window are too
-much for playing music). So I decided to write a free-to-use (even you could
-use it commercially!) library and player to access your service.
-
-I know you have to pay your bills using ads on your website. At the moment this
-client is ad-free, but I would show text ads to support you. All I need is a
-api to retrieve those ads :)
-
-By the way: It's useless to change the encryption/decryption key. It won't take
-a week to get it working again, because the key is visible to every decompiler
-and debugger.
-
