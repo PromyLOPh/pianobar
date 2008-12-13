@@ -235,8 +235,6 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 void *BarPlayerThread (void *data) {
 	struct aacPlayer *player = data;
 	NeAACDecConfigurationPtr conf;
-	struct curl_slist *extraHeader = NULL;
-	char rangeHeader[255];
 	CURLcode curlRet = 0;
 
 	/* init handles */
@@ -258,6 +256,8 @@ void *BarPlayerThread (void *data) {
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, (void *) player);
 	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
 	curl_easy_setopt (player->audioFd, CURLOPT_CONNECTTIMEOUT, 60);
+	/* start downloading from beginning of file */
+	curl_easy_setopt (player->audioFd, CURLOPT_RESUME_FROM, 0);
 
 	player->mode = PLAYER_INITIALIZED;
 
@@ -266,15 +266,10 @@ void *BarPlayerThread (void *data) {
 	do {
 		/* if curl failed, setup new headers _everytime_ (the range changed) */
 		if (curlRet == CURLE_PARTIAL_FILE) {
-			snprintf (rangeHeader, sizeof (rangeHeader),
-					"Range: bytes=%i-", player->bytesReceived);
-			extraHeader = curl_slist_append (extraHeader, rangeHeader);
-			curl_easy_setopt (player->audioFd, CURLOPT_HTTPHEADER,
-					extraHeader);
+			curl_easy_setopt (player->audioFd, CURLOPT_RESUME_FROM,
+					player->bytesReceived);
 		}
 		curlRet = curl_easy_perform (player->audioFd);
-		curl_slist_free_all (extraHeader);
-		extraHeader = NULL;
 	} while (curlRet == CURLE_PARTIAL_FILE);
 
 	NeAACDecClose(player->aacHandle);
