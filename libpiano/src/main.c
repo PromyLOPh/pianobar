@@ -864,6 +864,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Request cannot be completed at this time, please try "
 					"again later.";
 
+		case PIANO_RET_STATION_CODE_INVALID:
+			return "Station id is invalid.";
+			break;
+
 		default:
 			return "No error message available.";
 			break;

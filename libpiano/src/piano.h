@@ -149,11 +149,11 @@ struct PianoSearchResult {
 
 typedef struct PianoSearchResult PianoSearchResult_t;
 
-/* FIXME: more error types (http failed, e.g.) later */
 enum PianoReturn {PIANO_RET_OK, PIANO_RET_ERR, PIANO_RET_XML_INVALID,
 		PIANO_RET_AUTH_TOKEN_INVALID, PIANO_RET_AUTH_USER_PASSWORD_INVALID,
 		PIANO_RET_NET_ERROR, PIANO_RET_NOT_AUTHORIZED,
-		PIANO_RET_PROTOCOL_INCOMPATIBLE, PIANO_RET_READONLY_MODE};
+		PIANO_RET_PROTOCOL_INCOMPATIBLE, PIANO_RET_READONLY_MODE,
+		PIANO_RET_STATION_CODE_INVALID};
 typedef enum PianoReturn PianoReturn_t;
 
 void PianoInit (PianoHandle_t *);
