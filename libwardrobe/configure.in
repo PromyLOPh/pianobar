@@ -1,5 +1,4 @@
 # init
-AC_PREREQ(2.62)
 AC_INIT([libwardrobe], [0.1], [PromyLOPh@lavabit.com])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR([src/main.c])
