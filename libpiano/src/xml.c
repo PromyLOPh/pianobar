@@ -37,6 +37,10 @@ void PianoXmlStructParser (const xmlNode *structRoot,
 char *PianoXmlGetNodeText (const xmlNode *node);
 
 /*	parse fault and get fault type
+ *	@param xml <name> content
+ *	@param xml <value> node
+ *	@param return error string
+ *	@return nothing
  */
 void PianoXmlIsFaultCb (const char *key, const xmlNode *value, void *data) {
 	PianoReturn_t *ret = data;
@@ -81,6 +85,11 @@ void PianoXmlIsFaultCb (const char *key, const xmlNode *value, void *data) {
 					PianoFree (matchStr, 0);
 				}
 			}
+		}
+	} else if (strcmp ("faultCode", key) == 0) {
+		/* some error can only be identified by looking at their id */
+		if (strcmp ("12", valueStr) == 0) {
+			*ret = PIANO_RET_IP_REJECTED;
 		}
 	}
 }

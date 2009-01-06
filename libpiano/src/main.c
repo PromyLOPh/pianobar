@@ -868,6 +868,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Station id is invalid.";
 			break;
 
+		case PIANO_RET_IP_REJECTED:
+			return "Your ip address was rejected. Please setup a control "
+					"proxy (see manpage).";
+
 		default:
 			return "No error message available.";
 			break;
