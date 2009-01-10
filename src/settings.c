@@ -115,7 +115,9 @@ void BarSettingsAppendKey (BarKeyShortcut_t *shortcut,
 void BarSettingsRead (BarSettings_t *settings) {
 	/* FIXME: what is the max length of a path? */
 	char configfile[1024], key[256], val[256];
+	size_t i;
 	FILE *configfd;
+	BarKeyShortcut_t *curShortcut;
 	BarKeyShortcut_t defaultKeys[] = {
 			{'?', BarUiActHelp, NULL, "act_help", NULL},
 			{'+', BarUiActLoveSong, "love current song", "act_songlove",
@@ -150,13 +152,14 @@ void BarSettingsRead (BarSettings_t *settings) {
 			{'x', BarUiActSelectQuickMix, "select quickmix stations",
 				"act_stationselectquickmix", NULL},
 			};
-	BarKeyShortcut_t *curShortcut;
-	size_t i;
 
 	BarGetXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
 	if ((configfd = fopen (configfile, "r")) == NULL) {
-		printf ("config file at %s not found\n", configfile);
-		/* FIXME: what about setting default values? */
+		/* use default keyboard shortcuts */
+		for (i = 0; i < sizeof (defaultKeys) / sizeof (*defaultKeys);
+				i++) {
+			BarSettingsAppendKey (&defaultKeys[i], settings);
+		}
 		return;
 	}
 
@@ -205,6 +208,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 				if (strcmp (defaultKeys[i].configKey, key) == 0) {
 					defaultKeys[i].key = val[0];
 					BarSettingsAppendKey (&defaultKeys[i], settings);
+					break;
 				}
 			}
 		}
@@ -222,7 +226,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 		settings->enableScrobbling = 1;
 	}
 
-	/* all actions available? append default actions if necessary */
+	/* append missing keyboard shortcuts to ensure the functionality is
+	 * available */
 	for (i = 0; i < sizeof (defaultKeys) / sizeof (*defaultKeys); i++) {
 		char shortcutAvailable = 0;
 		curShortcut = settings->keys;
