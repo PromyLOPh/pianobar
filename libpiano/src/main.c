@@ -712,6 +712,11 @@ PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph) {
 	return ret;
 }
 
+/*	get station from list by id
+ *	@param search here
+ *	@param search for this
+ *	@return the first station structure matching the given id
+ */
 PianoStation_t *PianoFindStationById (PianoStation_t *stations,
 		const char *searchStation) {
 	while (stations != NULL) {

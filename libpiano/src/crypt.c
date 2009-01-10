@@ -104,7 +104,7 @@ char *PianoIntsToString (const unsigned int *arrInts, size_t arrIntsN) {
 	for (i = 0; i < arrIntsN; i++) {
 		/* map string to 4-byte int */
 		tmp = (unsigned int *) &strDecoded[i*4];
-		/* FIXME: big endian does not need to byteswap */
+		/* FIXME: big endian does not need to byteswap? */
 		*tmp = byteswap32 (arrInts[i]);
 	}
 	return strDecoded;

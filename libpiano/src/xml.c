@@ -87,7 +87,8 @@ void PianoXmlIsFaultCb (const char *key, const xmlNode *value, void *data) {
 			}
 		}
 	} else if (strcmp ("faultCode", key) == 0) {
-		/* some error can only be identified by looking at their id */
+		/* some errors can only be identified by looking at their id */
+		/* detect pandora's ip restriction */
 		if (strcmp ("12", valueStr) == 0) {
 			*ret = PIANO_RET_IP_REJECTED;
 		}
