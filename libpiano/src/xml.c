@@ -388,17 +388,19 @@ PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml) {
 		}
 	}
 	/* set quickmix flags after all stations are read */
-	curQuickMixId = quickMixIds;
-	while (*curQuickMixId != NULL) {
-		PianoStation_t *curStation = PianoFindStationById (ph->stations,
-				*curQuickMixId);
-		if (curStation != NULL) {
-			curStation->useQuickMix = 1;
+	if (quickMixIds != NULL) {
+		curQuickMixId = quickMixIds;
+		while (*curQuickMixId != NULL) {
+			PianoStation_t *curStation = PianoFindStationById (ph->stations,
+					*curQuickMixId);
+			if (curStation != NULL) {
+				curStation->useQuickMix = 1;
+			}
+			free (*curQuickMixId);
+			curQuickMixId++;
 		}
-		free (*curQuickMixId);
-		curQuickMixId++;
+		free (quickMixIds);
 	}
-	free (quickMixIds);
 
 	xmlFreeDoc (doc);
 	return PIANO_RET_OK;
