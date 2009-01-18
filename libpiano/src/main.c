@@ -61,17 +61,16 @@ void PianoFree (void *ptr, size_t size) {
 	}
 }
 
-/*	initialize piano handle, set up curl handle and settings; note: you
- *	_must_ init curl and libxml2 using curl_global_init (CURL_GLOBAL_SSL)
- *	and xmlInitParser (), you also _must_ cleanup their garbage on your own!
+/*	initialize piano handle, set up curl handle and settings; note: _you_ have
+ *	to init curl and libxml2 using curl_global_init (CURL_GLOBAL_SSL) and
+ *	xmlInitParser (), _you_ also have to cleanup their garbage on your own!
  *	@param piano handle
  *	@return nothing
  */
 void PianoInit (PianoHandle_t *ph) {
 	memset (ph, 0, sizeof (*ph));
 	ph->curlHandle = curl_easy_init ();
-	/* FIXME: 64-bit may make this hack useless */
-	snprintf (ph->routeId, sizeof (ph->routeId), "%07liP", time (NULL)>>8);
+	snprintf (ph->routeId, sizeof (ph->routeId), "%07liP", time (NULL) % 10000000);
 	curl_easy_setopt (ph->curlHandle, CURLOPT_USERAGENT, PACKAGE_STRING);
 	curl_easy_setopt (ph->curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 	curl_easy_setopt (ph->curlHandle, CURLOPT_TIMEOUT, 60);
