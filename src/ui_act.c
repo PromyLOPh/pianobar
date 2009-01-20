@@ -239,7 +239,7 @@ void BarUiActRenameStation (BAR_KS_ARGS) {
 
 	RETURN_IF_NO_STATION;
 
-	lineBuf = readline ("New name?\n");
+	lineBuf = readline ("New name: ");
 	if (lineBuf != NULL && strlen (lineBuf) > 0) {
 		if (!BarTransformIfShared (ph, *curStation)) {
 			return;

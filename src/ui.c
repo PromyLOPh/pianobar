@@ -312,7 +312,7 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 		curCat = curCat->next;
 	}
 	/* select category or exit */
-	if (!BarReadlineInt (NULL, &i)) {
+	if (!BarReadlineInt ("Select category: ", &i)) {
 		BarUiMsg ("Aborted.\n");
 		return;
 	}
@@ -330,7 +330,7 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 		i++;
 		curStation = curStation->next;
 	}
-	if (!BarReadlineInt (NULL, &i)) {
+	if (!BarReadlineInt ("Select genre: ", &i)) {
 		BarUiMsg ("Aborted.\n");
 		return;
 	}
