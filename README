@@ -8,9 +8,9 @@ pianobar is a console client for the personalized web radio pandora
 - rate played songs and let pandora explain why they were selected
 - show upcoming songs
 - configure key bindings
-- last.fm scrobbling support
+- last.fm scrobbling support (currently unmaintained)
 - proxy support for listeners outside the USA
 
-Your can get recent versions of this software at
+You can get recent versions of this software at
 http://github.com/PromyLOPh/pianobar/tree/master or
 http://uint16.ath.cx/software/pandora_client.en.html
