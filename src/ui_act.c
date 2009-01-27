@@ -208,7 +208,7 @@ void BarUiActSkipSong (BAR_KS_ARGS) {
 /*	move song to different station
  */
 void BarUiActMoveSong (BAR_KS_ARGS) {
-	PianoStation_t *moveStation;
+	PianoStation_t *moveStation, *fromStation;
 
 	RETURN_IF_NO_SONG;
 
@@ -220,7 +220,12 @@ void BarUiActMoveSong (BAR_KS_ARGS) {
 		}
 		printf ("Moving song to \"%s\"... ", moveStation->name);
 		fflush (stdout);
-		if (BarUiPrintPianoStatus (PianoMoveSong (ph, *curStation,
+		fromStation = PianoFindStationById (ph->stations, (*curSong)->stationId);
+		if (fromStation == NULL) {
+			BarUiMsg ("Station not found\n");
+			return;
+		}
+		if (BarUiPrintPianoStatus (PianoMoveSong (ph, fromStation,
 				moveStation, *curSong)) == PIANO_RET_OK) {
 			player->doQuit = 1;
 		}
