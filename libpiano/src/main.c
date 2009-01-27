@@ -871,6 +871,7 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 		case PIANO_RET_READONLY_MODE:
 			return "Request cannot be completed at this time, please try "
 					"again later.";
+			break;
 
 		case PIANO_RET_STATION_CODE_INVALID:
 			return "Station id is invalid.";
@@ -879,6 +880,11 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 		case PIANO_RET_IP_REJECTED:
 			return "Your ip address was rejected. Please setup a control "
 					"proxy (see manpage).";
+			break;
+
+		case PIANO_RET_STATION_NONEXISTENT:
+			return "Station does not exist";
+			break;
 
 		default:
 			return "No error message available.";

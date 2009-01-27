@@ -78,6 +78,9 @@ void PianoXmlIsFaultCb (const char *key, const xmlNode *value, void *data) {
 					} else if (strcmp ("STATION_CODE_INVALID",
 							matchStr) == 0) {
 						*ret = PIANO_RET_STATION_CODE_INVALID;
+					} else if (strcmp ("STATION_DOES_NOT_EXIST",
+							matchStr) == 0) {
+						*ret = PIANO_RET_STATION_NONEXISTENT;
 					} else {
 						*ret = PIANO_RET_ERR;
 						printf (PACKAGE ": Unknown error %s in %s\n",
