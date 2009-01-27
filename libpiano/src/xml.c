@@ -290,7 +290,13 @@ void PianoXmlParsePlaylistCb (const char *key, const xmlNode *value,
 		song->album = strdup (valueStr);
 	} else if (strcmp ("fileGain", key) == 0) {
 		song->fileGain = atof (valueStr);
-	}
+	} else if (strcmp ("audioEncoding", key) == 0) {
+		if (strcmp (valueStr, "aacplus") == 0) {
+			song->audioFormat = PIANO_AF_AACPLUS;
+		} else if (strcmp (valueStr, "mp3") == 0) {
+			song->audioFormat = PIANO_AF_MP3;
+		}
+ 	}
 }
 
 /*	parses userinfos sent by pandora as login response

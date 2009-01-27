@@ -44,6 +44,7 @@ THE SOFTWARE.
 /* prototypes */
 PianoReturn_t PianoAddFeedback (PianoHandle_t *, const char *, const char *,
 		const char *, const char *, const char *, PianoSongRating_t);
+const char *PianoAudioFormatToString (PianoAudioFormat_t);
 
 /*	more "secure" free version; only use this function, not original free ()
  *	in this library
@@ -271,7 +272,8 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
  *	@param piano handle
  *	@param station id
  */
-PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId) {
+PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
+		PianoAudioFormat_t format) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], url[PIANO_URL_BUFFER_SIZE];
 	char *requestStr, *retStr;
 	PianoReturn_t ret;
@@ -286,14 +288,15 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId) {
 			"<param><value><string>0</string></value></param>"
 			"<param><value><string></string></value></param>"
 			"<param><value><string></string></value></param>"
-			"<param><value><string>aacplus</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
-			stationId);
+			stationId, PianoAudioFormatToString (format));
 	requestStr = PianoEncryptString (xmlSendBuf);
 	snprintf (url, sizeof (url), PIANO_RPC_URL
 			"rid=%s&lid=%s&method=getFragment&arg1=%s&arg2=0"
-			"&arg3=0&arg4=&arg5=&arg6=aacplus", ph->routeId,
-			ph->user.listenerId, stationId);
+			"&arg3=0&arg4=&arg5=&arg6=%s", ph->routeId,
+			ph->user.listenerId, stationId,
+			PianoAudioFormatToString (format));
 
 	if ((ret = PianoHttpPost (ph->curlHandle, url, requestStr, &retStr)) ==
 			PIANO_RET_OK) {
@@ -882,3 +885,24 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			break;
 	}
 }
+
+/*	convert audio format id to string that can be used in xml requests
+ *	@param format id
+ *	@return constant string
+ */
+const char *PianoAudioFormatToString (PianoAudioFormat_t format) {
+	switch (format) {
+		case PIANO_AF_AACPLUS:
+			return "aacplus";
+			break;
+
+		case PIANO_AF_MP3:
+			return "mp3";
+			break;
+
+		default:
+			return NULL;
+			break;
+	}
+}
+

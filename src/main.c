@@ -165,7 +165,8 @@ int main (int argc, char **argv) {
 					BarUiMsg ("Receiving new playlist... ");
 					PianoDestroyPlaylist (&ph);
 					if (BarUiPrintPianoStatus (PianoGetPlaylist (&ph,
-							curStation->id)) != PIANO_RET_OK) {
+							curStation->id, PIANO_AF_AACPLUS)) !=
+							PIANO_RET_OK) {
 						curStation = NULL;
 					} else {
 						curSong = ph.playlist;

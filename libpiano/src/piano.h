@@ -73,6 +73,10 @@ typedef struct PianoStation PianoStation_t;
 enum PianoSongRating {PIANO_RATE_BAN, PIANO_RATE_LOVE, PIANO_RATE_NONE};
 typedef enum PianoSongRating PianoSongRating_t;
 
+/* UNKNOWN should be 0, because memset sets audio format to 0 */
+typedef enum {PIANO_AF_UNKNOWN = 0, PIANO_AF_AACPLUS, PIANO_AF_MP3}
+		PianoAudioFormat_t;
+
 struct PianoSong {
 	char *artist;
 	//char **genre;
@@ -105,6 +109,7 @@ struct PianoSong {
 	char *focusTraitId;
 	char *identity;
 	//int score; /* only used for search results */
+	PianoAudioFormat_t audioFormat;
 	struct PianoSong *next;
 };
 
@@ -165,7 +170,8 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
 		const char *password, char secureLogin);
 
 PianoReturn_t PianoGetStations (PianoHandle_t *ph);
-PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId);
+PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
+		PianoAudioFormat_t);
 
 PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoSong_t *song,
 		PianoSongRating_t rating);
