@@ -31,112 +31,60 @@ THE SOFTWARE.
 
 #include <curl/curl.h>
 
-struct PianoUserInfo {
-	//unsigned int zipcode;
-	/* disabled: billingFrequency */
-	//char hasExplicitContentFilter;
+typedef struct PianoUserInfo {
 	char *webAuthToken;
-	/* disabled: alertCode */
-	/* disabled: seenQuickMixPanel */
-	//unsigned short birthYear;
-	//char *bookmarkUrl;
-	//char *listenerState; /* FIXME: use enum? */
-	/* disabled: adCookieValue */
-	/* disabled: gender */
-	/* disabled: emailOptIn */
-	/* disabled: autoRenew */
-	//char *username;
 	char *listenerId;
 	char *authToken;
-	//char *webName;
-};
+} PianoUserInfo_t;
 
-typedef struct PianoUserInfo PianoUserInfo_t;
-
-struct PianoStation {
+typedef struct PianoStation {
 	char isCreator;
-	/* disabled: originalStationId */
-	//char **genre;
-	//unsigned int originalCreatorId;
-	/* disabled: initialSeed */
-	/* disabled: isNew */
-	/* disabled: transformType */
-	//char *idToken;
 	char isQuickMix;
 	char useQuickMix; /* station will be included in quickmix */
 	char *name;
 	char *id;
 	struct PianoStation *next;
-};
-typedef struct PianoStation PianoStation_t;
+} PianoStation_t;
 
-enum PianoSongRating {PIANO_RATE_BAN, PIANO_RATE_LOVE, PIANO_RATE_NONE};
-typedef enum PianoSongRating PianoSongRating_t;
+typedef enum {PIANO_RATE_BAN, PIANO_RATE_LOVE, PIANO_RATE_NONE}
+		PianoSongRating_t;
 
 /* UNKNOWN should be 0, because memset sets audio format to 0 */
 typedef enum {PIANO_AF_UNKNOWN = 0, PIANO_AF_AACPLUS, PIANO_AF_MP3}
 		PianoAudioFormat_t;
 
-struct PianoSong {
+typedef struct PianoSong {
 	char *artist;
-	//char **genre;
 	char *matchingSeed;
-	/* disabled: composerName */
-	/* disabled: isSeed */
-	/* disabled: artistFansURL */
-	/* disabled: songExplorerUrl */
 	float fileGain;
-	/* disabled: songDetailURL */
-	/* disabled: albumDetailURL */
-	//char *webId;
-	/* disabled: musicComUrl */
-	/* disabled: fanExplorerUrl */
 	PianoSongRating_t rating;
-	/* disabled: artistExplorerUrl */
-	/* disabled: artRadio */
-	//char *audioEncoding; /* FIXME: should be enum: mp3 or aacplus */
 	char *stationId;
 	char *album;
-	//char *artistMusicId;
 	char *userSeed;
-	/* disabled: albumExplorerUrl */
-	/* disabled: amazonUrl */
 	char *audioUrl;
-	//char onTour;
-	/* disabled: itunesUrl */
 	char *musicId;
 	char *title;
 	char *focusTraitId;
 	char *identity;
-	//int score; /* only used for search results */
 	PianoAudioFormat_t audioFormat;
 	struct PianoSong *next;
-};
-
-typedef struct PianoSong PianoSong_t;
+} PianoSong_t;
 
 /* currently only used for search results */
-struct PianoArtist {
-	/* disabled: iscomposer */
-	/* disabled: likelymatch */
+typedef struct PianoArtist {
 	char *name;
 	char *musicId;
 	int score;
 	struct PianoArtist *next;
-};
+} PianoArtist_t;
 
-typedef struct PianoArtist PianoArtist_t;
-
-
-struct PianoGenreCategory {
+typedef struct PianoGenreCategory {
 	char *name;
 	PianoStation_t *stations;
 	struct PianoGenreCategory *next;
-};
+} PianoGenreCategory_t;
 
-typedef struct PianoGenreCategory PianoGenreCategory_t;
-
-struct PianoHandle {
+typedef struct PianoHandle {
 	CURL *curlHandle;
 	char routeId[9];
 	PianoUserInfo_t user;
@@ -144,58 +92,49 @@ struct PianoHandle {
 	PianoStation_t *stations;
 	PianoSong_t *playlist;
 	PianoGenreCategory_t *genreStations;
-};
+} PianoHandle_t;
 
-typedef struct PianoHandle PianoHandle_t;
-
-struct PianoSearchResult {
+typedef struct PianoSearchResult {
 	PianoSong_t *songs;
 	PianoArtist_t *artists;
-};
+} PianoSearchResult_t;
 
-typedef struct PianoSearchResult PianoSearchResult_t;
-
-enum PianoReturn {PIANO_RET_OK, PIANO_RET_ERR, PIANO_RET_XML_INVALID,
+typedef enum {PIANO_RET_OK, PIANO_RET_ERR, PIANO_RET_XML_INVALID,
 		PIANO_RET_AUTH_TOKEN_INVALID, PIANO_RET_AUTH_USER_PASSWORD_INVALID,
 		PIANO_RET_NET_ERROR, PIANO_RET_NOT_AUTHORIZED,
 		PIANO_RET_PROTOCOL_INCOMPATIBLE, PIANO_RET_READONLY_MODE,
-		PIANO_RET_STATION_CODE_INVALID, PIANO_RET_IP_REJECTED};
-typedef enum PianoReturn PianoReturn_t;
+		PIANO_RET_STATION_CODE_INVALID, PIANO_RET_IP_REJECTED} PianoReturn_t;
 
 void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
-void PianoDestroyPlaylist (PianoHandle_t *ph);
-void PianoDestroySearchResult (PianoSearchResult_t *searchResult);
-PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
-		const char *password, char secureLogin);
+void PianoDestroyPlaylist (PianoHandle_t *);
+void PianoDestroySearchResult (PianoSearchResult_t *);
+PianoReturn_t PianoConnect (PianoHandle_t *, const char *, const char *, char);
 
-PianoReturn_t PianoGetStations (PianoHandle_t *ph);
-PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
+PianoReturn_t PianoGetStations (PianoHandle_t *);
+PianoReturn_t PianoGetPlaylist (PianoHandle_t *, const char *,
 		PianoAudioFormat_t);
 
-PianoReturn_t PianoRateTrack (PianoHandle_t *ph, PianoSong_t *song,
-		PianoSongRating_t rating);
-PianoReturn_t PianoMoveSong (PianoHandle_t *ph,
-		const PianoStation_t *stationFrom, const PianoStation_t *stationTo,
-		const PianoSong_t *song);
-PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
-		const char *newName);
-PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station);
-PianoReturn_t PianoSearchMusic (const PianoHandle_t *ph,
-		const char *searchStr, PianoSearchResult_t *searchResult);
-PianoReturn_t PianoCreateStation (PianoHandle_t *ph, const char *type,
-		const char *id);
-PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
-		PianoStation_t *station, const char *musicId);
-PianoReturn_t PianoSongTired (PianoHandle_t *ph, const PianoSong_t *song);
-PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph);
-PianoStation_t *PianoFindStationById (PianoStation_t *stations,
-		const char *searchStation);
-PianoReturn_t PianoGetGenreStations (PianoHandle_t *ph);
-PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
-		PianoStation_t *station);
-PianoReturn_t PianoExplain (const PianoHandle_t *ph, const PianoSong_t *song,
-		char **retExplain);
-const char *PianoErrorToStr (PianoReturn_t ret);
+PianoReturn_t PianoRateTrack (PianoHandle_t *, PianoSong_t *,
+		PianoSongRating_t);
+PianoReturn_t PianoMoveSong (PianoHandle_t *, const PianoStation_t *,
+		const PianoStation_t *, const PianoSong_t *);
+PianoReturn_t PianoRenameStation (PianoHandle_t *, PianoStation_t *,
+		const char *);
+PianoReturn_t PianoDeleteStation (PianoHandle_t *, PianoStation_t *);
+PianoReturn_t PianoSearchMusic (const PianoHandle_t *, const char *,
+		PianoSearchResult_t *);
+PianoReturn_t PianoCreateStation (PianoHandle_t *, const char *,
+		const char *);
+PianoReturn_t PianoStationAddMusic (PianoHandle_t *, PianoStation_t *,
+		const char *);
+PianoReturn_t PianoSongTired (PianoHandle_t *, const PianoSong_t *);
+PianoReturn_t PianoSetQuickmix (PianoHandle_t *);
+PianoStation_t *PianoFindStationById (PianoStation_t *, const char *);
+PianoReturn_t PianoGetGenreStations (PianoHandle_t *);
+PianoReturn_t PianoTransformShared (PianoHandle_t *, PianoStation_t *);
+PianoReturn_t PianoExplain (const PianoHandle_t *, const PianoSong_t *,
+		char **);
+const char *PianoErrorToStr (PianoReturn_t);
 
 #endif /* _PIANO_H */
