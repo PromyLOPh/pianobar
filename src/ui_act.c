@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 /* needed by readline */
 #include <stdio.h>
 #include <readline/readline.h>
@@ -39,6 +40,14 @@ THE SOFTWARE.
 #define RETURN_IF_NO_SONG if (*curStation == NULL || *curSong == NULL) { \
 		BarUiMsg ("No song playing.\n"); \
 		return; }
+
+/*	helper to _really_ skip a song (unlock mutex, quit player)
+ *	@param player handle
+ */
+inline void BarUiDoSkipSong (struct aacPlayer *player) {
+	player->doQuit = 1;
+	pthread_mutex_unlock (&player->pauseMutex);
+}
 
 /*	transform station if necessary to allow changes like rename, rate, ...
  *	@param piano handle
@@ -101,7 +110,7 @@ void BarUiActBanSong (BAR_KS_ARGS) {
 	BarUiMsg ("Banning song... ");
 	if (BarUiPrintPianoStatus (PianoRateTrack (ph, *curSong,
 			PIANO_RATE_BAN)) == PIANO_RET_OK) {
-		player->doQuit = 1;
+		BarUiDoSkipSong (player);
 	}
 }
 
@@ -130,7 +139,7 @@ void BarUiActDeleteStation (BAR_KS_ARGS) {
 		BarUiMsg ("Deleting station... ");
 		if (BarUiPrintPianoStatus (PianoDeleteStation (ph,
 				*curStation)) == PIANO_RET_OK) {
-			player->doQuit = 1;
+			BarUiDoSkipSong (player);
 			PianoDestroyPlaylist (ph);
 			*curSong = NULL;
 			*curStation = NULL;
@@ -202,7 +211,7 @@ void BarUiActLoveSong (BAR_KS_ARGS) {
 /*	skip song
  */
 void BarUiActSkipSong (BAR_KS_ARGS) {
-	player->doQuit = 1;
+	BarUiDoSkipSong (player);
 }
 
 /*	move song to different station
@@ -227,7 +236,7 @@ void BarUiActMoveSong (BAR_KS_ARGS) {
 		}
 		if (BarUiPrintPianoStatus (PianoMoveSong (ph, fromStation,
 				moveStation, *curSong)) == PIANO_RET_OK) {
-			player->doQuit = 1;
+			BarUiDoSkipSong (player);
 		}
 	}
 }
@@ -235,7 +244,10 @@ void BarUiActMoveSong (BAR_KS_ARGS) {
 /*	pause
  */
 void BarUiActPause (BAR_KS_ARGS) {
-	player->doPause = !player->doPause;
+	/* already locked => unlock/unpause */
+	if (pthread_mutex_trylock (&player->pauseMutex) == EBUSY) {
+		pthread_mutex_unlock (&player->pauseMutex);
+	}
 }
 
 /*	rename current station
@@ -261,7 +273,7 @@ void BarUiActRenameStation (BAR_KS_ARGS) {
 /*	play another station
  */
 void BarUiActSelectStation (BAR_KS_ARGS) {
-	player->doQuit = 1;
+	BarUiDoSkipSong (player);
 	PianoDestroyPlaylist (ph);
 	*curSong = NULL;
 	*curStation = BarUiSelectStation (ph, "Select station: ");
@@ -281,7 +293,7 @@ void BarUiActTempBanSong (BAR_KS_ARGS) {
 	BarUiMsg ("Putting song on shelf... ");
 	if (BarUiPrintPianoStatus (PianoSongTired (ph, *curSong)) ==
 			PIANO_RET_OK) {
-		player->doQuit = 1;
+		BarUiDoSkipSong (player);
 	}
 }
 
@@ -328,5 +340,5 @@ void BarUiActSelectQuickMix (BAR_KS_ARGS) {
  */
 void BarUiActQuit (BAR_KS_ARGS) {
 	*doQuit = 1;
-	player->doQuit = 1;
+	BarUiDoSkipSong (player);
 }

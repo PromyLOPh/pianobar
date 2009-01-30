@@ -34,18 +34,13 @@ THE SOFTWARE.
 #define byteswap32(x) (((x >> 24) & 0x000000ff) | ((x >> 8) & 0x0000ff00) | \
 		((x << 8) & 0x00ff0000) | ((x << 24) & 0xff000000))
 
-/* FIXME: not the best solution to poll every second, but the easiest
- * one I know... (pthread's conditions could be another solution) */
+/* wait while locked, but don't slow down main thread by keeping
+* locks too long */
 #define QUIT_PAUSE_CHECK \
+	pthread_mutex_lock (&player->pauseMutex); \
+	pthread_mutex_unlock (&player->pauseMutex); \
 	if (player->doQuit) { \
 		return 0; \
-	} \
-	if (player->doPause) { \
-		curl_easy_pause (player->audioFd, CURLPAUSE_ALL); \
-		while (player->doPause && !player->doQuit) { \
-			sleep (1); \
-		} \
-		curl_easy_pause (player->audioFd, CURLPAUSE_CONT); \
 	}
 
 /*	compute replaygain scale factor
@@ -225,6 +220,8 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			(player->bufferFilled - player->bufferRead));
 	player->bufferFilled = (player->bufferFilled - player->bufferRead);
 
+	pthread_mutex_unlock (&player->pauseMutex);
+
 	return size*nmemb;
 }
 
@@ -239,6 +236,7 @@ void *BarPlayerThread (void *data) {
 	CURLcode curlRet = 0;
 
 	/* init handles */
+	pthread_mutex_init (&player->pauseMutex, NULL);
 	player->audioFd = curl_easy_init ();
 	player->aacHandle = NeAACDecOpen();
 	
@@ -279,6 +277,7 @@ void *BarPlayerThread (void *data) {
 	if (player->sampleSize != NULL) {
 		free (player->sampleSize);
 	}
+	pthread_mutex_destroy (&player->pauseMutex);
 
 	player->mode = PLAYER_FINISHED_PLAYBACK;
 

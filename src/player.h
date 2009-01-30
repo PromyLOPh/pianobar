@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <curl/curl.h>
 #include <neaacdec.h>
 #include <ao/ao.h>
+#include <pthread.h>
 
 struct aacPlayer {
 	/* buffer; should be large enough */
@@ -52,7 +53,7 @@ struct aacPlayer {
 	ao_device *audioOutDevice;
 	char *url;
 	char doQuit;
-	char doPause;
+	pthread_mutex_t pauseMutex;
 	CURL *audioFd;
 };
 
