@@ -220,8 +220,6 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			(player->bufferFilled - player->bufferRead));
 	player->bufferFilled = (player->bufferFilled - player->bufferRead);
 
-	pthread_mutex_unlock (&player->pauseMutex);
-
 	return size*nmemb;
 }
 
