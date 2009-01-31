@@ -9,6 +9,7 @@ Versions may vary :) Just get the newest one:
 pianobar
 ++++++++
 
+cmake
 libao				http://www.xiph.org/ao/
 libcurl				http://curl.haxx.se/
 libfaad2			http://www.audiocoding.com/downloads.html
@@ -19,25 +20,22 @@ UTF-8 console/locale!
 libpiano
 ++++++++
 
+cmake
 libcurl with SSL	http://curl.haxx.se/
 libxml2				http://xmlsoft.org/
 
 libwardrobe
 +++++++++++
 
+cmake
 libcurl				http://curl.haxx.se/
 
 Build
 -----
 
-./autogen.sh
-./configure
+cmake .
 make
 make install
-
-If the build or configure process fails try something like this (you may have
-to adjust the paths):
-LDFLAGS+=" -L/usr/pkg/lib" CFLAGS+=" -I/usr/pkg/include/faad2" ./configure
 
 You can run the client directly from the source directory:
  

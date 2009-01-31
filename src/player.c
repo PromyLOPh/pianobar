@@ -251,7 +251,7 @@ void *BarPlayerThread (void *data) {
 	curl_easy_setopt (player->audioFd, CURLOPT_URL, player->url);
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION, BarPlayerCurlCb);
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, (void *) player);
-	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE_STRING);
+	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE);
 	curl_easy_setopt (player->audioFd, CURLOPT_CONNECTTIMEOUT, 60);
 	/* start downloading from beginning of file */
 	curl_easy_setopt (player->audioFd, CURLOPT_RESUME_FROM, 0);

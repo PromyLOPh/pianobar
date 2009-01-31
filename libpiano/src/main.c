@@ -73,7 +73,7 @@ void PianoInit (PianoHandle_t *ph) {
 	memset (ph, 0, sizeof (*ph));
 	ph->curlHandle = curl_easy_init ();
 	snprintf (ph->routeId, sizeof (ph->routeId), "%07liP", time (NULL) % 10000000);
-	curl_easy_setopt (ph->curlHandle, CURLOPT_USERAGENT, PACKAGE_STRING);
+	curl_easy_setopt (ph->curlHandle, CURLOPT_USERAGENT, PACKAGE);
 	curl_easy_setopt (ph->curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 	curl_easy_setopt (ph->curlHandle, CURLOPT_TIMEOUT, 60);
 }
@@ -200,7 +200,7 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
 	PianoReturn_t ret;
 
 #if 0
-	printf ("\n==========\n" PACKAGE_NAME ": Pandora changed their blowfish "
+	printf ("\n==========\n" PACKAGE ": Pandora changed their blowfish "
 			"encryption key. You will not be able to connect to pandora.\n"
 			"==========\n");
 #endif
@@ -865,7 +865,7 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			break;
 
 		case PIANO_RET_PROTOCOL_INCOMPATIBLE:
-			return "Protocol incompatible. Please upgrade " PACKAGE_NAME ".";
+			return "Protocol incompatible. Please upgrade " PACKAGE ".";
 			break;
 
 		case PIANO_RET_READONLY_MODE:

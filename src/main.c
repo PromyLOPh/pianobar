@@ -65,7 +65,7 @@ int main (int argc, char **argv) {
 	char buf = '\0';
 	BarKeyShortcut_t *curShortcut;
 
-	BarUiMsg ("Welcome to " PACKAGE_NAME "!\n");
+	BarUiMsg ("Welcome to " PACKAGE "!\n");
 
 	/* init some things */
 	curl_global_init (CURL_GLOBAL_SSL);

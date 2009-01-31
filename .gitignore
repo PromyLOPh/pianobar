@@ -1,20 +1,10 @@
-.deps
-.libs
-*.lo
-*.la
 *.o
 # vim swap files
 .*.sw*
-aclocal.m4
-autom4te.cache
-compile
-config.*
-configure
-depcomp
-install-sh
-libtool
-ltmain.sh
 Makefile
-Makefile.in
-missing
-stamp-h1
+config.h
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.a
+install_manifest.txt
