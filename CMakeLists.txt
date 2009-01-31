@@ -1,0 +1,8 @@
+cmake_minimum_required (VERSION 2.4)
+
+set (PACKAGE pianobar)
+project (${PACKAGE})
+
+add_subdirectory (libpiano)
+add_subdirectory (libwardrobe)
+add_subdirectory (src)
