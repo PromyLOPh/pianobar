@@ -22,7 +22,8 @@ Per-user configuration file. See
 .SH CONFIGURATION
 The configuration file consists of simple
 .B key = value
-lines. Each terminated with a newline (\\n) character. Keys and values are both case sensitive. act_*-keys control 
+lines. Each terminated with a newline (\\n) character. Keys and values are both
+case sensitive. act_*-keys control 
 .B pianobar's
 key-bindings.
 
@@ -36,15 +37,18 @@ Love currently played song.
 
 .TP
 .B act_songban = -
-Ban current track. It will not be played again and can only removed using the pandora.com web interface.
+Ban current track. It will not be played again and can only removed using the
+pandora.com web interface.
 
 .TP
 .B act_stationaddmusic = a
-Add more music to current station. You will be asked for a search string. Just follow the instructions.
+Add more music to current station. You will be asked for a search string. Just
+follow the instructions.
 
 .TP
 .B act_stationcreate = c
-Create new station. You have to enter a search string and select the song or artist of your choice.
+Create new station. You have to enter a search string and select the song or
+artist of your choice.
 
 .TP
 .B act_stationdelete = d
@@ -100,19 +104,27 @@ Show next songs in playlist.
 Select quickmix stations.
 
 .TP
+.B audio_format = {aacplus,mp3}
+Select audio format. aacplus is default if both libraries (faad, mad) are
+available.
+
+.TP
 .B control_proxy = host:port
-Non-american users need a proxy to use pandora.com. Only the xmlrpc interface will use this proxy. The music is streamed directly.
+Non-american users need a proxy to use pandora.com. Only the xmlrpc interface
+will use this proxy. The music is streamed directly.
 
 .TP
 .B control_proxy_type = {http,socks4,socks4a,socks5}
-If you want to use a proxy you need to specify the proxy type you're going to use. Note that
+If you want to use a proxy you need to specify the proxy type you're going to
+use. Note that
 .B socks5
 needs an IP address specified in
 .B control_proxy
 
 .TP
 .B disable_secure_login = {1,0}
-If you have problems when loggin in and you know your control proxy definitively works try setting this option to
+If you have problems when loggin in and you know your control proxy
+definitively works try setting this option to
 .B 1.
 It disables the SSL secured login. Beware!
 .I Your password will be sent as plain-text!
