@@ -154,6 +154,15 @@ void BarSettingsRead (BarSettings_t *settings) {
 				"act_stationselectquickmix", NULL},
 			};
 
+	/* apply defaults */
+	#ifdef ENABLE_FAAD
+	settings->audioFormat = PIANO_AF_AACPLUS;
+	#else
+		#ifdef ENABLE_MAD
+		settings->audioFormat = PIANO_AF_MP3;
+		#endif
+	#endif
+
 	BarGetXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
 	if ((configfd = fopen (configfile, "r")) == NULL) {
 		/* use default keyboard shortcuts */
@@ -211,6 +220,12 @@ void BarSettingsRead (BarSettings_t *settings) {
 					BarSettingsAppendKey (&defaultKeys[i], settings);
 					break;
 				}
+			}
+		} else if (strcmp ("audio_format", key) == 0) {
+			if (strcmp (val, "aacplus") == 0) {
+				settings->audioFormat = PIANO_AF_AACPLUS;
+			} else if (strcmp (val, "mp3") == 0) {
+				settings->audioFormat = PIANO_AF_MP3;
 			}
 		}
 	}

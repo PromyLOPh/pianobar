@@ -1,1 +1,11 @@
+#ifndef _CONFIG_H
+#define _CONFIG_H
+
+/* package name */
 #define PACKAGE "${PACKAGE}"
+
+/* used libraries */
+#cmakedefine ENABLE_FAAD
+#cmakedefine ENABLE_MAD
+
+#endif /* _CONFIG_H */

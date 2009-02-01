@@ -1,3 +1,5 @@
+set (CMAKE_C_FLAGS -Wall)
+
 find_package (CURL REQUIRED)
 
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in

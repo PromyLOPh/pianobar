@@ -6,32 +6,18 @@ Dependencies
 
 Versions may vary :) Just get the newest one:
 
-pianobar
-++++++++
-
 cmake
 libao				http://www.xiph.org/ao/
-libcurl				http://curl.haxx.se/
+libcurl with SSL	http://curl.haxx.se/
 libfaad2			http://www.audiocoding.com/downloads.html
+AND/OR libmad		http://www.underbit.com/products/mad/
+libxml2				http://xmlsoft.org/
 pthreads
 readline
 UTF-8 console/locale!
 
-libpiano
-++++++++
-
-cmake
-libcurl with SSL	http://curl.haxx.se/
-libxml2				http://xmlsoft.org/
-
-libwardrobe
-+++++++++++
-
-cmake
-libcurl				http://curl.haxx.se/
-
-Build
------
+Building
+--------
 
 cmake .
 make

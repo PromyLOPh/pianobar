@@ -52,7 +52,7 @@ inline float BarSamplesToSeconds (float samplerate, float channels,
 
 int main (int argc, char **argv) {
 	PianoHandle_t ph;
-	struct aacPlayer player;
+	static struct audioPlayer player;
 	BarSettings_t settings;
 	PianoSong_t *curSong = NULL;
 	PianoStation_t *curStation = NULL;
@@ -165,7 +165,7 @@ int main (int argc, char **argv) {
 					BarUiMsg ("Receiving new playlist... ");
 					PianoDestroyPlaylist (&ph);
 					if (BarUiPrintPianoStatus (PianoGetPlaylist (&ph,
-							curStation->id, PIANO_AF_AACPLUS)) !=
+							curStation->id, settings.audioFormat)) !=
 							PIANO_RET_OK) {
 						curStation = NULL;
 					} else {
@@ -198,6 +198,7 @@ int main (int argc, char **argv) {
 					memset (&player, 0, sizeof (player));
 					player.url = strdup (curSong->audioUrl);
 					player.gain = curSong->fileGain;
+					player.audioFormat = curSong->audioFormat;
 		
 					/* start player */
 					pthread_create (&playerThread, NULL, BarPlayerThread,

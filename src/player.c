@@ -43,32 +43,56 @@ THE SOFTWARE.
 		return 0; \
 	}
 
+/* pandora uses float values with 2 digits precision. Scale them by 100 to get
+ * a "nice" integer */
+#define RG_SCALE_FACTOR 100
+
 /*	compute replaygain scale factor
  *	algo taken from here: http://www.dsprelated.com/showmessage/29246/1.php
  *	mpd does the same
  *	@param apply this gain
  *	@return this * yourvalue = newgain value
  */
-inline float computeReplayGainScale (float applyGain) {
-	return pow (10.0, applyGain / 20.0);
+inline unsigned int computeReplayGainScale (float applyGain) {
+	return pow (10.0, applyGain / 20.0) * RG_SCALE_FACTOR;
 }
 
-/*	our heart: plays streamed music
+/*	apply replaygain to signed short value
+ *	@param value
+ *	@param replaygain scale (calculated by computeReplayGainScale)
+ *	@return scaled value
+ */
+inline signed short int applyReplayGain (signed short int value,
+		unsigned int scale) {
+	int tmpReplayBuf = value * scale;
+	/* avoid clipping */
+	if (tmpReplayBuf > INT16_MAX*RG_SCALE_FACTOR) {
+		return INT16_MAX;
+	} else if (tmpReplayBuf < INT16_MIN*RG_SCALE_FACTOR) {
+		return INT16_MIN;
+	} else {
+		return tmpReplayBuf / RG_SCALE_FACTOR;
+	}
+}
+
+#ifdef ENABLE_FAAD
+
+/*	play aac stream
  *	@param streamed data
  *	@param block size
  *	@param received blocks
  *	@param extra data (player data)
  *	@return received bytes or less on error
  */
-size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
+size_t BarPlayerAACCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	char *data = ptr;
-	struct aacPlayer *player = stream;
+	struct audioPlayer *player = stream;
 
 	QUIT_PAUSE_CHECK;
 
 	/* fill buffer */
 	if (player->bufferFilled + size*nmemb > sizeof (player->buffer)) {
-		printf ("Buffer overflow!\n");
+		printf (PACKAGE ": Buffer overflow!\n");
 		return 0;
 	}
 	memcpy (player->buffer+player->bufferFilled, data, size*nmemb);
@@ -79,14 +103,13 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	if (player->mode == PLAYER_RECV_DATA) {
 		short int *aacDecoded;
 		NeAACDecFrameInfo frameInfo;
-		int tmpReplayBuf;
 		size_t i;
 
 		while ((player->bufferFilled - player->bufferRead) >
 				player->sampleSize[player->sampleSizeCurr]) {
 			/* decode frame */
 			aacDecoded = NeAACDecDecode(player->aacHandle, &frameInfo,
-					(unsigned char *) player->buffer + player->bufferRead,
+					player->buffer + player->bufferRead,
 					player->sampleSize[player->sampleSizeCurr]);
 			if (frameInfo.error != 0) {
 				printf (PACKAGE ": Decoding error: %s\n\n",
@@ -94,19 +117,11 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 				break;
 			}
 			for (i = 0; i < frameInfo.samples; i++) {
-				tmpReplayBuf = (float) aacDecoded[i] * player->scale;
-				/* avoid clipping */
-				if (tmpReplayBuf > INT16_MAX) {
-					aacDecoded[i] = INT16_MAX;
-				} else if (tmpReplayBuf < INT16_MIN) {
-					aacDecoded[i] = INT16_MIN;
-				} else {
-					aacDecoded[i] = tmpReplayBuf;
-				}
+				aacDecoded[i] = applyReplayGain (aacDecoded[i], player->scale);
 			}
 			/* ao_play needs bytes: 1 sample = 16 bits = 2 bytes */
 			ao_play (player->audioOutDevice, (char *) aacDecoded,
-					frameInfo.samples * 16 / 8);
+					frameInfo.samples * 2);
 			player->bufferRead += frameInfo.bytesconsumed;
 			player->sampleSizeCurr++;
 			/* going through this loop can take up to a few seconds =>
@@ -136,15 +151,14 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 					/* +1+4 needs to be replaced by <something>! */
 					player->bufferRead += 1+4;
-					char err = NeAACDecInit2 (player->aacHandle,
-							(unsigned char *) player->buffer +
+					char err = NeAACDecInit2 (player->aacHandle, player->buffer +
 							player->bufferRead, 5, &player->samplerate,
 							&player->channels);
 					player->bufferRead += 5;
 					if (err != 0) {
-						printf ("Error while initializing audio decoder"
+						printf (PACKAGE ": Error while initializing audio decoder"
 								"(%i)\n", err);
-						return 1;
+						return 0;
 					}
 					audioOutDriver = ao_default_driver_id();
 					format.bits = 16;
@@ -218,38 +232,162 @@ size_t BarPlayerCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 	/* move remaining bytes to buffer beginning */
 	memmove (player->buffer, player->buffer + player->bufferRead,
 			(player->bufferFilled - player->bufferRead));
-	player->bufferFilled = (player->bufferFilled - player->bufferRead);
+	player->bufferFilled -= player->bufferRead;
 
 	return size*nmemb;
 }
 
+#endif /* ENABLE_FAAD */
+
+#ifdef ENABLE_MAD
+
+/*	convert mad's internal fixed point format to short int
+ *	@param mad fixed
+ *	@return short int
+ */
+inline signed short int BarPlayerMadToShort (mad_fixed_t fixed) {
+	/* Clipping */
+	if (fixed >= MAD_F_ONE) {
+		return SHRT_MAX;
+	} else if (fixed <= -MAD_F_ONE) {
+		return -SHRT_MAX;
+	}
+
+	/* Conversion */
+	return (signed short int) (fixed >> (MAD_F_FRACBITS - 15));
+}
+
+size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
+	char *data = ptr;
+	struct audioPlayer *player = stream;
+	size_t i;
+
+	QUIT_PAUSE_CHECK;
+
+	/* fill buffer */
+	if (player->bufferFilled + size*nmemb > sizeof (player->buffer)) {
+		printf (PACKAGE ": Buffer overflow!\n");
+		return 0;
+	}
+	memcpy (player->buffer+player->bufferFilled, data, size*nmemb);
+	player->bufferFilled += size*nmemb;
+	player->bufferRead = 0;
+	player->bytesReceived += size*nmemb;
+
+	mad_stream_buffer (&player->mp3Stream, player->buffer,
+			player->bufferFilled);
+	player->mp3Stream.error = 0;
+	do {
+		/* channels * max samples found in mad.h */
+		signed short int madDecoded[2*1152], *madPtr = madDecoded;
+
+		if (mad_frame_decode (&player->mp3Frame, &player->mp3Stream) != 0) {
+			if (player->mp3Stream.error != MAD_ERROR_BUFLEN) {
+				printf (PACKAGE ": mp3 decoding error: %s.\n",
+						mad_stream_errorstr (&player->mp3Stream));
+				return 0;
+			} else {
+				/* rebuffering required => exit loop */
+				break;
+			}
+		}
+		mad_timer_add (&player->mp3Timer, player->mp3Frame.header.duration);
+		mad_synth_frame (&player->mp3Synth, &player->mp3Frame);
+		for (i = 0; i < player->mp3Synth.pcm.length; i++) {
+			/* left channel */
+			*(madPtr++) = applyReplayGain (BarPlayerMadToShort (
+					player->mp3Synth.pcm.samples[0][i]), player->scale);
+
+			/* right channel */
+			*(madPtr++) = applyReplayGain (BarPlayerMadToShort (
+					player->mp3Synth.pcm.samples[1][i]), player->scale);
+		}
+		if (player->mode < PLAYER_AUDIO_INITIALIZED) {
+			ao_sample_format format;
+			int audioOutDriver;
+
+			player->channels = player->mp3Synth.pcm.channels;
+			player->samplerate = player->mp3Synth.pcm.samplerate;
+			audioOutDriver = ao_default_driver_id();
+			format.bits = 16;
+			format.channels = player->channels;
+			format.rate = player->samplerate;
+			format.byte_format = AO_FMT_LITTLE;
+			player->audioOutDevice = ao_open_live (audioOutDriver,
+					&format, NULL);
+			player->mode = PLAYER_AUDIO_INITIALIZED;
+		}
+		/* samples * length * channels */
+		ao_play (player->audioOutDevice, (char *) madDecoded,
+				player->mp3Synth.pcm.length * 2 * 2);
+
+		QUIT_PAUSE_CHECK;
+	} while (player->mp3Stream.error != MAD_ERROR_BUFLEN);
+
+	player->bufferRead += player->mp3Stream.next_frame - player->buffer;
+
+	/* move remaining bytes to buffer beginning */
+	memmove (player->buffer, player->buffer + player->bufferRead,
+			(player->bufferFilled - player->bufferRead));
+	player->bufferFilled -= player->bufferRead;
+
+	return size*nmemb;
+}
+#endif /* ENABLE_MAD */
 
 /*	player thread; for every song a new thread is started
  *	@param aacPlayer structure
  *	@return NULL NULL NULL ...
  */
 void *BarPlayerThread (void *data) {
-	struct aacPlayer *player = data;
+	struct audioPlayer *player = data;
+	#ifdef ENABLE_FAAD
 	NeAACDecConfigurationPtr conf;
+	#endif
 	CURLcode curlRet = 0;
 
 	/* init handles */
 	pthread_mutex_init (&player->pauseMutex, NULL);
 	player->audioFd = curl_easy_init ();
-	player->aacHandle = NeAACDecOpen();
+
+	switch (player->audioFormat) {
+		#ifdef ENABLE_FAAD
+		case PIANO_AF_AACPLUS:
+			player->aacHandle = NeAACDecOpen();
+			/* set aac conf */
+			conf = NeAACDecGetCurrentConfiguration(player->aacHandle);
+			conf->outputFormat = FAAD_FMT_16BIT;
+		    conf->downMatrix = 1;
+			NeAACDecSetConfiguration(player->aacHandle, conf);
+
+			curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION,
+					BarPlayerAACCurlCb);
+			break;
+		#endif /* ENABLE_FAAD */
+
+		#ifdef ENABLE_MAD
+		case PIANO_AF_MP3:
+			mad_stream_init (&player->mp3Stream);
+			mad_frame_init (&player->mp3Frame);
+			mad_synth_init (&player->mp3Synth);
+			mad_timer_reset (&player->mp3Timer);
+
+			curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION,
+					BarPlayerMp3CurlCb);
+			break;
+		#endif /* ENABLE_MAD */
+
+		default:
+			printf (PACKAGE ": Unsupported audio format!\n");
+			return NULL;
+			break;
+	}
 	
 	/* init replaygain */
 	player->scale = computeReplayGainScale (player->gain);
 
-	/* set aac conf */
-	conf = NeAACDecGetCurrentConfiguration(player->aacHandle);
-	conf->outputFormat = FAAD_FMT_16BIT;
-    conf->downMatrix = 1;
-	NeAACDecSetConfiguration(player->aacHandle, conf);
-
 	/* init curl */
 	curl_easy_setopt (player->audioFd, CURLOPT_URL, player->url);
-	curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION, BarPlayerCurlCb);
 	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, (void *) player);
 	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE);
 	curl_easy_setopt (player->audioFd, CURLOPT_CONNECTTIMEOUT, 60);
@@ -269,12 +407,32 @@ void *BarPlayerThread (void *data) {
 		curlRet = curl_easy_perform (player->audioFd);
 	} while (curlRet == CURLE_PARTIAL_FILE);
 
-	NeAACDecClose(player->aacHandle);
+	switch (player->audioFormat) {
+		#ifdef ENABLE_FAAD
+		case PIANO_AF_AACPLUS:
+			NeAACDecClose(player->aacHandle);
+			break;
+		#endif /* ENABLE_FAAD */
+
+		#ifdef ENABLE_MAD
+		case PIANO_AF_MP3:
+			mad_synth_finish (&player->mp3Synth);
+			mad_frame_finish (&player->mp3Frame);
+			mad_stream_finish (&player->mp3Stream);
+			break;
+		#endif /* ENABLE_MAD */
+
+		default:
+			/* this should never happen: thread is aborted above */
+			break;
+	}
 	ao_close(player->audioOutDevice);
 	curl_easy_cleanup (player->audioFd);
+	#ifdef ENABLE_FAAD
 	if (player->sampleSize != NULL) {
 		free (player->sampleSize);
 	}
+	#endif /* ENABLE_FAAD */
 	pthread_mutex_destroy (&player->pauseMutex);
 
 	player->mode = PLAYER_FINISHED_PLAYBACK;

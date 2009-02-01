@@ -44,7 +44,7 @@ THE SOFTWARE.
 /*	helper to _really_ skip a song (unlock mutex, quit player)
  *	@param player handle
  */
-inline void BarUiDoSkipSong (struct aacPlayer *player) {
+inline void BarUiDoSkipSong (struct audioPlayer *player) {
 	player->doQuit = 1;
 	pthread_mutex_unlock (&player->pauseMutex);
 }
@@ -178,6 +178,7 @@ void BarUiActSongInfo (BAR_KS_ARGS) {
 	printf ("Song infos:\n"
 			"album:\t%s\n"
 			"artist:\t%s\n"
+			"audioFormat:\t%i\n"
 			"audioUrl:\t%s\n"
 			"fileGain:\t%f\n"
 			"focusTraitId:\t%s\n"
@@ -188,12 +189,11 @@ void BarUiActSongInfo (BAR_KS_ARGS) {
 			"stationId:\t%s\n"
 			"title:\t%s\n"
 			"userSeed:\t%s\n",
-			(*curSong)->album, (*curSong)->artist, (*curSong)->audioUrl,
-			(*curSong)->fileGain, (*curSong)->focusTraitId,
-			(*curSong)->identity, (*curSong)->matchingSeed,
-			(*curSong)->musicId, (*curSong)->rating,
-			(*curSong)->stationId, (*curSong)->title,
-			(*curSong)->userSeed);
+			(*curSong)->album, (*curSong)->artist, (*curSong)->audioFormat,
+			(*curSong)->audioUrl, (*curSong)->fileGain,
+			(*curSong)->focusTraitId, (*curSong)->identity,
+			(*curSong)->matchingSeed, (*curSong)->musicId, (*curSong)->rating,
+			(*curSong)->stationId, (*curSong)->title, (*curSong)->userSeed);
 }
 
 /*	rate current song

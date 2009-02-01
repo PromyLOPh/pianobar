@@ -24,37 +24,68 @@ THE SOFTWARE.
 #ifndef _PLAYER_H
 #define _PLAYER_H
 
+#include "config.h"
+
 #include <curl/curl.h>
+
+#ifdef ENABLE_FAAD
 #include <neaacdec.h>
+#endif
+
+#ifdef ENABLE_MAD
+#include <mad.h>
+#endif
+
 #include <ao/ao.h>
 #include <pthread.h>
+#include <piano.h>
 
-struct aacPlayer {
+struct audioPlayer {
 	/* buffer; should be large enough */
-	char buffer[CURL_MAX_WRITE_SIZE*2];
+	unsigned char buffer[CURL_MAX_WRITE_SIZE*2];
 	size_t bufferFilled;
 	size_t bufferRead;
+	size_t bytesReceived;
+
 	enum {PLAYER_FREED = 0, PLAYER_INITIALIZED, PLAYER_FOUND_ESDS,
 			PLAYER_AUDIO_INITIALIZED, PLAYER_FOUND_STSZ,
 			PLAYER_SAMPLESIZE_INITIALIZED, PLAYER_RECV_DATA,
 			PLAYER_FINISHED_PLAYBACK} mode;
-	size_t bytesReceived;
-	/* stsz atom: sample sizes */
-	unsigned int *sampleSize;
+
+	PianoAudioFormat_t audioFormat;
+
 	size_t sampleSizeN;
 	size_t sampleSizeCurr;
+
 	/* aac */
+	#ifdef ENABLE_FAAD
 	NeAACDecHandle aacHandle;
+	/* stsz atom: sample sizes */
+	unsigned int *sampleSize;
+	#endif
+
+	/* mp3 */
+	#ifdef ENABLE_MAD
+	struct mad_stream mp3Stream;
+	struct mad_frame mp3Frame;
+	struct mad_synth mp3Synth;
+	mad_timer_t mp3Timer;
+	#endif
+
 	unsigned long samplerate;
 	unsigned char channels;
+
 	float gain;
-	float scale;
+	unsigned int scale;
+
 	/* audio out */
 	ao_device *audioOutDevice;
+
+	CURL *audioFd;
 	char *url;
+
 	char doQuit;
 	pthread_mutex_t pauseMutex;
-	CURL *audioFd;
 };
 
 void *BarPlayerThread (void *data);

@@ -1,3 +1,5 @@
+set (CMAKE_C_FLAGS -Wall)
+
 find_package (LibXml2 REQUIRED)
 find_package (CURL REQUIRED)
 

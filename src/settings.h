@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #include "player.h"
 
-#define BAR_KS_ARGS PianoHandle_t *ph, struct aacPlayer *player, \
+#define BAR_KS_ARGS PianoHandle_t *ph, struct audioPlayer *player, \
 		struct BarSettings *settings, PianoSong_t **curSong, \
 		PianoStation_t **curStation, char *doQuit
 
@@ -50,6 +50,7 @@ struct BarSettings {
 		char *configKey;
 		struct BarKeyShortcut *next;
 	} *keys;
+	PianoAudioFormat_t audioFormat;
 };
 
 typedef struct BarSettings BarSettings_t;
