@@ -1,5 +1,10 @@
 set (CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set (CMAKE_C_FLAGS -Wall)
+set (ENABLE_MAD 0)
+set (ENABLE_FAAD 0)
+
+option (USE_FAAD "Use libfaad for aac decoding (if available)" on)
+option (USE_MAD "Use libmad for mp3 decoding (if available)" on)
 
 find_package (LibXml2 REQUIRED)
 find_package (CURL REQUIRED)
@@ -21,17 +26,29 @@ endif (NOT LIBM)
 # check for audio decoding library
 find_package (Faad)
 find_package (Mad)
-if (NOT FAAD_FOUND AND NOT MAD_FOUND)
-	message (FATAL_ERROR "libmad and/or libfaad are required.")
-endif (NOT FAAD_FOUND AND NOT MAD_FOUND)
-if (FAAD_FOUND)
+
+if (FAAD_FOUND AND USE_FAAD)
 	message (STATUS "Found libfaad, enabling aac decoding")
 	set (ENABLE_FAAD 1)
-endif (FAAD_FOUND)
-if (MAD_FOUND)
+elseif (FAAD_FOUND AND NOT USE_FAAD)
+	message (STATUS "Found libfaad, but disabling aac decoding by request")
+elseif (NOT FAAD_FOUND AND USE_FAAD)
+	message (STATUS "libfaad not found but requested")
+endif (FAAD_FOUND AND USE_FAAD)
+
+if (MAD_FOUND AND USE_MAD)
 	message (STATUS "Found libmad, enabling mp3 decoding")
 	set (ENABLE_MAD 1)
-endif (MAD_FOUND)
+elseif (MAD_FOUND AND NOT USE_MAD)
+	message (STATUS "Found libmad, but disabling mp3 decoding by request")
+elseif (NOT MAD_FOUND AND USE_MAD)
+	message (STATUS "libmad not found but requested")
+endif (MAD_FOUND AND USE_MAD)
+
+# check whether faad and/or mad are available and enabled
+if (NOT ENABLE_FAAD AND NOT ENABLE_MAD)
+	message (FATAL_ERROR "libmad and/or libfaad are required.")
+endif (NOT ENABLE_FAAD AND NOT ENABLE_MAD)
 
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 	${CMAKE_CURRENT_BINARY_DIR}/config.h)
