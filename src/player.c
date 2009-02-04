@@ -75,6 +75,27 @@ inline signed short int applyReplayGain (signed short int value,
 	}
 }
 
+inline int BarPlayerBufferFill (struct audioPlayer *player, char *data,
+		size_t dataSize) {
+	/* fill buffer */
+	if (player->bufferFilled + dataSize > sizeof (player->buffer)) {
+		printf (PACKAGE ": Buffer overflow!\n");
+		return 0;
+	}
+	memcpy (player->buffer+player->bufferFilled, data, dataSize);
+	player->bufferFilled += dataSize;
+	player->bufferRead = 0;
+	player->bytesReceived += dataSize;
+	return 1;
+}
+
+inline void BarPlayerBufferMove (struct audioPlayer *player) {
+	/* move remaining bytes to buffer beginning */
+	memmove (player->buffer, player->buffer + player->bufferRead,
+			(player->bufferFilled - player->bufferRead));
+	player->bufferFilled -= player->bufferRead;
+}
+
 #ifdef ENABLE_FAAD
 
 /*	play aac stream
@@ -90,15 +111,9 @@ size_t BarPlayerAACCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 	QUIT_PAUSE_CHECK;
 
-	/* fill buffer */
-	if (player->bufferFilled + size*nmemb > sizeof (player->buffer)) {
-		printf (PACKAGE ": Buffer overflow!\n");
+	if (!BarPlayerBufferFill (player, data, size*nmemb)) {
 		return 0;
 	}
-	memcpy (player->buffer+player->bufferFilled, data, size*nmemb);
-	player->bufferFilled += size*nmemb;
-	player->bufferRead = 0;
-	player->bytesReceived += size*nmemb;
 
 	if (player->mode == PLAYER_RECV_DATA) {
 		short int *aacDecoded;
@@ -229,10 +244,7 @@ size_t BarPlayerAACCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 		}
 	}
 
-	/* move remaining bytes to buffer beginning */
-	memmove (player->buffer, player->buffer + player->bufferRead,
-			(player->bufferFilled - player->bufferRead));
-	player->bufferFilled -= player->bufferRead;
+	BarPlayerBufferMove (player);
 
 	return size*nmemb;
 }
@@ -264,15 +276,9 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 	QUIT_PAUSE_CHECK;
 
-	/* fill buffer */
-	if (player->bufferFilled + size*nmemb > sizeof (player->buffer)) {
-		printf (PACKAGE ": Buffer overflow!\n");
+	if (!BarPlayerBufferFill (player, data, size*nmemb)) {
 		return 0;
 	}
-	memcpy (player->buffer+player->bufferFilled, data, size*nmemb);
-	player->bufferFilled += size*nmemb;
-	player->bufferRead = 0;
-	player->bytesReceived += size*nmemb;
 
 	mad_stream_buffer (&player->mp3Stream, player->buffer,
 			player->bufferFilled);
@@ -326,10 +332,7 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 	player->bufferRead += player->mp3Stream.next_frame - player->buffer;
 
-	/* move remaining bytes to buffer beginning */
-	memmove (player->buffer, player->buffer + player->bufferRead,
-			(player->bufferFilled - player->bufferRead));
-	player->bufferFilled -= player->bufferRead;
+	BarPlayerBufferMove (player);
 
 	return size*nmemb;
 }
