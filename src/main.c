@@ -45,11 +45,6 @@ THE SOFTWARE.
 #include "config.h"
 #include "ui.h"
 
-inline float BarSamplesToSeconds (float samplerate, float channels,
-		float samples) {
-	return channels * 1000.0 * samples / samplerate;
-}
-
 int main (int argc, char **argv) {
 	PianoHandle_t ph;
 	static struct audioPlayer player;
@@ -128,13 +123,11 @@ int main (int argc, char **argv) {
 	while (!doQuit) {
 		/* already played a song, clean up things/scrobble song */
 		if (player.mode == PLAYER_FINISHED_PLAYBACK) {
-			scrobbleSong.length = BarSamplesToSeconds (player.samplerate,
-					player.channels, player.sampleSizeN);
-			/* scrobble when >= nn% are played */
-			if (BarSamplesToSeconds (player.samplerate,
-					player.channels, player.sampleSizeCurr) * 100 /
-					scrobbleSong.length >=
-					settings.lastfmScrobblePercent &&
+			scrobbleSong.length = player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR;
+			/* scrobble when >= nn% are played; use seconds, not
+			 * milliseconds */
+			if (player.songPlayed / BAR_PLAYER_MS_TO_S_FACTOR * 100 /
+					scrobbleSong.length >= settings.lastfmScrobblePercent &&
 					settings.enableScrobbling) {
 				WardrobeReturn_t wRet;
 
@@ -224,14 +217,12 @@ int main (int argc, char **argv) {
 		/* show time */
 		if (player.mode >= PLAYER_SAMPLESIZE_INITIALIZED &&
 				player.mode < PLAYER_FINISHED_PLAYBACK) {
-			float songLength = BarSamplesToSeconds (player.samplerate,
-					player.channels, player.sampleSizeN);
-			float songRemaining = songLength -
-					BarSamplesToSeconds (player.samplerate,
-							player.channels, player.sampleSizeCurr);
-			printf ("-%02i:%02i/%02i:%02i\r", (int) songRemaining/60,
-					(int) songRemaining%60, (int) songLength/60,
-					(int) songLength%60);
+			long int songRemaining = player.songDuration - player.songPlayed;
+			printf ("-%02i:%02i/%02i:%02i\r",
+					(int) songRemaining / BAR_PLAYER_MS_TO_S_FACTOR / 60,
+					(int) songRemaining / BAR_PLAYER_MS_TO_S_FACTOR % 60,
+					(int) player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
+					(int) player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
 			fflush (stdout);
 		}
 	}

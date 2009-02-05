@@ -40,6 +40,8 @@ THE SOFTWARE.
 #include <pthread.h>
 #include <piano.h>
 
+#define BAR_PLAYER_MS_TO_S_FACTOR 1000
+
 struct audioPlayer {
 	/* buffer; should be large enough */
 	unsigned char buffer[CURL_MAX_WRITE_SIZE*2];
@@ -54,14 +56,17 @@ struct audioPlayer {
 
 	PianoAudioFormat_t audioFormat;
 
-	size_t sampleSizeN;
-	size_t sampleSizeCurr;
+	/* duration and already played time; measured in milliseconds */
+	unsigned long int songDuration;
+	unsigned long int songPlayed;
 
 	/* aac */
 	#ifdef ENABLE_FAAD
 	NeAACDecHandle aacHandle;
 	/* stsz atom: sample sizes */
 	unsigned int *sampleSize;
+	size_t sampleSizeN;
+	size_t sampleSizeCurr;
 	#endif
 
 	/* mp3 */
@@ -69,7 +74,6 @@ struct audioPlayer {
 	struct mad_stream mp3Stream;
 	struct mad_frame mp3Frame;
 	struct mad_synth mp3Synth;
-	mad_timer_t mp3Timer;
 	#endif
 
 	unsigned long samplerate;

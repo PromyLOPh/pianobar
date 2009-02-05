@@ -137,6 +137,10 @@ size_t BarPlayerAACCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			/* ao_play needs bytes: 1 sample = 16 bits = 2 bytes */
 			ao_play (player->audioOutDevice, (char *) aacDecoded,
 					frameInfo.samples * 2);
+			/* add played frame length to played time, explained below */
+			player->songPlayed += (float) frameInfo.samples *
+					(float) BAR_PLAYER_MS_TO_S_FACTOR /
+					(float) player->samplerate / (float) player->channels;
 			player->bufferRead += frameInfo.bytesconsumed;
 			player->sampleSizeCurr++;
 			/* going through this loop can take up to a few seconds =>
@@ -214,6 +218,16 @@ size_t BarPlayerAACCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 							sizeof (player->sampleSizeN));
 					player->bufferRead += 4;
 					player->sampleSizeCurr = 0;
+					/* set up song duration (assuming one frame always contains
+					 * the same number of samples); numbers are too huge => use
+					 * float
+					 * calculation: channels * number of frames * samples per
+					 * frame / samplerate */
+					/* FIXME: Hard-coded number of samples per frame */
+					player->songDuration = (float) player->sampleSizeN *
+							4096.0 * (float) BAR_PLAYER_MS_TO_S_FACTOR /
+							(float) player->samplerate /
+							(float) player->channels;
 					break;
 				} else {
 					player->sampleSize[player->sampleSizeCurr] =
@@ -297,7 +311,6 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 				break;
 			}
 		}
-		mad_timer_add (&player->mp3Timer, player->mp3Frame.header.duration);
 		mad_synth_frame (&player->mp3Synth, &player->mp3Frame);
 		for (i = 0; i < player->mp3Synth.pcm.length; i++) {
 			/* left channel */
@@ -321,11 +334,19 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 			format.byte_format = AO_FMT_LITTLE;
 			player->audioOutDevice = ao_open_live (audioOutDriver,
 					&format, NULL);
-			player->mode = PLAYER_AUDIO_INITIALIZED;
+			/* must be > PLAYER_SAMPLESIZE_INITIALIZED, otherwise time won't
+			 * be visible to user (ugly, but mp3 decoding != aac decoding) */
+			player->mode = PLAYER_RECV_DATA;
 		}
 		/* samples * length * channels */
 		ao_play (player->audioOutDevice, (char *) madDecoded,
 				player->mp3Synth.pcm.length * 2 * 2);
+
+		/* same calculation as in aac player; don't need to divide by channels,
+		 * length is number of samples for _one_ channel */
+		player->songPlayed += (float) player->mp3Synth.pcm.length *
+				(float) BAR_PLAYER_MS_TO_S_FACTOR /
+				(float) player->samplerate;
 
 		QUIT_PAUSE_CHECK;
 	} while (player->mp3Stream.error != MAD_ERROR_BUFLEN);
@@ -334,6 +355,40 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 	BarPlayerBufferMove (player);
 
+	return size*nmemb;
+}
+
+/*	get file length; needed for mp3 only atm
+ *	@param header line
+ *	@param size of _one_ element
+ *	@param number of elements
+ *	@param optional data (player in this case)
+ *	@return read data size or -1
+ */
+size_t BarPlayerParseHeader (void *ptr, size_t size, size_t nmemb,
+		void *stream) {
+	char *data = ptr;
+	struct audioPlayer *player = stream;
+	char lengthBuffer[20];
+	const char identString[] = "Content-Length: ";
+	size_t identStringLength = strlen (identString);
+	size_t contentLength = 0;
+
+	/* avoid buffer overflow */
+	if (size*nmemb > identStringLength &&
+			size*nmemb - identStringLength < sizeof (lengthBuffer) - 1) {
+		if (memcmp (data, identString, identStringLength) == 0) {
+			memset (lengthBuffer, 0, sizeof (lengthBuffer));
+			memcpy (lengthBuffer, data+identStringLength, size*nmemb -
+					identStringLength);
+			contentLength = atol (lengthBuffer);
+			/* force floating point division to avoid overflows;
+			 * calculation: file size / (kbit/s * kilo / bits per byte) */
+			/* FIXME: hardcoded kbits/s */
+			player->songDuration = (float) contentLength / (128.0 * 1000.0 /
+					(float) BAR_PLAYER_MS_TO_S_FACTOR / 8.0);
+		}
+	}
 	return size*nmemb;
 }
 #endif /* ENABLE_MAD */
@@ -373,10 +428,13 @@ void *BarPlayerThread (void *data) {
 			mad_stream_init (&player->mp3Stream);
 			mad_frame_init (&player->mp3Frame);
 			mad_synth_init (&player->mp3Synth);
-			mad_timer_reset (&player->mp3Timer);
 
 			curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION,
 					BarPlayerMp3CurlCb);
+			curl_easy_setopt (player->audioFd, CURLOPT_HEADERFUNCTION,
+					BarPlayerParseHeader);
+			curl_easy_setopt (player->audioFd, CURLOPT_WRITEHEADER,
+					(void *) player);
 			break;
 		#endif /* ENABLE_MAD */
 
