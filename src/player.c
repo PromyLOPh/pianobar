@@ -342,11 +342,14 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 		ao_play (player->audioOutDevice, (char *) madDecoded,
 				player->mp3Synth.pcm.length * 2 * 2);
 
-		/* same calculation as in aac player; don't need to divide by channels,
-		 * length is number of samples for _one_ channel */
-		player->songPlayed += (float) player->mp3Synth.pcm.length *
-				(float) BAR_PLAYER_MS_TO_S_FACTOR /
-				(float) player->samplerate;
+		/* avoid division by 0 */
+		if (player->mode == PLAYER_RECV_DATA) {
+			/* same calculation as in aac player; don't need to divide by
+			 * channels, length is number of samples for _one_ channel */
+			player->songPlayed += (float) player->mp3Synth.pcm.length *
+					(float) BAR_PLAYER_MS_TO_S_FACTOR /
+					(float) player->samplerate;
+		}
 
 		QUIT_PAUSE_CHECK;
 	} while (player->mp3Stream.error != MAD_ERROR_BUFLEN);
