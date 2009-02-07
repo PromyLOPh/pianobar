@@ -465,6 +465,12 @@ void *BarPlayerThread (void *data) {
 	do {
 		/* if curl failed, setup new headers _everytime_ (the range changed) */
 		if (curlRet == CURLE_PARTIAL_FILE) {
+			/* don't calc song length from content-length header again (wrong
+			 * time would be shown otherwise as the reported content-length is
+			 * smaller than the whole file actually is -- we're going to
+			 * receive partial content!) */
+			curl_easy_setopt (player->audioFd, CURLOPT_HEADERFUNCTION, NULL);
+			curl_easy_setopt (player->audioFd, CURLOPT_WRITEHEADER, NULL);
 			curl_easy_setopt (player->audioFd, CURLOPT_RESUME_FROM,
 					player->bytesReceived);
 		}
