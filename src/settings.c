@@ -137,6 +137,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 			{'i', BarUiActSongInfo,
 				"print verbose information about current song",
 				"act_songinfo", NULL},
+			{'j', BarUiActAddSharedStation, "add shared station",
+				"act_addshared", NULL},
 			{'m', BarUiActMoveSong, "move song to different station",
 				"act_songmove", NULL},
 			{'n', BarUiActSkipSong, "next song", "act_songnext", NULL},

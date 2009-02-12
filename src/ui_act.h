@@ -30,6 +30,7 @@ void BarUiActHelp (BAR_KS_ARGS);
 void BarUiActAddMusic (BAR_KS_ARGS);
 void BarUiActBanSong (BAR_KS_ARGS);
 void BarUiActCreateStation (BAR_KS_ARGS);
+void BarUiActAddSharedStation (BAR_KS_ARGS);
 void BarUiActDeleteStation (BAR_KS_ARGS);
 void BarUiActExplain (BAR_KS_ARGS);
 void BarUiActStationFromGenre (BAR_KS_ARGS);

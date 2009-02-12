@@ -126,6 +126,18 @@ void BarUiActCreateStation (BAR_KS_ARGS) {
 	}
 }
 
+/*	add shared station by id
+ */
+void BarUiActAddSharedStation (BAR_KS_ARGS) {
+	char *stationId = NULL;
+
+	if ((stationId = readline ("Station id: ")) != NULL) {
+		BarUiMsg ("Adding shared station... ");
+		BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", stationId));
+		free (stationId);
+	}
+}
+
 /*	delete current station
  */
 void BarUiActDeleteStation (BAR_KS_ARGS) {
