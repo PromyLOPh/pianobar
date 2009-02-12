@@ -126,7 +126,8 @@ int main (int argc, char **argv) {
 			scrobbleSong.length = player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR;
 			/* scrobble when >= nn% are played; use seconds, not
 			 * milliseconds */
-			if (player.songPlayed / BAR_PLAYER_MS_TO_S_FACTOR * 100 /
+			if (scrobbleSong.length > 0 &&
+					player.songPlayed / BAR_PLAYER_MS_TO_S_FACTOR * 100 /
 					scrobbleSong.length >= settings.lastfmScrobblePercent &&
 					settings.enableScrobbling) {
 				WardrobeReturn_t wRet;
