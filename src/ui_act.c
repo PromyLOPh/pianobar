@@ -299,9 +299,6 @@ void BarUiActSelectStation (BAR_KS_ARGS) {
 void BarUiActTempBanSong (BAR_KS_ARGS) {
 	RETURN_IF_NO_SONG;
 
-	if (!BarTransformIfShared (ph, *curStation)) {
-		return;
-	}
 	BarUiMsg ("Putting song on shelf... ");
 	if (BarUiPrintPianoStatus (PianoSongTired (ph, *curSong)) ==
 			PIANO_RET_OK) {
