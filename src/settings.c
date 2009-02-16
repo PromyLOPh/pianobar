@@ -82,6 +82,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->password);
 	free (settings->lastfmUser);
 	free (settings->lastfmPassword);
+	free (settings->autostartStation);
 	memset (settings, 0, sizeof (*settings));
 }
 
@@ -229,6 +230,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 			} else if (strcmp (val, "mp3") == 0) {
 				settings->audioFormat = PIANO_AF_MP3;
 			}
+		} else if (strcmp ("autostart_station", key) == 0) {
+			settings->autostartStation = strdup (val);
 		}
 	}
 

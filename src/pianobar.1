@@ -114,6 +114,15 @@ Select audio format. aacplus is default if both libraries (faad, mad) are
 available.
 
 .TP
+.B autostart_station = stationid
+Play this station when starting up. You can get the
+.B stationid
+by pressing
+.B i
+or the key you defined in
+.B act_songinfo.
+
+.TP
 .B control_proxy = host:port
 Non-american users need a proxy to use pandora.com. Only the xmlrpc interface
 will use this proxy. The music is streamed directly.
@@ -132,11 +141,11 @@ If you have problems when loggin in and you know your control proxy
 definitively works try setting this option to
 .B 1.
 It disables the SSL secured login. Beware!
-.I Your password will be sent as plain-text!
+.I Your password will be send as plain-text!
 
 .TP
 .B lastfm_user = your_username
-If you want to send your played song to last.fm set this to your last.fm
+If you want to send your played songs to last.fm set this to your last.fm
 username.
 
 .TP

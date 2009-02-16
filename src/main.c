@@ -110,8 +110,18 @@ int main (int argc, char **argv) {
 		return 0;
 	}
 
-	/* select station */
-	curStation = BarUiSelectStation (&ph, "Select station: ");
+	/* try to get autostart station */
+	if (settings.autostartStation != NULL) {
+		curStation = PianoFindStationById (ph.stations,
+				settings.autostartStation);
+		if (curStation == NULL) {
+			BarUiMsg ("Error: Autostart station not found.\n");
+		}
+	}
+	/* no autostart? ask the user */
+	if (curStation == NULL) {
+		curStation = BarUiSelectStation (&ph, "Select station: ");
+	}
 	if (curStation != NULL) {
 		printf ("Playing station \"%s\"\n", curStation->name);
 	}
