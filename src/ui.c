@@ -161,6 +161,7 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt) {
 	}
 
 	if (!BarReadlineInt (prompt, &i)) {
+		free (ss);
 		return NULL;
 	}
 	ssCurr = ss;
