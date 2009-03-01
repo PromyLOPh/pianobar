@@ -131,7 +131,8 @@ void BarUiActCreateStation (BAR_KS_ARGS) {
 void BarUiActAddSharedStation (BAR_KS_ARGS) {
 	char *stationId = NULL;
 
-	if ((stationId = readline ("Station id: ")) != NULL) {
+	if ((stationId = readline ("Station id: ")) != NULL &&
+			strlen (stationId) > 0) {
 		BarUiMsg ("Adding shared station... ");
 		BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", stationId));
 		free (stationId);
