@@ -51,7 +51,7 @@ inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret) {
 	return ret;
 }
 
-/*	check whether complete string is numeric
+/*	check if all characters of string are numeric
  *	@param the string
  *	@return 1 = yes, 0 = not numeric
  */
@@ -85,10 +85,9 @@ char BarReadlineInt (const char *prompt, int *retVal) {
 	return ret;
 }
 
-/* sort linked list (station); attention: this is a
- * "i-had-no-clue-what-to-do-algo", but it works.
- * @param stations
- * @return NULL-terminated array with sorted stations
+/*	sort linked list (station)
+ *	@param stations
+ *	@return NULL-terminated array with sorted stations
  */
 PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations) {
 	PianoStation_t *currStation, **sortedStations, **currSortedStation;
@@ -148,6 +147,7 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt) {
 	PianoStation_t **ss = NULL, **ssCurr = NULL, *retStation;
 	int i = 0;
 
+	/* sort and print stations */
 	ss = BarSortedStations (ph->stations);
 	ssCurr = ss;
 	while (*ssCurr != NULL) {
@@ -181,6 +181,7 @@ PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
 	PianoSong_t *tmpSong = NULL;
 	int i = 0;
 
+	/* print all songs */
 	tmpSong = startSong;
 	while (tmpSong != NULL) {
 		printf ("%2u) %s - %s\n", i, tmpSong->artist, tmpSong->title);
@@ -206,6 +207,7 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
 	PianoArtist_t *tmpArtist = NULL;
 	int i = 0;
 
+	/* print all artists */
 	tmpArtist = startArtist;
 	while (tmpArtist != NULL) {
 		printf ("%2u) %s\n", i, tmpArtist->name);
@@ -244,6 +246,7 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 		}
 		BarUiMsg ("\r");
 		if (searchResult.songs != NULL && searchResult.artists != NULL) {
+			/* songs and artists found */
 			BarUiMsg ("Is this an [a]rtist or [t]rack name? Press c to abort.\n");
 			read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
 			if (yesnoBuf == 'a') {
@@ -256,29 +259,23 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 				if (tmpSong != NULL) {
 					musicId = strdup (tmpSong->musicId);
 				}
-			} else {
-				BarUiMsg ("Aborted.\n");
 			}
 		} else if (searchResult.songs != NULL) {
+			/* songs found */
 			tmpSong = BarUiSelectSong (searchResult.songs);
 			if (tmpSong != NULL) {
 				musicId = strdup (tmpSong->musicId);
-			} else {
-				BarUiMsg ("Aborted.\n");
 			}
 		} else if (searchResult.artists != NULL) {
+			/* artists found */
 			tmpArtist = BarUiSelectArtist (searchResult.artists);
 			if (tmpArtist != NULL) {
 				musicId = strdup (tmpArtist->musicId);
-			} else {
-				BarUiMsg ("Aborted.\n");
 			}
 		} else {
 			BarUiMsg ("Nothing found...\n");
 		}
 		PianoDestroySearchResult (&searchResult);
-	} else {
-		BarUiMsg ("Aborted.\n");
 	}
 	if (lineBuf != NULL) {
 		free (lineBuf);

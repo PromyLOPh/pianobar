@@ -105,7 +105,7 @@ char *PianoIntsToString (const unsigned int *arrInts, size_t arrIntsN) {
 	for (i = 0; i < arrIntsN; i++) {
 		/* map string to 4-byte int */
 		tmp = (unsigned int *) &strDecoded[i*4];
-		/* FIXME: big endian does not need to byteswap? */
+		/* FIXME: big endian does not need byteswap? */
 		*tmp = byteswap32 (arrInts[i]);
 	}
 	return strDecoded;
@@ -219,8 +219,8 @@ char *PianoIntsToHexString (const unsigned int *arrInts, size_t arrIntsN) {
 	size_t intMapN = arrIntsN * sizeof (*arrInts);
 
 	for (i = 0; i < intMapN; i++) {
-		/* we need to swap the bytes again */
 		writePos = i + (4 - (i % 4) * 2) - 1;
+		/* we need to swap the bytes again */
 		hexStr[writePos*2] = (intMap[i] & 0xf0) < 0xa0 ? (intMap[i] >> 4) +
 				'0' : (intMap[i] >> 4) + 'a' - 10;
 		hexStr[writePos*2+1] = (intMap[i] & 0x0f) < 0x0a ? (intMap[i] & 0x0f) +

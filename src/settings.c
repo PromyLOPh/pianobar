@@ -59,10 +59,16 @@ void BarGetXdgConfigDir (const char *filename, char *retDir,
 	}
 }
 
+/*	initialize settings structure
+ *	@param settings struct
+ */
 void BarSettingsInit (BarSettings_t *settings) {
 	memset (settings, 0, sizeof (*settings));
 }
 
+/*	free settings structure, zero it afterwards
+ *	@oaram pointer to struct
+ */
 void BarSettingsDestroy (BarSettings_t *settings) {
 	BarKeyShortcut_t *curShortcut = settings->keys, *lastShortcut;
 
@@ -86,6 +92,10 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	memset (settings, 0, sizeof (*settings));
 }
 
+/*	copy key shortcut into settings structure
+ *	@param shortcut to be copied
+ *	@param destination settings structure
+ */
 void BarSettingsAppendKey (BarKeyShortcut_t *shortcut,
 		BarSettings_t *settings) {
 	BarKeyShortcut_t *tmp = calloc (1, sizeof (*tmp));
@@ -99,6 +109,7 @@ void BarSettingsAppendKey (BarKeyShortcut_t *shortcut,
 		tmp->configKey = strdup (shortcut->configKey);
 	}
 
+	/* insert into linked list */
 	if (settings->keys == NULL) {
 		settings->keys = tmp;
 	} else {

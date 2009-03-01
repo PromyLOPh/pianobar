@@ -75,6 +75,12 @@ inline signed short int applyReplayGain (signed short int value,
 	}
 }
 
+/*	Refill player's buffer with dataSize of data
+ *	@param player structure
+ *	@param new data
+ *	@param data size
+ *	@return 1 on success, 0 when buffer overflow occured
+ */
 inline int BarPlayerBufferFill (struct audioPlayer *player, char *data,
 		size_t dataSize) {
 	/* fill buffer */
@@ -89,6 +95,11 @@ inline int BarPlayerBufferFill (struct audioPlayer *player, char *data,
 	return 1;
 }
 
+/*	move data beginning from read pointer to buffer beginning and
+ *	overwrite data already read from buffer
+ *	@param player structure
+ *	@return nothing at all
+ */
 inline void BarPlayerBufferMove (struct audioPlayer *player) {
 	/* move remaining bytes to buffer beginning */
 	memmove (player->buffer, player->buffer + player->bufferRead,

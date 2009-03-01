@@ -21,21 +21,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-/* main loop, helper functions */
-
-#include <wardrobe.h>
-#include <curl/curl.h>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
+/* system includes */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <poll.h>
-#include <readline/readline.h>
 #include <time.h>
 #include <ctype.h>
+
+/* last.fm scrobbling library */
+#include <wardrobe.h>
+
+#include <curl/curl.h>
+
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+
+#include <pthread.h>
+
+#include <readline/readline.h>
+
+/* pandora.com library */
 #include <piano.h>
 
 #include "player.h"
@@ -58,7 +65,7 @@ int main (int argc, char **argv) {
 	/* needed in main loop */
 	struct pollfd polls = {fileno (stdin), POLLIN, POLLIN};
 	char buf = '\0';
-	BarKeyShortcut_t *curShortcut;
+	BarKeyShortcut_t *curShortcut = NULL;
 
 	BarUiMsg ("Welcome to " PACKAGE "!\n");
 
@@ -131,15 +138,14 @@ int main (int argc, char **argv) {
 	memset (&player, 0, sizeof (player));
 
 	while (!doQuit) {
-		/* already played a song, clean up things/scrobble song */
+		/* song finished playing, clean up things/scrobble song */
 		if (player.mode == PLAYER_FINISHED_PLAYBACK) {
 			scrobbleSong.length = player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR;
 			/* scrobble when >= nn% are played; use seconds, not
 			 * milliseconds */
-			if (scrobbleSong.length > 0 &&
+			if (scrobbleSong.length > 0 && settings.enableScrobbling &&
 					player.songPlayed / BAR_PLAYER_MS_TO_S_FACTOR * 100 /
-					scrobbleSong.length >= settings.lastfmScrobblePercent &&
-					settings.enableScrobbling) {
+					scrobbleSong.length >= settings.lastfmScrobblePercent) {
 				WardrobeReturn_t wRet;
 
 				BarUiMsg ("Scrobbling song... ");
@@ -152,6 +158,8 @@ int main (int argc, char **argv) {
 			}
 			WardrobeSongDestroy (&scrobbleSong);
 			free (player.url);
+			/* FIXME: pthread_join blocks everything if network connection
+			 * is hung up e.g. */
 			pthread_join (playerThread, NULL);
 			memset (&player, 0, sizeof (player));
 		}
@@ -180,6 +188,7 @@ int main (int argc, char **argv) {
 						}
 					}
 				}
+				/* song ready to play */
 				if (curSong != NULL) {
 					PianoStation_t *realStation =
 							PianoFindStationById (ph.stations,
@@ -199,6 +208,7 @@ int main (int argc, char **argv) {
 					scrobbleSong.album = strdup (curSong->album);
 					scrobbleSong.started = time (NULL);
 
+					/* setup player */
 					memset (&player, 0, sizeof (player));
 					player.url = strdup (curSong->audioUrl);
 					player.gain = curSong->fileGain;
@@ -211,7 +221,8 @@ int main (int argc, char **argv) {
 			} /* end if curStation != NULL */
 		}
 
-		/* in the meantime: wait for user actions */
+		/* in the meantime: wait for user actions;
+		 * 1000ms == 1s => refresh time display every second */
 		if (poll (&polls, 1, 1000) > 0) {
 			read (fileno (stdin), &buf, sizeof (buf));
 			curShortcut = settings.keys;
