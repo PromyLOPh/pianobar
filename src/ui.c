@@ -24,6 +24,7 @@ THE SOFTWARE.
 /* everything that interacts with the user */
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,8 +35,37 @@ THE SOFTWARE.
 /*	output message and flush stdout
  *	@param message
  */
-inline void BarUiMsg (const char *msg) {
-	printf ("%s", msg);
+inline void BarUiMsg (uiMsg_t type, const char *format, ...) {
+	va_list fmtargs;
+
+	switch (type) {
+		case MSG_INFO:
+			printf ("i ");
+			break;
+
+		case MSG_PLAYING:
+			printf ("> ");
+			break;
+
+		case MSG_TIME:
+			printf ("# ");
+			break;
+		
+		case MSG_ERR:
+			printf ("! ");
+			break;
+
+		case MSG_LIST:
+			printf ("\t");
+			break;
+	
+		default:
+			break;
+	}
+	va_start (fmtargs, format);
+	vprintf (format, fmtargs);
+	va_end (fmtargs);
+
 	fflush (stdout);
 }
 
@@ -44,9 +74,9 @@ inline void BarUiMsg (const char *msg) {
  */
 inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret) {
 	if (ret != PIANO_RET_OK) {
-		printf ("Error: %s\n", PianoErrorToStr (ret));
+		BarUiMsg (MSG_NONE, "Error: %s\n", PianoErrorToStr (ret));
 	} else {
-		printf ("Ok.\n");
+		BarUiMsg (MSG_NONE, "Ok.\n");
 	}
 	return ret;
 }
@@ -151,7 +181,7 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt) {
 	ss = BarSortedStations (ph->stations);
 	ssCurr = ss;
 	while (*ssCurr != NULL) {
-		printf ("%2i) %c%c%c %s\n", i,
+		BarUiMsg (MSG_LIST, "%2i) %c%c%c %s\n", i,
 				(*ssCurr)->useQuickMix ? 'q' : ' ',
 				(*ssCurr)->isQuickMix ? 'Q' : ' ',
 				!(*ssCurr)->isCreator ? 'S' : ' ',
@@ -185,7 +215,8 @@ PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
 	/* print all songs */
 	tmpSong = startSong;
 	while (tmpSong != NULL) {
-		printf ("%2u) %s - %s\n", i, tmpSong->artist, tmpSong->title);
+		BarUiMsg (MSG_LIST, "%2u) %s - %s\n", i, tmpSong->artist,
+				tmpSong->title);
 		i++;
 		tmpSong = tmpSong->next;
 	}
@@ -211,7 +242,7 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
 	/* print all artists */
 	tmpArtist = startArtist;
 	while (tmpArtist != NULL) {
-		printf ("%2u) %s\n", i, tmpArtist->name);
+		BarUiMsg (MSG_LIST, "%2u) %s\n", i, tmpArtist->name);
 		i++;
 		tmpArtist = tmpArtist->next;
 	}
@@ -239,16 +270,17 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 
 	lineBuf = readline ("Search for artist/title: ");
 	if (lineBuf != NULL && strlen (lineBuf) > 0) {
-		BarUiMsg ("Searching... ");
+		BarUiMsg (MSG_INFO, "Searching... ");
 		if (BarUiPrintPianoStatus (PianoSearchMusic (ph, lineBuf,
 				&searchResult)) != PIANO_RET_OK) {
 			free (lineBuf);
 			return NULL;
 		}
-		BarUiMsg ("\r");
+		BarUiMsg (MSG_NONE, "\r");
 		if (searchResult.songs != NULL && searchResult.artists != NULL) {
 			/* songs and artists found */
-			BarUiMsg ("Is this an [a]rtist or [t]rack name? Press c to abort.\n");
+			BarUiMsg (MSG_QUESTION,
+					"Is this an [a]rtist or [t]rack name? Press c to abort.\n");
 			read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
 			if (yesnoBuf == 'a') {
 				tmpArtist = BarUiSelectArtist (searchResult.artists);
@@ -274,7 +306,7 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 				musicId = strdup (tmpArtist->musicId);
 			}
 		} else {
-			BarUiMsg ("Nothing found...\n");
+			BarUiMsg (MSG_INFO, "Nothing found...\n");
 		}
 		PianoDestroySearchResult (&searchResult);
 	}
@@ -295,7 +327,7 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 
 	/* receive genre stations list if not yet available */
 	if (ph->genreStations == NULL) {
-		BarUiMsg ("Receiving genre stations... ");
+		BarUiMsg (MSG_INFO, "Receiving genre stations... ");
 		if (BarUiPrintPianoStatus (PianoGetGenreStations (ph)) !=
 				PIANO_RET_OK) {
 			return;
@@ -306,13 +338,12 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 	curCat = ph->genreStations;
 	i = 0;
 	while (curCat != NULL) {
-		printf ("%2i) %s\n", i, curCat->name);
+		BarUiMsg (MSG_LIST, "%2i) %s\n", i, curCat->name);
 		i++;
 		curCat = curCat->next;
 	}
 	/* select category or exit */
 	if (!BarReadlineInt ("Select category: ", &i)) {
-		BarUiMsg ("Aborted.\n");
 		return;
 	}
 	curCat = ph->genreStations;
@@ -325,12 +356,11 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 	curStation = curCat->stations;
 	i = 0;
 	while (curStation != NULL) {
-		printf ("%2i) %s\n", i, curStation->name);
+		BarUiMsg (MSG_LIST, "%2i) %s\n", i, curStation->name);
 		i++;
 		curStation = curStation->next;
 	}
 	if (!BarReadlineInt ("Select genre: ", &i)) {
-		BarUiMsg ("Aborted.\n");
 		return;
 	}
 	curStation = curCat->stations;
@@ -339,8 +369,25 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 		i--;
 	}
 	/* create station */
-	printf ("Adding shared station \"%s\"... ", curStation->name);
-	fflush (stdout);
+	BarUiMsg (MSG_INFO, "Adding shared station \"%s\"... ", curStation->name);
 	BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", curStation->id));
 }
 
+/*	Print station infos (including station id)
+ *	@param the station
+ */
+inline void BarUiPrintStation (PianoStation_t *station) {
+	BarUiMsg (MSG_PLAYING, "Station \"%s\" (%s)\n", station->name, station->id);
+}
+
+/*	Print song infos (artist, title, album, loved)
+ *	@param the song
+ *	@param alternative station info (show real station for quickmix, e.g.)
+ */
+inline void BarUiPrintSong (PianoSong_t *song, PianoStation_t *station) {
+	BarUiMsg (MSG_PLAYING, "\"%s\" by \"%s\" on \"%s\"%s%s%s\n",
+			song->title, song->artist, song->album,
+			(song->rating == PIANO_RATE_LOVE) ? " <3" : "",
+			station != NULL ? " @ " : "",
+			station != NULL ? station->name : "");
+}

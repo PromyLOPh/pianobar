@@ -30,6 +30,7 @@ THE SOFTWARE.
 
 #include "player.h"
 #include "config.h"
+#include "ui.h"
 
 #define byteswap32(x) (((x >> 24) & 0x000000ff) | ((x >> 8) & 0x0000ff00) | \
 		((x << 8) & 0x00ff0000) | ((x << 24) & 0xff000000))
@@ -85,7 +86,7 @@ inline int BarPlayerBufferFill (struct audioPlayer *player, char *data,
 		size_t dataSize) {
 	/* fill buffer */
 	if (player->bufferFilled + dataSize > sizeof (player->buffer)) {
-		printf (PACKAGE ": Buffer overflow!\n");
+		BarUiMsg (MSG_ERR, PACKAGE ": Buffer overflow!\n");
 		return 0;
 	}
 	memcpy (player->buffer+player->bufferFilled, data, dataSize);
@@ -138,7 +139,7 @@ size_t BarPlayerAACCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 					player->buffer + player->bufferRead,
 					player->sampleSize[player->sampleSizeCurr]);
 			if (frameInfo.error != 0) {
-				printf (PACKAGE ": Decoding error: %s\n\n",
+				BarUiMsg (MSG_ERR, PACKAGE ": Decoding error: %s\n",
 						NeAACDecGetErrorMessage (frameInfo.error));
 				break;
 			}
@@ -186,7 +187,8 @@ size_t BarPlayerAACCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 							&player->channels);
 					player->bufferRead += 5;
 					if (err != 0) {
-						printf (PACKAGE ": Error while initializing audio decoder"
+						BarUiMsg (MSG_ERR, PACKAGE ": Error while "
+								"initializing audio decoder"
 								"(%i)\n", err);
 						return 0;
 					}
@@ -314,7 +316,7 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 		if (mad_frame_decode (&player->mp3Frame, &player->mp3Stream) != 0) {
 			if (player->mp3Stream.error != MAD_ERROR_BUFLEN) {
-				printf (PACKAGE ": mp3 decoding error: %s.\n",
+				BarUiMsg (MSG_ERR, PACKAGE ": mp3 decoding error: %s\n",
 						mad_stream_errorstr (&player->mp3Stream));
 				return 0;
 			} else {
@@ -453,7 +455,7 @@ void *BarPlayerThread (void *data) {
 		#endif /* ENABLE_MAD */
 
 		default:
-			printf (PACKAGE ": Unsupported audio format!\n");
+			BarUiMsg (MSG_ERR, PACKAGE ": Unsupported audio format!\n");
 			return NULL;
 			break;
 	}

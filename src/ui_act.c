@@ -34,11 +34,11 @@ THE SOFTWARE.
 #include "ui_act.h"
 
 #define RETURN_IF_NO_STATION if (*curStation == NULL) { \
-		BarUiMsg ("No station selected.\n"); \
+		BarUiMsg (MSG_ERR, "No station selected.\n"); \
 		return; }
 
 #define RETURN_IF_NO_SONG if (*curStation == NULL || *curSong == NULL) { \
-		BarUiMsg ("No song playing.\n"); \
+		BarUiMsg (MSG_ERR, "No song playing.\n"); \
 		return; }
 
 /*	helper to _really_ skip a song (unlock mutex, quit player)
@@ -57,7 +57,7 @@ inline void BarUiDoSkipSong (struct audioPlayer *player) {
 int BarTransformIfShared (PianoHandle_t *ph, PianoStation_t *station) {
 	/* shared stations must be transformed */
 	if (!station->isCreator) {
-		BarUiMsg ("Transforming station... ");
+		BarUiMsg (MSG_INFO, "Transforming station... ");
 		if (BarUiPrintPianoStatus (PianoTransformShared (ph, station)) !=
 				PIANO_RET_OK) {
 			return 0;
@@ -71,10 +71,11 @@ int BarTransformIfShared (PianoHandle_t *ph, PianoStation_t *station) {
 void BarUiActHelp (BAR_KS_ARGS) {
 	BarKeyShortcut_t *curShortcut = settings->keys;
 
-	printf ("\r");
+	BarUiMsg (MSG_NONE, "\r");
 	while (curShortcut != NULL) {
 		if (curShortcut->description != NULL) {
-			printf ("%c\t%s\n", curShortcut->key, curShortcut->description);
+			BarUiMsg (MSG_NONE, "%c\t%s\n", curShortcut->key,
+					curShortcut->description);
 		}
 		curShortcut = curShortcut->next;
 	}
@@ -92,7 +93,7 @@ void BarUiActAddMusic (BAR_KS_ARGS) {
 		if (!BarTransformIfShared (ph, *curStation)) {
 			return;
 		}
-		BarUiMsg ("Adding music to station... ");
+		BarUiMsg (MSG_INFO, "Adding music to station... ");
 		BarUiPrintPianoStatus (PianoStationAddMusic (ph,
 				*curStation, musicId));
 		free (musicId);
@@ -107,7 +108,7 @@ void BarUiActBanSong (BAR_KS_ARGS) {
 	if (!BarTransformIfShared (ph, *curStation)) {
 		return;
 	}
-	BarUiMsg ("Banning song... ");
+	BarUiMsg (MSG_INFO, "Banning song... ");
 	if (BarUiPrintPianoStatus (PianoRateTrack (ph, *curSong,
 			PIANO_RATE_BAN)) == PIANO_RET_OK) {
 		BarUiDoSkipSong (player);
@@ -120,7 +121,7 @@ void BarUiActCreateStation (BAR_KS_ARGS) {
 	char *musicId;
 	musicId = BarUiSelectMusicId (ph);
 	if (musicId != NULL) {
-		BarUiMsg ("Creating station... ");
+		BarUiMsg (MSG_INFO, "Creating station... ");
 		BarUiPrintPianoStatus (PianoCreateStation (ph, "mi", musicId));
 		free (musicId);
 	}
@@ -133,7 +134,7 @@ void BarUiActAddSharedStation (BAR_KS_ARGS) {
 
 	if ((stationId = readline ("Station id: ")) != NULL &&
 			strlen (stationId) > 0) {
-		BarUiMsg ("Adding shared station... ");
+		BarUiMsg (MSG_INFO, "Adding shared station... ");
 		BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", stationId));
 		free (stationId);
 	}
@@ -146,10 +147,12 @@ void BarUiActDeleteStation (BAR_KS_ARGS) {
 
 	RETURN_IF_NO_STATION;
 
-	printf ("Really delete \"%s\"? [yn]\n", (*curStation)->name);
+	BarUiMsg (MSG_QUESTION, "Really delete \"%s\"? [yn] ",
+			(*curStation)->name);
 	read (fileno (stdin), &yesNoBuf, sizeof (yesNoBuf));
+	BarUiMsg (MSG_NONE, "\n");
 	if (yesNoBuf == 'y') {
-		BarUiMsg ("Deleting station... ");
+		BarUiMsg (MSG_INFO, "Deleting station... ");
 		if (BarUiPrintPianoStatus (PianoDeleteStation (ph,
 				*curStation)) == PIANO_RET_OK) {
 			BarUiDoSkipSong (player);
@@ -167,10 +170,10 @@ void BarUiActExplain (BAR_KS_ARGS) {
 
 	RETURN_IF_NO_STATION;
 
-	BarUiMsg ("Receiving explanation... ");
+	BarUiMsg (MSG_INFO, "Receiving explanation... ");
 	if (BarUiPrintPianoStatus (PianoExplain (ph, *curSong,
 			&explanation)) == PIANO_RET_OK) {
-		printf ("%s\n", explanation);
+		BarUiMsg (MSG_INFO, "%s\n", explanation);
 		free (explanation);
 	}
 }
@@ -187,8 +190,19 @@ void BarUiActStationFromGenre (BAR_KS_ARGS) {
 void BarUiActSongInfo (BAR_KS_ARGS) {
 	RETURN_IF_NO_SONG;
 
+	BarUiPrintStation ((*curStation));
+	/* print real station if quickmix */
+	BarUiPrintSong ((*curSong), (*curStation)->isQuickMix ?
+			PianoFindStationById (ph->stations, (*curSong)->stationId) : NULL);
+}
+
+/*	print some debugging information
+ */
+void BarUiActDebug (BAR_KS_ARGS) {
+	RETURN_IF_NO_SONG;
+
 	/* print debug-alike infos */
-	printf ("Song infos:\n"
+	BarUiMsg (MSG_NONE,
 			"album:\t%s\n"
 			"artist:\t%s\n"
 			"audioFormat:\t%i\n"
@@ -217,7 +231,7 @@ void BarUiActLoveSong (BAR_KS_ARGS) {
 	if (!BarTransformIfShared (ph, *curStation)) {
 		return;
 	}
-	BarUiMsg ("Loving song... ");
+	BarUiMsg (MSG_INFO, "Loving song... ");
 	BarUiPrintPianoStatus (PianoRateTrack (ph, *curSong, PIANO_RATE_LOVE));
 }
 
@@ -240,11 +254,10 @@ void BarUiActMoveSong (BAR_KS_ARGS) {
 				!BarTransformIfShared (ph, moveStation)) {
 			return;
 		}
-		printf ("Moving song to \"%s\"... ", moveStation->name);
-		fflush (stdout);
+		BarUiMsg (MSG_INFO, "Moving song to \"%s\"... ", moveStation->name);
 		fromStation = PianoFindStationById (ph->stations, (*curSong)->stationId);
 		if (fromStation == NULL) {
-			BarUiMsg ("Station not found\n");
+			BarUiMsg (MSG_ERR, "Station not found\n");
 			return;
 		}
 		if (BarUiPrintPianoStatus (PianoMoveSong (ph, fromStation,
@@ -275,7 +288,7 @@ void BarUiActRenameStation (BAR_KS_ARGS) {
 		if (!BarTransformIfShared (ph, *curStation)) {
 			return;
 		}
-		BarUiMsg ("Renaming station... ");
+		BarUiMsg (MSG_INFO, "Renaming station... ");
 		BarUiPrintPianoStatus (PianoRenameStation (ph, *curStation, lineBuf));
 	}
 	if (lineBuf != NULL) {
@@ -291,7 +304,7 @@ void BarUiActSelectStation (BAR_KS_ARGS) {
 	*curSong = NULL;
 	*curStation = BarUiSelectStation (ph, "Select station: ");
 	if (*curStation != NULL) {
-		printf ("Changed station to %s\n", (*curStation)->name);
+		BarUiPrintStation ((*curStation));
 	}
 }
 
@@ -300,7 +313,7 @@ void BarUiActSelectStation (BAR_KS_ARGS) {
 void BarUiActTempBanSong (BAR_KS_ARGS) {
 	RETURN_IF_NO_SONG;
 
-	BarUiMsg ("Putting song on shelf... ");
+	BarUiMsg (MSG_INFO, "Putting song on shelf... ");
 	if (BarUiPrintPianoStatus (PianoSongTired (ph, *curSong)) ==
 			PIANO_RET_OK) {
 		BarUiDoSkipSong (player);
@@ -315,15 +328,14 @@ void BarUiActPrintUpcoming (BAR_KS_ARGS) {
 	PianoSong_t *nextSong = (*curSong)->next;
 	if (nextSong != NULL) {
 		int i = 0;
-		BarUiMsg ("Next songs:\n");
 		while (nextSong != NULL) {
-			printf ("%2i) \"%s\" by \"%s\"\n", i, nextSong->title,
+			BarUiMsg (MSG_LIST, "%2i) \"%s\" by \"%s\"\n", i, nextSong->title,
 					nextSong->artist);
 			nextSong = nextSong->next;
 			i++;
 		}
 	} else {
-		BarUiMsg ("No songs in queue.\n");
+		BarUiMsg (MSG_INFO, "No songs in queue.\n");
 	}
 }
 
@@ -339,10 +351,10 @@ void BarUiActSelectQuickMix (BAR_KS_ARGS) {
 				"Toggle quickmix for station: ")) != NULL) {
 			selStation->useQuickMix = !selStation->useQuickMix;
 		}
-		BarUiMsg ("Setting quickmix stations... ");
+		BarUiMsg (MSG_INFO, "Setting quickmix stations... ");
 		BarUiPrintPianoStatus (PianoSetQuickmix (ph));
 	} else {
-		BarUiMsg ("Not a QuickMix station.\n");
+		BarUiMsg (MSG_ERR, "Not a QuickMix station.\n");
 	}
 }
 

@@ -67,7 +67,7 @@ int main (int argc, char **argv) {
 	char buf = '\0';
 	BarKeyShortcut_t *curShortcut = NULL;
 
-	BarUiMsg ("Welcome to " PACKAGE "!\n");
+	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE "!\n");
 
 	/* init some things */
 	curl_global_init (CURL_GLOBAL_SSL);
@@ -86,7 +86,7 @@ int main (int argc, char **argv) {
 		BarTermSetEcho (0);
 		settings.password = readline ("Password: ");
 		BarTermSetEcho (1);
-		printf ("\n");
+		BarUiMsg (MSG_NONE, "\n");
 	}
 
 	if (settings.enableScrobbling) {
@@ -106,13 +106,13 @@ int main (int argc, char **argv) {
 
 	BarTermSetBuffer (0);
 
-	BarUiMsg ("Login... ");
+	BarUiMsg (MSG_INFO, "Login... ");
 	if (BarUiPrintPianoStatus (PianoConnect (&ph, settings.username,
 			settings.password, !settings.disableSecureLogin)) !=
 			PIANO_RET_OK) {
 		return 0;
 	}
-	BarUiMsg ("Get stations... ");
+	BarUiMsg (MSG_INFO, "Get stations... ");
 	if (BarUiPrintPianoStatus (PianoGetStations (&ph)) != PIANO_RET_OK) {
 		return 0;
 	}
@@ -122,7 +122,7 @@ int main (int argc, char **argv) {
 		curStation = PianoFindStationById (ph.stations,
 				settings.autostartStation);
 		if (curStation == NULL) {
-			BarUiMsg ("Error: Autostart station not found.\n");
+			BarUiMsg (MSG_ERR, "Error: Autostart station not found.\n");
 		}
 	}
 	/* no autostart? ask the user */
@@ -130,7 +130,7 @@ int main (int argc, char **argv) {
 		curStation = BarUiSelectStation (&ph, "Select station: ");
 	}
 	if (curStation != NULL) {
-		printf ("Playing station \"%s\"\n", curStation->name);
+		BarUiPrintStation (curStation);
 	}
 
 	/* little hack, needed to signal: hey! we need a playlist, but don't
@@ -148,12 +148,13 @@ int main (int argc, char **argv) {
 					scrobbleSong.length >= settings.lastfmScrobblePercent) {
 				WardrobeReturn_t wRet;
 
-				BarUiMsg ("Scrobbling song... ");
+				BarUiMsg (MSG_INFO, "Scrobbling song... ");
 				if ((wRet = WardrobeSubmit (&wh, &scrobbleSong)) ==
 						WARDROBE_RET_OK) {
-					BarUiMsg ("Ok.\n");
+					BarUiMsg (MSG_NONE, "Ok.\n");
 				} else {
-					printf ("Error: %s\n", WardrobeErrorToString (wRet));
+					BarUiMsg (MSG_ERR, "Error: %s\n",
+							WardrobeErrorToString (wRet));
 				}
 			}
 			WardrobeSongDestroy (&scrobbleSong);
@@ -174,7 +175,7 @@ int main (int argc, char **argv) {
 					curSong = curSong->next;
 				}
 				if (curSong == NULL) {
-					BarUiMsg ("Receiving new playlist... ");
+					BarUiMsg (MSG_INFO, "Receiving new playlist... ");
 					PianoDestroyPlaylist (&ph);
 					if (BarUiPrintPianoStatus (PianoGetPlaylist (&ph,
 							curStation->id, settings.audioFormat)) !=
@@ -183,23 +184,16 @@ int main (int argc, char **argv) {
 					} else {
 						curSong = ph.playlist;
 						if (curSong == NULL) {
-							BarUiMsg ("No tracks left.\n");
+							BarUiMsg (MSG_INFO, "No tracks left.\n");
 							curStation = NULL;
 						}
 					}
 				}
 				/* song ready to play */
 				if (curSong != NULL) {
-					PianoStation_t *realStation =
+					BarUiPrintSong (curSong, curStation->isQuickMix ?
 							PianoFindStationById (ph.stations,
-							curSong->stationId);
-					printf ("\"%s\" by \"%s\" on \"%s\"%s%s%s\n",
-							curSong->title, curSong->artist,
-							curSong->album, (curSong->rating ==
-							PIANO_RATE_LOVE) ? " (Loved)" : "",
-							curStation->isQuickMix ? " @ ": "",
-							curStation->isQuickMix ? realStation->name :
-							"");
+							curSong->stationId) : NULL);
 					/* setup artist and song name for scrobbling (curSong
 					 * may be NULL later) */
 					WardrobeSongInit (&scrobbleSong);
@@ -226,6 +220,9 @@ int main (int argc, char **argv) {
 		if (poll (&polls, 1, 1000) > 0) {
 			read (fileno (stdin), &buf, sizeof (buf));
 			curShortcut = settings.keys;
+			/* don't show what the user enters here, we could disable
+			 * echoing too... */
+			BarUiMsg (MSG_NONE, "\r");
 			while (curShortcut != NULL) {
 				if (curShortcut->key == buf) {
 					curShortcut->cmd (&ph, &player, &settings, &curSong,
@@ -240,12 +237,11 @@ int main (int argc, char **argv) {
 		if (player.mode >= PLAYER_SAMPLESIZE_INITIALIZED &&
 				player.mode < PLAYER_FINISHED_PLAYBACK) {
 			long int songRemaining = player.songDuration - player.songPlayed;
-			printf ("-%02i:%02i/%02i:%02i\r",
+			BarUiMsg (MSG_TIME, "-%02i:%02i/%02i:%02i\r",
 					(int) songRemaining / BAR_PLAYER_MS_TO_S_FACTOR / 60,
 					(int) songRemaining / BAR_PLAYER_MS_TO_S_FACTOR % 60,
 					(int) player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
 					(int) player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
-			fflush (stdout);
 		}
 	}
 

@@ -26,12 +26,17 @@ THE SOFTWARE.
 
 #include <piano.h>
 
-inline void BarUiMsg (const char *msg);
+typedef enum {MSG_NONE, MSG_INFO, MSG_PLAYING, MSG_TIME, MSG_ERR,
+		MSG_QUESTION, MSG_LIST} uiMsg_t;
+
+inline void BarUiMsg (uiMsg_t type, const char *format, ...);
 inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret);
 PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt);
 PianoSong_t *BarUiSelectSong (PianoSong_t *startSong);
 PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist);
 char *BarUiSelectMusicId (const PianoHandle_t *ph);
 void BarStationFromGenre (PianoHandle_t *ph);
+inline void BarUiPrintStation (PianoStation_t *);
+inline void BarUiPrintSong (PianoSong_t *, PianoStation_t *);
 
 #endif /* _UI_H */

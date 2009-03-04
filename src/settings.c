@@ -147,7 +147,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 			{'g', BarUiActStationFromGenre, "add genre station",
 				"act_stationaddbygenre", NULL},
 			{'i', BarUiActSongInfo,
-				"print verbose information about current song",
+				"print information about current song/station",
 				"act_songinfo", NULL},
 			{'j', BarUiActAddSharedStation, "add shared station",
 				"act_addshared", NULL},
@@ -166,6 +166,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 				NULL},
 			{'x', BarUiActSelectQuickMix, "select quickmix stations",
 				"act_stationselectquickmix", NULL},
+			{'$', BarUiActDebug, NULL,
+				"act_debug", NULL},
 			};
 
 	/* apply defaults */
