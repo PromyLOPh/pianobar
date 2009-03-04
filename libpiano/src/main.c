@@ -33,7 +33,7 @@ THE SOFTWARE.
 #include "crypt.h"
 #include "config.h"
 
-#define PIANO_PROTOCOL_VERSION "21"
+#define PIANO_PROTOCOL_VERSION "22"
 #define PIANO_RPC_URL "http://www.pandora.com/radio/xmlrpc/v" \
 		PIANO_PROTOCOL_VERSION "?"
 #define PIANO_SECURE_RPC_URL "https://www.pandora.com/radio/xmlrpc/v" \
@@ -285,7 +285,6 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
 			"<param><value><string>%s</string></value></param>"
 			"<param><value><string>%s</string></value></param>"
 			"<param><value><string>0</string></value></param>"
-			"<param><value><string>0</string></value></param>"
 			"<param><value><string></string></value></param>"
 			"<param><value><string></string></value></param>"
 			"<param><value><string>%s</string></value></param>"
@@ -294,7 +293,7 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
 	requestStr = PianoEncryptString (xmlSendBuf);
 	snprintf (url, sizeof (url), PIANO_RPC_URL
 			"rid=%s&lid=%s&method=getFragment&arg1=%s&arg2=0"
-			"&arg3=0&arg4=&arg5=&arg6=%s", ph->routeId,
+			"&arg3=&arg4=&arg5=%s", ph->routeId,
 			ph->user.listenerId, stationId,
 			PianoAudioFormatToString (format));
 
