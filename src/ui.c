@@ -56,7 +56,7 @@ inline void BarUiMsg (uiMsg_t type, const char *format, ...) {
 			break;
 
 		case MSG_LIST:
-			printf ("\t");
+			printf ("    ");
 			break;
 	
 		default:

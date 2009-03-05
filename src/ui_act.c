@@ -74,7 +74,7 @@ void BarUiActHelp (BAR_KS_ARGS) {
 	BarUiMsg (MSG_NONE, "\r");
 	while (curShortcut != NULL) {
 		if (curShortcut->description != NULL) {
-			BarUiMsg (MSG_NONE, "%c\t%s\n", curShortcut->key,
+			BarUiMsg (MSG_LIST, "%c    %s\n", curShortcut->key,
 					curShortcut->description);
 		}
 		curShortcut = curShortcut->next;
