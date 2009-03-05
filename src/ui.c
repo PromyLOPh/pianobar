@@ -40,23 +40,27 @@ inline void BarUiMsg (uiMsg_t type, const char *format, ...) {
 
 	switch (type) {
 		case MSG_INFO:
-			printf ("i ");
+			printf ("(i) ");
 			break;
 
 		case MSG_PLAYING:
-			printf ("> ");
+			printf ("|>  ");
 			break;
 
 		case MSG_TIME:
-			printf ("# ");
+			printf ("#   ");
 			break;
 		
 		case MSG_ERR:
-			printf ("! ");
+			printf ("/!\\ ");
+			break;
+
+		case MSG_QUESTION:
+			printf ("[?] ");
 			break;
 
 		case MSG_LIST:
-			printf ("    ");
+			printf ("       ");
 			break;
 	
 		default:
