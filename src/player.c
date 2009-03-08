@@ -307,6 +307,17 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 		return 0;
 	}
 
+	/* initialize song length */
+	if (player->mode < PLAYER_SAMPLESIZE_INITIALIZED) {
+		double contentLength = 0;
+		/* FIXME: curl's documentation says we should call curl_easy_getinfo
+		 * _after_ a transfer finished */
+		curl_easy_getinfo (player->audioFd, CURLINFO_CONTENT_LENGTH_DOWNLOAD,
+				&contentLength);
+		player->songDuration = contentLength / (128.0 * 1000.0 /
+				(float) BAR_PLAYER_MS_TO_S_FACTOR / 8.0);
+	}
+
 	mad_stream_buffer (&player->mp3Stream, player->buffer,
 			player->bufferFilled);
 	player->mp3Stream.error = 0;
@@ -373,40 +384,6 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 	return size*nmemb;
 }
-
-/*	get file length; needed for mp3 only atm
- *	@param header line
- *	@param size of _one_ element
- *	@param number of elements
- *	@param optional data (player in this case)
- *	@return read data size or -1
- */
-size_t BarPlayerParseHeader (void *ptr, size_t size, size_t nmemb,
-		void *stream) {
-	char *data = ptr;
-	struct audioPlayer *player = stream;
-	char lengthBuffer[20];
-	const char identString[] = "Content-Length: ";
-	size_t identStringLength = strlen (identString);
-	size_t contentLength = 0;
-
-	/* avoid buffer overflow */
-	if (size*nmemb > identStringLength &&
-			size*nmemb - identStringLength < sizeof (lengthBuffer) - 1) {
-		if (memcmp (data, identString, identStringLength) == 0) {
-			memset (lengthBuffer, 0, sizeof (lengthBuffer));
-			memcpy (lengthBuffer, data+identStringLength, size*nmemb -
-					identStringLength);
-			contentLength = atol (lengthBuffer);
-			/* force floating point division to avoid overflows;
-			 * calculation: file size / (kbit/s * kilo / bits per byte) */
-			/* FIXME: hardcoded kbits/s */
-			player->songDuration = (float) contentLength / (128.0 * 1000.0 /
-					(float) BAR_PLAYER_MS_TO_S_FACTOR / 8.0);
-		}
-	}
-	return size*nmemb;
-}
 #endif /* ENABLE_MAD */
 
 /*	player thread; for every song a new thread is started
@@ -447,10 +424,6 @@ void *BarPlayerThread (void *data) {
 
 			curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION,
 					BarPlayerMp3CurlCb);
-			curl_easy_setopt (player->audioFd, CURLOPT_HEADERFUNCTION,
-					BarPlayerParseHeader);
-			curl_easy_setopt (player->audioFd, CURLOPT_WRITEHEADER,
-					(void *) player);
 			break;
 		#endif /* ENABLE_MAD */
 
@@ -476,19 +449,10 @@ void *BarPlayerThread (void *data) {
 	/* This loop should work around song abortions by requesting the
 	 * missing part of the song */
 	do {
-		/* if curl failed, setup new headers _everytime_ (the range changed) */
-		if (curlRet == CURLE_PARTIAL_FILE) {
-			/* don't calc song length from content-length header again (wrong
-			 * time would be shown otherwise as the reported content-length is
-			 * smaller than the whole file actually is -- we're going to
-			 * receive partial content!) */
-			curl_easy_setopt (player->audioFd, CURLOPT_HEADERFUNCTION, NULL);
-			curl_easy_setopt (player->audioFd, CURLOPT_WRITEHEADER, NULL);
-			curl_easy_setopt (player->audioFd, CURLOPT_RESUME_FROM,
-					player->bytesReceived);
-		}
+		curl_easy_setopt (player->audioFd, CURLOPT_RESUME_FROM,
+				player->bytesReceived);
 		curlRet = curl_easy_perform (player->audioFd);
-	} while (curlRet == CURLE_PARTIAL_FILE);
+	} while (curlRet == CURLE_PARTIAL_FILE || curlRet == CURLE_RECV_ERROR);
 
 	switch (player->audioFormat) {
 		#ifdef ENABLE_FAAD
