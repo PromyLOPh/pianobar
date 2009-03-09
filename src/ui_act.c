@@ -132,7 +132,8 @@ void BarUiActCreateStation (BAR_KS_ARGS) {
 void BarUiActAddSharedStation (BAR_KS_ARGS) {
 	char *stationId = NULL;
 
-	if ((stationId = readline ("Station id: ")) != NULL &&
+	BarUiMsg (MSG_QUESTION, "Station id: ");
+	if ((stationId = readline (NULL)) != NULL &&
 			strlen (stationId) > 0) {
 		BarUiMsg (MSG_INFO, "Adding shared station... ");
 		BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", stationId));
@@ -147,7 +148,7 @@ void BarUiActDeleteStation (BAR_KS_ARGS) {
 
 	RETURN_IF_NO_STATION;
 
-	BarUiMsg (MSG_QUESTION, "Really delete \"%s\"? [yn] ",
+	BarUiMsg (MSG_QUESTION, "Really delete \"%s\"? [yN] ",
 			(*curStation)->name);
 	read (fileno (stdin), &yesNoBuf, sizeof (yesNoBuf));
 	BarUiMsg (MSG_NONE, "\n");
@@ -283,7 +284,8 @@ void BarUiActRenameStation (BAR_KS_ARGS) {
 
 	RETURN_IF_NO_STATION;
 
-	lineBuf = readline ("New name: ");
+	BarUiMsg (MSG_QUESTION, "New name: ");
+	lineBuf = readline (NULL);
 	if (lineBuf != NULL && strlen (lineBuf) > 0) {
 		if (!BarTransformIfShared (ph, *curStation)) {
 			return;

@@ -80,11 +80,13 @@ int main (int argc, char **argv) {
 	BarSettingsRead (&settings);
 
 	if (settings.username == NULL) {
-		settings.username = readline ("Username: ");
+		BarUiMsg (MSG_QUESTION, "Username: ");
+		settings.username = readline (NULL);
 	}
 	if (settings.password == NULL) {
 		BarTermSetEcho (0);
-		settings.password = readline ("Password: ");
+		BarUiMsg (MSG_QUESTION, "Password: ");
+		settings.password = readline (NULL);
 		BarTermSetEcho (1);
 		BarUiMsg (MSG_NONE, "\n");
 	}

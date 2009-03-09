@@ -108,7 +108,8 @@ char BarReadlineInt (const char *prompt, int *retVal) {
 	char *buf;
 	char ret = 0;
 
-	if ((buf = readline (prompt)) != NULL && strlen (buf) > 0 &&
+	BarUiMsg (MSG_QUESTION, prompt);
+	if ((buf = readline (NULL)) != NULL && strlen (buf) > 0 &&
 			BarIsNumericStr (buf)) {
 		*retVal = atoi (buf);
 		ret = 1;
@@ -272,7 +273,8 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 	PianoArtist_t *tmpArtist;
 	PianoSong_t *tmpSong;
 
-	lineBuf = readline ("Search for artist/title: ");
+	BarUiMsg (MSG_QUESTION, "Search for artist/title: ");
+	lineBuf = readline (NULL);
 	if (lineBuf != NULL && strlen (lineBuf) > 0) {
 		BarUiMsg (MSG_INFO, "Searching... ");
 		if (BarUiPrintPianoStatus (PianoSearchMusic (ph, lineBuf,
@@ -283,8 +285,8 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 		BarUiMsg (MSG_NONE, "\r");
 		if (searchResult.songs != NULL && searchResult.artists != NULL) {
 			/* songs and artists found */
-			BarUiMsg (MSG_QUESTION,
-					"Is this an [a]rtist or [t]rack name? Press c to abort.\n");
+			BarUiMsg (MSG_QUESTION, "Is this an [a]rtist or [t]rack name? "
+					"Press c to abort. ");
 			read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
 			if (yesnoBuf == 'a') {
 				tmpArtist = BarUiSelectArtist (searchResult.artists);
