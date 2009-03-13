@@ -48,6 +48,9 @@ THE SOFTWARE.
  * a "nice" integer */
 #define RG_SCALE_FACTOR 100
 
+/* FIXME: Hardcoded bitrate (kbit/s) */
+#define MP3_BITRATE 128
+
 /*	compute replaygain scale factor
  *	algo taken from here: http://www.dsprelated.com/showmessage/29246/1.php
  *	mpd does the same
@@ -314,15 +317,21 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 		 * _after_ a transfer finished */
 		curl_easy_getinfo (player->audioFd, CURLINFO_CONTENT_LENGTH_DOWNLOAD,
 				&contentLength);
-		player->songDuration = contentLength / (128.0 * 1000.0 /
+		player->songDuration = contentLength / ((float) MP3_BITRATE * 1024.0 /
 				(float) BAR_PLAYER_MS_TO_S_FACTOR / 8.0);
+	}
+
+	/* some "prebuffering" */
+	if (player->mode < PLAYER_RECV_DATA &&
+			player->bufferFilled < sizeof (player->buffer) / 10) {
+		return size*nmemb;
 	}
 
 	mad_stream_buffer (&player->mp3Stream, player->buffer,
 			player->bufferFilled);
 	player->mp3Stream.error = 0;
 	do {
-		/* channels * max samples found in mad.h */
+		/* channels * max samples, found in mad.h */
 		signed short int madDecoded[2*1152], *madPtr = madDecoded;
 
 		if (mad_frame_decode (&player->mp3Frame, &player->mp3Stream) != 0) {
