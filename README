@@ -2,10 +2,10 @@ pianobar
 ========
 
 pianobar is a console client for the personalized web radio pandora
-(http://www.pandora.com). It features these functionalities:
+(http://www.pandora.com).
 
 - play and manage (create, add more music, delete, rename, ...) your stations
-- rate played songs and let pandora explain why they were selected
+- rate played songs and let pandora explain why they have been selected
 - show upcoming songs
 - configure key bindings
 - last.fm scrobbling support (currently unmaintained)
