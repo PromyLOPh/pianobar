@@ -288,6 +288,7 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 			BarUiMsg (MSG_QUESTION, "Is this an [a]rtist or [t]rack name? "
 					"Press c to abort. ");
 			read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
+			BarUiMsg (MSG_NONE, "\n");
 			if (yesnoBuf == 'a') {
 				tmpArtist = BarUiSelectArtist (searchResult.artists);
 				if (tmpArtist != NULL) {
