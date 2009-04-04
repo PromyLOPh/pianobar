@@ -165,5 +165,34 @@ Your pandora.com password. Plain-text.
 .B user = your@user.name
 Your pandora.com username.
 
+.SH REMOTE CONTROL
+.B pianobar
+can be controlled through a fifo. You have to create it yourself by executing
+
+ mkfifo ~/.config/pianobar/ctl
+
+Adjust the path if you set up a $XDG_CONFIG_HOME. Afterwards you can write
+commands directly into the fifo. Example (next song):
+
+ echo -n 'n' > ~/.config/pianobar/ctl
+
+.B n
+is the keybinding for "next song". If you customized your keybindings you have to use these characters to control
+.B pianobar.
+.I This behaviour may change in the future!
+
+Please note: Commands like "select station" or "delete station" don't make
+sense at the moment, because the expected input is read from stdin, but not
+from the fifo.
+
+Another example:
+
+ while true; do;
+    nc -l -p 12345 -s localhost localhost > ~/.config/pianobar/ctl;
+    sleep 1;
+ done
+
+ echo -ne 'n\\x1a' | nc -q 0 127.0.0.1 12345
+
 .SH AUTHOR
 Lars-Dominik Braun <PromyLOPh@lavabit.com>
