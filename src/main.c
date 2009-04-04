@@ -29,6 +29,10 @@ THE SOFTWARE.
 #include <poll.h>
 #include <time.h>
 #include <ctype.h>
+/* open () */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 /* last.fm scrobbling library */
 #include <wardrobe.h>
@@ -53,17 +57,22 @@ THE SOFTWARE.
 #include "ui.h"
 
 int main (int argc, char **argv) {
+	/* handles */
 	PianoHandle_t ph;
 	static struct audioPlayer player;
 	BarSettings_t settings;
-	PianoSong_t *curSong = NULL;
-	PianoStation_t *curStation = NULL;
-	char doQuit = 0;
 	pthread_t playerThread;
 	WardrobeHandle_t wh;
+	/* currently playing */
+	PianoSong_t *curSong = NULL;
+	PianoStation_t *curStation = NULL;
 	WardrobeSong_t scrobbleSong;
-	/* needed in main loop */
-	struct pollfd polls = {fileno (stdin), POLLIN, POLLIN};
+	char doQuit = 0;
+	/* polls */
+	/* FIXME: max path length? */
+	char ctlPath[1024];
+	struct pollfd polls[2];
+	nfds_t pollsLen = 0;
 	char buf = '\0';
 	BarKeyShortcut_t *curShortcut = NULL;
 
@@ -76,8 +85,20 @@ int main (int argc, char **argv) {
 	PianoInit (&ph);
 	WardrobeInit (&wh);
 	BarSettingsInit (&settings);
-
 	BarSettingsRead (&settings);
+
+	/* init polls */
+	polls[0].fd = fileno (stdin);
+	polls[0].events = POLLIN;
+	++pollsLen;
+	BarGetXdgConfigDir (PACKAGE "/ctl", ctlPath, sizeof (ctlPath));
+	/* FIXME: O_RDONLY blocks while opening :/ */
+	polls[1].fd = open (ctlPath, O_RDWR);
+	polls[1].events = POLLIN;
+	if (polls[1].fd != -1) {
+		++pollsLen;
+		BarUiMsg (MSG_INFO, "Control fifo at %s opened\n", ctlPath);
+	}
 
 	if (settings.username == NULL) {
 		BarUiMsg (MSG_QUESTION, "Username: ");
@@ -219,8 +240,12 @@ int main (int argc, char **argv) {
 
 		/* in the meantime: wait for user actions;
 		 * 1000ms == 1s => refresh time display every second */
-		if (poll (&polls, 1, 1000) > 0) {
-			read (fileno (stdin), &buf, sizeof (buf));
+		if (poll (polls, pollsLen, 1000) > 0) {
+			if (polls[0].revents & POLLIN) {
+				read (fileno (stdin), &buf, sizeof (buf));
+			} else if (polls[1].revents & POLLIN) {
+				read (polls[1].fd, &buf, sizeof (buf));
+			}
 			curShortcut = settings.keys;
 			/* don't show what the user enters here, we could disable
 			 * echoing too... */

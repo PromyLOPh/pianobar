@@ -62,4 +62,7 @@ void BarSettingsDestroy (BarSettings_t *settings);
 
 void BarSettingsRead (BarSettings_t *settings);
 
+void BarGetXdgConfigDir (const char *filename, char *retDir,
+		size_t retDirN);
+
 #endif /* _SETTINGS_H */
