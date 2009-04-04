@@ -272,11 +272,14 @@ int main (int argc, char **argv) {
 		}
 	}
 
+	/* destroy everything (including the world...) */
 	if (player.url != NULL) {
 		free (player.url);
 		pthread_join (playerThread, NULL);
 	}
-	/* destroy everything (including the world...) */
+	if (polls[1].fd != -1) {
+		close (polls[1].fd);
+	}
 	PianoDestroy (&ph);
 	WardrobeDestroy (&wh);
 	curl_global_cleanup ();
