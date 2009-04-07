@@ -231,6 +231,10 @@ int main (int argc, char **argv) {
 					player.gain = curSong->fileGain;
 					player.audioFormat = curSong->audioFormat;
 		
+					/* throw event */
+					BarUiStartEventCmd (&settings, "songstart", curStation,
+							curSong);
+
 					/* start player */
 					pthread_create (&playerThread, NULL, BarPlayerThread,
 							&player);

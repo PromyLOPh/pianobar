@@ -52,6 +52,7 @@ struct BarSettings {
 	} *keys;
 	PianoAudioFormat_t audioFormat;
 	char *autostartStation;
+	char *eventCmd;
 };
 
 typedef struct BarSettings BarSettings_t;

@@ -29,6 +29,11 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include <readline/readline.h>
+#include <errno.h>
+
+/* waitpid () */
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "ui.h"
 
@@ -397,4 +402,61 @@ inline void BarUiPrintSong (PianoSong_t *song, PianoStation_t *station) {
 			(song->rating == PIANO_RATE_LOVE) ? " <3" : "",
 			station != NULL ? " @ " : "",
 			station != NULL ? station->name : "");
+}
+
+/*	Excute external event handler
+ *	@param settings containing the cmdline
+ *	@param event type
+ *	@param current station
+ *	@param current song
+ *	@param piano error-code
+ */
+void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
+		const PianoStation_t *curStation, const PianoSong_t *curSong) {
+	pid_t chld;
+	char pipeBuf[1024];
+	int pipeFd[2];
+
+	if (settings->eventCmd == NULL) {
+		/* nothing to do... */
+		return;
+	}
+
+	/* prepare stdin content */
+	memset (pipeBuf, 0, sizeof (pipeBuf));
+	snprintf (pipeBuf, sizeof (pipeBuf),
+			"artist=%s\n"
+			"title=%s\n"
+			"album=%s\n"
+			"stationName=%s\n",
+			curSong->artist,
+			curSong->title,
+			curSong->album,
+			curStation->name);
+	
+	if (pipe (pipeFd) == -1) {
+		BarUiMsg (MSG_ERR, "Cannot create eventcmd pipe. (%s)\n", strerror (errno));
+		return;
+	}
+
+	chld = fork ();
+	if (chld == 0) {
+		/* child */
+		close (pipeFd[1]);
+		dup2 (pipeFd[0], fileno (stdin));
+		execl (settings->eventCmd, settings->eventCmd, type, NULL);
+		BarUiMsg (MSG_ERR, "Cannot start eventcmd. (%s)\n", strerror (errno));
+		close (pipeFd[0]);
+		exit (1);
+	} else if (chld == -1) {
+		BarUiMsg (MSG_ERR, "Cannot fork eventcmd. (%s)\n", strerror (errno));
+	} else {
+		/* parent */
+		int status;
+		close (pipeFd[0]);
+		write (pipeFd[1], pipeBuf, strlen (pipeBuf));
+		close (pipeFd[1]);
+		/* wait to get rid of the zombie */
+		waitpid (chld, &status, 0);
+	}
 }

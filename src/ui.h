@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 #include <piano.h>
 
+#include "settings.h"
+
 typedef enum {MSG_NONE, MSG_INFO, MSG_PLAYING, MSG_TIME, MSG_ERR,
 		MSG_QUESTION, MSG_LIST} uiMsg_t;
 
@@ -38,5 +40,7 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph);
 void BarStationFromGenre (PianoHandle_t *ph);
 inline void BarUiPrintStation (PianoStation_t *);
 inline void BarUiPrintSong (PianoSong_t *, PianoStation_t *);
+void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
+		const PianoStation_t *curStation, const PianoSong_t *curSong);
 
 #endif /* _UI_H */

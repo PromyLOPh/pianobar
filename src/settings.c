@@ -89,6 +89,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->lastfmUser);
 	free (settings->lastfmPassword);
 	free (settings->autostartStation);
+	free (settings->eventCmd);
 	memset (settings, 0, sizeof (*settings));
 }
 
@@ -245,6 +246,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 			}
 		} else if (strcmp ("autostart_station", key) == 0) {
 			settings->autostartStation = strdup (val);
+		} else if (strcmp ("event_command", key) == 0) {
+			settings->eventCmd = strdup (val);
 		}
 	}
 
