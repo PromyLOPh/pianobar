@@ -144,6 +144,11 @@ It disables the SSL secured login. Beware!
 .I Your password will be send as plain-text!
 
 .TP
+.B event_command = path
+File that is executed when event occurs. The file is called with the event type
+as it's first argument. More information is supplied through stdin.
+
+.TP
 .B lastfm_user = your_username
 If you want to send your played songs to last.fm set this to your last.fm
 username.
