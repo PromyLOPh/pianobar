@@ -33,7 +33,7 @@ THE SOFTWARE.
 #include "crypt.h"
 #include "config.h"
 
-#define PIANO_PROTOCOL_VERSION "22"
+#define PIANO_PROTOCOL_VERSION "23"
 #define PIANO_RPC_URL "http://www.pandora.com/radio/xmlrpc/v" \
 		PIANO_PROTOCOL_VERSION "?"
 #define PIANO_SECURE_RPC_URL "https://www.pandora.com/radio/xmlrpc/v" \
