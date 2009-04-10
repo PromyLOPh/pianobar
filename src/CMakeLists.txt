@@ -8,7 +8,6 @@ option (USE_MAD "Use libmad for mp3 decoding (if available)" on)
 
 find_package (LibXml2 REQUIRED)
 find_package (CURL REQUIRED)
-find_package (Readline REQUIRED)
 find_package (LibAo REQUIRED)
 
 # find threading implementation
@@ -57,12 +56,13 @@ include_directories (
 	${pianobar_SOURCE_DIR}/libpiano/src
 	${pianobar_SOURCE_DIR}/libwardrobe/src
 	${LIBXML2_INCLUDE_DIR}
-	${CURL_INCLUDE_DIRS} ${READLINE_INCLUDE_DIR} ${FAAD_INCLUDE_DIRS}
-	${LIBAO_INCLUDE_DIRS} ${MAD_INCLUDE_DIRS})
+	${CURL_INCLUDE_DIRS} ${FAAD_INCLUDE_DIRS} ${LIBAO_INCLUDE_DIRS}
+	${MAD_INCLUDE_DIRS})
 
-add_executable (pianobar main.c terminal.c settings.c player.c ui.c ui_act.c)
+add_executable (pianobar main.c terminal.c settings.c player.c ui.c ui_act.c
+	ui_readline.c)
 target_link_libraries (pianobar piano wardrobe ${CURL_LIBRARIES}
-	${LIBXML2_LIBRARIES} ${READLINE_LIBRARY} ${FAAD_LIBRARY} ${LIBAO_LIBRARY}
+	${LIBXML2_LIBRARIES} ${FAAD_LIBRARY} ${LIBAO_LIBRARY}
 	${CMAKE_THREAD_LIBS_INIT} ${MAD_LIBRARIES} ${LIBM})
 
 install (TARGETS pianobar RUNTIME DESTINATION bin)

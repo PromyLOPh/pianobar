@@ -36,6 +36,7 @@ THE SOFTWARE.
 #include <sys/wait.h>
 
 #include "ui.h"
+#include "ui_readline.h"
 
 /*	output message and flush stdout
  *	@param message
@@ -86,41 +87,6 @@ inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret) {
 		BarUiMsg (MSG_NONE, "Error: %s\n", PianoErrorToStr (ret));
 	} else {
 		BarUiMsg (MSG_NONE, "Ok.\n");
-	}
-	return ret;
-}
-
-/*	check if all characters of string are numeric
- *	@param the string
- *	@return 1 = yes, 0 = not numeric
- */
-char BarIsNumericStr (const char *str) {
-	while (*str != '\0') {
-		if (isdigit (*str) == 0) {
-			return 0;
-		}
-		str++;
-	}
-	return 1;
-}
-
-/*	use readline to get integer value
- *	@param prompt or NULL
- *	@param returns integer
- *	@return 1 = success, 0 = failure (not an integer, ...)
- */
-char BarReadlineInt (const char *prompt, int *retVal) {
-	char *buf;
-	char ret = 0;
-
-	BarUiMsg (MSG_QUESTION, prompt);
-	if ((buf = readline (NULL)) != NULL && strlen (buf) > 0 &&
-			BarIsNumericStr (buf)) {
-		*retVal = atoi (buf);
-		ret = 1;
-	}
-	if (buf != NULL) {
-		free (buf);
 	}
 	return ret;
 }
@@ -200,7 +166,8 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt) {
 		i++;
 	}
 
-	if (!BarReadlineInt (prompt, &i)) {
+	BarUiMsg (MSG_QUESTION, prompt);
+	if (BarReadlineInt (&i) == 0) {
 		free (ss);
 		return NULL;
 	}
@@ -230,7 +197,8 @@ PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
 		i++;
 		tmpSong = tmpSong->next;
 	}
-	if (!BarReadlineInt ("Select song: ", &i)) {
+	BarUiMsg (MSG_QUESTION, "Select song: ");
+	if (BarReadlineInt (&i) == 0) {
 		return NULL;
 	}
 	tmpSong = startSong;
@@ -256,7 +224,8 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
 		i++;
 		tmpArtist = tmpArtist->next;
 	}
-	if (!BarReadlineInt ("Select artist: ", &i)) {
+	BarUiMsg (MSG_QUESTION, "Select artist: ");
+	if (BarReadlineInt (&i) == 0) {
 		return NULL;
 	}
 	tmpArtist = startArtist;
@@ -272,19 +241,17 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
  *	@return musicId or NULL on abort/error
  */
 char *BarUiSelectMusicId (const PianoHandle_t *ph) {
-	char *musicId = NULL, *lineBuf;
-	char yesnoBuf;
+	char *musicId = NULL;
+	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;
 	PianoArtist_t *tmpArtist;
 	PianoSong_t *tmpSong;
 
 	BarUiMsg (MSG_QUESTION, "Search for artist/title: ");
-	lineBuf = readline (NULL);
-	if (lineBuf != NULL && strlen (lineBuf) > 0) {
+	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0) > 0) {
 		BarUiMsg (MSG_INFO, "Searching... ");
 		if (BarUiPrintPianoStatus (PianoSearchMusic (ph, lineBuf,
 				&searchResult)) != PIANO_RET_OK) {
-			free (lineBuf);
 			return NULL;
 		}
 		BarUiMsg (MSG_NONE, "\r");
@@ -292,14 +259,13 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 			/* songs and artists found */
 			BarUiMsg (MSG_QUESTION, "Is this an [a]rtist or [t]rack name? "
 					"Press c to abort. ");
-			read (fileno (stdin), &yesnoBuf, sizeof (yesnoBuf));
-			BarUiMsg (MSG_NONE, "\n");
-			if (yesnoBuf == 'a') {
+			BarReadline (selectBuf, sizeof (selectBuf), "atc", 1, 0);
+			if (*selectBuf == 'a') {
 				tmpArtist = BarUiSelectArtist (searchResult.artists);
 				if (tmpArtist != NULL) {
 					musicId = strdup (tmpArtist->musicId);
 				}
-			} else if (yesnoBuf == 't') {
+			} else if (*selectBuf == 't') {
 				tmpSong = BarUiSelectSong (searchResult.songs);
 				if (tmpSong != NULL) {
 					musicId = strdup (tmpSong->musicId);
@@ -321,9 +287,6 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 			BarUiMsg (MSG_INFO, "Nothing found...\n");
 		}
 		PianoDestroySearchResult (&searchResult);
-	}
-	if (lineBuf != NULL) {
-		free (lineBuf);
 	}
 
 	return musicId;
@@ -355,7 +318,8 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 		curCat = curCat->next;
 	}
 	/* select category or exit */
-	if (!BarReadlineInt ("Select category: ", &i)) {
+	BarUiMsg (MSG_QUESTION, "Select category: ");
+	if (BarReadlineInt (&i) == 0) {
 		return;
 	}
 	curCat = ph->genreStations;
@@ -372,7 +336,8 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 		i++;
 		curStation = curStation->next;
 	}
-	if (!BarReadlineInt ("Select genre: ", &i)) {
+	BarUiMsg (MSG_QUESTION, "Select genre: ");
+	if (BarReadlineInt (&i) == 0) {
 		return;
 	}
 	curStation = curCat->stations;

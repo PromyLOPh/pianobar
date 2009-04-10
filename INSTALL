@@ -13,7 +13,6 @@ libfaad2			http://www.audiocoding.com/downloads.html
 AND/OR libmad		http://www.underbit.com/products/mad/
 libxml2				http://xmlsoft.org/
 pthreads
-readline
 UTF-8 console/locale!
 
 Building

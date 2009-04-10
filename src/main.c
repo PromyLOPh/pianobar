@@ -44,8 +44,6 @@ THE SOFTWARE.
 
 #include <pthread.h>
 
-#include <readline/readline.h>
-
 /* pandora.com library */
 #include <piano.h>
 
@@ -55,6 +53,7 @@ THE SOFTWARE.
 #include "terminal.h"
 #include "config.h"
 #include "ui.h"
+#include "ui_readline.h"
 
 int main (int argc, char **argv) {
 	/* handles */
@@ -79,6 +78,7 @@ int main (int argc, char **argv) {
 	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE "!\n");
 
 	/* init some things */
+	BarTermSetEcho (0);
 	curl_global_init (CURL_GLOBAL_SSL);
 	xmlInitParser ();
 	ao_initialize ();
@@ -101,14 +101,16 @@ int main (int argc, char **argv) {
 	}
 
 	if (settings.username == NULL) {
+		char nameBuf[100];
 		BarUiMsg (MSG_QUESTION, "Username: ");
-		settings.username = readline (NULL);
+		BarReadlineStr (nameBuf, sizeof (nameBuf), 0);
+		settings.username = strdup (nameBuf);
 	}
 	if (settings.password == NULL) {
-		BarTermSetEcho (0);
+		char passBuf[100];
 		BarUiMsg (MSG_QUESTION, "Password: ");
-		settings.password = readline (NULL);
-		BarTermSetEcho (1);
+		BarReadlineStr (passBuf, sizeof (passBuf), 1);
+		settings.password = strdup (passBuf);
 		BarUiMsg (MSG_NONE, "\n");
 	}
 

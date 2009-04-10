@@ -26,12 +26,10 @@ THE SOFTWARE.
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-/* needed by readline */
-#include <stdio.h>
-#include <readline/readline.h>
 
 #include "ui.h"
 #include "ui_act.h"
+#include "ui_readline.h"
 
 #define RETURN_IF_NO_STATION if (*curStation == NULL) { \
 		BarUiMsg (MSG_ERR, "No station selected.\n"); \
@@ -130,29 +128,24 @@ void BarUiActCreateStation (BAR_KS_ARGS) {
 /*	add shared station by id
  */
 void BarUiActAddSharedStation (BAR_KS_ARGS) {
-	char *stationId = NULL;
+	char stationId[50];
 
 	BarUiMsg (MSG_QUESTION, "Station id: ");
-	if ((stationId = readline (NULL)) != NULL &&
-			strlen (stationId) > 0) {
+	if (BarReadline (stationId, sizeof (stationId), "0123456789", 0, 0) > 0) {
 		BarUiMsg (MSG_INFO, "Adding shared station... ");
-		BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", stationId));
-		free (stationId);
+		BarUiPrintPianoStatus (PianoCreateStation (ph, "sh",
+				(char *) stationId));
 	}
 }
 
 /*	delete current station
  */
 void BarUiActDeleteStation (BAR_KS_ARGS) {
-	char yesNoBuf;
-
 	RETURN_IF_NO_STATION;
 
 	BarUiMsg (MSG_QUESTION, "Really delete \"%s\"? [yN] ",
 			(*curStation)->name);
-	read (fileno (stdin), &yesNoBuf, sizeof (yesNoBuf));
-	BarUiMsg (MSG_NONE, "\n");
-	if (yesNoBuf == 'y') {
+	if (BarReadlineYesNo (0)) {
 		BarUiMsg (MSG_INFO, "Deleting station... ");
 		if (BarUiPrintPianoStatus (PianoDeleteStation (ph,
 				*curStation)) == PIANO_RET_OK) {
@@ -280,21 +273,18 @@ void BarUiActPause (BAR_KS_ARGS) {
 /*	rename current station
  */
 void BarUiActRenameStation (BAR_KS_ARGS) {
-	char *lineBuf;
+	char lineBuf[100];
 
 	RETURN_IF_NO_STATION;
 
 	BarUiMsg (MSG_QUESTION, "New name: ");
-	lineBuf = readline (NULL);
-	if (lineBuf != NULL && strlen (lineBuf) > 0) {
+	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0) > 0) {
 		if (!BarTransformIfShared (ph, *curStation)) {
 			return;
 		}
 		BarUiMsg (MSG_INFO, "Renaming station... ");
-		BarUiPrintPianoStatus (PianoRenameStation (ph, *curStation, lineBuf));
-	}
-	if (lineBuf != NULL) {
-		free (lineBuf);
+		BarUiPrintPianoStatus (PianoRenameStation (ph, *curStation,
+				(char *) lineBuf));
 	}
 }
 
