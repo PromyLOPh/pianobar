@@ -70,6 +70,7 @@ int main (int argc, char **argv) {
 	/* polls */
 	/* FIXME: max path length? */
 	char ctlPath[1024];
+	FILE *ctlFd = NULL;
 	struct pollfd polls[2];
 	nfds_t pollsLen = 0;
 	char buf = '\0';
@@ -91,11 +92,13 @@ int main (int argc, char **argv) {
 	polls[0].fd = fileno (stdin);
 	polls[0].events = POLLIN;
 	++pollsLen;
+
 	BarGetXdgConfigDir (PACKAGE "/ctl", ctlPath, sizeof (ctlPath));
-	/* FIXME: O_RDONLY blocks while opening :/ */
-	polls[1].fd = open (ctlPath, O_RDWR);
-	polls[1].events = POLLIN;
-	if (polls[1].fd != -1) {
+	/* FIXME: why is r_+_ required? */
+	ctlFd = fopen (ctlPath, "r+");
+	if (ctlFd != NULL) {
+		polls[1].fd = fileno (ctlFd);
+		polls[1].events = POLLIN;
 		++pollsLen;
 		BarUiMsg (MSG_INFO, "Control fifo at %s opened\n", ctlPath);
 	}
@@ -248,9 +251,9 @@ int main (int argc, char **argv) {
 		 * 1000ms == 1s => refresh time display every second */
 		if (poll (polls, pollsLen, 1000) > 0) {
 			if (polls[0].revents & POLLIN) {
-				read (fileno (stdin), &buf, sizeof (buf));
+				buf = fgetc (stdin);
 			} else if (polls[1].revents & POLLIN) {
-				read (polls[1].fd, &buf, sizeof (buf));
+				buf = fgetc (ctlFd);
 			}
 			curShortcut = settings.keys;
 			/* don't show what the user enters here, we could disable
@@ -283,8 +286,8 @@ int main (int argc, char **argv) {
 		free (player.url);
 		pthread_join (playerThread, NULL);
 	}
-	if (polls[1].fd != -1) {
-		close (polls[1].fd);
+	if (ctlFd != NULL) {
+		fclose (ctlFd);
 	}
 	PianoDestroy (&ph);
 	WardrobeDestroy (&wh);
