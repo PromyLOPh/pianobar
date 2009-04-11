@@ -86,7 +86,7 @@ void BarUiActAddMusic (BAR_KS_ARGS) {
 
 	RETURN_IF_NO_STATION;
 
-	musicId = BarUiSelectMusicId (ph);
+	musicId = BarUiSelectMusicId (ph, curFd);
 	if (musicId != NULL) {
 		if (!BarTransformIfShared (ph, *curStation)) {
 			return;
@@ -117,7 +117,7 @@ void BarUiActBanSong (BAR_KS_ARGS) {
  */
 void BarUiActCreateStation (BAR_KS_ARGS) {
 	char *musicId;
-	musicId = BarUiSelectMusicId (ph);
+	musicId = BarUiSelectMusicId (ph, curFd);
 	if (musicId != NULL) {
 		BarUiMsg (MSG_INFO, "Creating station... ");
 		BarUiPrintPianoStatus (PianoCreateStation (ph, "mi", musicId));
@@ -131,7 +131,8 @@ void BarUiActAddSharedStation (BAR_KS_ARGS) {
 	char stationId[50];
 
 	BarUiMsg (MSG_QUESTION, "Station id: ");
-	if (BarReadline (stationId, sizeof (stationId), "0123456789", 0, 0) > 0) {
+	if (BarReadline (stationId, sizeof (stationId), "0123456789", 0, 0,
+			curFd) > 0) {
 		BarUiMsg (MSG_INFO, "Adding shared station... ");
 		BarUiPrintPianoStatus (PianoCreateStation (ph, "sh",
 				(char *) stationId));
@@ -145,7 +146,7 @@ void BarUiActDeleteStation (BAR_KS_ARGS) {
 
 	BarUiMsg (MSG_QUESTION, "Really delete \"%s\"? [yN] ",
 			(*curStation)->name);
-	if (BarReadlineYesNo (0)) {
+	if (BarReadlineYesNo (0, curFd)) {
 		BarUiMsg (MSG_INFO, "Deleting station... ");
 		if (BarUiPrintPianoStatus (PianoDeleteStation (ph,
 				*curStation)) == PIANO_RET_OK) {
@@ -176,7 +177,7 @@ void BarUiActExplain (BAR_KS_ARGS) {
  */
 void BarUiActStationFromGenre (BAR_KS_ARGS) {
 	/* use genre station */
-	BarStationFromGenre (ph);
+	BarStationFromGenre (ph, curFd);
 }
 
 /*	print verbose song information
@@ -242,7 +243,7 @@ void BarUiActMoveSong (BAR_KS_ARGS) {
 
 	RETURN_IF_NO_SONG;
 
-	moveStation = BarUiSelectStation (ph, "Move song to station: ");
+	moveStation = BarUiSelectStation (ph, "Move song to station: ", curFd);
 	if (moveStation != NULL) {
 		if (!BarTransformIfShared (ph, *curStation) ||
 				!BarTransformIfShared (ph, moveStation)) {
@@ -278,7 +279,7 @@ void BarUiActRenameStation (BAR_KS_ARGS) {
 	RETURN_IF_NO_STATION;
 
 	BarUiMsg (MSG_QUESTION, "New name: ");
-	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0) > 0) {
+	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0, curFd) > 0) {
 		if (!BarTransformIfShared (ph, *curStation)) {
 			return;
 		}
@@ -294,7 +295,7 @@ void BarUiActSelectStation (BAR_KS_ARGS) {
 	BarUiDoSkipSong (player);
 	PianoDestroyPlaylist (ph);
 	*curSong = NULL;
-	*curStation = BarUiSelectStation (ph, "Select station: ");
+	*curStation = BarUiSelectStation (ph, "Select station: ", curFd);
 	if (*curStation != NULL) {
 		BarUiPrintStation ((*curStation));
 	}
@@ -340,7 +341,7 @@ void BarUiActSelectQuickMix (BAR_KS_ARGS) {
 	if ((*curStation)->isQuickMix) {
 		PianoStation_t *selStation;
 		while ((selStation = BarUiSelectStation (ph,
-				"Toggle quickmix for station: ")) != NULL) {
+				"Toggle quickmix for station: ", curFd)) != NULL) {
 			selStation->useQuickMix = !selStation->useQuickMix;
 		}
 		BarUiMsg (MSG_INFO, "Setting quickmix stations... ");

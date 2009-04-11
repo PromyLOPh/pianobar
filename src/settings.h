@@ -31,7 +31,7 @@ THE SOFTWARE.
 
 #define BAR_KS_ARGS PianoHandle_t *ph, struct audioPlayer *player, \
 		struct BarSettings *settings, PianoSong_t **curSong, \
-		PianoStation_t **curStation, char *doQuit
+		PianoStation_t **curStation, char *doQuit, FILE *curFd
 
 struct BarSettings {
 	char *username;

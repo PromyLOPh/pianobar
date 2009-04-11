@@ -149,7 +149,8 @@ PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations) {
  *	@param piano handle
  *	@return pointer to selected station or NULL
  */
-PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt) {
+PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
+		FILE *curFd) {
 	PianoStation_t **ss = NULL, **ssCurr = NULL, *retStation;
 	int i = 0;
 
@@ -167,7 +168,7 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt) {
 	}
 
 	BarUiMsg (MSG_QUESTION, prompt);
-	if (BarReadlineInt (&i) == 0) {
+	if (BarReadlineInt (&i, curFd) == 0) {
 		free (ss);
 		return NULL;
 	}
@@ -185,7 +186,7 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt) {
  *	@param song list
  *	@return pointer to selected item in song list or NULL
  */
-PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
+PianoSong_t *BarUiSelectSong (PianoSong_t *startSong, FILE *curFd) {
 	PianoSong_t *tmpSong = NULL;
 	int i = 0;
 
@@ -198,7 +199,7 @@ PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
 		tmpSong = tmpSong->next;
 	}
 	BarUiMsg (MSG_QUESTION, "Select song: ");
-	if (BarReadlineInt (&i) == 0) {
+	if (BarReadlineInt (&i, curFd) == 0) {
 		return NULL;
 	}
 	tmpSong = startSong;
@@ -213,7 +214,7 @@ PianoSong_t *BarUiSelectSong (PianoSong_t *startSong) {
  *	@param artists (linked list)
  *	@return pointer to selected artist or NULL on abort
  */
-PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
+PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd) {
 	PianoArtist_t *tmpArtist = NULL;
 	int i = 0;
 
@@ -225,7 +226,7 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
 		tmpArtist = tmpArtist->next;
 	}
 	BarUiMsg (MSG_QUESTION, "Select artist: ");
-	if (BarReadlineInt (&i) == 0) {
+	if (BarReadlineInt (&i, curFd) == 0) {
 		return NULL;
 	}
 	tmpArtist = startArtist;
@@ -240,7 +241,7 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist) {
  *	@param piano handle
  *	@return musicId or NULL on abort/error
  */
-char *BarUiSelectMusicId (const PianoHandle_t *ph) {
+char *BarUiSelectMusicId (const PianoHandle_t *ph, FILE *curFd) {
 	char *musicId = NULL;
 	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;
@@ -248,7 +249,7 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 	PianoSong_t *tmpSong;
 
 	BarUiMsg (MSG_QUESTION, "Search for artist/title: ");
-	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0) > 0) {
+	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0, curFd) > 0) {
 		BarUiMsg (MSG_INFO, "Searching... ");
 		if (BarUiPrintPianoStatus (PianoSearchMusic (ph, lineBuf,
 				&searchResult)) != PIANO_RET_OK) {
@@ -259,27 +260,27 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 			/* songs and artists found */
 			BarUiMsg (MSG_QUESTION, "Is this an [a]rtist or [t]rack name? "
 					"Press c to abort. ");
-			BarReadline (selectBuf, sizeof (selectBuf), "atc", 1, 0);
+			BarReadline (selectBuf, sizeof (selectBuf), "atc", 1, 0, curFd);
 			if (*selectBuf == 'a') {
-				tmpArtist = BarUiSelectArtist (searchResult.artists);
+				tmpArtist = BarUiSelectArtist (searchResult.artists, curFd);
 				if (tmpArtist != NULL) {
 					musicId = strdup (tmpArtist->musicId);
 				}
 			} else if (*selectBuf == 't') {
-				tmpSong = BarUiSelectSong (searchResult.songs);
+				tmpSong = BarUiSelectSong (searchResult.songs, curFd);
 				if (tmpSong != NULL) {
 					musicId = strdup (tmpSong->musicId);
 				}
 			}
 		} else if (searchResult.songs != NULL) {
 			/* songs found */
-			tmpSong = BarUiSelectSong (searchResult.songs);
+			tmpSong = BarUiSelectSong (searchResult.songs, curFd);
 			if (tmpSong != NULL) {
 				musicId = strdup (tmpSong->musicId);
 			}
 		} else if (searchResult.artists != NULL) {
 			/* artists found */
-			tmpArtist = BarUiSelectArtist (searchResult.artists);
+			tmpArtist = BarUiSelectArtist (searchResult.artists, curFd);
 			if (tmpArtist != NULL) {
 				musicId = strdup (tmpArtist->musicId);
 			}
@@ -295,7 +296,7 @@ char *BarUiSelectMusicId (const PianoHandle_t *ph) {
 /*	browse genre stations and create shared station
  *	@param piano handle
  */
-void BarStationFromGenre (PianoHandle_t *ph) {
+void BarStationFromGenre (PianoHandle_t *ph, FILE *curFd) {
 	int i;
 	PianoGenreCategory_t *curCat;
 	PianoStation_t *curStation;
@@ -319,7 +320,7 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 	}
 	/* select category or exit */
 	BarUiMsg (MSG_QUESTION, "Select category: ");
-	if (BarReadlineInt (&i) == 0) {
+	if (BarReadlineInt (&i, curFd) == 0) {
 		return;
 	}
 	curCat = ph->genreStations;
@@ -337,7 +338,7 @@ void BarStationFromGenre (PianoHandle_t *ph) {
 		curStation = curStation->next;
 	}
 	BarUiMsg (MSG_QUESTION, "Select genre: ");
-	if (BarReadlineInt (&i) == 0) {
+	if (BarReadlineInt (&i, curFd) == 0) {
 		return;
 	}
 	curStation = curCat->stations;

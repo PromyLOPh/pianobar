@@ -54,10 +54,11 @@ inline char BarReadlineIsUtf8Content (char b) {
  *	@param accept these characters
  *	@param return if buffer full (otherwise more characters are not accepted)
  *	@param don't echo anything (for passwords)
+ *	@param read from this fd
  *	@return number of bytes read from stdin
  */
 size_t BarReadline (char *buf, size_t bufSize, const char *mask,
-		char fullReturn, char noEcho) {
+		char fullReturn, char noEcho, FILE *fd) {
 	int chr = 0;
 	size_t bufPos = 0;
 	size_t bufLen = 0;
@@ -65,7 +66,9 @@ size_t BarReadline (char *buf, size_t bufSize, const char *mask,
 
 	memset (buf, 0, bufSize);
 
-	while ((chr = fgetc (stdin)) != EOF) {
+	/* if fd is a fifo fgetc will always return EOF if nobody writes to
+	 * it, stdin will block */
+	while ((chr = fgetc (fd)) != EOF) {
 		switch (chr) {
 			/* EOT */
 			case 4:
@@ -162,19 +165,20 @@ size_t BarReadline (char *buf, size_t bufSize, const char *mask,
  *	@param buffer size
  *	@return number of bytes read from stdin
  */
-inline size_t BarReadlineStr (char *buf, size_t bufSize, char noEcho) {
-	return BarReadline (buf, bufSize, NULL, 0, noEcho);
+inline size_t BarReadlineStr (char *buf, size_t bufSize, char noEcho,
+		FILE *fd) {
+	return BarReadline (buf, bufSize, NULL, 0, noEcho, fd);
 }
 
 /*	Read int from stdin
  *	@param write result into this variable
  *	@return number of bytes read from stdin
  */
-size_t BarReadlineInt (int *ret) {
+size_t BarReadlineInt (int *ret, FILE *fd) {
 	int rlRet = 0;
 	char buf[16];
 
-	rlRet = BarReadline (buf, sizeof (buf), "0123456789", 0, 0);
+	rlRet = BarReadline (buf, sizeof (buf), "0123456789", 0, 0, fd);
 	*ret = atoi ((char *) buf);
 
 	return rlRet;
@@ -183,9 +187,9 @@ size_t BarReadlineInt (int *ret) {
 /*	Yes/No?
  *	@param defaul (user presses enter)
  */
-int BarReadlineYesNo (char def) {
+int BarReadlineYesNo (char def, FILE *fd) {
 	char buf[2];
-	BarReadline (buf, sizeof (buf), "yYnN", 1, 0);
+	BarReadline (buf, sizeof (buf), "yYnN", 1, 0, fd);
 	if (*buf == 'y' || *buf == 'Y' || (def == 1 && *buf == '\0')) {
 		return 1;
 	} else {

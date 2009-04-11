@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-size_t BarReadline (char *, size_t, const char *, char, char);
-inline size_t BarReadlineStr (char *, size_t, char);
-size_t BarReadlineInt (int *);
-int BarReadlineYesNo (char def);
+size_t BarReadline (char *, size_t, const char *, char, char, FILE *);
+inline size_t BarReadlineStr (char *, size_t, char, FILE *);
+size_t BarReadlineInt (int *, FILE *);
+int BarReadlineYesNo (char def, FILE *);
 

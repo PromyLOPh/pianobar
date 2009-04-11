@@ -106,13 +106,13 @@ int main (int argc, char **argv) {
 	if (settings.username == NULL) {
 		char nameBuf[100];
 		BarUiMsg (MSG_QUESTION, "Username: ");
-		BarReadlineStr (nameBuf, sizeof (nameBuf), 0);
+		BarReadlineStr (nameBuf, sizeof (nameBuf), 0, stdin);
 		settings.username = strdup (nameBuf);
 	}
 	if (settings.password == NULL) {
 		char passBuf[100];
 		BarUiMsg (MSG_QUESTION, "Password: ");
-		BarReadlineStr (passBuf, sizeof (passBuf), 1);
+		BarReadlineStr (passBuf, sizeof (passBuf), 1, stdin);
 		settings.password = strdup (passBuf);
 		BarUiMsg (MSG_NONE, "\n");
 	}
@@ -155,7 +155,7 @@ int main (int argc, char **argv) {
 	}
 	/* no autostart? ask the user */
 	if (curStation == NULL) {
-		curStation = BarUiSelectStation (&ph, "Select station: ");
+		curStation = BarUiSelectStation (&ph, "Select station: ", stdin);
 	}
 	if (curStation != NULL) {
 		BarUiPrintStation (curStation);
@@ -250,19 +250,20 @@ int main (int argc, char **argv) {
 		/* in the meantime: wait for user actions;
 		 * 1000ms == 1s => refresh time display every second */
 		if (poll (polls, pollsLen, 1000) > 0) {
+			FILE *curFd = NULL;
+
 			if (polls[0].revents & POLLIN) {
-				buf = fgetc (stdin);
+				curFd = stdin;
 			} else if (polls[1].revents & POLLIN) {
-				buf = fgetc (ctlFd);
+				curFd = ctlFd;
 			}
+			buf = fgetc (curFd);
 			curShortcut = settings.keys;
-			/* don't show what the user enters here, we could disable
-			 * echoing too... */
-			BarUiMsg (MSG_NONE, "\r");
+
 			while (curShortcut != NULL) {
 				if (curShortcut->key == buf) {
 					curShortcut->cmd (&ph, &player, &settings, &curSong,
-							&curStation, &doQuit);
+							&curStation, &doQuit, curFd);
 					break;
 				}
 				curShortcut = curShortcut->next;
