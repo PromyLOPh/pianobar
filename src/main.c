@@ -203,10 +203,12 @@ int main (int argc, char **argv) {
 					curSong = curSong->next;
 				}
 				if (curSong == NULL) {
+					PianoReturn_t pRet = PIANO_RET_ERR;
+
 					BarUiMsg (MSG_INFO, "Receiving new playlist... ");
 					PianoDestroyPlaylist (&ph);
-					if (BarUiPrintPianoStatus (PianoGetPlaylist (&ph,
-							curStation->id, settings.audioFormat)) !=
+					if ((pRet = BarUiPrintPianoStatus (PianoGetPlaylist (&ph,
+							curStation->id, settings.audioFormat))) !=
 							PIANO_RET_OK) {
 						curStation = NULL;
 					} else {
@@ -216,6 +218,8 @@ int main (int argc, char **argv) {
 							curStation = NULL;
 						}
 					}
+					BarUiStartEventCmd (&settings, "stationfetchplaylist",
+							curStation, curSong, pRet);
 				}
 				/* song ready to play */
 				if (curSong != NULL) {
@@ -238,7 +242,7 @@ int main (int argc, char **argv) {
 		
 					/* throw event */
 					BarUiStartEventCmd (&settings, "songstart", curStation,
-							curSong);
+							curSong, PIANO_RET_OK);
 
 					/* start player */
 					pthread_create (&playerThread, NULL, BarPlayerThread,

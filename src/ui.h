@@ -42,6 +42,7 @@ void BarStationFromGenre (PianoHandle_t *ph, FILE *curFd);
 inline void BarUiPrintStation (PianoStation_t *);
 inline void BarUiPrintSong (PianoSong_t *, PianoStation_t *);
 void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
-		const PianoStation_t *curStation, const PianoSong_t *curSong);
+		const PianoStation_t *curStation, const PianoSong_t *curSong,
+		PianoReturn_t);
 
 #endif /* _UI_H */
