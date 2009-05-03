@@ -37,7 +37,7 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 		FILE *curFd);
 PianoSong_t *BarUiSelectSong (PianoSong_t *startSong, FILE *curFd);
 PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd);
-char *BarUiSelectMusicId (const PianoHandle_t *ph, FILE *curFd);
+char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd);
 void BarStationFromGenre (PianoHandle_t *ph, FILE *curFd);
 inline void BarUiPrintStation (PianoStation_t *);
 inline void BarUiPrintSong (PianoSong_t *, PianoStation_t *);

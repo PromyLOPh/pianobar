@@ -8,7 +8,6 @@ Versions may vary :) Just get the newest one:
 
 cmake
 libao				http://www.xiph.org/ao/
-libcurl with SSL	http://curl.haxx.se/
 libfaad2			http://www.audiocoding.com/downloads.html
 AND/OR libmad		http://www.underbit.com/products/mad/
 libxml2				http://xmlsoft.org/

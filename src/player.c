@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
+#include <limits.h>
 
 #include "player.h"
 #include "config.h"
@@ -120,13 +121,13 @@ inline void BarPlayerBufferMove (struct audioPlayer *player) {
  *	@param extra data (player data)
  *	@return received bytes or less on error
  */
-size_t BarPlayerAACCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
+char BarPlayerAACCurlCb (void *ptr, size_t size, void *stream) {
 	char *data = ptr;
 	struct audioPlayer *player = stream;
 
 	QUIT_PAUSE_CHECK;
 
-	if (!BarPlayerBufferFill (player, data, size*nmemb)) {
+	if (!BarPlayerBufferFill (player, data, size)) {
 		return 0;
 	}
 
@@ -276,7 +277,7 @@ size_t BarPlayerAACCurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 	BarPlayerBufferMove (player);
 
-	return size*nmemb;
+	return 1;
 }
 
 #endif /* ENABLE_FAAD */
@@ -299,32 +300,28 @@ inline signed short int BarPlayerMadToShort (mad_fixed_t fixed) {
 	return (signed short int) (fixed >> (MAD_F_FRACBITS - 15));
 }
 
-size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
+char BarPlayerMp3CurlCb (void *ptr, size_t size, void *stream) {
 	char *data = ptr;
 	struct audioPlayer *player = stream;
 	size_t i;
 
 	QUIT_PAUSE_CHECK;
 
-	if (!BarPlayerBufferFill (player, data, size*nmemb)) {
+	if (!BarPlayerBufferFill (player, data, size)) {
 		return 0;
 	}
 
 	/* initialize song length */
 	if (player->mode < PLAYER_SAMPLESIZE_INITIALIZED) {
-		double contentLength = 0;
-		/* FIXME: curl's documentation says we should call curl_easy_getinfo
-		 * _after_ a transfer finished */
-		curl_easy_getinfo (player->audioFd, CURLINFO_CONTENT_LENGTH_DOWNLOAD,
-				&contentLength);
-		player->songDuration = contentLength / ((float) MP3_BITRATE * 1024.0 /
+		player->songDuration = (float) player->waith.contentLength /
+				((float) MP3_BITRATE * 1024.0 /
 				(float) BAR_PLAYER_MS_TO_S_FACTOR / 8.0);
 	}
 
 	/* some "prebuffering" */
 	if (player->mode < PLAYER_RECV_DATA &&
-			player->bufferFilled < sizeof (player->buffer) / 10) {
-		return size*nmemb;
+			player->bufferFilled < sizeof (player->buffer) / 2) {
+		return 1;
 	}
 
 	mad_stream_buffer (&player->mp3Stream, player->buffer,
@@ -391,7 +388,7 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
 
 	BarPlayerBufferMove (player);
 
-	return size*nmemb;
+	return 1;
 }
 #endif /* ENABLE_MAD */
 
@@ -401,14 +398,18 @@ size_t BarPlayerMp3CurlCb (void *ptr, size_t size, size_t nmemb, void *stream) {
  */
 void *BarPlayerThread (void *data) {
 	struct audioPlayer *player = data;
+	char extraHeaders[25];
 	#ifdef ENABLE_FAAD
 	NeAACDecConfigurationPtr conf;
 	#endif
-	CURLcode curlRet = 0;
+	WaitressReturn_t wRet = WAITRESS_RET_ERR;
 
 	/* init handles */
 	pthread_mutex_init (&player->pauseMutex, NULL);
-	player->audioFd = curl_easy_init ();
+	player->scale = computeReplayGainScale (player->gain);
+	player->waith.data = (void *) player;
+	/* extraHeaders will be initialized later */
+	player->waith.extraHeaders = extraHeaders;
 
 	switch (player->audioFormat) {
 		#ifdef ENABLE_FAAD
@@ -420,8 +421,7 @@ void *BarPlayerThread (void *data) {
 		    conf->downMatrix = 1;
 			NeAACDecSetConfiguration(player->aacHandle, conf);
 
-			curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION,
-					BarPlayerAACCurlCb);
+			player->waith.callback = BarPlayerAACCurlCb;
 			break;
 		#endif /* ENABLE_FAAD */
 
@@ -431,8 +431,7 @@ void *BarPlayerThread (void *data) {
 			mad_frame_init (&player->mp3Frame);
 			mad_synth_init (&player->mp3Synth);
 
-			curl_easy_setopt (player->audioFd, CURLOPT_WRITEFUNCTION,
-					BarPlayerMp3CurlCb);
+			player->waith.callback = BarPlayerMp3CurlCb;
 			break;
 		#endif /* ENABLE_MAD */
 
@@ -442,26 +441,15 @@ void *BarPlayerThread (void *data) {
 			break;
 	}
 	
-	/* init replaygain */
-	player->scale = computeReplayGainScale (player->gain);
-
-	/* init curl */
-	curl_easy_setopt (player->audioFd, CURLOPT_URL, player->url);
-	curl_easy_setopt (player->audioFd, CURLOPT_WRITEDATA, (void *) player);
-	curl_easy_setopt (player->audioFd, CURLOPT_USERAGENT, PACKAGE);
-	curl_easy_setopt (player->audioFd, CURLOPT_CONNECTTIMEOUT, 60);
-	/* start downloading from beginning of file */
-	curl_easy_setopt (player->audioFd, CURLOPT_RESUME_FROM, 0);
-
 	player->mode = PLAYER_INITIALIZED;
 
 	/* This loop should work around song abortions by requesting the
 	 * missing part of the song */
 	do {
-		curl_easy_setopt (player->audioFd, CURLOPT_RESUME_FROM,
+		snprintf (extraHeaders, sizeof (extraHeaders), "Range: %u-\r\n",
 				player->bytesReceived);
-		curlRet = curl_easy_perform (player->audioFd);
-	} while (curlRet == CURLE_PARTIAL_FILE || curlRet == CURLE_RECV_ERROR);
+		wRet = WaitressFetchCall (&player->waith);
+	} while (wRet == WAITRESS_RET_PARTIAL_FILE);
 
 	switch (player->audioFormat) {
 		#ifdef ENABLE_FAAD
@@ -483,7 +471,7 @@ void *BarPlayerThread (void *data) {
 			break;
 	}
 	ao_close(player->audioOutDevice);
-	curl_easy_cleanup (player->audioFd);
+	WaitressFree (&player->waith);
 	#ifdef ENABLE_FAAD
 	if (player->sampleSize != NULL) {
 		free (player->sampleSize);

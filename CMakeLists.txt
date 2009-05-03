@@ -5,4 +5,5 @@ project (${PACKAGE} C)
 
 add_subdirectory (libpiano)
 add_subdirectory (libwardrobe)
+add_subdirectory (libwaitress)
 add_subdirectory (src)

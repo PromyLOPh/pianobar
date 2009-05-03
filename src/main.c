@@ -80,7 +80,6 @@ int main (int argc, char **argv) {
 
 	/* init some things */
 	BarTermSetEcho (0);
-	curl_global_init (CURL_GLOBAL_SSL);
 	xmlInitParser ();
 	ao_initialize ();
 	PianoInit (&ph);
@@ -123,20 +122,16 @@ int main (int argc, char **argv) {
 	}
 
 	/* setup control connection */
-	if (settings.controlProxy != NULL &&
-			settings.controlProxyType != -1) {
-		curl_easy_setopt (ph.curlHandle, CURLOPT_PROXY,
-				settings.controlProxy);
-		curl_easy_setopt (ph.curlHandle, CURLOPT_PROXYTYPE,
-				settings.controlProxyType);
+	if (settings.controlProxy != NULL) {
+		char tmpPath[2];
+		WaitressSplitUrl (settings.controlProxy, ph.waith.proxyHost, sizeof (ph.waith.proxyHost), ph.waith.proxyPort, sizeof (ph.waith.proxyPort), tmpPath, sizeof (tmpPath));
 	}
-	curl_easy_setopt (ph.curlHandle, CURLOPT_CONNECTTIMEOUT, 60);
 
 	BarTermSetBuffer (0);
 
 	BarUiMsg (MSG_INFO, "Login... ");
 	if (BarUiPrintPianoStatus (PianoConnect (&ph, settings.username,
-			settings.password, !settings.disableSecureLogin)) !=
+			settings.password)) !=
 			PIANO_RET_OK) {
 		return 0;
 	}
@@ -186,7 +181,6 @@ int main (int argc, char **argv) {
 				}
 			}
 			WardrobeSongDestroy (&scrobbleSong);
-			free (player.url);
 			/* FIXME: pthread_join blocks everything if network connection
 			 * is hung up e.g. */
 			pthread_join (playerThread, NULL);
@@ -236,7 +230,10 @@ int main (int argc, char **argv) {
 
 					/* setup player */
 					memset (&player, 0, sizeof (player));
-					player.url = strdup (curSong->audioUrl);
+
+					WaitressInit (&player.waith);
+					WaitressSetUrl (&player.waith, curSong->audioUrl);
+
 					player.gain = curSong->fileGain;
 					player.audioFormat = curSong->audioFormat;
 		
@@ -287,8 +284,7 @@ int main (int argc, char **argv) {
 	}
 
 	/* destroy everything (including the world...) */
-	if (player.url != NULL) {
-		free (player.url);
+	if (player.mode != PLAYER_FREED) {
 		pthread_join (playerThread, NULL);
 	}
 	if (ctlFd != NULL) {
@@ -296,7 +292,6 @@ int main (int argc, char **argv) {
 	}
 	PianoDestroy (&ph);
 	WardrobeDestroy (&wh);
-	curl_global_cleanup ();
 	ao_shutdown();
 	xmlCleanupParser ();
 	BarSettingsDestroy (&settings);

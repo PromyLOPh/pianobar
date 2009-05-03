@@ -241,7 +241,7 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd) {
  *	@param piano handle
  *	@return musicId or NULL on abort/error
  */
-char *BarUiSelectMusicId (const PianoHandle_t *ph, FILE *curFd) {
+char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd) {
 	char *musicId = NULL;
 	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;

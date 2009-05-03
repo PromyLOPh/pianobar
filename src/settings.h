@@ -24,7 +24,6 @@ THE SOFTWARE.
 #ifndef _SETTINGS_H
 #define _SETTINGS_H
 
-#include <curl/curl.h>
 #include <piano.h>
 
 #include "player.h"
@@ -37,12 +36,10 @@ struct BarSettings {
 	char *username;
 	char *password;
 	char *controlProxy; /* non-american listeners need this */
-	curl_proxytype controlProxyType;
 	char *lastfmUser;
 	char *lastfmPassword;
 	unsigned char lastfmScrobblePercent;
 	char enableScrobbling;
-	char disableSecureLogin;
 	struct BarKeyShortcut {
 		char key;
 		void (*cmd) (BAR_KS_ARGS);

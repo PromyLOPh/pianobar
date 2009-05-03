@@ -26,8 +26,6 @@ THE SOFTWARE.
 
 #include "config.h"
 
-#include <curl/curl.h>
-
 #ifdef ENABLE_FAAD
 #include <neaacdec.h>
 #endif
@@ -38,13 +36,15 @@ THE SOFTWARE.
 
 #include <ao/ao.h>
 #include <pthread.h>
+
 #include <piano.h>
+#include <waitress.h>
 
 #define BAR_PLAYER_MS_TO_S_FACTOR 1000
 
 struct audioPlayer {
 	/* buffer; should be large enough */
-	unsigned char buffer[CURL_MAX_WRITE_SIZE*2];
+	unsigned char buffer[WAITRESS_RECV_BUFFER*2];
 	size_t bufferFilled;
 	size_t bufferRead;
 	size_t bytesReceived;
@@ -85,8 +85,7 @@ struct audioPlayer {
 	/* audio out */
 	ao_device *audioOutDevice;
 
-	CURL *audioFd;
-	char *url;
+	WaitressHandle_t waith;
 
 	char doQuit;
 	pthread_mutex_t pauseMutex;

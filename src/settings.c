@@ -199,19 +199,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 		}
 		if (strcmp ("control_proxy", key) == 0) {
 			settings->controlProxy = strdup (val);
-		} else if (strcmp ("control_proxy_type", key) == 0) {
-			if (strcmp ("http", val) == 0) {
-				settings->controlProxyType = CURLPROXY_HTTP;
-			} else if (strcmp ("socks4", val) == 0) {
-				settings->controlProxyType = CURLPROXY_SOCKS4;
-			} else if (strcmp ("socks4a", val) == 0) {
-				settings->controlProxyType = CURLPROXY_SOCKS4A;
-			} else if (strcmp ("socks5", val) == 0) {
-				settings->controlProxyType = CURLPROXY_SOCKS5;
-			} else {
-				/* error: don't use proxy at all */
-				settings->controlProxyType = -1;
-			}
 		} else if (strcmp ("user", key) == 0) {
 			settings->username = strdup (val);
 		} else if (strcmp ("password", key) == 0) {
@@ -222,12 +209,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->lastfmPassword = strdup (val);
 		} else if (strcmp ("lastfm_scrobble_percent", key) == 0) {
 			settings->lastfmScrobblePercent = atoi (val);
-		} else if (strcmp ("disable_secure_login", key) == 0) {
-			if (strcmp (val, "1") == 0) {
-				settings->disableSecureLogin = 1;
-			} else {
-				settings->disableSecureLogin = 0;
-			}
 		} else if (memcmp ("act_", key, 4) == 0) {
 			/* keyboard shortcuts */
 			for (i = 0; i < sizeof (defaultKeys) / sizeof (*defaultKeys);
