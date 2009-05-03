@@ -289,8 +289,9 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	read (sockfd, statusBuf, sizeof (statusBuf));
 	switch (statusBuf[0]) {
 		case '2':
-			if (statusBuf[1] == '0' && statusBuf[2] == '0') {
-				/* 200 OK */
+			if (statusBuf[1] == '0' &&
+					(statusBuf[2] == '0' || statusBuf[2] == '6')) {
+				/* 200 OK/206 Partial Content */
 			} else {
 				CLOSE_RET (WAITRESS_RET_STATUS_UNKNOWN);
 			}

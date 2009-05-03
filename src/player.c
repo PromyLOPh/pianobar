@@ -446,7 +446,7 @@ void *BarPlayerThread (void *data) {
 	/* This loop should work around song abortions by requesting the
 	 * missing part of the song */
 	do {
-		snprintf (extraHeaders, sizeof (extraHeaders), "Range: %u-\r\n",
+		snprintf (extraHeaders, sizeof (extraHeaders), "Range: bytes=%u-\r\n",
 				player->bytesReceived);
 		wRet = WaitressFetchCall (&player->waith);
 	} while (wRet == WAITRESS_RET_PARTIAL_FILE);
