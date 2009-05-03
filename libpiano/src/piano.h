@@ -29,7 +29,7 @@ THE SOFTWARE.
  * all strings _must_ be utf-8 encoded. i won't care, but pandora does. so
  * be nice and check the encoding of your strings. thanks :) */
 
-#include <curl/curl.h>
+#include <waitress.h>
 
 typedef struct PianoUserInfo {
 	char *webAuthToken;
@@ -85,7 +85,7 @@ typedef struct PianoGenreCategory {
 } PianoGenreCategory_t;
 
 typedef struct PianoHandle {
-	CURL *curlHandle;
+	WaitressHandle_t waith;
 	char routeId[9];
 	PianoUserInfo_t user;
 	/* linked lists */
@@ -110,7 +110,7 @@ void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
 void PianoDestroyPlaylist (PianoHandle_t *);
 void PianoDestroySearchResult (PianoSearchResult_t *);
-PianoReturn_t PianoConnect (PianoHandle_t *, const char *, const char *, char);
+PianoReturn_t PianoConnect (PianoHandle_t *, const char *, const char *);
 
 PianoReturn_t PianoGetStations (PianoHandle_t *);
 PianoReturn_t PianoGetPlaylist (PianoHandle_t *, const char *,
@@ -123,7 +123,7 @@ PianoReturn_t PianoMoveSong (PianoHandle_t *, const PianoStation_t *,
 PianoReturn_t PianoRenameStation (PianoHandle_t *, PianoStation_t *,
 		const char *);
 PianoReturn_t PianoDeleteStation (PianoHandle_t *, PianoStation_t *);
-PianoReturn_t PianoSearchMusic (const PianoHandle_t *, const char *,
+PianoReturn_t PianoSearchMusic (PianoHandle_t *, const char *,
 		PianoSearchResult_t *);
 PianoReturn_t PianoCreateStation (PianoHandle_t *, const char *,
 		const char *);
@@ -134,8 +134,7 @@ PianoReturn_t PianoSetQuickmix (PianoHandle_t *);
 PianoStation_t *PianoFindStationById (PianoStation_t *, const char *);
 PianoReturn_t PianoGetGenreStations (PianoHandle_t *);
 PianoReturn_t PianoTransformShared (PianoHandle_t *, PianoStation_t *);
-PianoReturn_t PianoExplain (const PianoHandle_t *, const PianoSong_t *,
-		char **);
+PianoReturn_t PianoExplain (PianoHandle_t *, const PianoSong_t *, char **);
 const char *PianoErrorToStr (PianoReturn_t);
 
 #endif /* _PIANO_H */

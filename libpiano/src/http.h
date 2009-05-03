@@ -24,10 +24,10 @@ THE SOFTWARE.
 #ifndef _HTTP_H
 #define _HTTP_H
 
+#include <waitress.h>
 #include "piano.h"
 
-PianoReturn_t PianoHttpPost (CURL *ch, const char *url, const char *postData,
-		char **retData);
-PianoReturn_t PianoHttpGet (CURL *ch, const char *url, char **retData);
+PianoReturn_t PianoHttpPost (WaitressHandle_t *, const char *, char *, size_t);
+PianoReturn_t PianoHttpGet (WaitressHandle_t *, char *, size_t);
 
 #endif /* _HTTP_H */
