@@ -123,25 +123,9 @@ or the key you defined in
 .B act_songinfo.
 
 .TP
-.B control_proxy = host:port
+.B control_proxy = http://host:port/
 Non-american users need a proxy to use pandora.com. Only the xmlrpc interface
 will use this proxy. The music is streamed directly.
-
-.TP
-.B control_proxy_type = {http,socks4,socks4a,socks5}
-If you want to use a proxy you need to specify the proxy type you're going to
-use. Note that
-.B socks5
-needs an IP address specified in
-.B control_proxy
-
-.TP
-.B disable_secure_login = {1,0}
-If you have problems when loggin in and you know your control proxy
-definitively works try setting this option to
-.B 1.
-It disables the SSL secured login. Beware!
-.I Your password will be send as plain-text!
 
 .TP
 .B event_command = path
