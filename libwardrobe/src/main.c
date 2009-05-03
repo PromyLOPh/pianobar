@@ -1,5 +1,6 @@
 /*
-Copyright (c) 2008 Lars-Dominik Braun
+Copyright (c) 2008-2009
+	Lars-Dominik Braun <PromyLOPh@lavabit.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,98 +25,36 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <curl/curl.h>
+#include <waitress.h>
 
 #include "wardrobe.h"
 #include "md5.h"
 #include "config.h"
 
-#define WARDROBE_HTTP_BUFFER_SIZE 10000
+#define WARDROBE_HTTP_SEND_SIZE 10*1024
+#define WARDROBE_HTTP_RECV_SIZE 1024
+#define WARDROBE_URL_SIZE 1024
 
-void WardrobeSongInit (WardrobeSong_t *ws) {
+/*	Initialize song structure
+ *	@param wardrobe sond
+ */
+inline void WardrobeSongInit (WardrobeSong_t *ws) {
 	memset (ws, 0, sizeof (*ws));
-}
-
-/*	callback for curl, writes data to buffer
- *	@param received data
- *	@param block size
- *	@param blocks received
- *	@param write data into this buffer
- *	@return written bytes
- */
-size_t WardrobeCurlRetToVar (void *ptr, size_t size, size_t nmemb,
-		void *stream) {
-	char *streamPtr = stream;
-
-	if ((strlen (streamPtr) + nmemb) > (WARDROBE_HTTP_BUFFER_SIZE - 1)) {
-		printf ("buffer overflow...\n");
-		return 0;
-	} else {
-		memcpy (streamPtr+strlen(streamPtr), ptr, size*nmemb);
-		return size*nmemb;
-	}
-}
-
-/*	receive data from url using GET method
- *	@param initialized curl handle
- *	@param call this url
- *	@param put received data here, memory is allocated by this function
- *	@return nothing yet
- */
-void WardrobeHttpGet (CURL *ch, const char *url, char **retData) {
-	/* Let's hope nothing will be bigger than this... */
-	char curlRet[WARDROBE_HTTP_BUFFER_SIZE];
-
-	memset (curlRet, 0, sizeof (curlRet));
-
-	curl_easy_setopt (ch, CURLOPT_URL, url);
-	curl_easy_setopt (ch, CURLOPT_HTTPGET, 1L);
-	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, WardrobeCurlRetToVar);
-	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) curlRet);
-
-	curl_easy_perform (ch);
-
-	*retData = strdup (curlRet);
-}
-
-/*	post data to url and receive answer as string
- *	@param initialized curl handle
- *	@param call this url
- *	@param post this data
- *	@param put received data here, memory is allocated by this function
- *	@return nothing yet
- */
-void WardrobeHttpPost (CURL *ch, const char *url, const char *postData,
-		char **retData) {
-	/* Let's hope nothing will be bigger than this... */
-	char curlRet[WARDROBE_HTTP_BUFFER_SIZE];
-
-	memset (curlRet, 0, sizeof (curlRet));
-	curl_easy_setopt (ch, CURLOPT_URL, url);
-	curl_easy_setopt (ch, CURLOPT_POSTFIELDS, postData);
-	curl_easy_setopt (ch, CURLOPT_WRITEFUNCTION, WardrobeCurlRetToVar);
-	curl_easy_setopt (ch, CURLOPT_WRITEDATA, (void *) curlRet);
-
-	curl_easy_perform (ch);
-
-	*retData = strdup (curlRet);
 }
 
 /*	initialize wardrobe handle (setup curl, e.g.)
  *	@param wardrobe handle
  */
-void WardrobeInit (WardrobeHandle_t *wh) {
+inline void WardrobeInit (WardrobeHandle_t *wh) {
 	memset (wh, 0, sizeof (*wh));
-	wh->ch = curl_easy_init ();
-	curl_easy_setopt (wh->ch, CURLOPT_USERAGENT, PACKAGE);
-	curl_easy_setopt (wh->ch, CURLOPT_CONNECTTIMEOUT, 60);
+	WaitressInit (&wh->waith);
 }
 
 /*	free () replacement that does some checks and zeros memory
  *	@param pointer
  *	@param size or 0 to disable zeroing
  */
-void WardrobeFree (void *ptr, size_t size) {
+inline void WardrobeFree (void *ptr, size_t size) {
 	if (ptr != NULL) {
 		if (size > 0) {
 			memset (ptr, 0, size);
@@ -140,7 +79,7 @@ void WardrobeSongDestroy (WardrobeSong_t *ws) {
 void WardrobeDestroy (WardrobeHandle_t *wh) {
 	WardrobeFree (wh->user, 0);
 	WardrobeFree (wh->password, 0);
-	curl_easy_cleanup (wh->ch);
+	WaitressFree (&wh->waith);
 	memset (wh, 0, sizeof (*wh));
 }
 
@@ -149,18 +88,22 @@ void WardrobeDestroy (WardrobeHandle_t *wh) {
  *	@return _OK or error
  */
 WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
-	char url[1024], tmp[100], *tmpDigest, *pwDigest, *ret;
+	/* md5 hash length + long integer max + NULL */
+	char url[WARDROBE_URL_SIZE], tmp[32+55+1], *tmpDigest, *pwDigest,
+			ret[WARDROBE_HTTP_RECV_SIZE], postUrl[1024];
 	WardrobeReturn_t fRet = WARDROBE_RET_ERR;
 	time_t currTStamp = time (NULL);
 
 	tmpDigest = WardrobeMd5Calc (wh->password);
 	snprintf (tmp, sizeof (tmp), "%s%li", tmpDigest, currTStamp);
 	pwDigest = WardrobeMd5Calc (tmp);
-	snprintf (url, sizeof (url), "http://post.audioscrobbler.com/"
-			"?hs=true&p=1.2&c=tst&v=1.0&u=%s&t=%li&a=%s", wh->user,
-			currTStamp, pwDigest);
+	snprintf (url, sizeof (url), "?hs=true&p=1.2&c=tst&v=1.0&u=%s&t=%li&a=%s",
+			wh->user, currTStamp, pwDigest);
 	
-	WardrobeHttpGet (wh->ch, url, &ret);
+	WaitressSetHPP (&wh->waith, "post.audioscrobbler.com", "80", url);
+	if (WaitressFetchBuf (&wh->waith, ret, sizeof (ret)) != WAITRESS_RET_OK) {
+		return WARDROBE_RET_CONNECT_ERR;
+	}
 
 	/* parse answer */
 	if (memcmp (ret, "OK", 2) == 0) {
@@ -178,9 +121,13 @@ WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 		} else {
 			printf ("buffer overflow!\n");
 		}
-		if (newlines[4] - newlines[3]-1 < sizeof (wh->postUrl)) {
-			memcpy (wh->postUrl, newlines[3]+1, newlines[4] -
+		if (newlines[4] - newlines[3]-1 < sizeof (postUrl)) {
+			memset (postUrl, 0, sizeof (postUrl));
+			memcpy (postUrl, newlines[3]+1, newlines[4] -
 					newlines[3]-1);
+			WaitressSplitUrl (postUrl, wh->postHost, sizeof (wh->postHost),
+					wh->postPort, sizeof (wh->postPort), wh->postPath,
+					sizeof (wh->postPath));
 		} else {
 			printf ("buffer overflow!\n");
 		}
@@ -195,7 +142,6 @@ WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 
 	WardrobeFree (tmpDigest, WARDROBE_MD5_DIGEST_LEN);
 	WardrobeFree (pwDigest, WARDROBE_MD5_DIGEST_LEN);
-	WardrobeFree (ret, 0);
 
 	return fRet;
 }
@@ -207,30 +153,33 @@ WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
  */
 WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
 		const WardrobeSong_t *ws) {
-	char postContent[10000];
-	char *urlencArtist, *urlencTitle, *urlencAlbum, *ret;
+	char postContent[WARDROBE_HTTP_SEND_SIZE];
+	char *urlencArtist, *urlencTitle, *urlencAlbum, ret[WARDROBE_HTTP_RECV_SIZE];
 	WardrobeReturn_t fRet = WARDROBE_RET_ERR;
 
-	urlencArtist = curl_easy_escape (wh->ch, ws->artist, 0);
-	urlencTitle = curl_easy_escape (wh->ch, ws->title, 0);
-	urlencAlbum = curl_easy_escape (wh->ch, ws->album, 0);
+	urlencArtist = WaitressUrlEncode (ws->artist);
+	urlencTitle = WaitressUrlEncode (ws->title);
+	urlencAlbum = WaitressUrlEncode (ws->album);
 
 	snprintf (postContent, sizeof (postContent), "s=%s&a[0]=%s&t[0]=%s&"
 			"i[0]=%li&o[0]=P&r[0]=&l[0]=%li&b[0]=%s&n[0]=&m[0]=",
 			wh->authToken, urlencArtist, urlencTitle, ws->started,
 			ws->length, urlencAlbum);
 
-	WardrobeHttpPost (wh->ch, wh->postUrl, postContent, &ret);
+	WaitressSetHPP (&wh->waith, wh->postHost, wh->postPort, wh->postPath);
+	if (WaitressFetchBuf (&wh->waith, ret, sizeof (ret)) != WAITRESS_RET_OK) {
+		return WARDROBE_RET_CONNECT_ERR;
+	}
+
 	if (memcmp (ret, "OK", 2) == 0) {
 		fRet = WARDROBE_RET_OK;
 	} else if (memcmp (ret, "BADSESSION", 10) == 0) {
 		fRet = WARDROBE_RET_BADSESSION;
 	}
 
-	curl_free (urlencArtist);
-	curl_free (urlencTitle);
-	curl_free (urlencAlbum);
-	WardrobeFree (ret, 0);
+	WardrobeFree (urlencArtist, 0);
+	WardrobeFree (urlencTitle, 0);
+	WardrobeFree (urlencAlbum, 0);
 
 	return fRet;
 }
@@ -291,6 +240,10 @@ const char *WardrobeErrorToString (WardrobeReturn_t ret) {
 		
 		case WARDROBE_RET_BADSESSION:
 			return "Bad session. Try to login again.";
+			break;
+
+		case WARDROBE_RET_CONNECT_ERR:
+			return "Connection failed.";
 			break;
 
 		default:

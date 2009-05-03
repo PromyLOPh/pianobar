@@ -1,5 +1,6 @@
 /*
-Copyright (c) 2008 Lars-Dominik Braun
+Copyright (c) 2008-2009
+	Lars-Dominik Braun <PromyLOPh@lavabit.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,16 +21,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-/* public api, not stable yet */
-
-#include <curl/curl.h>
+#include <waitress.h>
 
 typedef struct {
 	char *user;
 	char *password;
 	char authToken[100];
-	char postUrl[1024];
-	CURL *ch;
+	char postHost[50];
+	char postPort[6];
+	char postPath[100];
+	WaitressHandle_t waith;
 } WardrobeHandle_t;
 
 typedef struct {
@@ -42,7 +43,8 @@ typedef struct {
 
 typedef enum {WARDROBE_RET_ERR, WARDROBE_RET_OK,
 		WARDROBE_RET_CLIENT_BANNED, WARDROBE_RET_BADAUTH,
-		WARDROBE_RET_BADTIME, WARDROBE_RET_BADSESSION} WardrobeReturn_t;
+		WARDROBE_RET_BADTIME, WARDROBE_RET_BADSESSION,
+		WARDROBE_RET_CONNECT_ERR} WardrobeReturn_t;
 
 void WardrobeInit (WardrobeHandle_t *wh);
 void WardrobeSongInit (WardrobeSong_t *ws);
@@ -51,3 +53,4 @@ void WardrobeDestroy (WardrobeHandle_t *wh);
 WardrobeReturn_t WardrobeSubmit (WardrobeHandle_t *wh,
 		const WardrobeSong_t *ws);
 const char *WardrobeErrorToString (WardrobeReturn_t ret);
+
