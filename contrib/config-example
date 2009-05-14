@@ -12,10 +12,7 @@
 #lastfm_scrobble_percent = 50
 
 # Proxy (for those who are not living in the USA)
-#control_proxy = 127.0.0.1:9090
-#control_proxy_type = http
-# Proxy does not support SSL? Enable this!
-#disable_secure_login = 1
+#control_proxy = http://127.0.0.1:9090/
 
 # Keybindings
 #act_help = ?
