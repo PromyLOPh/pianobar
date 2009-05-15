@@ -29,6 +29,8 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <poll.h>
 
 #include "config.h"
 #include "waitress.h"
@@ -41,6 +43,7 @@ typedef struct {
 
 inline void WaitressInit (WaitressHandle_t *waith) {
 	memset (waith, 0, sizeof (*waith));
+	waith->socktimeout = 30000;
 }
 
 inline void WaitressFree (WaitressHandle_t *waith) {
@@ -145,11 +148,21 @@ char WaitressSplitUrl (const char *url, char *retHost, size_t retHostSize,
 	return 1;
 }
 
+/*	Parse url and set host, port, path
+ *	@param Waitress handle
+ *	@param url: protocol://host:port/path
+ */
 inline char WaitressSetUrl (WaitressHandle_t *waith, const char *url) {
 	return WaitressSplitUrl (url, waith->host, sizeof (waith->host),
 		waith->port, sizeof (waith->port), waith->path, sizeof (waith->path));
 }
 
+/*	Set host, port, path
+ *	@param Waitress handle
+ *	@param host
+ *	@param port (getaddrinfo () needs a string...)
+ *	@param path, including leading /
+ */
 inline void WaitressSetHPP (WaitressHandle_t *waith, const char *host,
 		const char *port, const char *path) {
 	strncpy (waith->host, host, sizeof (waith->host)-1);
@@ -198,14 +211,72 @@ WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char *buf,
 	return WaitressFetchCall (waith);
 }
 
+/*	write () wrapper with poll () timeout
+ *	@param socket fd
+ *	@param write buffer
+ *	@param write count bytes
+ *	@param reuse existing pollfd structure
+ *	@param timeout (microseconds)
+ *	@return WAITRESS_RET_OK, WAITRESS_RET_TIMEOUT or WAITRESS_RET_ERR
+ */
+WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf, size_t count,
+		struct pollfd *sockpoll, int timeout) {
+	int pollres = -1;
+
+	sockpoll->events = POLLOUT;
+	pollres = poll (sockpoll, 1, timeout);
+	if (pollres == 0) {
+		return WAITRESS_RET_TIMEOUT;
+	} else if (pollres == -1) {
+		return WAITRESS_RET_ERR;
+	}
+	if (write (sockfd, buf, count) == -1) {
+		return WAITRESS_RET_ERR;
+	}
+	return WAITRESS_RET_OK;
+}
+
+/*	read () wrapper with poll () timeout
+ *	@param socket fd
+ *	@param write to this buf, not NULL terminated
+ *	@param buffer size
+ *	@param reuse existing pollfd struct
+ *	@param timeout (in microseconds)
+ *	@param read () return value/written bytes
+ *	@return WAITRESS_RET_OK, WAITRESS_RET_TIMEOUT, WAITRESS_RET_ERR
+ */
+WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
+		struct pollfd *sockpoll, int timeout, ssize_t *retSize) {
+	int pollres = -1;
+
+	sockpoll->events = POLLIN;
+	pollres = poll (sockpoll, 1, timeout);
+	if (pollres == 0) {
+		return WAITRESS_RET_TIMEOUT;
+	} else if (pollres == -1) {
+		return WAITRESS_RET_ERR;
+	}
+	if ((*retSize = read (sockfd, buf, count)) == -1) {
+		return WAITRESS_RET_ERR;
+	}
+	return WAITRESS_RET_OK;
+}
+
+/* FIXME: compiler macros are ugly... */
 #define CLOSE_RET(ret) close (sockfd); return ret;
+#define WRITE_RET(buf, count) \
+		if ((wRet = WaitressPollWrite (sockfd, buf, count, \
+				&sockpoll, waith->socktimeout)) != WAITRESS_RET_OK) { \
+			CLOSE_RET (wRet); \
+		}
+#define READ_RET(buf, count, size) \
+		if ((wRet = WaitressPollRead (sockfd, buf, count, \
+				&sockpoll, waith->socktimeout, size)) != WAITRESS_RET_OK) { \
+			CLOSE_RET (wRet); \
+		}
 
 /*	Receive data from host and call *callback ()
  *	@param waitress handle
- *	@param host
- *	@param port
- *	@param absolute path
- *	@param callback function
  *	@return WaitressReturn_t
  */
 WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
@@ -216,6 +287,8 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	char writeBuf[2*1024];
 	ssize_t recvSize = 0;
 	WaitressReturn_t wRet = WAITRESS_RET_OK;
+	struct pollfd sockpoll;
+	int pollres;
 
 	/* initialize */
 	waith->contentLength = 0;
@@ -240,13 +313,27 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		freeaddrinfo (res);
 		return WAITRESS_RET_SOCK_ERR;
 	}
+	sockpoll.fd = sockfd;
 
-	if (connect (sockfd, res->ai_addr, res->ai_addrlen) == -1) {
-		freeaddrinfo (res);
+	fcntl (sockfd, F_SETFL, O_NONBLOCK);
+
+	/* non-blocking connect will return immediately */
+	connect (sockfd, res->ai_addr, res->ai_addrlen);
+
+	sockpoll.events = POLLOUT;
+	pollres = poll (&sockpoll, 1, waith->socktimeout);
+	freeaddrinfo (res);
+	if (pollres == 0) {
+		return WAITRESS_RET_TIMEOUT;
+	} else if (pollres == -1) {
+		return WAITRESS_RET_ERR;
+	}
+	/* check connect () return value */
+	socklen_t pollresSize = sizeof (pollres);
+	getsockopt (sockfd, SOL_SOCKET, SO_ERROR, &pollres, &pollresSize);
+	if (pollres != 0) {
 		return WAITRESS_RET_CONNECT_REFUSED;
 	}
-
-	freeaddrinfo (res);
 
 	/* send request */
 	if (WaitressProxyEnabled (waith)) {
@@ -260,33 +347,33 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
 			waith->path);
 	}
-	write (sockfd, writeBuf, strlen (writeBuf));
+	WRITE_RET (writeBuf, strlen (writeBuf));
 
 	snprintf (writeBuf, sizeof (writeBuf),
 			"Host: %s\r\nUser-Agent: " PACKAGE "\r\n", waith->host);
-	write (sockfd, writeBuf, strlen (writeBuf));
+	WRITE_RET (writeBuf, strlen (writeBuf));
 
 	if (waith->method == WAITRESS_METHOD_POST && waith->postData != NULL) {
 		snprintf (writeBuf, sizeof (writeBuf), "Content-Length: %u\r\n",
 				strlen (waith->postData));
-		write (sockfd, writeBuf, strlen (writeBuf));
+		WRITE_RET (writeBuf, strlen (writeBuf));
 	}
 	
 	if (waith->extraHeaders != NULL) {
-		write (sockfd, waith->extraHeaders, strlen (waith->extraHeaders));
+		WRITE_RET (waith->extraHeaders, strlen (waith->extraHeaders));
 	}
 	
-	write (sockfd, "\r\n", 2);
+	WRITE_RET ("\r\n", 2);
 
 	if (waith->method == WAITRESS_METHOD_POST && waith->postData != NULL) {
-		write (sockfd, waith->postData, strlen (waith->postData));
+		WRITE_RET (waith->postData, strlen (waith->postData));
 	}
 
 	/* throw "HTTP/1.1 " (length 9) away... */
-	read (sockfd, recvBuf, 9);
+	READ_RET (recvBuf, 9, &recvSize);
 
 	/* parse status code */
-	read (sockfd, statusBuf, sizeof (statusBuf));
+	READ_RET (statusBuf, sizeof (statusBuf), &recvSize);
 	switch (statusBuf[0]) {
 		case '2':
 			if (statusBuf[1] == '0' &&
@@ -331,7 +418,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 
 	/* read and parse header, max sizeof(recvBuf) */
 	char *bufPos = recvBuf, *hdrMark = NULL, *hdrBegin = recvBuf;
-	recvSize = read (sockfd, recvBuf, sizeof (recvBuf));
+	READ_RET (recvBuf, sizeof (recvBuf), &recvSize);
 
 	while (bufPos - recvBuf < recvSize) {
 		/* mark header name end */
@@ -376,7 +463,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 
 	/* receive content */
 	do {
-		recvSize = read (sockfd, recvBuf, sizeof (recvBuf));
+		READ_RET (recvBuf, sizeof (recvBuf), &recvSize);
 		if (recvSize > 0) {
 			waith->contentReceived += recvSize;
 			if (!waith->callback (recvBuf, recvSize, waith->data)) {
@@ -395,4 +482,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 }
 
 #undef CLOSE_RET
+#undef WRITE_RET
+#undef READ_RET
 
