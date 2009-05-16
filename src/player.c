@@ -449,7 +449,8 @@ void *BarPlayerThread (void *data) {
 		snprintf (extraHeaders, sizeof (extraHeaders), "Range: bytes=%u-\r\n",
 				player->bytesReceived);
 		wRet = WaitressFetchCall (&player->waith);
-	} while (wRet == WAITRESS_RET_PARTIAL_FILE);
+	} while (wRet == WAITRESS_RET_PARTIAL_FILE ||
+			wRet == WAITRESS_RET_TIMEOUT);
 
 	switch (player->audioFormat) {
 		#ifdef ENABLE_FAAD
