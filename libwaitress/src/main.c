@@ -257,7 +257,7 @@ WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
 		return WAITRESS_RET_ERR;
 	}
 	if ((*retSize = read (sockfd, buf, count)) == -1) {
-		return WAITRESS_RET_ERR;
+		return WAITRESS_RET_READ_ERR;
 	}
 	return WAITRESS_RET_OK;
 }
