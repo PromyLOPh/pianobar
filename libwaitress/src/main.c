@@ -338,12 +338,12 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	/* send request */
 	if (WaitressProxyEnabled (waith)) {
 		snprintf (writeBuf, sizeof (writeBuf),
-			"%s http://%s:%s%s HTTP/1.1\r\nProxy-Connection: close\r\n",
+			"%s http://%s:%s%s HTTP/1.0\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
 			waith->host, waith->port, waith->path);
 	} else {
 		snprintf (writeBuf, sizeof (writeBuf),
-			"%s %s HTTP/1.1\r\nConnection: close\r\n",
+			"%s %s HTTP/1.0\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
 			waith->path);
 	}

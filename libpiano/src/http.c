@@ -58,6 +58,8 @@ PianoReturn_t PianoHttpPost (WaitressHandle_t *waith, const char *postData,
  */
 PianoReturn_t PianoHttpGet (WaitressHandle_t *waith, char *retData,
 		size_t retDataSize) {
+	waith->extraHeaders = NULL;
+	waith->postData = NULL;
 	waith->method = WAITRESS_METHOD_GET;
 
 	if (WaitressFetchBuf (waith, retData, retDataSize) == WAITRESS_RET_OK) {
