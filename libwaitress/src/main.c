@@ -74,8 +74,8 @@ inline void WaitressSetProxy (WaitressHandle_t *waith, const char *host,
  *	@return malloc'ed encoded string, don't forget to free it
  */
 char *WaitressUrlEncode (const char *in) {
-	/* worst case: encode all characters */
 	size_t inLen = strlen (in);
+	/* worst case: encode all characters */
 	char *out = calloc (inLen * 3 + 1, sizeof (*in));
 	const char *inPos = in;
 	char *outPos = out;
@@ -83,7 +83,7 @@ char *WaitressUrlEncode (const char *in) {
 	while (inPos - in < inLen) {
 		if (!isalnum (*inPos) && *inPos != '_' && *inPos != '-' && *inPos != '.') {
 			*outPos++ = '%';
-			snprintf (outPos, 3, "%02x", *inPos);
+			snprintf (outPos, 3, "%02x", *inPos & 0xff);
 			outPos += 2;
 		} else {
 			/* copy character */
