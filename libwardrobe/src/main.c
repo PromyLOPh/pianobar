@@ -97,7 +97,7 @@ WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 	tmpDigest = WardrobeMd5Calc (wh->password);
 	snprintf (tmp, sizeof (tmp), "%s%li", tmpDigest, currTStamp);
 	pwDigest = WardrobeMd5Calc (tmp);
-	snprintf (url, sizeof (url), "?hs=true&p=1.2&c=tst&v=1.0&u=%s&t=%li&a=%s",
+	snprintf (url, sizeof (url), "/?hs=true&p=1.2&c=tst&v=1.0&u=%s&t=%li&a=%s",
 			wh->user, currTStamp, pwDigest);
 	
 	WaitressSetHPP (&wh->waith, "post.audioscrobbler.com", "80", url);
