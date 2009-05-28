@@ -157,7 +157,7 @@ void PianoBytesToInts (const char *strInput, unsigned int **retArrInts,
 	while (i < strInputN) {
 		shift = 24;
 		while (shift >= 0 && i < strInputN) {
-			arrInts[i/4] |= strInput[i] << shift;
+			arrInts[i/4] |= (strInput[i] & 0xff) << shift;
 			shift -= 8;
 			i++;
 		}
