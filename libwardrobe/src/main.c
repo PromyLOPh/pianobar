@@ -101,6 +101,9 @@ WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 			wh->user, currTStamp, pwDigest);
 	
 	WaitressSetHPP (&wh->waith, "post.audioscrobbler.com", "80", url);
+	wh->waith.method = WAITRESS_METHOD_GET;
+	wh->waith.postData = NULL;
+	wh->waith.extraHeaders = NULL;
 	if (WaitressFetchBuf (&wh->waith, ret, sizeof (ret)) != WAITRESS_RET_OK) {
 		return WARDROBE_RET_CONNECT_ERR;
 	}
@@ -114,7 +117,7 @@ WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 		for (i = 1; i < sizeof (newlines) / sizeof (*newlines); i++) {
 			newlines[i] = strchr (newlines[i-1]+1, '\n');
 		}
-		/* copy needed values */
+		/* copy needed values (auth token and post url) */
 		if (newlines[2] - newlines[1]-1 < sizeof (wh->authToken)) {
 			memcpy (wh->authToken, newlines[1]+1, newlines[2] -
 					newlines[1]-1);
@@ -162,11 +165,14 @@ WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
 	urlencAlbum = WaitressUrlEncode (ws->album);
 
 	snprintf (postContent, sizeof (postContent), "s=%s&a[0]=%s&t[0]=%s&"
-			"i[0]=%li&o[0]=P&r[0]=&l[0]=%li&b[0]=%s&n[0]=&m[0]=",
+			"i[0]=%li&o[0]=E&r[0]=&l[0]=%li&b[0]=%s&n[0]=&m[0]=",
 			wh->authToken, urlencArtist, urlencTitle, ws->started,
 			ws->length, urlencAlbum);
 
 	WaitressSetHPP (&wh->waith, wh->postHost, wh->postPort, wh->postPath);
+	wh->waith.method = WAITRESS_METHOD_POST;
+	wh->waith.postData = postContent;
+	wh->waith.extraHeaders = "Content-Type: application/x-www-form-urlencoded\r\n";
 	if (WaitressFetchBuf (&wh->waith, ret, sizeof (ret)) != WAITRESS_RET_OK) {
 		return WARDROBE_RET_CONNECT_ERR;
 	}
