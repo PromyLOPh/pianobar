@@ -33,6 +33,8 @@ THE SOFTWARE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+/* tcset/getattr () */
+#include <termios.h>
 
 /* last.fm scrobbling library */
 #include <wardrobe.h>
@@ -75,11 +77,15 @@ int main (int argc, char **argv) {
 	nfds_t pollsLen = 0;
 	char buf = '\0';
 	BarKeyShortcut_t *curShortcut = NULL;
+	/* terminal attributes _before_ we started messing around with ~ECHO */
+	struct termios termOrig;
 
 	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE "!\n");
 
-	/* init some things */
+	/* save terminal attributes, before disabling echoing */
+	tcgetattr (fileno (stdin), &termOrig);
 	BarTermSetEcho (0);
+	/* init some things */
 	xmlInitParser ();
 	ao_initialize ();
 	PianoInit (&ph);
@@ -124,7 +130,9 @@ int main (int argc, char **argv) {
 	/* setup control connection */
 	if (settings.controlProxy != NULL) {
 		char tmpPath[2];
-		WaitressSplitUrl (settings.controlProxy, ph.waith.proxyHost, sizeof (ph.waith.proxyHost), ph.waith.proxyPort, sizeof (ph.waith.proxyPort), tmpPath, sizeof (tmpPath));
+		WaitressSplitUrl (settings.controlProxy, ph.waith.proxyHost,
+				sizeof (ph.waith.proxyHost), ph.waith.proxyPort,
+				sizeof (ph.waith.proxyPort), tmpPath, sizeof (tmpPath));
 	}
 
 	BarTermSetBuffer (0);
@@ -295,6 +303,9 @@ int main (int argc, char **argv) {
 	ao_shutdown();
 	xmlCleanupParser ();
 	BarSettingsDestroy (&settings);
+
+	/* restore terminal attributes, zsh doesn't need this, bash does... */
+	tcsetattr (fileno (stdin), TCSANOW, &termOrig);
 
 	return 0;
 }
