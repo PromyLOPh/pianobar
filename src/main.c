@@ -282,12 +282,20 @@ int main (int argc, char **argv) {
 		/* show time */
 		if (player.mode >= PLAYER_SAMPLESIZE_INITIALIZED &&
 				player.mode < PLAYER_FINISHED_PLAYBACK) {
-			long int songRemaining = player.songDuration - player.songPlayed;
-			BarUiMsg (MSG_TIME, "-%02i:%02i/%02i:%02i\r",
-					(int) songRemaining / BAR_PLAYER_MS_TO_S_FACTOR / 60,
-					(int) songRemaining / BAR_PLAYER_MS_TO_S_FACTOR % 60,
-					(int) player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
-					(int) player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
+			/* Ugly: songDuration is unsigned _long_ int! Lets hope this won't
+			 * overflow */
+			int songRemaining = (signed long int) (player.songDuration - player.songPlayed)
+					/ BAR_PLAYER_MS_TO_S_FACTOR;
+			char pos = 0;
+			if (songRemaining < 0) {
+				/* Use plus sign if song is longer than expected */
+				pos = 1;
+				songRemaining = -songRemaining;
+			}
+			BarUiMsg (MSG_TIME, "%c%02i:%02i/%02i:%02i\r", (pos ? '+' : '-'),
+					songRemaining / 60, songRemaining % 60,
+					player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
+					player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
 		}
 	}
 
