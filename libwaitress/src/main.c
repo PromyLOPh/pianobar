@@ -283,12 +283,16 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	struct addrinfo hints, *res;
 	int sockfd;
 	char recvBuf[WAITRESS_RECV_BUFFER];
-	char statusBuf[3];
 	char writeBuf[2*1024];
 	ssize_t recvSize = 0;
 	WaitressReturn_t wRet = WAITRESS_RET_OK;
 	struct pollfd sockpoll;
 	int pollres;
+	/* header parser vars */
+	char *nextLine = NULL, *thisLine = NULL;
+	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
+	char statusCode[3], val[256];
+	unsigned int bufFilled = 0;
 
 	/* initialize */
 	waith->contentLength = 0;
@@ -369,96 +373,71 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		WRITE_RET (waith->postData, strlen (waith->postData));
 	}
 
-	/* throw "HTTP/1.1 " (length 9) away... */
-	READ_RET (recvBuf, 9, &recvSize);
+	/* receive answer */
+	nextLine = recvBuf;
+	while (hdrParseMode != HDRM_FINISHED) {
+		READ_RET (recvBuf+bufFilled, sizeof (recvBuf) - bufFilled, &recvSize);
+		bufFilled += recvSize;
+		thisLine = recvBuf;
 
-	/* parse status code */
-	READ_RET (statusBuf, sizeof (statusBuf), &recvSize);
-	switch (statusBuf[0]) {
-		case '2':
-			if (statusBuf[1] == '0' &&
-					(statusBuf[2] == '0' || statusBuf[2] == '6')) {
-				/* 200 OK/206 Partial Content */
-			} else {
-				CLOSE_RET (WAITRESS_RET_STATUS_UNKNOWN);
+		/* split */
+		while ((nextLine = strchr (thisLine, '\n')) != NULL &&
+				hdrParseMode != HDRM_FINISHED) {
+			/* make lines parseable by string routines */
+			*nextLine = '\0';
+			if (*(nextLine-1) == '\r') {
+				*(nextLine-1) = '\0';
 			}
-			break;
+			/* skip \0 */
+			++nextLine;
 
-		case '4':
-			/* 40X? */
-			switch (statusBuf[1]) {
-				case '0':
-					switch (statusBuf[2]) {
-						case '3':
-							/* 403 Forbidden */
+			switch (hdrParseMode) {
+				/* Status code */
+				case HDRM_HEAD:
+					if (sscanf (thisLine, "HTTP/1.%*1[0-9] %3[0-9] ",
+							statusCode) == 1) {
+						if (memcmp (statusCode, "200", 3) == 0 ||
+								memcmp (statusCode, "206", 3) == 0) {
+							/* everything's fine... */
+						} else if (memcmp (statusCode, "403", 3) == 0) {
 							CLOSE_RET (WAITRESS_RET_FORBIDDEN);
-							break;
-	
-						case '4':
-							/* 404 Not found */
+						} else if (memcmp (statusCode, "404", 3) == 0) {
 							CLOSE_RET (WAITRESS_RET_NOTFOUND);
-							break;
-	
-						default:
+						} else {
 							CLOSE_RET (WAITRESS_RET_STATUS_UNKNOWN);
-							break;
+						}
+						hdrParseMode = HDRM_LINES;
+					} /* endif */
+					break;
+
+				/* Everything else, except status code */
+				case HDRM_LINES:
+					/* empty line => content starts here */
+					if (*thisLine == '\0') {
+						hdrParseMode = HDRM_FINISHED;
+					} else {
+						memset (val, 0, sizeof (val));
+						if (sscanf (thisLine, "Content-Length: %255c", val) == 1) {
+							waith->contentLength = atol (val);
+						}
 					}
 					break;
 
 				default:
-					CLOSE_RET (WAITRESS_RET_STATUS_UNKNOWN);
 					break;
-			}
-			break;
+			} /* end switch */
+			thisLine = nextLine;
+		} /* end while strchr */
+		memmove (recvBuf, thisLine, thisLine-recvBuf);
+		bufFilled -= (thisLine-recvBuf);
+	} /* end while hdrParseMode */
 
-		default:
-			CLOSE_RET (WAITRESS_RET_STATUS_UNKNOWN);
-			break;
-	}
-
-	/* read and parse header, max sizeof(recvBuf) */
-	char *bufPos = recvBuf, *hdrMark = NULL, *hdrBegin = recvBuf;
-	READ_RET (recvBuf, sizeof (recvBuf), &recvSize);
-
-	while (bufPos - recvBuf < recvSize) {
-		/* mark header name end */
-		if (*bufPos == ':' && hdrMark == NULL) {
-			hdrMark = bufPos;
-		} else if (*bufPos == '\n') {
-			/* parse header */
-			if (hdrMark != NULL && (bufPos - hdrBegin > 12) &&
-					memcmp ("Content-Length", hdrBegin, 12) == 0) {
-				/* unsigned integer max: 4,294,967,295 = 10 digits */
-				char tmpSizeBuf[11];
-
-				memset (tmpSizeBuf, 0, sizeof (tmpSizeBuf));
-
-				/* skip ':' => +1; skip '\r' suffix => -1 */
-				if ((bufPos-1) - (hdrMark+1) > sizeof (tmpSizeBuf)-1) {
-					CLOSE_RET (WAITRESS_RET_HDR_OVERFLOW);
-				}
-				memcpy (tmpSizeBuf, hdrMark+1, (bufPos-1) - (hdrMark+1));
-				waith->contentLength = atol (tmpSizeBuf);
-			}
-
-			/* end header, containts \r\n == empty line */
-			if (bufPos - hdrBegin < 2 && hdrMark == NULL) {
-				++bufPos;
-				/* push remaining bytes to callback */
-				if (bufPos - recvBuf < recvSize) {
-					waith->contentReceived += recvSize - (bufPos - recvBuf);
-					if (!waith->callback (bufPos, recvSize - (bufPos - recvBuf),
-							waith->data)) {
-						CLOSE_RET (WAITRESS_RET_CB_ABORT);
-					}
-				}
-				break;
-			}
-
-			hdrBegin = bufPos+1;
-			hdrMark = NULL;
+	/* push remaining bytes */
+	if (bufFilled > 0) {
+		waith->contentReceived += bufFilled;
+		if (!waith->callback (thisLine, bufFilled, waith->data)) {
+			CLOSE_RET (WAITRESS_RET_CB_ABORT);
 		}
-		++bufPos;
 	}
 
 	/* receive content */
