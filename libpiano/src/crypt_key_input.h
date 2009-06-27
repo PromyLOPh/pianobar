@@ -24,13 +24,15 @@ THE SOFTWARE.
 #ifndef _CRYPT_KEY_INPUT_H
 #define _CRYPT_KEY_INPUT_H
 
+#include <stdint.h>
+
 /* decryption key for last 48 bytes of audio urls
  * search for rpc.input in the decompiled pandora actionscript
  */
 
 const unsigned int in_key_n = 16;
 
-static const unsigned long in_key_p [16 + 2] = {
+static const uint32_t in_key_p [16 + 2] = {
 		0x50E2A8D4L, 0x103290CCL, 0x2BCFDB20L, 0xEC665FF6L,
 		0xA6521A84L, 0x536F33BFL, 0xA2229197L, 0x1B797EF7L,
 		0x646C1CB4L, 0xCDDE464AL, 0xCA864B25L, 0x20D6E3F7L,
@@ -38,7 +40,7 @@ static const unsigned long in_key_p [16 + 2] = {
 		0xCCEE1164L, 0xF7A94CE1L,
 		};
 
-static const unsigned long in_key_s [4][256] = {{
+static const uint32_t in_key_s [4][256] = {{
 		0x6741D820L, 0x61599D6DL, 0x8513F3BFL, 0xF7A30985L,
 		0x88DC9FFFL, 0xECB90622L, 0x48C3CEC2L, 0xB1C96B9FL,
 		0x5E0CAD63L, 0x49BD8C2DL, 0x8875BA79L, 0x5C91F805L,

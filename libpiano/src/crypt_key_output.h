@@ -26,9 +26,11 @@ THE SOFTWARE.
 #ifndef _CRYPT_KEY_OUTPUT_H
 #define _CRYPT_KEY_OUTPUT_H
 
+#include <stdint.h>
+
 const unsigned int out_key_n = 16;
 
-static const unsigned long out_key_p [16 + 2] = {
+static const uint32_t out_key_p [16 + 2] = {
 		0xC10590ECL, 0xBA979EE1L, 0x04EEE520L, 0x759C8C59L,
 		0x22804BA7L, 0x7C46EB7AL, 0x21ACF684L, 0xB9A7B8E7L,
 		0xBEED610AL, 0xDB325139L, 0xDF84AD90L, 0x31FB85C8L,
@@ -36,7 +38,7 @@ static const unsigned long out_key_p [16 + 2] = {
 		0x223BF5EFL, 0xEDA2CDB5L,
 		};
 
-static const unsigned long out_key_s [4][256] = {{
+static const uint32_t out_key_s [4][256] = {{
 		0x9654C859L, 0x909BC929L, 0x6C13EA8EL, 0xFB78C4F8L,
 		0xA1DD8C99L, 0x9C04168AL, 0x2A43D4A9L, 0x52BE439BL,
 		0x10040365L, 0x422C267DL, 0x5210312EL, 0x0AD6D8ECL,
