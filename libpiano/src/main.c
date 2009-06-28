@@ -61,9 +61,7 @@ void PianoFree (void *ptr, size_t size) {
 	}
 }
 
-/*	initialize piano handle, set up curl handle and settings; note: _you_ have
- *	to init curl and libxml2 using curl_global_init (CURL_GLOBAL_SSL) and
- *	xmlInitParser (), _you_ also have to cleanup their garbage on your own!
+/*	initialize piano handle
  *	@param piano handle
  *	@return nothing
  */
@@ -157,9 +155,7 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
 	ph->playlist = NULL;
 }
 
-/*	frees the whole piano handle structure; this will _not_ cleanup curl's
- *	internal garbage, you have to call curl_global_cleanup () and
- *	xmlCleanupParser () for libxml2
+/*	frees the whole piano handle structure
  *	@param piano handle
  *	@return nothing
  */

@@ -42,7 +42,7 @@ inline void WardrobeSongInit (WardrobeSong_t *ws) {
 	memset (ws, 0, sizeof (*ws));
 }
 
-/*	initialize wardrobe handle (setup curl, e.g.)
+/*	initialize wardrobe handle (setup waitress, e.g.)
  *	@param wardrobe handle
  */
 inline void WardrobeInit (WardrobeHandle_t *wh) {

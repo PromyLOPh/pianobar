@@ -116,12 +116,11 @@ inline void BarPlayerBufferMove (struct audioPlayer *player) {
 
 /*	play aac stream
  *	@param streamed data
- *	@param block size
- *	@param received blocks
+ *	@param received bytes
  *	@param extra data (player data)
  *	@return received bytes or less on error
  */
-char BarPlayerAACCurlCb (void *ptr, size_t size, void *stream) {
+char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 	char *data = ptr;
 	struct audioPlayer *player = stream;
 
@@ -300,7 +299,7 @@ inline signed short int BarPlayerMadToShort (mad_fixed_t fixed) {
 	return (signed short int) (fixed >> (MAD_F_FRACBITS - 15));
 }
 
-char BarPlayerMp3CurlCb (void *ptr, size_t size, void *stream) {
+char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 	char *data = ptr;
 	struct audioPlayer *player = stream;
 	size_t i;
@@ -421,7 +420,7 @@ void *BarPlayerThread (void *data) {
 		    conf->downMatrix = 1;
 			NeAACDecSetConfiguration(player->aacHandle, conf);
 
-			player->waith.callback = BarPlayerAACCurlCb;
+			player->waith.callback = BarPlayerAACCb;
 			break;
 		#endif /* ENABLE_FAAD */
 
@@ -431,7 +430,7 @@ void *BarPlayerThread (void *data) {
 			mad_frame_init (&player->mp3Frame);
 			mad_synth_init (&player->mp3Synth);
 
-			player->waith.callback = BarPlayerMp3CurlCb;
+			player->waith.callback = BarPlayerMp3Cb;
 			break;
 		#endif /* ENABLE_MAD */
 

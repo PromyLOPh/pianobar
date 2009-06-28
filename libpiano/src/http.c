@@ -29,14 +29,12 @@ THE SOFTWARE.
 
 #include "http.h"
 
-/* FIXME: we may use a callback given by the library client here. would be
- * more flexible... */
 /*	post data to url and receive answer as string
- *	@param initialized curl handle
- *	@param call this url
- *	@param post this data
- *	@param put received data here, memory is allocated by this function
- *	@return nothing yet
+ *	@param initialized waitress handle
+ *	@param null-terminated post data string
+ *	@param receive buffer
+ *	@param buffer size
+ *	@return _RET_OK or _RET_NET_ERROR
  */
 PianoReturn_t PianoHttpPost (WaitressHandle_t *waith, const char *postData,
 		char *retData, size_t retDataSize) {
@@ -50,11 +48,11 @@ PianoReturn_t PianoHttpPost (WaitressHandle_t *waith, const char *postData,
 	return PIANO_RET_NET_ERROR;
 }
 
-/*	get data
- *	@param initialized curl handle
- *	@param call this url
- *	@param put received data here, memory is allocated by this function
- *	@return nothing yet
+/*	http get request, return server response body
+ *	@param initialized waitress handle
+ *	@param receive buffer
+ *	@param buffer size
+ *	@return _RET_OK or _RET_NET_ERROR
  */
 PianoReturn_t PianoHttpGet (WaitressHandle_t *waith, char *retData,
 		size_t retDataSize) {

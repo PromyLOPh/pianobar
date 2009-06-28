@@ -39,8 +39,6 @@ THE SOFTWARE.
 /* last.fm scrobbling library */
 #include <wardrobe.h>
 
-#include <curl/curl.h>
-
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 

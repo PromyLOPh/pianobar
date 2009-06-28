@@ -1,6 +1,6 @@
-#  MAD_INCLUDE_DIRS - where to find curl/curl.h, etc.
-#  MAD_LIBRARIES    - List of libraries when using curl.
-#  MAD_FOUND        - True if curl found.
+#  MAD_INCLUDE_DIRS - where to find mad.h, etc.
+#  MAD_LIBRARIES    - List of libraries when using libmad.
+#  MAD_FOUND        - True if libmad found.
 
 # Look for the header file.
 FIND_PATH(MAD_INCLUDE_DIR NAMES mad.h)

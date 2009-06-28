@@ -1,6 +1,6 @@
-#  FAAD_INCLUDE_DIRS - where to find curl/curl.h, etc.
-#  FAAD_LIBRARIES    - List of libraries when using curl.
-#  FAAD_FOUND        - True if curl found.
+#  FAAD_INCLUDE_DIRS - where to find faad.h, etc.
+#  FAAD_LIBRARIES    - List of libraries when using libfaad.
+#  FAAD_FOUND        - True if libfaad found.
 
 # Look for the header file.
 FIND_PATH(FAAD_INCLUDE_DIR NAMES faad.h)

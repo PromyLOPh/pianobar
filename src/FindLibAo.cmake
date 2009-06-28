@@ -1,8 +1,8 @@
-# - Find readline
+# - Find libao
 #
-#  LIBAO_INCLUDE_DIRS - where to find curl/curl.h, etc.
-#  LIBAO_LIBRARIES    - List of libraries when using curl.
-#  LIBAO_FOUND        - True if curl found.
+#  LIBAO_INCLUDE_DIRS - where to find ao/ao.h, etc.
+#  LIBAO_LIBRARIES    - List of libraries when using libao.
+#  LIBAO_FOUND        - True if libao found.
 
 # Look for the header file.
 FIND_PATH(LIBAO_INCLUDE_DIR NAMES ao/ao.h)
