@@ -1,9 +1,9 @@
-#  FAAD_INCLUDE_DIRS - where to find faad.h, etc.
+#  FAAD_INCLUDE_DIRS - where to find neaacdec.h, etc.
 #  FAAD_LIBRARIES    - List of libraries when using libfaad.
 #  FAAD_FOUND        - True if libfaad found.
 
 # Look for the header file.
-FIND_PATH(FAAD_INCLUDE_DIR NAMES faad.h)
+FIND_PATH(FAAD_INCLUDE_DIR NAMES neaacdec.h)
 MARK_AS_ADVANCED(FAAD_INCLUDE_DIR)
 
 # Look for the library.
