@@ -81,7 +81,8 @@ int main (int argc, char **argv) {
 	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE "!\n");
 
 	/* save terminal attributes, before disabling echoing */
-	tcgetattr (fileno (stdin), &termOrig);
+	BarTermSave (&termOrig);
+
 	BarTermSetEcho (0);
 	/* init some things */
 	xmlInitParser ();
@@ -139,10 +140,12 @@ int main (int argc, char **argv) {
 	if (BarUiPrintPianoStatus (PianoConnect (&ph, settings.username,
 			settings.password)) !=
 			PIANO_RET_OK) {
+		BarTermRestore (&termOrig);
 		return 0;
 	}
 	BarUiMsg (MSG_INFO, "Get stations... ");
 	if (BarUiPrintPianoStatus (PianoGetStations (&ph)) != PIANO_RET_OK) {
+		BarTermRestore (&termOrig);
 		return 0;
 	}
 
@@ -311,7 +314,7 @@ int main (int argc, char **argv) {
 	BarSettingsDestroy (&settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */
-	tcsetattr (fileno (stdin), TCSANOW, &termOrig);
+	BarTermRestore (&termOrig);
 
 	return 0;
 }

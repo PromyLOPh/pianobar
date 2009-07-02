@@ -24,7 +24,9 @@ THE SOFTWARE.
 #ifndef _TERMINAL_H
 #define _TERMINAL_H
 
-void BarTermSetEcho (char enable);
-void BarTermSetBuffer (char enable);
+void BarTermSetEcho (char);
+void BarTermSetBuffer (char);
+inline void BarTermSave (struct termios *);
+inline void BarTermRestore (struct termios *termOrig);
 
 #endif /* _TERMINAL_H */

@@ -56,3 +56,18 @@ void BarTermSetBuffer (char enable) {
 	}
 	tcsetattr(fileno (stdin), TCSANOW, &termopts);
 }
+
+/*	Save old terminal settings
+ *	@param save settings here
+ */
+inline void BarTermSave (struct termios *termOrig) {
+	tcgetattr (fileno (stdin), termOrig);
+}
+
+/*	Restore terminal settings
+ *	@param Old settings
+ */
+inline void BarTermRestore (struct termios *termOrig) {
+	tcsetattr (fileno (stdin), TCSANOW, termOrig);
+}
+
