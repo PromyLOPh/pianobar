@@ -885,6 +885,10 @@ const char *PianoAudioFormatToString (PianoAudioFormat_t format) {
 			return "mp3";
 			break;
 
+		case PIANO_AF_MP3_HI:
+			return "mp3-hifi";
+			break;
+
 		default:
 			return NULL;
 			break;

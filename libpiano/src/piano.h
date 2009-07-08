@@ -50,8 +50,8 @@ typedef enum {PIANO_RATE_BAN, PIANO_RATE_LOVE, PIANO_RATE_NONE}
 		PianoSongRating_t;
 
 /* UNKNOWN should be 0, because memset sets audio format to 0 */
-typedef enum {PIANO_AF_UNKNOWN = 0, PIANO_AF_AACPLUS, PIANO_AF_MP3}
-		PianoAudioFormat_t;
+typedef enum {PIANO_AF_UNKNOWN = 0, PIANO_AF_AACPLUS, PIANO_AF_MP3,
+		PIANO_AF_MP3_HI} PianoAudioFormat_t;
 
 typedef struct PianoSong {
 	char *artist;

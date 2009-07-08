@@ -224,6 +224,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->audioFormat = PIANO_AF_AACPLUS;
 			} else if (strcmp (val, "mp3") == 0) {
 				settings->audioFormat = PIANO_AF_MP3;
+			} else if (strcmp (val, "mp3-hifi") == 0) {
+				settings->audioFormat = PIANO_AF_MP3_HI;
 			}
 		} else if (strcmp ("autostart_station", key) == 0) {
 			settings->autostartStation = strdup (val);

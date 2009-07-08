@@ -109,9 +109,9 @@ Show next songs in playlist.
 Select quickmix stations.
 
 .TP
-.B audio_format = {aacplus,mp3}
+.B audio_format = {aacplus,mp3,mp3-hifi}
 Select audio format. aacplus is default if both libraries (faad, mad) are
-available.
+available. mp3-hifi is available for Pandora One customers only.
 
 .TP
 .B autostart_station = stationid
@@ -169,10 +169,6 @@ commands directly into the fifo. Example (next song):
 is the keybinding for "next song". If you customized your keybindings you have to use these characters to control
 .B pianobar.
 .I This behaviour may change in the future!
-
-Please note: Commands like "select station" or "delete station" don't make
-sense at the moment, because the expected input is read from stdin, but not
-from the fifo.
 
 Another example:
 

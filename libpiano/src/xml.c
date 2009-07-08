@@ -108,7 +108,7 @@ PianoReturn_t PianoXmlIsFault (const xmlNode *docRoot) {
 	PianoReturn_t ret;
 
 	/* FIXME: we could get into troubles when fault is not the first child
-	 * (pandora yould add whitespace e.g.) */
+	 * (pandora could add whitespace e.g.) */
 	if (docRoot->children != NULL &&
 			docRoot->children->type == XML_ELEMENT_NODE &&
 			xmlStrEqual (docRoot->children->name, (xmlChar *) "fault")) {
@@ -298,6 +298,8 @@ void PianoXmlParsePlaylistCb (const char *key, const xmlNode *value,
 			song->audioFormat = PIANO_AF_AACPLUS;
 		} else if (strcmp (valueStr, "mp3") == 0) {
 			song->audioFormat = PIANO_AF_MP3;
+		} else if (strcmp (valueStr, "mp3-hifi") == 0) {
+			song->audioFormat = PIANO_AF_MP3_HI;
 		}
  	}
 }
@@ -801,3 +803,4 @@ PianoReturn_t PianoXmlParseNarrative (const char *xml, char **retNarrative) {
 
 	return ret;
 }
+
