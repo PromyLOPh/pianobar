@@ -200,7 +200,8 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
 			"encryption key. You will not be able to connect to pandora.\n"
 			"==========\n");
 #endif
-	/* sync (is the return value used by pandora? for now: ignore result) */
+	/* sync and throw away result (it's an encrypted timestamp, decrypt with
+	 * PianoDecryptString) */
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&method=sync", ph->routeId);
 	ret = PianoHttpPost (&ph->waith, requestStr, retStr, sizeof (retStr));
