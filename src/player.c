@@ -310,13 +310,6 @@ char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 		return 0;
 	}
 
-	/* initialize song length */
-	if (player->mode < PLAYER_SAMPLESIZE_INITIALIZED) {
-		player->songDuration = (float) player->waith.contentLength /
-				((float) MP3_BITRATE * 1024.0 /
-				(float) BAR_PLAYER_MS_TO_S_FACTOR / 8.0);
-	}
-
 	/* some "prebuffering" */
 	if (player->mode < PLAYER_RECV_DATA &&
 			player->bufferFilled < sizeof (player->buffer) / 2) {
@@ -363,6 +356,12 @@ char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 			format.byte_format = AO_FMT_LITTLE;
 			player->audioOutDevice = ao_open_live (audioOutDriver,
 					&format, NULL);
+
+			/* calc song length using the framerate of the first decoded frame */
+			player->songDuration = (float) player->waith.contentLength /
+					((float) player->mp3Frame.header.bitrate /
+					(float) BAR_PLAYER_MS_TO_S_FACTOR / 8.0);
+
 			/* must be > PLAYER_SAMPLESIZE_INITIALIZED, otherwise time won't
 			 * be visible to user (ugly, but mp3 decoding != aac decoding) */
 			player->mode = PLAYER_RECV_DATA;
