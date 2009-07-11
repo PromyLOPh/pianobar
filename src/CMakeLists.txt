@@ -6,7 +6,6 @@ set (ENABLE_FAAD 0)
 option (USE_FAAD "Use libfaad for aac decoding (if available)" on)
 option (USE_MAD "Use libmad for mp3 decoding (if available)" on)
 
-find_package (LibXml2 REQUIRED)
 find_package (LibAo REQUIRED)
 
 # find threading implementation
@@ -55,15 +54,13 @@ include_directories (
 	${pianobar_SOURCE_DIR}/libpiano/src
 	${pianobar_SOURCE_DIR}/libwardrobe/src
 	${pianobar_SOURCE_DIR}/libwaitress/src
-	${LIBXML2_INCLUDE_DIR}
 	${FAAD_INCLUDE_DIRS} ${LIBAO_INCLUDE_DIRS}
 	${MAD_INCLUDE_DIRS})
 
 add_executable (pianobar main.c terminal.c settings.c player.c ui.c ui_act.c
 	ui_readline.c)
-target_link_libraries (pianobar piano wardrobe waitress
-	${LIBXML2_LIBRARIES} ${FAAD_LIBRARY} ${LIBAO_LIBRARY}
-	${CMAKE_THREAD_LIBS_INIT} ${MAD_LIBRARIES} ${LIBM})
+target_link_libraries (pianobar piano wardrobe waitress ${FAAD_LIBRARY}
+	${LIBAO_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${MAD_LIBRARIES} ${LIBM})
 
 install (TARGETS pianobar RUNTIME DESTINATION bin)
 install (FILES pianobar.1 DESTINATION share/man/man1)

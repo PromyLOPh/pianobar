@@ -39,9 +39,6 @@ THE SOFTWARE.
 /* last.fm scrobbling library */
 #include <wardrobe.h>
 
-#include <libxml/parser.h>
-#include <libxml/tree.h>
-
 #include <pthread.h>
 
 /* pandora.com library */
@@ -85,7 +82,6 @@ int main (int argc, char **argv) {
 
 	BarTermSetEcho (0);
 	/* init some things */
-	xmlInitParser ();
 	ao_initialize ();
 	PianoInit (&ph);
 	WardrobeInit (&wh);
@@ -310,7 +306,6 @@ int main (int argc, char **argv) {
 	PianoDestroy (&ph);
 	WardrobeDestroy (&wh);
 	ao_shutdown();
-	xmlCleanupParser ();
 	BarSettingsDestroy (&settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */

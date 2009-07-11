@@ -21,21 +21,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ezxml.h>
 
 #include "piano.h"
 #include "crypt.h"
 #include "config.h"
 #include "main.h"
 
-void PianoXmlStructParser (const xmlNode *structRoot,
-		void (*callback) (const char *, const xmlNode *, void *),
-		void *data);
-char *PianoXmlGetNodeText (const xmlNode *node);
+void PianoXmlStructParser (const ezxml_t structRoot,
+		void (*callback) (const char *, const ezxml_t, void *), void *data);
+char *PianoXmlGetNodeText (const ezxml_t node);
 
 /*	parse fault and get fault type
  *	@param xml <name> content
@@ -43,7 +41,7 @@ char *PianoXmlGetNodeText (const xmlNode *node);
  *	@param return error string
  *	@return nothing
  */
-void PianoXmlIsFaultCb (const char *key, const xmlNode *value, void *data) {
+void PianoXmlIsFaultCb (const char *key, const ezxml_t value, void *data) {
 	PianoReturn_t *ret = data;
 	char *valueStr = PianoXmlGetNodeText (value);
 	char *matchStart, *matchEnd, *matchStr;
@@ -103,18 +101,12 @@ void PianoXmlIsFaultCb (const char *key, const xmlNode *value, void *data) {
  *	@param document root of xml doc
  *	@return _RET_OK or fault code (_RET_*)
  */
-PianoReturn_t PianoXmlIsFault (const xmlNode *docRoot) {
-	xmlNode *faultStruct;
+PianoReturn_t PianoXmlIsFault (ezxml_t xmlDoc) {
 	PianoReturn_t ret;
 
-	/* FIXME: we could get into troubles when fault is not the first child
-	 * (pandora could add whitespace e.g.) */
-	if (docRoot->children != NULL &&
-			docRoot->children->type == XML_ELEMENT_NODE &&
-			xmlStrEqual (docRoot->children->name, (xmlChar *) "fault")) {
-		/* FIXME: detect fault type */
-		faultStruct = docRoot->children->children->children;
-		PianoXmlStructParser (faultStruct, PianoXmlIsFaultCb, &ret);
+	if ((xmlDoc = ezxml_child (xmlDoc, "fault")) != NULL) {
+		xmlDoc = ezxml_get (xmlDoc, "value", 0, "struct", -1);
+		PianoXmlStructParser (xmlDoc, PianoXmlIsFaultCb, &ret);
 		return ret;
 	}
 	return PIANO_RET_OK;
@@ -136,35 +128,27 @@ PianoReturn_t PianoXmlIsFault (const xmlNode *docRoot) {
  *			freed soon
  *	@param extra data for callback
  */
-void PianoXmlStructParser (const xmlNode *structRoot,
-		void (*callback) (const char *, const xmlNode *, void *), void *data) {
-
-	xmlNode *curNode, *memberNode, *valueNode;
-	xmlChar *key;
+void PianoXmlStructParser (const ezxml_t structRoot,
+		void (*callback) (const char *, const ezxml_t, void *), void *data) {
+	ezxml_t curNode, keyNode, valueNode;
+	char *key;
 
 	/* get all <member> nodes */
-    for (curNode = structRoot->children; curNode; curNode = curNode->next) {
-        if (curNode->type == XML_ELEMENT_NODE &&
-				xmlStrEqual ((xmlChar *) "member", curNode->name)) {
-			key = NULL;
-			valueNode = NULL;
-			/* check children for <name> or <value> */
-			for (memberNode = curNode->children; memberNode;
-					memberNode = memberNode->next) {
-				if (memberNode->type == XML_ELEMENT_NODE) {
-					if (xmlStrEqual ((xmlChar *) "name", memberNode->name)) {
-						key = memberNode->children->content;
-					} else if (xmlStrEqual ((xmlChar *) "value",
-							memberNode->name)) {
-						valueNode = memberNode->children;
-					}
-				}
-			}
-			/* this will ignore empty <value /> nodes, but well... */
-			if (key != NULL && valueNode != NULL) {
-				(*callback) ((char *) key, valueNode, data);
-			}
-        }
+    for (curNode = ezxml_child (structRoot, "member"); curNode; curNode = curNode->next) {
+		/* reset variables */
+		key = NULL;
+		valueNode = keyNode = NULL;
+
+		keyNode = ezxml_child (curNode, "name");
+		if (keyNode != NULL) {
+			key = ezxml_txt (keyNode);
+		}
+
+		valueNode = ezxml_child (curNode, "value");
+		/* this will ignore empty <value /> nodes, but well... */
+		if (*key != '\0' && valueNode != NULL) {
+			(*callback) ((char *) key, valueNode, data);
+		}
 	}
 }
 
@@ -174,20 +158,15 @@ void PianoXmlStructParser (const xmlNode *structRoot,
  *	@param returns document root
  *	@return _OK or error
  */
-PianoReturn_t PianoXmlInitDoc (const char *xml, xmlDocPtr *doc,
-		xmlNode **docRoot) {
-	*doc = xmlReadDoc ((xmlChar *) xml, NULL, NULL, 0);
+PianoReturn_t PianoXmlInitDoc (char *xmlStr, ezxml_t *xmlDoc) {
 	PianoReturn_t ret;
 
-	if (*doc == NULL) {
-		printf (PACKAGE ": error while parsing this xml document\n%s\n", xml);
+	if ((*xmlDoc = ezxml_parse_str (xmlStr, strlen (xmlStr))) == NULL) {
 		return PIANO_RET_XML_INVALID;
 	}
 
-	*docRoot = xmlDocGetRootElement (*doc);
-
-	if ((ret = PianoXmlIsFault (*docRoot)) != PIANO_RET_OK) {
-		xmlFreeDoc (*doc);
+	if ((ret = PianoXmlIsFault (*xmlDoc)) != PIANO_RET_OK) {
+		ezxml_free (*xmlDoc);
 		return ret;
 	}
 
@@ -198,16 +177,15 @@ PianoReturn_t PianoXmlInitDoc (const char *xml, xmlDocPtr *doc,
  *	or <int> subnodes, just ignore them
  *	@param xml node <value>
  */
-char *PianoXmlGetNodeText (const xmlNode *node) {
-	/* FIXME: this is not the correct way; we should check the node type
-	 * as well */
-	if (node->content != NULL) {
-		return (char *) node->content;
-	} else if (node->children != NULL &&
-			node->children->content != NULL) {
-		return (char *) node->children->content;
+char *PianoXmlGetNodeText (const ezxml_t node) {
+	char *retTxt = NULL;
+
+	retTxt = ezxml_txt (node);
+	/* no text => empty string */
+	if (*retTxt == '\0') {
+		retTxt = ezxml_txt (node->child);
 	}
-	return NULL;
+	return retTxt;
 }
 
 /*	structParser callback; writes userinfo to PianoUserInfo structure
@@ -216,12 +194,11 @@ char *PianoXmlGetNodeText (const xmlNode *node) {
  *	@param pointer to userinfo structure
  *	@return nothing
  */
-void PianoXmlParseUserinfoCb (const char *key, const xmlNode *value,
+void PianoXmlParseUserinfoCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoUserInfo_t *user = data;
 	char *valueStr = PianoXmlGetNodeText (value);
 
-	/* FIXME: should be continued later */
 	if (strcmp ("webAuthToken", key) == 0) {
 		user->webAuthToken = strdup (valueStr);
 	} else if (strcmp ("authToken", key) == 0) {
@@ -231,7 +208,7 @@ void PianoXmlParseUserinfoCb (const char *key, const xmlNode *value,
 	}
 }
 
-void PianoXmlParseStationsCb (const char *key, const xmlNode *value,
+void PianoXmlParseStationsCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoStation_t *station = data;
 	char *valueStr = PianoXmlGetNodeText (value);
@@ -247,8 +224,7 @@ void PianoXmlParseStationsCb (const char *key, const xmlNode *value,
 	}
 }
 
-/* FIXME: copy & waste */
-void PianoXmlParsePlaylistCb (const char *key, const xmlNode *value,
+void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoSong_t *song = data;
 	char *valueStr = PianoXmlGetNodeText (value);
@@ -309,43 +285,40 @@ void PianoXmlParsePlaylistCb (const char *key, const xmlNode *value,
  *	@param utf-8 string
  *	@return _RET_OK or error
  */
-PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, const char *xml) {
-	xmlNode *docRoot;
-	xmlDocPtr doc;
+PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
+	ezxml_t xmlDoc, structNode;
 	PianoReturn_t ret;
 
-	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
 	}
 
 	/* <methodResponse> <params> <param> <value> <struct> */
-	xmlNode *structRoot = docRoot->children->children->children->children;
-	PianoXmlStructParser (structRoot, PianoXmlParseUserinfoCb, &ph->user);
+	structNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", 0, "struct", -1);
+	PianoXmlStructParser (structNode, PianoXmlParseUserinfoCb, &ph->user);
 
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
+
 	return PIANO_RET_OK;
 }
 
-void PianoXmlParseQuickMixStationsCb (const char *key, const xmlNode *value,
+void PianoXmlParseQuickMixStationsCb (const char *key, const ezxml_t value,
 		void *data) {
 	char ***retIds = data;
 	char **ids = NULL;
 	size_t idsN = 0;
-	xmlNode *curNode;
+	ezxml_t curNode;
 
 	if (strcmp ("quickMixStationIds", key) == 0) {
-		for (curNode = value->children->children; curNode;
-				curNode = curNode->next) {
-			if (curNode->type == XML_ELEMENT_NODE &&
-					xmlStrEqual ((xmlChar *) "value", curNode->name)) {
-				idsN++;
-				if (ids == NULL) {
-					ids = calloc (idsN, sizeof (*ids));
-				} else {
-					ids = realloc (ids, idsN * sizeof (*ids));
-				}
-				ids[idsN-1] = strdup (PianoXmlGetNodeText (curNode));
+		for (curNode = ezxml_child (ezxml_get (value, "array", 0, "data", -1), "value");
+				curNode; curNode = curNode->next) {
+			idsN++;
+			if (ids == NULL) {
+				ids = calloc (idsN, sizeof (*ids));
+			} else {
+				ids = realloc (ids, idsN * sizeof (*ids));
 			}
+			ids[idsN-1] = strdup (PianoXmlGetNodeText (curNode));
 		}
 		/* append NULL: list ends here */
 		idsN++;
@@ -364,39 +337,37 @@ void PianoXmlParseQuickMixStationsCb (const char *key, const xmlNode *value,
  *	@param xml returned by pandora
  *	@return _RET_OK or error
  */
-PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml) {
-	xmlNode *docRoot, *curNode;
-	xmlDocPtr doc;
+PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
+	ezxml_t xmlDoc, dataNode;
 	PianoReturn_t ret;
 	char **quickMixIds = NULL, **curQuickMixId = NULL;
 
-	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
 	}
 
-	/* <methodResponse> <params> <param> <value> <array> <data> */
-	xmlNode *dataRoot = docRoot->children->children->children->children->children;
-    for (curNode = dataRoot->children; curNode; curNode = curNode->next) {
-        if (curNode->type == XML_ELEMENT_NODE &&
-				xmlStrEqual ((xmlChar *) "value", curNode->name)) {
-			PianoStation_t *tmpStation = calloc (1, sizeof (*tmpStation));
-			PianoXmlStructParser (curNode->children,
-					PianoXmlParseStationsCb, tmpStation);
-			/* get stations selected for quickmix */
-			if (tmpStation->isQuickMix) {
-				PianoXmlStructParser (curNode->children,
-						PianoXmlParseQuickMixStationsCb, &quickMixIds);
+	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", 0, "array",
+			0, "data", -1);
+
+	for (dataNode = ezxml_child (dataNode, "value"); dataNode;
+			dataNode = dataNode->next) {
+		PianoStation_t *tmpStation = calloc (1, sizeof (*tmpStation));
+		PianoXmlStructParser (ezxml_child (dataNode, "struct"),
+				PianoXmlParseStationsCb, tmpStation);
+		/* get stations selected for quickmix */
+		if (tmpStation->isQuickMix) {
+			PianoXmlStructParser (ezxml_child (dataNode, "struct"),
+					PianoXmlParseQuickMixStationsCb, &quickMixIds);
+		}
+		/* start new linked list or append */
+		if (ph->stations == NULL) {
+			ph->stations = tmpStation;
+		} else {
+			PianoStation_t *curStation = ph->stations;
+			while (curStation->next != NULL) {
+				curStation = curStation->next;
 			}
-			/* start new linked list or append */
-			if (ph->stations == NULL) {
-				ph->stations = tmpStation;
-			} else {
-				PianoStation_t *curStation = ph->stations;
-				while (curStation->next != NULL) {
-					curStation = curStation->next;
-				}
-				curStation->next = tmpStation;
-			}
+			curStation->next = tmpStation;
 		}
 	}
 	/* set quickmix flags after all stations are read */
@@ -414,7 +385,8 @@ PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml) {
 		free (quickMixIds);
 	}
 
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
+
 	return PIANO_RET_OK;
 }
 
@@ -423,21 +395,18 @@ PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml) {
  *	@param xml document
  *	@return nothing yet
  */
-PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph,
-		const char *xml) {
-	xmlNode *docRoot;
-	xmlDocPtr doc;
+PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
+	ezxml_t xmlDoc, dataNode;
 	PianoStation_t *tmpStation;
 	PianoReturn_t ret;
 
-	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
 	}
 
-	/* get <struct> node */
-	xmlNode *dataRoot = docRoot->children->children->children->children;
+	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", 0, "struct", -1);
 	tmpStation = calloc (1, sizeof (*tmpStation));
-	PianoXmlStructParser (dataRoot, PianoXmlParseStationsCb, tmpStation);
+	PianoXmlStructParser (dataNode, PianoXmlParseStationsCb, tmpStation);
 	/* FIXME: copy & waste */
 	/* start new linked list or append */
 	if (ph->stations == NULL) {
@@ -450,7 +419,7 @@ PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph,
 		curStation->next = tmpStation;
 	}
 	
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
 
 	return PIANO_RET_OK;
 }
@@ -460,22 +429,20 @@ PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph,
  *	@param xml document
  *	@param update this station
  */
-PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, const char *xml,
+PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
 		PianoStation_t *station) {
-	xmlNode *docRoot;
-	xmlDocPtr doc;
+	ezxml_t xmlDoc, dataNode;
 	PianoReturn_t ret;
 
-	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
 	}
 
-	/* get <struct> node */
-	xmlNode *dataRoot = docRoot->children->children->children->children;
+	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", 0, "struct", -1);
 	PianoDestroyStation (station);
-	PianoXmlStructParser (dataRoot, PianoXmlParseStationsCb, station);
+	PianoXmlStructParser (dataNode, PianoXmlParseStationsCb, station);
 	
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
 
 	return PIANO_RET_OK;
 }
@@ -484,37 +451,35 @@ PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, const char *xml,
  *	@param piano handle
  *	@param xml document
  */
-PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, const char *xml) {
-	xmlNode *docRoot, *curNode;
-	xmlDocPtr doc;
+PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
+	ezxml_t xmlDoc, dataNode;
 	PianoReturn_t ret;
 
-	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
 	}
 
-	/* <methodResponse> <params> <param> <value> <array> <data> */
-	xmlNode *dataRoot = docRoot->children->children->children->children->children;
-    for (curNode = dataRoot->children; curNode; curNode = curNode->next) {
-        if (curNode->type == XML_ELEMENT_NODE &&
-				xmlStrEqual ((xmlChar *) "value", curNode->name)) {
-			PianoSong_t *tmpSong = calloc (1, sizeof (*tmpSong));
-			PianoXmlStructParser (curNode->children,
-					PianoXmlParsePlaylistCb, tmpSong);
-			/* begin linked list or append */
-			if (ph->playlist == NULL) {
-				ph->playlist = tmpSong;
-			} else {
-				PianoSong_t *curSong = ph->playlist;
-				while (curSong->next != NULL) {
-					curSong = curSong->next;
-				}
-				curSong->next = tmpSong;
+	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", 0, "array",
+			0, "data", -1);
+
+	for (dataNode = ezxml_child (dataNode, "value"); dataNode;
+			dataNode = dataNode->next) {
+		PianoSong_t *tmpSong = calloc (1, sizeof (*tmpSong));
+		PianoXmlStructParser (ezxml_child (dataNode, "struct"),
+				PianoXmlParsePlaylistCb, tmpSong);
+		/* begin linked list or append */
+		if (ph->playlist == NULL) {
+			ph->playlist = tmpSong;
+		} else {
+			PianoSong_t *curSong = ph->playlist;
+			while (curSong->next != NULL) {
+				curSong = curSong->next;
 			}
+			curSong->next = tmpSong;
 		}
 	}
 
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
 
 	return PIANO_RET_OK;
 }
@@ -525,30 +490,30 @@ PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, const char *xml) {
  *	@param xml string
  *	@return
  */
-PianoReturn_t PianoXmlParseSimple (const char *xml) {
-	xmlNode *docRoot;
-	xmlDocPtr doc;
+PianoReturn_t PianoXmlParseSimple (char *xml) {
+	ezxml_t xmlDoc, dataNode;
 	PianoReturn_t ret;
 
-	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
 	}
 
-	xmlNode *val = docRoot->children->children->children->children;
-	if (xmlStrEqual (val->content, (xmlChar *) "1")) {
+	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", -1);
+
+	if (strcmp (ezxml_txt (dataNode), "1") == 0) {
 		ret = PIANO_RET_OK;
 	} else {
 		ret = PIANO_RET_ERR;
 	}
 
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
 
 	return ret;
 }
 
 /*	xml struct parser callback, used in PianoXmlParseSearchCb
  */
-void PianoXmlParseSearchArtistCb (const char *key, const xmlNode *value,
+void PianoXmlParseSearchArtistCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoArtist_t *artist = data;
 	char *valueStr = PianoXmlGetNodeText (value);
@@ -563,58 +528,48 @@ void PianoXmlParseSearchArtistCb (const char *key, const xmlNode *value,
 /*	callback for xml struct parser used in PianoXmlParseSearch, "switch" for
  *	PianoXmlParseSearchArtistCb and PianoXmlParsePlaylistCb
  */
-void PianoXmlParseSearchCb (const char *key, const xmlNode *value,
+void PianoXmlParseSearchCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoSearchResult_t *searchResult = data;
+	ezxml_t curNode;
 
 	if (strcmp ("artists", key) == 0) {
-		xmlNode *curNode;
-
 		/* skip <value><array><data> */
-		for (curNode = value->children->children; curNode;
-				curNode = curNode->next) {
-	        if (curNode->type == XML_ELEMENT_NODE &&
-					xmlStrEqual ((xmlChar *) "value", curNode->name)) {
+		for (curNode = ezxml_child (ezxml_get (value, "array", 0, "data", -1), "value");
+				curNode; curNode = curNode->next) {
+			PianoArtist_t *artist = calloc (1, sizeof (*artist));
+			memset (artist, 0, sizeof (*artist));
 
-				PianoArtist_t *artist = calloc (1, sizeof (*artist));
-				memset (artist, 0, sizeof (*artist));
+			PianoXmlStructParser (ezxml_child (curNode, "struct"),
+					PianoXmlParseSearchArtistCb, artist);
 
-				PianoXmlStructParser (curNode->children,
-						PianoXmlParseSearchArtistCb, artist);
-
-				/* add result to linked list */
-				if (searchResult->artists == NULL) {
-					searchResult->artists = artist;
-				} else {
-					PianoArtist_t *curArtist = searchResult->artists;
-					while (curArtist->next != NULL) {
-						curArtist = curArtist->next;
-					}
-					curArtist->next = artist;
+			/* add result to linked list */
+			if (searchResult->artists == NULL) {
+				searchResult->artists = artist;
+			} else {
+				PianoArtist_t *curArtist = searchResult->artists;
+				while (curArtist->next != NULL) {
+					curArtist = curArtist->next;
 				}
+				curArtist->next = artist;
 			}
 		}
 	} else if (strcmp ("songs", key) == 0) {
-		xmlNode *curNode;
-
-		for (curNode = value->children->children; curNode;
-				curNode = curNode->next) {
-	        if (curNode->type == XML_ELEMENT_NODE &&
-					xmlStrEqual ((xmlChar *) "value", curNode->name)) {
-				/* FIXME: copy & waste */
-				PianoSong_t *tmpSong = calloc (1, sizeof (*tmpSong));
-				PianoXmlStructParser (curNode->children,
-						PianoXmlParsePlaylistCb, tmpSong);
-				/* begin linked list or append */
-				if (searchResult->songs == NULL) {
-					searchResult->songs = tmpSong;
-				} else {
-					PianoSong_t *curSong = searchResult->songs;
-					while (curSong->next != NULL) {
-						curSong = curSong->next;
-					}
-					curSong->next = tmpSong;
+		for (curNode = ezxml_child (ezxml_get (value, "array", 0, "data", -1), "value");
+				curNode; curNode = curNode->next) {
+			/* FIXME: copy & waste */
+			PianoSong_t *tmpSong = calloc (1, sizeof (*tmpSong));
+			PianoXmlStructParser (ezxml_child (curNode, "struct"),
+					PianoXmlParsePlaylistCb, tmpSong);
+			/* begin linked list or append */
+			if (searchResult->songs == NULL) {
+				searchResult->songs = tmpSong;
+			} else {
+				PianoSong_t *curSong = searchResult->songs;
+				while (curSong->next != NULL) {
+					curSong = curSong->next;
 				}
+				curSong->next = tmpSong;
 			}
 		}
 	}
@@ -625,27 +580,27 @@ void PianoXmlParseSearchCb (const char *key, const xmlNode *value,
  *	@param returns search result
  *	@return nothing yet
  */
-PianoReturn_t PianoXmlParseSearch (const char *searchXml,
+PianoReturn_t PianoXmlParseSearch (char *xml,
 		PianoSearchResult_t *searchResult) {
-	xmlNode *docRoot;
-	xmlDocPtr doc;
+	ezxml_t xmlDoc, dataNode;
 	PianoReturn_t ret;
 
-	if ((ret = PianoXmlInitDoc (searchXml, &doc, &docRoot)) != PIANO_RET_OK) {
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
 	}
 	
-	xmlNode *structRoot = docRoot->children->children->children->children;
+	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", 0, "struct", -1);
 	/* we need a "clean" search result (with null pointers) */
 	memset (searchResult, 0, sizeof (*searchResult));
-	PianoXmlStructParser (structRoot, PianoXmlParseSearchCb, searchResult);
+	PianoXmlStructParser (dataNode, PianoXmlParseSearchCb, searchResult);
 
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
 
 	return PIANO_RET_OK;
 }
 
 /*	encode reserved xml chars
+ *	TODO: remove and use ezxml_ampencode
  *	@param encode this
  *	@return encoded string
  */
@@ -678,87 +633,55 @@ char *PianoXmlEncodeString (const char *s) {
 	return sOut;
 }
 
-PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph,
-		const char *xmlContent) {
-	xmlNode *docRoot, *catNode, *genreNode, *attrNodeValue;
-	xmlDocPtr doc;
-	xmlAttr *attrNode;
+PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph, char *xml) {
+	ezxml_t xmlDoc, catNode, genreNode;
 	PianoReturn_t ret;
 	PianoGenreCategory_t *tmpGenreCategory;
 	PianoStation_t *tmpStation;
 
-    if ((ret = PianoXmlInitDoc (xmlContent, &doc, &docRoot)) !=
-			PIANO_RET_OK) {
+    if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
         return ret;
     }
 
 	/* get all <member> nodes */
-    for (catNode = docRoot->children; catNode; catNode = catNode->next) {
-        if (catNode->type == XML_ELEMENT_NODE &&
-				xmlStrEqual ((xmlChar *) "category", catNode->name)) {
-			tmpGenreCategory = calloc (1, sizeof (*tmpGenreCategory));
-			/* get category attributes */
-			for (attrNode = catNode->properties; attrNode;
-					attrNode = attrNode->next) {
-				for (attrNodeValue = attrNode->children; attrNodeValue;
-						attrNodeValue = attrNodeValue->next) {
-					if (attrNodeValue->type == XML_TEXT_NODE &&
-							xmlStrEqual (attrNode->name,
-							(xmlChar *) "categoryName")) {
-						tmpGenreCategory->name =
-								strdup ((char *) attrNodeValue->content);
-					}
-				}
-			}
-			/* get genre subnodes */
-			for (genreNode = catNode->children; genreNode;
-					genreNode = genreNode->next) {
-				if (genreNode->type == XML_ELEMENT_NODE &&
-						xmlStrEqual ((xmlChar *) "genre", genreNode->name)) {
-					tmpStation = calloc (1, sizeof (*tmpStation));
-					/* get genre attributes */
-					for (attrNode = genreNode->properties; attrNode;
-							attrNode = attrNode->next) {
-						for (attrNodeValue = attrNode->children; attrNodeValue;
-								attrNodeValue = attrNodeValue->next) {
-							if (attrNodeValue->type == XML_TEXT_NODE) {
-								if (xmlStrEqual (attrNode->name,
-										(xmlChar *) "name")) {
-									tmpStation->name = strdup ((char *) attrNodeValue->content);
-								} else if (xmlStrEqual (attrNode->name,
-										(xmlChar *) "stationId")) {
-									tmpStation->id = strdup ((char *) attrNodeValue->content);
-								}
-							}
-						}
-					}
-					/* append station */
-					if (tmpGenreCategory->stations == NULL) {
-						tmpGenreCategory->stations = tmpStation;
-					} else {
-						PianoStation_t *curStation =
-								tmpGenreCategory->stations;
-						while (curStation->next != NULL) {
-							curStation = curStation->next;
-						}
-						curStation->next = tmpStation;
-					}
-				}
-			}
-			/* append category */
-			if (ph->genreStations == NULL) {
-				ph->genreStations = tmpGenreCategory;
+    for (catNode = ezxml_child (xmlDoc, "category"); catNode;
+			catNode = catNode->next) {
+		tmpGenreCategory = calloc (1, sizeof (*tmpGenreCategory));
+		tmpGenreCategory->name = strdup (ezxml_attr (catNode, "categoryName"));
+
+		/* get genre subnodes */
+		for (genreNode = ezxml_child (catNode, "genre"); genreNode;
+				genreNode = genreNode->next) {
+			tmpStation = calloc (1, sizeof (*tmpStation));
+			/* get genre attributes */
+			tmpStation->name = strdup (ezxml_attr (genreNode, "name"));
+			tmpStation->id = strdup (ezxml_attr (genreNode, "stationId"));
+
+			/* append station */
+			if (tmpGenreCategory->stations == NULL) {
+				tmpGenreCategory->stations = tmpStation;
 			} else {
-				PianoGenreCategory_t *curCat = ph->genreStations;
-				while (curCat->next != NULL) {
-					curCat = curCat->next;
+				PianoStation_t *curStation =
+						tmpGenreCategory->stations;
+				while (curStation->next != NULL) {
+					curStation = curStation->next;
 				}
-				curCat->next = tmpGenreCategory;
+				curStation->next = tmpStation;
 			}
-        }
+		}
+		/* append category */
+		if (ph->genreStations == NULL) {
+			ph->genreStations = tmpGenreCategory;
+		} else {
+			PianoGenreCategory_t *curCat = ph->genreStations;
+			while (curCat->next != NULL) {
+				curCat = curCat->next;
+			}
+			curCat->next = tmpGenreCategory;
+		}
 	}
 
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
 
 	return PIANO_RET_OK;
 }
@@ -767,16 +690,15 @@ PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph,
  *	@param xml doc
  *	@return _OK or error
  */
-PianoReturn_t PianoXmlParseTranformStation (const char *searchXml) {
-	xmlNode *docRoot;
-	xmlDocPtr doc;
+PianoReturn_t PianoXmlParseTranformStation (char *xml) {
+	ezxml_t xmlDoc;
 	PianoReturn_t ret;
 
-	if ((ret = PianoXmlInitDoc (searchXml, &doc, &docRoot)) != PIANO_RET_OK) {
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
 	}
 	
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
 
 	return PIANO_RET_OK;
 }
@@ -786,20 +708,19 @@ PianoReturn_t PianoXmlParseTranformStation (const char *searchXml) {
  *	@param returns the answer
  *	@return _OK or error
  */
-PianoReturn_t PianoXmlParseNarrative (const char *xml, char **retNarrative) {
-	xmlNode *docRoot;
-	xmlDocPtr doc;
+PianoReturn_t PianoXmlParseNarrative (char *xml, char **retNarrative) {
+	ezxml_t xmlDoc, dataNode;
 	PianoReturn_t ret;
 
-	if ((ret = PianoXmlInitDoc (xml, &doc, &docRoot)) != PIANO_RET_OK) {
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
 	}
 
 	/* <methodResponse> <params> <param> <value> $textnode */
-	xmlNode *val = docRoot->children->children->children->children;
-	*retNarrative = strdup ((char *) val->content);
+	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", -1);
+	*retNarrative = strdup (ezxml_txt (dataNode));
 
-	xmlFreeDoc (doc);
+	ezxml_free (xmlDoc);
 
 	return ret;
 }

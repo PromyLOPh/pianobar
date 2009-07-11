@@ -1,13 +1,11 @@
 set (CMAKE_C_FLAGS -Wall)
 
-find_package (LibXml2 REQUIRED)
-
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 	${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-include_directories (${LIBXML2_INCLUDE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/../../libwaitress/src)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/../../libwaitress/src
+	${CMAKE_CURRENT_SOURCE_DIR}/../../libezxml/src)
 
 add_library (piano STATIC crypt.c http.c main.c xml.c)
-target_link_libraries (piano ${LIBXML_LIBRARIES} waitress)
+target_link_libraries (piano waitress ezxml)
 
