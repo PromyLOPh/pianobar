@@ -49,9 +49,6 @@ THE SOFTWARE.
  * a "nice" integer */
 #define RG_SCALE_FACTOR 100
 
-/* FIXME: Hardcoded bitrate (kbit/s) */
-#define MP3_BITRATE 128
-
 /*	compute replaygain scale factor
  *	algo taken from here: http://www.dsprelated.com/showmessage/29246/1.php
  *	mpd does the same
