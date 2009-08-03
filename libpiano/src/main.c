@@ -189,46 +189,37 @@ void PianoDestroy (PianoHandle_t *ph) {
  */
 PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
 		const char *password) {
-	char retStr[PIANO_RECV_BUFFER], requestStrPlain[PIANO_SEND_BUFFER_SIZE];
-	char *requestStr = PianoEncryptString ("<?xml version=\"1.0\"?>"
-			"<methodCall><methodName>misc.sync</methodName>"
-			"<params></params></methodCall>");
+	char retStr[PIANO_RECV_BUFFER], xmlSendBuf[PIANO_SEND_BUFFER_SIZE];
 	PianoReturn_t ret;
 
-#if 0
-	printf ("\n==========\n" PACKAGE ": Pandora changed their blowfish "
-			"encryption key. You will not be able to connect to pandora.\n"
-			"==========\n");
-#endif
 	/* sync and throw away result (it's an encrypted timestamp, decrypt with
 	 * PianoDecryptString) */
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>misc.sync</methodName>"
+			"<params></params></methodCall>");
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&method=sync", ph->routeId);
-	ret = PianoHttpPost (&ph->waith, requestStr, retStr, sizeof (retStr));
-	PianoFree (requestStr, 0);
+	ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr, sizeof (retStr));
 
 	if (ret != PIANO_RET_OK) {
 		return ret;
 	}
 
 	/* authenticate */
-	snprintf (requestStrPlain, sizeof (requestStrPlain), 
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), 
 			"<?xml version=\"1.0\"?><methodCall>"
 			"<methodName>listener.authenticateListener</methodName>"
 			"<params><param><value><int>%li</int></value></param>"
 			"<param><value><string>%s</string></value></param>"
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), user, password);
-	requestStr = PianoEncryptString (requestStrPlain);
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&method=authenticateListener", ph->routeId);
 
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseUserinfo (ph, retStr);
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -239,7 +230,6 @@ PianoReturn_t PianoConnect (PianoHandle_t *ph, const char *user,
  */
 PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -247,17 +237,14 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 			"<params><param><value><int>%li</int></value></param>"
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken);
-	requestStr = PianoEncryptString (xmlSendBuf);
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=getStations", ph->routeId,
 			ph->user.listenerId);
 
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseStations (ph, retStr);
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -269,7 +256,6 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
 		PianoAudioFormat_t format) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret;
 
 	/* FIXME: remove static numbers */
@@ -284,19 +270,16 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			stationId, PianoAudioFormatToString (format));
-	requestStr = PianoEncryptString (xmlSendBuf);
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=getFragment&arg1=%s&arg2=0"
 			"&arg3=&arg4=&arg5=%s", ph->routeId,
 			ph->user.listenerId, stationId,
 			PianoAudioFormatToString (format));
 
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParsePlaylist (ph, retStr);
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -357,7 +340,6 @@ PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, const char *stationId,
 		const char *songUserSeed, const char *songFocusTraitId,
 		PianoSongRating_t rating) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret = PIANO_RET_ERR;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -378,7 +360,6 @@ PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, const char *stationId,
 			(songUserSeed == NULL) ? "" : songUserSeed,
 			(songFocusTraitId == NULL) ? "" : songFocusTraitId,
 			(rating == PIANO_RATE_LOVE) ? 1 : 0);
-	requestStr = PianoEncryptString (xmlSendBuf);
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=addFeedback&arg1=%s&arg2=%s"
 			"&arg3=%s&arg4=%s&arg5=%s&arg6=&arg7=%s&arg8=false", ph->routeId,
@@ -388,12 +369,10 @@ PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, const char *stationId,
 			(songFocusTraitId == NULL) ? "" : songFocusTraitId,
 			(rating == PIANO_RATE_LOVE) ? "true" : "false");
 
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseSimple (retStr);
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -408,7 +387,7 @@ PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, const char *stationId,
 PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 		const char *newName) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr, *urlencodedNewName, *xmlencodedNewName;
+	char *urlencodedNewName, *xmlencodedNewName;
 	PianoReturn_t ret = PIANO_RET_ERR;
 
 	xmlencodedNewName = PianoXmlEncodeString (newName);
@@ -420,14 +399,13 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			station->id, xmlencodedNewName);
-	requestStr = PianoEncryptString (xmlSendBuf);
 
 	urlencodedNewName = WaitressUrlEncode (newName);
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=setStationName&arg1=%s&arg2=%s",
 			ph->routeId, ph->user.listenerId, station->id, urlencodedNewName);
 
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		if ((ret = PianoXmlParseSimple (retStr)) == PIANO_RET_OK) {
 			PianoFree (station->name, 0);
@@ -437,7 +415,6 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 
 	PianoFree (urlencodedNewName, 0);
 	PianoFree (xmlencodedNewName, 0);
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -449,7 +426,6 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
  */
 PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret = PIANO_RET_ERR;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -459,12 +435,11 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			station->id);
-	requestStr = PianoEncryptString (xmlSendBuf);
 
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=removeStation&arg1=%s", ph->routeId,
 			ph->user.listenerId, station->id);
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		if ((ret = PianoXmlParseSimple (retStr)) == PIANO_RET_OK) {
 			/* delete station from local station list */
@@ -487,8 +462,6 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 		}
 	}
 
-	PianoFree (requestStr, 0);
-
 	return ret;
 }
 
@@ -503,7 +476,7 @@ PianoReturn_t PianoDeleteStation (PianoHandle_t *ph, PianoStation_t *station) {
 PianoReturn_t PianoSearchMusic (PianoHandle_t *ph,
 		const char *searchStr, PianoSearchResult_t *searchResult) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr, *xmlencodedSearchStr, *urlencodedSearchStr;
+	char *xmlencodedSearchStr, *urlencodedSearchStr;
 	PianoReturn_t ret;
 
 	xmlencodedSearchStr = PianoXmlEncodeString (searchStr);
@@ -514,21 +487,19 @@ PianoReturn_t PianoSearchMusic (PianoHandle_t *ph,
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			xmlencodedSearchStr);
-	requestStr = PianoEncryptString (xmlSendBuf);
 
 	urlencodedSearchStr = WaitressUrlEncode (searchStr);
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=search&arg1=%s", ph->routeId,
 			ph->user.listenerId, urlencodedSearchStr);
 	
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseSearch (retStr, searchResult);
 	}
 
 	PianoFree (urlencodedSearchStr, 0);
 	PianoFree (xmlencodedSearchStr, 0);
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -543,7 +514,6 @@ PianoReturn_t PianoSearchMusic (PianoHandle_t *ph,
 PianoReturn_t PianoCreateStation (PianoHandle_t *ph, const char *type,
 		const char *id) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -553,18 +523,15 @@ PianoReturn_t PianoCreateStation (PianoHandle_t *ph, const char *type,
 			"<param><value><string>%s%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			type, id);
-	requestStr = PianoEncryptString (xmlSendBuf);
 
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=createStation&arg1=%s%s", ph->routeId,
 			ph->user.listenerId, type, id);
 	
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseCreateStation (ph, retStr);
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -581,7 +548,6 @@ PianoReturn_t PianoCreateStation (PianoHandle_t *ph, const char *type,
 PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 		PianoStation_t *station, const char *musicId) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -592,18 +558,15 @@ PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			station->id, musicId);
-	requestStr = PianoEncryptString (xmlSendBuf);
 
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=addSeed&arg1=%s&arg2=%s", ph->routeId,
 			ph->user.listenerId, station->id, musicId);
 	
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseAddSeed (ph, retStr, station);
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -615,7 +578,6 @@ PianoReturn_t PianoStationAddMusic (PianoHandle_t *ph,
  */
 PianoReturn_t PianoSongTired (PianoHandle_t *ph, const PianoSong_t *song) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -625,18 +587,15 @@ PianoReturn_t PianoSongTired (PianoHandle_t *ph, const PianoSong_t *song) {
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			song->identity);
-	requestStr = PianoEncryptString (xmlSendBuf);
 
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=addTiredSong&arg1=%s", ph->routeId,
 			ph->user.listenerId, song->identity);
 
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseSimple (retStr);
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -648,7 +607,6 @@ PianoReturn_t PianoSongTired (PianoHandle_t *ph, const PianoSong_t *song) {
 PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], valueBuf[1000], urlArgBuf[1000],
 			retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret;
 	PianoStation_t *curStation = ph->stations;
 
@@ -683,18 +641,15 @@ PianoReturn_t PianoSetQuickmix (PianoHandle_t *ph) {
 	strncat (xmlSendBuf,
 			"</data></array></value></param></params></methodCall>",
 			sizeof (xmlSendBuf) - strlen (xmlSendBuf) - 1);
-	requestStr = PianoEncryptString (xmlSendBuf);
 
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=setQuickMix&arg1=RANDOM&arg2=%s",
 			ph->routeId, ph->user.listenerId, urlArgBuf);
 	
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseSimple (retStr);
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -743,7 +698,6 @@ PianoReturn_t PianoGetGenreStations (PianoHandle_t *ph) {
 PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
 		PianoStation_t *station) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -753,13 +707,12 @@ PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			station->id);
-	requestStr = PianoEncryptString (xmlSendBuf);
 
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=transformShared&arg1=%s", ph->routeId,
 			ph->user.listenerId, station->id);
 	
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseTranformStation (retStr);
 		/* though this call returns a bunch of "new" data only this one is
@@ -768,8 +721,6 @@ PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
 			station->isCreator = 1;
 		}
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }
@@ -783,7 +734,6 @@ PianoReturn_t PianoTransformShared (PianoHandle_t *ph,
 PianoReturn_t PianoExplain (PianoHandle_t *ph, const PianoSong_t *song,
 		char **retExplain) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
-	char *requestStr;
 	PianoReturn_t ret;
 
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
@@ -794,18 +744,15 @@ PianoReturn_t PianoExplain (PianoHandle_t *ph, const PianoSong_t *song,
 			"<param><value><string>%s</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			song->stationId, song->musicId);
-	requestStr = PianoEncryptString (xmlSendBuf);
 	
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=method=narrative&arg1=%s&arg2=%s",
 			ph->routeId, ph->user.listenerId, song->stationId, song->musicId);
 	
-	if ((ret = PianoHttpPost (&ph->waith, requestStr, retStr,
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
 			sizeof (retStr))) == PIANO_RET_OK) {
 		ret = PianoXmlParseNarrative (retStr, retExplain);
 	}
-
-	PianoFree (requestStr, 0);
 
 	return ret;
 }

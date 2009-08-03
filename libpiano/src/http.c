@@ -27,6 +27,8 @@ THE SOFTWARE.
 
 #include <waitress.h>
 
+#include "main.h"
+#include "crypt.h"
 #include "http.h"
 
 /*	post data to url and receive answer as string
@@ -38,14 +40,20 @@ THE SOFTWARE.
  */
 PianoReturn_t PianoHttpPost (WaitressHandle_t *waith, const char *postData,
 		char *retData, size_t retDataSize) {
+	PianoReturn_t pRet = PIANO_RET_NET_ERROR;
+	char *reqPostData = PianoEncryptString (postData);
+
 	waith->extraHeaders = "Content-Type: text/xml\r\n";
-	waith->postData = postData;
+	waith->postData = reqPostData;
 	waith->method = WAITRESS_METHOD_POST;
 
 	if (WaitressFetchBuf (waith, retData, retDataSize) == WAITRESS_RET_OK) {
-		return PIANO_RET_OK;
+		pRet = PIANO_RET_OK;
 	}
-	return PIANO_RET_NET_ERROR;
+
+	PianoFree (reqPostData, 0);
+
+	return pRet;
 }
 
 /*	http get request, return server response body
