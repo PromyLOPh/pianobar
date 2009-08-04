@@ -122,7 +122,8 @@ char WaitressSplitUrl (const char *url, char *retHost, size_t retHostSize,
 		lastPos = urlPos;
 
 		/* find host */
-		while (*urlPos != ':' && *urlPos != '/' && urlPos - lastPos < retHostSize-1) {
+		while (*urlPos != '\0' && *urlPos != ':' && *urlPos != '/' &&
+				urlPos - lastPos < retHostSize-1) {
 			*retHost++ = *urlPos++;
 		}
 		lastPos = urlPos;
@@ -132,14 +133,16 @@ char WaitressSplitUrl (const char *url, char *retHost, size_t retHostSize,
 			/* skip : */
 			++urlPos;
 			++lastPos;
-			while (*urlPos != '/' && urlPos - lastPos < retPortSize-1) {
+			while (*urlPos != '\0' && *urlPos != '/' &&
+					urlPos - lastPos < retPortSize-1) {
 				*retPort++ = *urlPos++;
 			}
 		}
 		lastPos = urlPos;
 
 		/* path */
-		while (*urlPos != '\0' && *urlPos != '#' && urlPos - lastPos < retPathSize-1) {
+		while (*urlPos != '\0' && *urlPos != '#' &&
+				urlPos - lastPos < retPathSize-1) {
 			*retPath++ = *urlPos++;
 		}
 	} else {
