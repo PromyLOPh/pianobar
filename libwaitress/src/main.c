@@ -376,8 +376,9 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	/* receive answer */
 	nextLine = recvBuf;
 	while (hdrParseMode != HDRM_FINISHED) {
-		READ_RET (recvBuf+bufFilled, sizeof (recvBuf) - bufFilled, &recvSize);
+		READ_RET (recvBuf+bufFilled, sizeof (recvBuf)-1 - bufFilled, &recvSize);
 		bufFilled += recvSize;
+		memset (recvBuf+bufFilled, 0, sizeof (recvBuf) - bufFilled);
 		thisLine = recvBuf;
 
 		/* split */
