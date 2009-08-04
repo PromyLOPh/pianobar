@@ -54,7 +54,7 @@ inline void WaitressFree (WaitressHandle_t *waith) {
  *	@param Waitress handle
  *	@return true|false
  */
-inline char WaitressProxyEnabled (const WaitressHandle_t *waith) {
+static inline char WaitressProxyEnabled (const WaitressHandle_t *waith) {
 	return *waith->proxyHost != '\0' && *waith->proxyPort != '\0';
 }
 
@@ -178,7 +178,7 @@ inline void WaitressSetHPP (WaitressHandle_t *waith, const char *host,
  *	@param data size
  *	@param buffer structure
  */
-char WaitressFetchBufCb (void *recvData, size_t recvDataSize, void *extraData) {
+static char WaitressFetchBufCb (void *recvData, size_t recvDataSize, void *extraData) {
 	char *recvBytes = recvData;
 	WaitressFetchBufCbBuffer_t *buffer = extraData;
 
@@ -222,7 +222,7 @@ WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char *buf,
  *	@param timeout (microseconds)
  *	@return WAITRESS_RET_OK, WAITRESS_RET_TIMEOUT or WAITRESS_RET_ERR
  */
-WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf, size_t count,
+static WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf, size_t count,
 		struct pollfd *sockpoll, int timeout) {
 	int pollres = -1;
 
@@ -248,7 +248,7 @@ WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf, size_t count,
  *	@param read () return value/written bytes
  *	@return WAITRESS_RET_OK, WAITRESS_RET_TIMEOUT, WAITRESS_RET_ERR
  */
-WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
+static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
 		struct pollfd *sockpoll, int timeout, ssize_t *retSize) {
 	int pollres = -1;
 

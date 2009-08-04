@@ -51,9 +51,9 @@ typedef struct {
 	unsigned char buffer[64]; /* input buffer */
 } MD5_CTX;
 
-void MD5Init (MD5_CTX *);
-void MD5Update (MD5_CTX *, unsigned char *, unsigned int);
-void MD5Final (unsigned char [16], MD5_CTX *);
+static void MD5Init (MD5_CTX *);
+static void MD5Update (MD5_CTX *, unsigned char *, unsigned int);
+static void MD5Final (unsigned char [16], MD5_CTX *);
 
 static void MD5Transform (unsigned long int [4], unsigned char [64]);
 static void Encode (unsigned char *, unsigned long int *, unsigned int);
@@ -101,7 +101,7 @@ Rotation is separate from addition to prevent recomputation.
 /*	MD5 initialization. Begins an MD5 operation, writing a new context.
  *	@param context
  */
-void MD5Init (MD5_CTX *context) {
+static void MD5Init (MD5_CTX *context) {
 	context->count[0] = context->count[1] = 0;
 	/* Load magic initialization constants. */
 	context->state[0] = 0x67452301;
@@ -117,7 +117,7 @@ void MD5Init (MD5_CTX *context) {
  *	@param input block
  *	@param length of input block
  */
-void MD5Update (MD5_CTX *context, unsigned char *input,
+static void MD5Update (MD5_CTX *context, unsigned char *input,
 		unsigned int inputLen) {
 	unsigned int i, index, partLen;
 
@@ -156,7 +156,7 @@ void MD5Update (MD5_CTX *context, unsigned char *input,
  *	@param message digest
  *	@param context
  */
-void MD5Final (unsigned char digest[16], MD5_CTX *context) {
+static void MD5Final (unsigned char digest[16], MD5_CTX *context) {
 	unsigned char bits[8];
 	unsigned int index, padLen;
 

@@ -97,7 +97,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
  *	@param shortcut to be copied
  *	@param destination settings structure
  */
-void BarSettingsAppendKey (BarKeyShortcut_t *shortcut,
+static void BarSettingsAppendKey (BarKeyShortcut_t *shortcut,
 		BarSettings_t *settings) {
 	BarKeyShortcut_t *tmp = calloc (1, sizeof (*tmp));
 

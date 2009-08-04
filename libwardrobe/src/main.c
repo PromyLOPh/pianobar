@@ -87,7 +87,7 @@ void WardrobeDestroy (WardrobeHandle_t *wh) {
  *	@param wardrobe handle
  *	@return _OK or error
  */
-WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
+static WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 	/* md5 hash length + long integer max + NULL */
 	char url[WARDROBE_URL_SIZE], tmp[32+55+1], *tmpDigest, *pwDigest,
 			ret[WARDROBE_HTTP_RECV_SIZE], postUrl[1024];
@@ -154,7 +154,7 @@ WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
  *	@param song
  *	@return _OK or error
  */
-WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
+static WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
 		const WardrobeSong_t *ws) {
 	char postContent[WARDROBE_HTTP_SEND_SIZE];
 	char *urlencArtist, *urlencTitle, *urlencAlbum, ret[WARDROBE_HTTP_RECV_SIZE];

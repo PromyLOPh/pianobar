@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 
-inline void BarReadlineMoveLeft (char *buf, size_t *bufPos,
+static inline void BarReadlineMoveLeft (char *buf, size_t *bufPos,
 		size_t *bufLen) {
 	char *tmpBuf = &buf[*bufPos-1];
 	while (tmpBuf < &buf[*bufLen]) {
@@ -36,15 +36,15 @@ inline void BarReadlineMoveLeft (char *buf, size_t *bufPos,
 	--(*bufLen);
 }
 
-inline char BarReadlineIsAscii (char b) {
+static inline char BarReadlineIsAscii (char b) {
 	return !(b & (1 << 7));
 }
 
-inline char BarReadlineIsUtf8Start (char b) {
+static inline char BarReadlineIsUtf8Start (char b) {
 	return (b & (1 << 7)) && (b & (1 << 6));
 }
 
-inline char BarReadlineIsUtf8Content (char b) {
+static inline char BarReadlineIsUtf8Content (char b) {
 	return (b & (1 << 7)) && !(b & (1 << 6));
 }
 

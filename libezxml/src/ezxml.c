@@ -53,12 +53,91 @@ struct ezxml_root {       // additional data for the root tag
 
 char *EZXML_NIL[] = { NULL }; // empty, null terminated array of strings
 
+// sets a flag for the given tag and returns the tag
+static ezxml_t ezxml_set_flag(ezxml_t xml, short flag) {
+    if (xml) xml->flags |= flag;
+    return xml;
+}
+
+// inserts an existing tag into an ezxml structure
+static ezxml_t ezxml_insert(ezxml_t xml, ezxml_t dest, size_t off)
+{
+    ezxml_t cur, prev, head;
+
+    xml->next = xml->sibling = xml->ordered = NULL;
+    xml->off = off;
+    xml->parent = dest;
+
+    if ((head = dest->child)) { // already have sub tags
+        if (head->off <= off) { // not first subtag
+            for (cur = head; cur->ordered && cur->ordered->off <= off;
+                 cur = cur->ordered);
+            xml->ordered = cur->ordered;
+            cur->ordered = xml;
+        }
+        else { // first subtag
+            xml->ordered = head;
+            dest->child = xml;
+        }
+
+        for (cur = head, prev = NULL; cur && strcmp(cur->name, xml->name);
+             prev = cur, cur = cur->sibling); // find tag type
+        if (cur && cur->off <= off) { // not first of type
+            while (cur->next && cur->next->off <= off) cur = cur->next;
+            xml->next = cur->next;
+            cur->next = xml;
+        }
+        else { // first tag of this type
+            if (prev && cur) prev->sibling = cur->sibling; // remove old first
+            xml->next = cur; // old first tag is now next
+            for (cur = head, prev = NULL; cur && cur->off <= off;
+                 prev = cur, cur = cur->sibling); // new sibling insert point
+            xml->sibling = cur;
+            if (prev) prev->sibling = xml;
+        }
+    }
+    else dest->child = xml; // only sub tag
+
+    return xml;
+}
+
+// Adds a child tag. off is the offset of the child tag relative to the start
+// of the parent tag's character content. Returns the child tag.
+static ezxml_t ezxml_add_child(ezxml_t xml, const char *name, size_t off)
+{
+    ezxml_t child;
+
+    if (! xml) return NULL;
+    child = (ezxml_t)memset(malloc(sizeof(struct ezxml)), '\0',
+                            sizeof(struct ezxml));
+    child->name = (char *)name;
+    child->attr = EZXML_NIL;
+    child->txt = "";
+
+    return ezxml_insert(child, xml, off);
+}
+
 // returns the first child tag with the given name or NULL if not found
 ezxml_t ezxml_child(ezxml_t xml, const char *name)
 {
     xml = (xml) ? xml->child : NULL;
     while (xml && strcmp(name, xml->name)) xml = xml->sibling;
     return xml;
+}
+
+// returns a new empty ezxml structure with the given root tag name
+static ezxml_t ezxml_new(const char *name)
+{
+    static char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
+                           "apos;", "&#39;", "amp;", "&#38;", NULL };
+    ezxml_root_t root = (ezxml_root_t)memset(malloc(sizeof(struct ezxml_root)), 
+                                             '\0', sizeof(struct ezxml_root));
+    root->xml.name = (char *)name;
+    root->cur = &root->xml;
+    strcpy(root->err, root->xml.txt = "");
+    root->ent = memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
+    root->attr = root->pi = (char ***)(root->xml.attr = EZXML_NIL);
+    return &root->xml;
 }
 
 // returns the Nth tag with the same name in the same subsection or NULL if not
@@ -87,7 +166,7 @@ const char *ezxml_attr(ezxml_t xml, const char *attr)
 }
 
 // same as ezxml_get but takes an already initialized va_list
-ezxml_t ezxml_vget(ezxml_t xml, va_list ap)
+static ezxml_t ezxml_vget(ezxml_t xml, va_list ap)
 {
     char *name = va_arg(ap, char *);
     int idx = -1;
@@ -117,7 +196,7 @@ ezxml_t ezxml_get(ezxml_t xml, ...)
 }
 
 // set an error string and return root
-ezxml_t ezxml_err(ezxml_root_t root, char *s, const char *err, ...)
+static ezxml_t ezxml_err(ezxml_root_t root, char *s, const char *err, ...)
 {
     va_list ap;
     int line = 1;
@@ -139,7 +218,7 @@ ezxml_t ezxml_err(ezxml_root_t root, char *s, const char *err, ...)
 // for cdata sections, ' ' for attribute normalization, or '*' for non-cdata
 // attribute normalization. Returns s, or if the decoded string is longer than
 // s, returns a malloced string that must be freed.
-char *ezxml_decode(char *s, char **ent, char t)
+static char *ezxml_decode(char *s, char **ent, char t)
 {
     char *e, *r = s, *m = s;
     long b, c, d, l;
@@ -202,7 +281,7 @@ char *ezxml_decode(char *s, char **ent, char t)
 }
 
 // called when parser finds start of new tag
-void ezxml_open_tag(ezxml_root_t root, char *name, char **attr)
+static void ezxml_open_tag(ezxml_root_t root, char *name, char **attr)
 {
     ezxml_t xml = root->cur;
     
@@ -214,7 +293,7 @@ void ezxml_open_tag(ezxml_root_t root, char *name, char **attr)
 }
 
 // called when parser finds character content between open and closing tag
-void ezxml_char_content(ezxml_root_t root, char *s, size_t len, char t)
+static void ezxml_char_content(ezxml_root_t root, char *s, size_t len, char t)
 {
     ezxml_t xml = root->cur;
     char *m = s;
@@ -238,7 +317,7 @@ void ezxml_char_content(ezxml_root_t root, char *s, size_t len, char t)
 }
 
 // called when parser finds closing tag
-ezxml_t ezxml_close_tag(ezxml_root_t root, char *name, char *s)
+static ezxml_t ezxml_close_tag(ezxml_root_t root, char *name, char *s)
 {
     if (! root->cur || ! root->cur->name || strcmp(name, root->cur->name))
         return ezxml_err(root, s, "unexpected closing tag </%s>", name);
@@ -249,7 +328,7 @@ ezxml_t ezxml_close_tag(ezxml_root_t root, char *name, char *s)
 
 // checks for circular entity references, returns non-zero if no circular
 // references are found, zero otherwise
-int ezxml_ent_ok(char *name, char *s, char **ent)
+static int ezxml_ent_ok(char *name, char *s, char **ent)
 {
     int i;
 
@@ -263,7 +342,7 @@ int ezxml_ent_ok(char *name, char *s, char **ent)
 }
 
 // called when the parser finds a processing instruction
-void ezxml_proc_inst(ezxml_root_t root, char *s, size_t len)
+static void ezxml_proc_inst(ezxml_root_t root, char *s, size_t len)
 {
     int i = 0, j = 1;
     char *target = s;
@@ -300,7 +379,7 @@ void ezxml_proc_inst(ezxml_root_t root, char *s, size_t len)
 }
 
 // called when the parser finds an internal doctype subset
-short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
+static short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
 {
     char q, *c, *t, *n = NULL, *v, **ent, **pe;
     int i, j;
@@ -403,7 +482,7 @@ short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
 
 // Converts a UTF-16 string to UTF-8. Returns a new string that must be freed
 // or NULL if no conversion was needed.
-char *ezxml_str2utf8(char **s, size_t *len)
+static char *ezxml_str2utf8(char **s, size_t *len)
 {
     char *u;
     size_t l = 0, sl, max = *len;
@@ -435,7 +514,7 @@ char *ezxml_str2utf8(char **s, size_t *len)
 }
 
 // frees a tag attribute list
-void ezxml_free_attr(char **attr) {
+static void ezxml_free_attr(char **attr) {
     int i = 0;
     char *m;
     
@@ -628,85 +707,5 @@ const char *ezxml_error(ezxml_t xml)
 {
     while (xml && xml->parent) xml = xml->parent; // find root tag
     return (xml) ? ((ezxml_root_t)xml)->err : "";
-}
-
-// returns a new empty ezxml structure with the given root tag name
-ezxml_t ezxml_new(const char *name)
-{
-    static char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
-                           "apos;", "&#39;", "amp;", "&#38;", NULL };
-    ezxml_root_t root = (ezxml_root_t)memset(malloc(sizeof(struct ezxml_root)), 
-                                             '\0', sizeof(struct ezxml_root));
-    root->xml.name = (char *)name;
-    root->cur = &root->xml;
-    strcpy(root->err, root->xml.txt = "");
-    root->ent = memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
-    root->attr = root->pi = (char ***)(root->xml.attr = EZXML_NIL);
-    return &root->xml;
-}
-
-// inserts an existing tag into an ezxml structure
-ezxml_t ezxml_insert(ezxml_t xml, ezxml_t dest, size_t off)
-{
-    ezxml_t cur, prev, head;
-
-    xml->next = xml->sibling = xml->ordered = NULL;
-    xml->off = off;
-    xml->parent = dest;
-
-    if ((head = dest->child)) { // already have sub tags
-        if (head->off <= off) { // not first subtag
-            for (cur = head; cur->ordered && cur->ordered->off <= off;
-                 cur = cur->ordered);
-            xml->ordered = cur->ordered;
-            cur->ordered = xml;
-        }
-        else { // first subtag
-            xml->ordered = head;
-            dest->child = xml;
-        }
-
-        for (cur = head, prev = NULL; cur && strcmp(cur->name, xml->name);
-             prev = cur, cur = cur->sibling); // find tag type
-        if (cur && cur->off <= off) { // not first of type
-            while (cur->next && cur->next->off <= off) cur = cur->next;
-            xml->next = cur->next;
-            cur->next = xml;
-        }
-        else { // first tag of this type
-            if (prev && cur) prev->sibling = cur->sibling; // remove old first
-            xml->next = cur; // old first tag is now next
-            for (cur = head, prev = NULL; cur && cur->off <= off;
-                 prev = cur, cur = cur->sibling); // new sibling insert point
-            xml->sibling = cur;
-            if (prev) prev->sibling = xml;
-        }
-    }
-    else dest->child = xml; // only sub tag
-
-    return xml;
-}
-
-// Adds a child tag. off is the offset of the child tag relative to the start
-// of the parent tag's character content. Returns the child tag.
-ezxml_t ezxml_add_child(ezxml_t xml, const char *name, size_t off)
-{
-    ezxml_t child;
-
-    if (! xml) return NULL;
-    child = (ezxml_t)memset(malloc(sizeof(struct ezxml)), '\0',
-                            sizeof(struct ezxml));
-    child->name = (char *)name;
-    child->attr = EZXML_NIL;
-    child->txt = "";
-
-    return ezxml_insert(child, xml, off);
-}
-
-// sets a flag for the given tag and returns the tag
-ezxml_t ezxml_set_flag(ezxml_t xml, short flag)
-{
-    if (xml) xml->flags |= flag;
-    return xml;
 }
 

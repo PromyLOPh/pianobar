@@ -31,9 +31,9 @@ THE SOFTWARE.
 #include "config.h"
 #include "main.h"
 
-void PianoXmlStructParser (const ezxml_t structRoot,
-		void (*callback) (const char *, const ezxml_t, void *), void *data);
-char *PianoXmlGetNodeText (const ezxml_t node);
+static void PianoXmlStructParser (const ezxml_t,
+		void (*callback) (const char *, const ezxml_t, void *), void *);
+static char *PianoXmlGetNodeText (const ezxml_t);
 
 /*	parse fault and get fault type
  *	@param xml <name> content
@@ -41,7 +41,8 @@ char *PianoXmlGetNodeText (const ezxml_t node);
  *	@param return error string
  *	@return nothing
  */
-void PianoXmlIsFaultCb (const char *key, const ezxml_t value, void *data) {
+static void PianoXmlIsFaultCb (const char *key, const ezxml_t value,
+		void *data) {
 	PianoReturn_t *ret = data;
 	char *valueStr = PianoXmlGetNodeText (value);
 	char *matchStart, *matchEnd, *matchStr;
@@ -101,7 +102,7 @@ void PianoXmlIsFaultCb (const char *key, const ezxml_t value, void *data) {
  *	@param document root of xml doc
  *	@return _RET_OK or fault code (_RET_*)
  */
-PianoReturn_t PianoXmlIsFault (ezxml_t xmlDoc) {
+static PianoReturn_t PianoXmlIsFault (ezxml_t xmlDoc) {
 	PianoReturn_t ret;
 
 	if ((xmlDoc = ezxml_child (xmlDoc, "fault")) != NULL) {
@@ -128,7 +129,7 @@ PianoReturn_t PianoXmlIsFault (ezxml_t xmlDoc) {
  *			freed soon
  *	@param extra data for callback
  */
-void PianoXmlStructParser (const ezxml_t structRoot,
+static void PianoXmlStructParser (const ezxml_t structRoot,
 		void (*callback) (const char *, const ezxml_t, void *), void *data) {
 	ezxml_t curNode, keyNode, valueNode;
 	char *key;
@@ -158,7 +159,7 @@ void PianoXmlStructParser (const ezxml_t structRoot,
  *	@param returns document root
  *	@return _OK or error
  */
-PianoReturn_t PianoXmlInitDoc (char *xmlStr, ezxml_t *xmlDoc) {
+static PianoReturn_t PianoXmlInitDoc (char *xmlStr, ezxml_t *xmlDoc) {
 	PianoReturn_t ret;
 
 	if ((*xmlDoc = ezxml_parse_str (xmlStr, strlen (xmlStr))) == NULL) {
@@ -177,7 +178,7 @@ PianoReturn_t PianoXmlInitDoc (char *xmlStr, ezxml_t *xmlDoc) {
  *	or <int> subnodes, just ignore them
  *	@param xml node <value>
  */
-char *PianoXmlGetNodeText (const ezxml_t node) {
+static char *PianoXmlGetNodeText (const ezxml_t node) {
 	char *retTxt = NULL;
 
 	retTxt = ezxml_txt (node);
@@ -194,7 +195,7 @@ char *PianoXmlGetNodeText (const ezxml_t node) {
  *	@param pointer to userinfo structure
  *	@return nothing
  */
-void PianoXmlParseUserinfoCb (const char *key, const ezxml_t value,
+static void PianoXmlParseUserinfoCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoUserInfo_t *user = data;
 	char *valueStr = PianoXmlGetNodeText (value);
@@ -208,7 +209,7 @@ void PianoXmlParseUserinfoCb (const char *key, const ezxml_t value,
 	}
 }
 
-void PianoXmlParseStationsCb (const char *key, const ezxml_t value,
+static void PianoXmlParseStationsCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoStation_t *station = data;
 	char *valueStr = PianoXmlGetNodeText (value);
@@ -224,7 +225,7 @@ void PianoXmlParseStationsCb (const char *key, const ezxml_t value,
 	}
 }
 
-void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
+static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoSong_t *song = data;
 	char *valueStr = PianoXmlGetNodeText (value);
@@ -302,7 +303,7 @@ PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml) {
 	return PIANO_RET_OK;
 }
 
-void PianoXmlParseQuickMixStationsCb (const char *key, const ezxml_t value,
+static void PianoXmlParseQuickMixStationsCb (const char *key, const ezxml_t value,
 		void *data) {
 	char ***retIds = data;
 	char **ids = NULL;
@@ -513,7 +514,7 @@ PianoReturn_t PianoXmlParseSimple (char *xml) {
 
 /*	xml struct parser callback, used in PianoXmlParseSearchCb
  */
-void PianoXmlParseSearchArtistCb (const char *key, const ezxml_t value,
+static void PianoXmlParseSearchArtistCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoArtist_t *artist = data;
 	char *valueStr = PianoXmlGetNodeText (value);
@@ -528,7 +529,7 @@ void PianoXmlParseSearchArtistCb (const char *key, const ezxml_t value,
 /*	callback for xml struct parser used in PianoXmlParseSearch, "switch" for
  *	PianoXmlParseSearchArtistCb and PianoXmlParsePlaylistCb
  */
-void PianoXmlParseSearchCb (const char *key, const ezxml_t value,
+static void PianoXmlParseSearchCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoSearchResult_t *searchResult = data;
 	ezxml_t curNode;

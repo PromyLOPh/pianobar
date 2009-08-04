@@ -42,7 +42,7 @@ THE SOFTWARE.
 #define PIANO_RECV_BUFFER 100*1024
 
 /* prototypes */
-PianoReturn_t PianoAddFeedback (PianoHandle_t *, const char *, const char *,
+static PianoReturn_t PianoAddFeedback (PianoHandle_t *, const char *, const char *,
 		const char *, const char *, const char *, PianoSongRating_t);
 const char *PianoAudioFormatToString (PianoAudioFormat_t);
 
@@ -335,7 +335,7 @@ PianoReturn_t PianoMoveSong (PianoHandle_t *ph,
  *	@param song focus trait id or NULL
  *	@param rating
  */
-PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, const char *stationId,
+static PianoReturn_t PianoAddFeedback (PianoHandle_t *ph, const char *stationId,
 		const char *songMusicId, const char *songMatchingSeed,
 		const char *songUserSeed, const char *songFocusTraitId,
 		PianoSongRating_t rating) {

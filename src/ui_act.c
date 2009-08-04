@@ -42,7 +42,7 @@ THE SOFTWARE.
 /*	helper to _really_ skip a song (unlock mutex, quit player)
  *	@param player handle
  */
-inline void BarUiDoSkipSong (struct audioPlayer *player) {
+static inline void BarUiDoSkipSong (struct audioPlayer *player) {
 	player->doQuit = 1;
 	pthread_mutex_unlock (&player->pauseMutex);
 }
@@ -52,7 +52,7 @@ inline void BarUiDoSkipSong (struct audioPlayer *player) {
  *	@param transform this station
  *	@return 0 = error, 1 = everything went well
  */
-int BarTransformIfShared (PianoHandle_t *ph, PianoStation_t *station) {
+static int BarTransformIfShared (PianoHandle_t *ph, PianoStation_t *station) {
 	/* shared stations must be transformed */
 	if (!station->isCreator) {
 		BarUiMsg (MSG_INFO, "Transforming station... ");

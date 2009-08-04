@@ -55,7 +55,7 @@ THE SOFTWARE.
  *	@param apply this gain
  *	@return this * yourvalue = newgain value
  */
-inline unsigned int computeReplayGainScale (float applyGain) {
+static inline unsigned int computeReplayGainScale (float applyGain) {
 	return pow (10.0, applyGain / 20.0) * RG_SCALE_FACTOR;
 }
 
@@ -64,7 +64,7 @@ inline unsigned int computeReplayGainScale (float applyGain) {
  *	@param replaygain scale (calculated by computeReplayGainScale)
  *	@return scaled value
  */
-inline signed short int applyReplayGain (signed short int value,
+static inline signed short int applyReplayGain (signed short int value,
 		unsigned int scale) {
 	int tmpReplayBuf = value * scale;
 	/* avoid clipping */
@@ -83,7 +83,7 @@ inline signed short int applyReplayGain (signed short int value,
  *	@param data size
  *	@return 1 on success, 0 when buffer overflow occured
  */
-inline int BarPlayerBufferFill (struct audioPlayer *player, char *data,
+static inline int BarPlayerBufferFill (struct audioPlayer *player, char *data,
 		size_t dataSize) {
 	/* fill buffer */
 	if (player->bufferFilled + dataSize > sizeof (player->buffer)) {
@@ -102,7 +102,7 @@ inline int BarPlayerBufferFill (struct audioPlayer *player, char *data,
  *	@param player structure
  *	@return nothing at all
  */
-inline void BarPlayerBufferMove (struct audioPlayer *player) {
+static inline void BarPlayerBufferMove (struct audioPlayer *player) {
 	/* move remaining bytes to buffer beginning */
 	memmove (player->buffer, player->buffer + player->bufferRead,
 			(player->bufferFilled - player->bufferRead));
@@ -117,7 +117,7 @@ inline void BarPlayerBufferMove (struct audioPlayer *player) {
  *	@param extra data (player data)
  *	@return received bytes or less on error
  */
-char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
+static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 	char *data = ptr;
 	struct audioPlayer *player = stream;
 
@@ -284,7 +284,7 @@ char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
  *	@param mad fixed
  *	@return short int
  */
-inline signed short int BarPlayerMadToShort (mad_fixed_t fixed) {
+static inline signed short int BarPlayerMadToShort (mad_fixed_t fixed) {
 	/* Clipping */
 	if (fixed >= MAD_F_ONE) {
 		return SHRT_MAX;
@@ -296,7 +296,7 @@ inline signed short int BarPlayerMadToShort (mad_fixed_t fixed) {
 	return (signed short int) (fixed >> (MAD_F_FRACBITS - 15));
 }
 
-char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
+static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 	char *data = ptr;
 	struct audioPlayer *player = stream;
 	size_t i;

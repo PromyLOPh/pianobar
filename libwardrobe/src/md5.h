@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008 Lars-Dominik Braun
+Copyright (c) 2008-2009 Lars-Dominik Braun
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,3 +23,4 @@ THE SOFTWARE.
 #define WARDROBE_MD5_DIGEST_LEN 32
 
 char *WardrobeMd5Calc (char *string);
+
