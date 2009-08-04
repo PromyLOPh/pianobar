@@ -43,9 +43,9 @@ THE SOFTWARE.
 #define INITIAL_SHIFT 28
 #define SHIFT_DEC 4
 unsigned char *PianoDecryptString (const unsigned char *strInput) {
-	/* hex-decode => strlen/2 */
-	unsigned char *strDecrypted = calloc (strlen ((char *) strInput)/2+1, sizeof (*strDecrypted));
-	uint32_t *iDecrypt = (uint32_t *) strDecrypted;
+	/* hex-decode => strlen/2 + null-byte */
+	uint32_t *iDecrypt = calloc (strlen ((char *) strInput)/2/sizeof (*iDecrypt)+1, sizeof (*iDecrypt));
+	unsigned char *strDecrypted = (unsigned char *) iDecrypt;
 	unsigned char shift = INITIAL_SHIFT;
 	unsigned char intsDecoded = 0;
 	unsigned char j;
@@ -112,15 +112,17 @@ unsigned char *PianoDecryptString (const unsigned char *strInput) {
  *	@return encrypted, hex-encoded string
  */
 unsigned char *PianoEncryptString (const unsigned char *strInput) {
-	size_t strInputN = strlen ((char *) strInput);
+	const size_t strInputN = strlen ((char *) strInput);
 	/* num of 64-bit blocks, rounded to next block */
 	size_t blockN = strInputN / 8 + 1;
-	uint32_t *blockInput = calloc (blockN*2, sizeof (*blockInput)), *blockPtr = blockInput;
+	uint32_t *blockInput = calloc (blockN*2, sizeof (*blockInput));
+	uint32_t *blockPtr = blockInput;
 	/* encryption blocks */
 	uint32_t f, lrExchange;
 	register uint32_t l, r;
 	/* output string */
-	unsigned char *strHex = calloc (blockN*8*2 + 1, sizeof (*strHex)), *hexPtr = strHex;
+	unsigned char *strHex = calloc (blockN*8*2 + 1, sizeof (*strHex));
+	unsigned char *hexPtr = strHex;
 	const char *hexmap = "0123456789abcdef";
 	size_t i;
 
