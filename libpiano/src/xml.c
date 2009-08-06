@@ -45,7 +45,7 @@ static void PianoXmlIsFaultCb (const char *key, const ezxml_t value,
 		void *data) {
 	PianoReturn_t *ret = data;
 	char *valueStr = PianoXmlGetNodeText (value);
-	char *matchStart, *matchEnd, *matchStr;
+	char *matchStart, *matchEnd;
 
 	if (strcmp ("faultString", key) == 0) {
 		*ret = PIANO_RET_ERR;
@@ -56,36 +56,34 @@ static void PianoXmlIsFaultCb (const char *key, const ezxml_t value,
 		if ((matchStart = strchr (valueStr, '|')) != NULL) {
 			if ((matchStart = strchr (matchStart+1, '|')) != NULL) {
 				if ((matchEnd = strchr (matchStart+1, '|')) != NULL) {
-					matchStr = calloc (matchEnd - (matchStart+1)+1,
-							sizeof (*matchStr));
-					memcpy (matchStr, matchStart+1, matchEnd -
-							(matchStart+1));
+					/* changes text in xml node, but we don't care... */
+					*matchEnd = '\0';
+					++matchStart;
 					/* translate to our error message system */
-					if (strcmp ("AUTH_INVALID_TOKEN", matchStr) == 0) {
+					if (strcmp ("AUTH_INVALID_TOKEN", matchStart) == 0) {
 						*ret = PIANO_RET_AUTH_TOKEN_INVALID;
 					} else if (strcmp ("AUTH_INVALID_USERNAME_PASSWORD",
-							matchStr) == 0) {
+							matchStart) == 0) {
 						*ret = PIANO_RET_AUTH_USER_PASSWORD_INVALID;
 					} else if (strcmp ("LISTENER_NOT_AUTHORIZED",
-							matchStr) == 0) {
+							matchStart) == 0) {
 						*ret = PIANO_RET_NOT_AUTHORIZED;
 					} else if (strcmp ("INCOMPATIBLE_VERSION",
-							matchStr) == 0) {
+							matchStart) == 0) {
 						*ret = PIANO_RET_PROTOCOL_INCOMPATIBLE;
-					} else if (strcmp ("READONLY_MODE", matchStr) == 0) {
+					} else if (strcmp ("READONLY_MODE", matchStart) == 0) {
 						*ret = PIANO_RET_READONLY_MODE;
 					} else if (strcmp ("STATION_CODE_INVALID",
-							matchStr) == 0) {
+							matchStart) == 0) {
 						*ret = PIANO_RET_STATION_CODE_INVALID;
 					} else if (strcmp ("STATION_DOES_NOT_EXIST",
-							matchStr) == 0) {
+							matchStart) == 0) {
 						*ret = PIANO_RET_STATION_NONEXISTENT;
 					} else {
 						*ret = PIANO_RET_ERR;
 						printf (PACKAGE ": Unknown error %s in %s\n",
-								matchStr, valueStr);
+								matchStart, valueStr);
 					}
-					PianoFree (matchStr, 0);
 				}
 			}
 		}
