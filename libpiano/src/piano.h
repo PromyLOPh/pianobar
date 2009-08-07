@@ -136,5 +136,7 @@ PianoReturn_t PianoGetGenreStations (PianoHandle_t *);
 PianoReturn_t PianoTransformShared (PianoHandle_t *, PianoStation_t *);
 PianoReturn_t PianoExplain (PianoHandle_t *, const PianoSong_t *, char **);
 const char *PianoErrorToStr (PianoReturn_t);
+PianoReturn_t PianoSeedSuggestions (PianoHandle_t *, const char *,
+		unsigned int, PianoSearchResult_t *);
 
 #endif /* _PIANO_H */

@@ -87,7 +87,7 @@ void BarUiActAddMusic (BAR_KS_ARGS) {
 
 	RETURN_IF_NO_STATION;
 
-	musicId = BarUiSelectMusicId (ph, curFd);
+	musicId = BarUiSelectMusicId (ph, curFd, (*curSong)->musicId);
 	if (musicId != NULL) {
 		if (!BarTransformIfShared (ph, *curStation)) {
 			return;
@@ -124,7 +124,7 @@ void BarUiActCreateStation (BAR_KS_ARGS) {
 	char *musicId;
 	PianoReturn_t pRet = PIANO_RET_ERR;
 
-	musicId = BarUiSelectMusicId (ph, curFd);
+	musicId = BarUiSelectMusicId (ph, curFd, NULL);
 	if (musicId != NULL) {
 		BarUiMsg (MSG_INFO, "Creating station... ");
 		pRet = BarUiPrintPianoStatus (PianoCreateStation (ph, "mi", musicId));

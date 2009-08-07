@@ -239,9 +239,11 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd) {
 
 /*	search music: query, search request, return music id
  *	@param piano handle
+ *	@param read data from fd
+ *	@param allow seed suggestions if != NULL
  *	@return musicId or NULL on abort/error
  */
-char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd) {
+char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd, char *similarToId) {
 	char *musicId = NULL;
 	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;
@@ -250,10 +252,18 @@ char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd) {
 
 	BarUiMsg (MSG_QUESTION, "Search for artist/title: ");
 	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0, curFd) > 0) {
-		BarUiMsg (MSG_INFO, "Searching... ");
-		if (BarUiPrintPianoStatus (PianoSearchMusic (ph, lineBuf,
-				&searchResult)) != PIANO_RET_OK) {
-			return NULL;
+		if (strcmp ("?", lineBuf) == 0 && similarToId != NULL) {
+			BarUiMsg (MSG_INFO, "Receiving suggestions... ");
+			if (BarUiPrintPianoStatus (PianoSeedSuggestions (ph, similarToId,
+					20, &searchResult)) != PIANO_RET_OK) {
+				return NULL;
+			}
+		} else {
+			BarUiMsg (MSG_INFO, "Searching... ");
+			if (BarUiPrintPianoStatus (PianoSearchMusic (ph, lineBuf,
+					&searchResult)) != PIANO_RET_OK) {
+				return NULL;
+			}
 		}
 		BarUiMsg (MSG_NONE, "\r");
 		if (searchResult.songs != NULL && searchResult.artists != NULL) {

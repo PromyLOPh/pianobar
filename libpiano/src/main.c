@@ -763,6 +763,38 @@ PianoReturn_t PianoExplain (PianoHandle_t *ph, const PianoSong_t *song,
 	return ret;
 }
 
+/*	Get seed suggestions by music id
+ *	@param piano handle
+ *	@param music id
+ *	@param max results
+ *	@param result buffer
+ */
+PianoReturn_t PianoSeedSuggestions (PianoHandle_t *ph, const char *musicId,
+		unsigned int max, PianoSearchResult_t *searchResult) {
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], retStr[PIANO_RECV_BUFFER];
+	PianoReturn_t ret;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>music.getSeedSuggestions</methodName>"
+			"<params><param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><int>%u</int></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			musicId, max);
+	
+	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
+			"rid=%s&lid=%s&method=method=getSeedSuggestions&arg1=%s&arg2=%u",
+			ph->routeId, ph->user.listenerId, musicId, max);
+	
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, retStr,
+			sizeof (retStr))) == PIANO_RET_OK) {
+		ret = PianoXmlParseSeedSuggestions (retStr, searchResult);
+	}
+
+	return ret;
+}
+
 /*	convert return value to human-readable string
  *	@param enum
  *	@return error string

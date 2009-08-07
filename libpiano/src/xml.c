@@ -647,6 +647,28 @@ PianoReturn_t PianoXmlParseSearch (char *xml,
 	return PIANO_RET_OK;
 }
 
+/*	FIXME: copy&waste (PianoXmlParseSearch)
+ */
+PianoReturn_t PianoXmlParseSeedSuggestions (char *xml,
+		PianoSearchResult_t *searchResult) {
+	ezxml_t xmlDoc, dataNode;
+	PianoReturn_t ret;
+
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
+		return ret;
+	}
+	
+	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", -1);
+	/* we need a "clean" search result (with null pointers) */
+	memset (searchResult, 0, sizeof (*searchResult));
+	/* reuse seach result parser; structure is nearly the same */
+	PianoXmlParseSearchCb ("artists", dataNode, searchResult);
+
+	ezxml_free (xmlDoc);
+
+	return PIANO_RET_OK;
+}
+
 /*	encode reserved xml chars
  *	TODO: remove and use ezxml_ampencode
  *	@param encode this
