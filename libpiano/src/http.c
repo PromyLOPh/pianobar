@@ -43,6 +43,10 @@ PianoReturn_t PianoHttpPost (WaitressHandle_t *waith, const char *postData,
 	PianoReturn_t pRet = PIANO_RET_NET_ERROR;
 	char *reqPostData = PianoEncryptString (postData);
 
+	if (reqPostData == NULL) {
+		return PIANO_RET_OUT_OF_MEMORY;
+	}
+
 	waith->extraHeaders = "Content-Type: text/xml\r\n";
 	waith->postData = reqPostData;
 	waith->method = WAITRESS_METHOD_POST;

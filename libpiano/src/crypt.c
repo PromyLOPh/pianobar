@@ -38,19 +38,23 @@ THE SOFTWARE.
 /*	decrypt hex-encoded, blowfish-crypted string: decode 2 hex-encoded blocks,
  *	decrypt, byteswap
  *	@param hex string
- *	@return decrypted string
+ *	@return decrypted string or NULL
  */
 #define INITIAL_SHIFT 28
 #define SHIFT_DEC 4
 unsigned char *PianoDecryptString (const unsigned char *strInput) {
 	/* hex-decode => strlen/2 + null-byte */
-	uint32_t *iDecrypt = calloc (strlen ((char *) strInput)/2/sizeof (*iDecrypt)+1, sizeof (*iDecrypt));
-	unsigned char *strDecrypted = (unsigned char *) iDecrypt;
-	unsigned char shift = INITIAL_SHIFT;
-	unsigned char intsDecoded = 0;
-	unsigned char j;
+	uint32_t *iDecrypt;
+	unsigned char *strDecrypted;
+	unsigned char shift = INITIAL_SHIFT, intsDecoded = 0, j;
 	/* blowfish blocks, 32-bit */
 	uint32_t f, l, r, lrExchange;
+
+	if ((iDecrypt = calloc (strlen ((char *) strInput)/2/sizeof (*iDecrypt)+1,
+			sizeof (*iDecrypt))) == NULL) {
+		return NULL;
+	}
+	strDecrypted = (unsigned char *) iDecrypt;
 
 	while (*strInput != '\0') {
 		/* hex-decode string */
@@ -115,20 +119,29 @@ unsigned char *PianoEncryptString (const unsigned char *strInput) {
 	const size_t strInputN = strlen ((char *) strInput);
 	/* num of 64-bit blocks, rounded to next block */
 	size_t blockN = strInputN / 8 + 1;
-	uint32_t *blockInput = calloc (blockN*2, sizeof (*blockInput));
-	uint32_t *blockPtr = blockInput;
-	/* encryption blocks */
-	uint32_t f, lrExchange;
-	register uint32_t l, r;
+	uint32_t *blockInput, *blockPtr;
 	/* output string */
-	unsigned char *strHex = calloc (blockN*8*2 + 1, sizeof (*strHex));
-	unsigned char *hexPtr = strHex;
+	unsigned char *strHex, *hexPtr;
 	const char *hexmap = "0123456789abcdef";
-	size_t i;
+
+	if ((blockInput = calloc (blockN*2, sizeof (*blockInput))) == NULL) {
+		return NULL;
+	}
+	blockPtr = blockInput;
+
+	if ((strHex = calloc (blockN*8*2 + 1, sizeof (*strHex))) == NULL) {
+		return NULL;
+	}
+	hexPtr = strHex;
 
 	memcpy (blockInput, strInput, strInputN);
 
 	while (blockN > 0) {
+		/* encryption blocks */
+		uint32_t f, lrExchange;
+		register uint32_t l, r;
+		int i;
+
 		l = byteswap32 (*blockPtr);
 		r = byteswap32 (*(blockPtr+1));
 		
