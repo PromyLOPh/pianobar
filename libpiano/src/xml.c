@@ -230,18 +230,24 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 
 	if (strcmp ("audioURL", key) == 0) {
 		/* last 48 chars of audioUrl are encrypted, but they put the key
-		 * into the door's lock; dumb pandora... */
+		 * into the door's lock... */
 		const char urlTailN = 48;
 		const size_t valueStrN = strlen (valueStr);
 		char *urlTail = NULL,
 				*urlTailCrypted = &valueStr[valueStrN - urlTailN];
-		urlTail = PianoDecryptString (urlTailCrypted);
-		song->audioUrl = calloc (valueStrN + 1, sizeof (*song->audioUrl));
-		memcpy (song->audioUrl, valueStr, valueStrN - urlTailN);
-		/* FIXME: the key seems to be broken... so ignore 8 x 0x08 postfix;
-		 * urlTailN/2 because the encrypted hex string is now decoded */
-		memcpy (&song->audioUrl[valueStrN - urlTailN], urlTail, urlTailN/2 - 8);
-		PianoFree (urlTail, urlTailN/2);
+
+		if ((urlTail = PianoDecryptString (urlTailCrypted)) != NULL) {
+			if ((song->audioUrl = calloc (valueStrN + 1,
+					sizeof (*song->audioUrl))) != NULL) {
+				memcpy (song->audioUrl, valueStr, valueStrN - urlTailN);
+				/* FIXME: the key seems to be broken... so ignore 8 x 0x08
+				 * postfix; urlTailN/2 because the encrypted hex string is now
+				 * decoded */
+				memcpy (&song->audioUrl[valueStrN - urlTailN], urlTail,
+						urlTailN/2 - 8);
+			}
+			PianoFree (urlTail, urlTailN/2);
+		}
 	} else if (strcmp ("artistSummary", key) == 0) {
 		song->artist = strdup (valueStr);
 	} else if (strcmp ("musicId", key) == 0) {
@@ -313,18 +319,32 @@ static void PianoXmlParseQuickMixStationsCb (const char *key, const ezxml_t valu
 				curNode; curNode = curNode->next) {
 			idsN++;
 			if (ids == NULL) {
-				ids = calloc (idsN, sizeof (*ids));
+				if ((ids = calloc (idsN, sizeof (*ids))) == NULL) {
+					*retIds = NULL;
+					return;
+				}
 			} else {
-				ids = realloc (ids, idsN * sizeof (*ids));
+				/* FIXME: memory leak (on failure) */
+				if ((ids = realloc (ids, idsN * sizeof (*ids))) == NULL) {
+					*retIds = NULL;
+					return;
+				}
 			}
 			ids[idsN-1] = strdup (PianoXmlGetNodeText (curNode));
 		}
 		/* append NULL: list ends here */
 		idsN++;
+		/* FIXME: copy&waste */
 		if (ids == NULL) {
-			ids = calloc (idsN, sizeof (*ids));
+			if ((ids = calloc (idsN, sizeof (*ids))) == NULL) {
+				*retIds = NULL;
+				return;
+			}
 		} else {
-			ids = realloc (ids, idsN * sizeof (*ids));
+			if ((ids = realloc (ids, idsN * sizeof (*ids))) == NULL) {
+				*retIds = NULL;
+				return;
+			}
 		}
 		ids[idsN-1] = NULL;
 	}
@@ -350,9 +370,16 @@ PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, char *xml) {
 
 	for (dataNode = ezxml_child (dataNode, "value"); dataNode;
 			dataNode = dataNode->next) {
-		PianoStation_t *tmpStation = calloc (1, sizeof (*tmpStation));
+		PianoStation_t *tmpStation;
+
+		if ((tmpStation = calloc (1, sizeof (*tmpStation))) == NULL) {
+			ezxml_free (xmlDoc);
+			return PIANO_RET_OUT_OF_MEMORY;
+		}
+
 		PianoXmlStructParser (ezxml_child (dataNode, "struct"),
 				PianoXmlParseStationsCb, tmpStation);
+
 		/* get stations selected for quickmix */
 		if (tmpStation->isQuickMix) {
 			PianoXmlStructParser (ezxml_child (dataNode, "struct"),
@@ -404,7 +431,11 @@ PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph, char *xml) {
 	}
 
 	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", 0, "struct", -1);
-	tmpStation = calloc (1, sizeof (*tmpStation));
+
+	if ((tmpStation = calloc (1, sizeof (*tmpStation))) == NULL) {
+		ezxml_free (xmlDoc);
+		return PIANO_RET_OUT_OF_MEMORY;
+	}
 	PianoXmlStructParser (dataNode, PianoXmlParseStationsCb, tmpStation);
 	/* FIXME: copy & waste */
 	/* start new linked list or append */
@@ -463,7 +494,13 @@ PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 
 	for (dataNode = ezxml_child (dataNode, "value"); dataNode;
 			dataNode = dataNode->next) {
-		PianoSong_t *tmpSong = calloc (1, sizeof (*tmpSong));
+		PianoSong_t *tmpSong;
+		
+		if ((tmpSong = calloc (1, sizeof (*tmpSong))) == NULL) {
+			ezxml_free (xmlDoc);
+			return PIANO_RET_OUT_OF_MEMORY;
+		}
+
 		PianoXmlStructParser (ezxml_child (dataNode, "struct"),
 				PianoXmlParsePlaylistCb, tmpSong);
 		/* begin linked list or append */
@@ -536,7 +573,13 @@ static void PianoXmlParseSearchCb (const char *key, const ezxml_t value,
 		/* skip <value><array><data> */
 		for (curNode = ezxml_child (ezxml_get (value, "array", 0, "data", -1), "value");
 				curNode; curNode = curNode->next) {
-			PianoArtist_t *artist = calloc (1, sizeof (*artist));
+			PianoArtist_t *artist;
+			
+			if ((artist = calloc (1, sizeof (*artist))) == NULL) {
+				/* fail silently */
+				break;
+			}
+
 			memset (artist, 0, sizeof (*artist));
 
 			PianoXmlStructParser (ezxml_child (curNode, "struct"),
@@ -557,7 +600,13 @@ static void PianoXmlParseSearchCb (const char *key, const ezxml_t value,
 		for (curNode = ezxml_child (ezxml_get (value, "array", 0, "data", -1), "value");
 				curNode; curNode = curNode->next) {
 			/* FIXME: copy & waste */
-			PianoSong_t *tmpSong = calloc (1, sizeof (*tmpSong));
+			PianoSong_t *tmpSong;
+			
+			if ((tmpSong = calloc (1, sizeof (*tmpSong))) == NULL) {
+				/* fail silently */
+				break;
+			}
+
 			PianoXmlStructParser (ezxml_child (curNode, "struct"),
 					PianoXmlParsePlaylistCb, tmpSong);
 			/* begin linked list or append */
@@ -601,15 +650,18 @@ PianoReturn_t PianoXmlParseSearch (char *xml,
 /*	encode reserved xml chars
  *	TODO: remove and use ezxml_ampencode
  *	@param encode this
- *	@return encoded string
+ *	@return encoded string or NULL
  */
 char *PianoXmlEncodeString (const char *s) {
 	char *replacements[] = {"&&amp;", "'&apos;", "\"&quot;", "<&lt;",
 			">&gt;", NULL};
-	char **r;
-	char *sOut = calloc (strlen (s) * 5 + 1, sizeof (*sOut)),
-			*sOutCurr = sOut;
-	char found;
+	char **r, *sOut, *sOutCurr, found;
+
+	if ((sOut = calloc (strlen (s) * 5 + 1, sizeof (*sOut))) == NULL) {
+		return NULL;
+	}
+
+	sOutCurr = sOut;
 
 	while (*s != '\0') {
 		r = replacements;
@@ -633,10 +685,8 @@ char *PianoXmlEncodeString (const char *s) {
 }
 
 PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph, char *xml) {
-	ezxml_t xmlDoc, catNode, genreNode;
+	ezxml_t xmlDoc, catNode;
 	PianoReturn_t ret;
-	PianoGenreCategory_t *tmpGenreCategory;
-	PianoStation_t *tmpStation;
 
     if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
         return ret;
@@ -645,13 +695,26 @@ PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph, char *xml) {
 	/* get all <member> nodes */
     for (catNode = ezxml_child (xmlDoc, "category"); catNode;
 			catNode = catNode->next) {
-		tmpGenreCategory = calloc (1, sizeof (*tmpGenreCategory));
+		PianoGenreCategory_t *tmpGenreCategory;
+		ezxml_t genreNode;
+
+		if ((tmpGenreCategory = calloc (1, sizeof (*tmpGenreCategory))) == NULL) {
+			ezxml_free (xmlDoc);
+			return PIANO_RET_OUT_OF_MEMORY;
+		}
+
 		tmpGenreCategory->name = strdup (ezxml_attr (catNode, "categoryName"));
 
 		/* get genre subnodes */
 		for (genreNode = ezxml_child (catNode, "genre"); genreNode;
 				genreNode = genreNode->next) {
-			tmpStation = calloc (1, sizeof (*tmpStation));
+			PianoStation_t *tmpStation;
+
+			if ((tmpStation = calloc (1, sizeof (*tmpStation))) == NULL) {
+				ezxml_free (xmlDoc);
+				return PIANO_RET_OUT_OF_MEMORY;
+			}
+
 			/* get genre attributes */
 			tmpStation->name = strdup (ezxml_attr (genreNode, "name"));
 			tmpStation->id = strdup (ezxml_attr (genreNode, "stationId"));

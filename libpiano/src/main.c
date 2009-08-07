@@ -390,7 +390,10 @@ PianoReturn_t PianoRenameStation (PianoHandle_t *ph, PianoStation_t *station,
 	char *urlencodedNewName, *xmlencodedNewName;
 	PianoReturn_t ret = PIANO_RET_ERR;
 
-	xmlencodedNewName = PianoXmlEncodeString (newName);
+	if ((xmlencodedNewName = PianoXmlEncodeString (newName)) == NULL) {
+		return PIANO_RET_OUT_OF_MEMORY;
+	}
+
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>station.setStationName</methodName>"
 			"<params><param><value><int>%li</int></value></param>"
@@ -479,7 +482,10 @@ PianoReturn_t PianoSearchMusic (PianoHandle_t *ph,
 	char *xmlencodedSearchStr, *urlencodedSearchStr;
 	PianoReturn_t ret;
 
-	xmlencodedSearchStr = PianoXmlEncodeString (searchStr);
+	if ((xmlencodedSearchStr = PianoXmlEncodeString (searchStr)) == NULL) {
+		return PIANO_RET_OUT_OF_MEMORY;
+	}
+
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>music.search</methodName>"
 			"<params><param><value><int>%li</int></value></param>"
@@ -810,7 +816,11 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			break;
 
 		case PIANO_RET_STATION_NONEXISTENT:
-			return "Station does not exist";
+			return "Station does not exist.";
+			break;
+
+		case PIANO_RET_OUT_OF_MEMORY:
+			return "Out of memory.";
 			break;
 
 		default:
