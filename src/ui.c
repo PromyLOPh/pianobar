@@ -28,7 +28,6 @@ THE SOFTWARE.
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <readline/readline.h>
 #include <errno.h>
 
 /* waitpid () */
