@@ -32,7 +32,6 @@ THE SOFTWARE.
 #include "config.h"
 
 #define WARDROBE_HTTP_SEND_SIZE 10*1024
-#define WARDROBE_HTTP_RECV_SIZE 1024
 #define WARDROBE_URL_SIZE 1024
 
 /*	Initialize song structure
@@ -90,7 +89,7 @@ void WardrobeDestroy (WardrobeHandle_t *wh) {
 static WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 	/* md5 hash length + long integer max + NULL */
 	char url[WARDROBE_URL_SIZE], tmp[32+55+1], *tmpDigest, *pwDigest,
-			ret[WARDROBE_HTTP_RECV_SIZE], postUrl[1024];
+			*ret, postUrl[1024];
 	WardrobeReturn_t fRet = WARDROBE_RET_ERR;
 	time_t currTStamp = time (NULL);
 
@@ -104,7 +103,7 @@ static WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 	wh->waith.method = WAITRESS_METHOD_GET;
 	wh->waith.postData = NULL;
 	wh->waith.extraHeaders = NULL;
-	if (WaitressFetchBuf (&wh->waith, ret, sizeof (ret)) != WAITRESS_RET_OK) {
+	if (WaitressFetchBuf (&wh->waith, &ret) != WAITRESS_RET_OK) {
 		return WARDROBE_RET_CONNECT_ERR;
 	}
 
@@ -145,6 +144,7 @@ static WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 
 	WardrobeFree (tmpDigest, WARDROBE_MD5_DIGEST_LEN);
 	WardrobeFree (pwDigest, WARDROBE_MD5_DIGEST_LEN);
+	WardrobeFree (ret, 0);
 
 	return fRet;
 }
@@ -157,7 +157,7 @@ static WardrobeReturn_t WardrobeHandshake (WardrobeHandle_t *wh) {
 static WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
 		const WardrobeSong_t *ws) {
 	char postContent[WARDROBE_HTTP_SEND_SIZE];
-	char *urlencArtist, *urlencTitle, *urlencAlbum, ret[WARDROBE_HTTP_RECV_SIZE];
+	char *urlencArtist, *urlencTitle, *urlencAlbum, *ret;
 	WardrobeReturn_t fRet = WARDROBE_RET_ERR;
 
 	urlencArtist = WaitressUrlEncode (ws->artist);
@@ -173,7 +173,7 @@ static WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
 	wh->waith.method = WAITRESS_METHOD_POST;
 	wh->waith.postData = postContent;
 	wh->waith.extraHeaders = "Content-Type: application/x-www-form-urlencoded\r\n";
-	if (WaitressFetchBuf (&wh->waith, ret, sizeof (ret)) != WAITRESS_RET_OK) {
+	if (WaitressFetchBuf (&wh->waith, &ret) != WAITRESS_RET_OK) {
 		return WARDROBE_RET_CONNECT_ERR;
 	}
 
@@ -186,6 +186,7 @@ static WardrobeReturn_t WardrobeSendSong (WardrobeHandle_t *wh,
 	WardrobeFree (urlencArtist, 0);
 	WardrobeFree (urlencTitle, 0);
 	WardrobeFree (urlencAlbum, 0);
+	WardrobeFree (ret, 0);
 
 	return fRet;
 }

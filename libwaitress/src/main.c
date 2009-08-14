@@ -37,8 +37,7 @@ THE SOFTWARE.
 
 typedef struct {
 	char *buf;
-	char *pos;
-	size_t max;
+	size_t pos;
 } WaitressFetchBufCbBuffer_t;
 
 inline void WaitressInit (WaitressHandle_t *waith) {
@@ -178,40 +177,49 @@ inline void WaitressSetHPP (WaitressHandle_t *waith, const char *host,
  *	@param data size
  *	@param buffer structure
  */
-static char WaitressFetchBufCb (void *recvData, size_t recvDataSize, void *extraData) {
+static char WaitressFetchBufCb (void *recvData, size_t recvDataSize,
+		void *extraData) {
 	char *recvBytes = recvData;
 	WaitressFetchBufCbBuffer_t *buffer = extraData;
 
-	if (buffer->pos - buffer->buf + recvDataSize < buffer->max) {
-		memcpy (buffer->pos, recvBytes, recvDataSize);
-		buffer->pos += recvDataSize;
-		*buffer->pos = '\0';
+	if (buffer->buf == NULL) {
+		if ((buffer->buf = malloc (sizeof (*buffer->buf) *
+				(recvDataSize + 1))) == NULL) {
+			return 0;
+		}
 	} else {
-		printf (PACKAGE ": Buffer overflow!\n");
-		return 0;
+		char *newbuf;
+		if ((newbuf = realloc (buffer->buf,
+				sizeof (*buffer->buf) *
+				(buffer->pos + recvDataSize + 1))) == NULL) {
+			free (buffer->buf);
+			return 0;
+		}
+		buffer->buf = newbuf;
 	}
+	memcpy (buffer->buf + buffer->pos, recvBytes, recvDataSize);
+	buffer->pos += recvDataSize;
+	*(buffer->buf+buffer->pos) = '\0';
 
 	return 1;
 }
 
 /*	Fetch string. Beware! This overwrites your waith->data pointer
  *	@param waitress handle
- *	@param Connect to host
- *	@param Port or service
- *	@param Resource path
- *	@param result buffer
- *	@param result buffer size
+ *	@param result buffer, malloced (don't forget to free it yourself)
  */
-WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char *buf,
-		size_t bufSize) {
+WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char **buf) {
 	WaitressFetchBufCbBuffer_t buffer;
+	WaitressReturn_t wRet;
 
-	buffer.buf = buffer.pos = buf;
-	buffer.max = bufSize;
+	memset (&buffer, 0, sizeof (buffer));
+
 	waith->data = &buffer;
 	waith->callback = WaitressFetchBufCb;
 
-	return WaitressFetchCall (waith);
+	wRet = WaitressFetchCall (waith);
+	*buf = buffer.buf;
+	return wRet;
 }
 
 /*	write () wrapper with poll () timeout

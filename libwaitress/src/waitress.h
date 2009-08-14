@@ -67,7 +67,7 @@ char WaitressSplitUrl (const char *, char *, size_t, char *, size_t, char *,
 inline char WaitressSetUrl (WaitressHandle_t *, const char *);
 inline void WaitressSetHPP (WaitressHandle_t *, const char *, const char *,
 		const char *);
-WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *, char *, size_t);
+WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *, char **);
 WaitressReturn_t WaitressFetchCall (WaitressHandle_t *);
 
 #endif /* _WAITRESS_H */

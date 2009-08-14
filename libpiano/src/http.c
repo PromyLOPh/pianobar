@@ -39,7 +39,7 @@ THE SOFTWARE.
  *	@return _RET_OK or _RET_NET_ERROR
  */
 PianoReturn_t PianoHttpPost (WaitressHandle_t *waith, const char *postData,
-		char *retData, size_t retDataSize) {
+		char **retData) {
 	PianoReturn_t pRet = PIANO_RET_NET_ERROR;
 	char *reqPostData = PianoEncryptString (postData);
 
@@ -51,7 +51,7 @@ PianoReturn_t PianoHttpPost (WaitressHandle_t *waith, const char *postData,
 	waith->postData = reqPostData;
 	waith->method = WAITRESS_METHOD_POST;
 
-	if (WaitressFetchBuf (waith, retData, retDataSize) == WAITRESS_RET_OK) {
+	if (WaitressFetchBuf (waith, retData) == WAITRESS_RET_OK) {
 		pRet = PIANO_RET_OK;
 	}
 
@@ -66,13 +66,12 @@ PianoReturn_t PianoHttpPost (WaitressHandle_t *waith, const char *postData,
  *	@param buffer size
  *	@return _RET_OK or _RET_NET_ERROR
  */
-PianoReturn_t PianoHttpGet (WaitressHandle_t *waith, char *retData,
-		size_t retDataSize) {
+PianoReturn_t PianoHttpGet (WaitressHandle_t *waith, char **retData) {
 	waith->extraHeaders = NULL;
 	waith->postData = NULL;
 	waith->method = WAITRESS_METHOD_GET;
 
-	if (WaitressFetchBuf (waith, retData, retDataSize) == WAITRESS_RET_OK) {
+	if (WaitressFetchBuf (waith, retData) == WAITRESS_RET_OK) {
 		return PIANO_RET_OK;
 	}
 	return PIANO_RET_NET_ERROR;

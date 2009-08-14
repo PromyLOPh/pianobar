@@ -27,7 +27,7 @@ THE SOFTWARE.
 #include <waitress.h>
 #include "piano.h"
 
-PianoReturn_t PianoHttpPost (WaitressHandle_t *, const char *, char *, size_t);
-PianoReturn_t PianoHttpGet (WaitressHandle_t *, char *, size_t);
+PianoReturn_t PianoHttpPost (WaitressHandle_t *, const char *, char **);
+PianoReturn_t PianoHttpGet (WaitressHandle_t *, char **);
 
 #endif /* _HTTP_H */
