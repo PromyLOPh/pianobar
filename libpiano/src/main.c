@@ -868,6 +868,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Out of memory.";
 			break;
 
+		case PIANO_RET_OUT_OF_SYNC:
+			return "Out of sync. Please correct your system's time.";
+			break;
+
 		default:
 			return "No error message available.";
 			break;

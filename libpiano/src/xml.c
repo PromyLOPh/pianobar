@@ -79,6 +79,8 @@ static void PianoXmlIsFaultCb (const char *key, const ezxml_t value,
 					} else if (strcmp ("STATION_DOES_NOT_EXIST",
 							matchStart) == 0) {
 						*ret = PIANO_RET_STATION_NONEXISTENT;
+					} else if (strcmp ("OUT_OF_SYNC", matchStart) == 0) {
+						*ret = PIANO_RET_OUT_OF_SYNC;
 					} else {
 						*ret = PIANO_RET_ERR;
 						printf (PACKAGE ": Unknown error %s in %s\n",
