@@ -16,6 +16,8 @@ ENDIF(NOT CMAKE_HAVE_CONNECT)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 	${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
+
 add_library (waitress STATIC main.c)
 target_link_libraries (waitress ${EXTRA_LIBS})
 

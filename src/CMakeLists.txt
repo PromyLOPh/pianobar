@@ -59,6 +59,7 @@ include_directories (
 	${pianobar_SOURCE_DIR}/libpiano/src
 	${pianobar_SOURCE_DIR}/libwardrobe/src
 	${pianobar_SOURCE_DIR}/libwaitress/src
+	${CMAKE_CURRENT_BINARY_DIR}
 	${FAAD_INCLUDE_DIRS} ${LIBAO_INCLUDE_DIRS}
 	${MAD_INCLUDE_DIRS})
 
