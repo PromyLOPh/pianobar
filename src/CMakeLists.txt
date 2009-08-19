@@ -3,6 +3,11 @@ set (CMAKE_C_FLAGS -Wall)
 set (ENABLE_MAD 0)
 set (ENABLE_FAAD 0)
 
+# This removes a warning on newer versions of cmake
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif(COMMAND cmake_policy)
+
 option (USE_FAAD "Use libfaad for aac decoding (if available)" on)
 option (USE_MAD "Use libmad for mp3 decoding (if available)" on)
 
