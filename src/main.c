@@ -81,6 +81,7 @@ int main (int argc, char **argv) {
 	BarTermSave (&termOrig);
 
 	BarTermSetEcho (0);
+	BarTermSetBuffer (0);
 	/* init some things */
 	ao_initialize ();
 	PianoInit (&ph);
@@ -114,7 +115,6 @@ int main (int argc, char **argv) {
 		BarUiMsg (MSG_QUESTION, "Password: ");
 		BarReadlineStr (passBuf, sizeof (passBuf), 1, stdin);
 		settings.password = strdup (passBuf);
-		BarUiMsg (MSG_NONE, "\n");
 	}
 
 	if (settings.enableScrobbling) {
@@ -129,8 +129,6 @@ int main (int argc, char **argv) {
 				sizeof (ph.waith.proxyHost), ph.waith.proxyPort,
 				sizeof (ph.waith.proxyPort), tmpPath, sizeof (tmpPath));
 	}
-
-	BarTermSetBuffer (0);
 
 	BarUiMsg (MSG_INFO, "Login... ");
 	if (BarUiPrintPianoStatus (PianoConnect (&ph, settings.username,
