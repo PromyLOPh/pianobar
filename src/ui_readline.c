@@ -92,7 +92,8 @@ size_t BarReadline (char *buf, size_t bufSize, const char *mask,
 				break;
 
 			/* backspace */
-			case 127:
+			case 8: /* ASCII BS */
+			case 127: /* ASCII DEL */
 				if (bufPos > 0) {
 					if (BarReadlineIsAscii (buf[bufPos-1])) {
 						BarReadlineMoveLeft (buf, &bufPos, &bufLen);
@@ -115,6 +116,7 @@ size_t BarReadline (char *buf, size_t bufSize, const char *mask,
 						fflush (stdout);
 					}
 				} else if (bufPos == 0 && buf[bufPos] != '\0') {
+					/* delete char at position 0 but don't move cursor any further */
 					buf[bufPos] = '\0';
 					if (!noEcho) {
 						printf ("\033[K");
