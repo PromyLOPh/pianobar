@@ -65,8 +65,8 @@ include_directories (
 
 add_executable (pianobar main.c terminal.c settings.c player.c ui.c ui_act.c
 	ui_readline.c)
-target_link_libraries (pianobar piano wardrobe waitress ${FAAD_LIBRARY}
-	${LIBAO_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${MAD_LIBRARIES} ${LIBM})
+target_link_libraries (pianobar piano wardrobe waitress ${FAAD_LIBRARIES}
+	${LIBAO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${MAD_LIBRARIES} ${LIBM})
 
 install (TARGETS pianobar RUNTIME DESTINATION bin)
 install (FILES pianobar.1 DESTINATION share/man/man1)
