@@ -23,12 +23,16 @@ THE SOFTWARE.
 
 /* everything that interacts with the user */
 
+#define _POSIX_C_SOURCE 1 /* fileno() */
+#define _BSD_SOURCE /* strdup() */
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <strings.h>
 
 /* waitpid () */
 #include <sys/types.h>

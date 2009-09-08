@@ -23,6 +23,8 @@ THE SOFTWARE.
 
 /* application settings */
 
+#define _BSD_SOURCE /* strdup() */
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

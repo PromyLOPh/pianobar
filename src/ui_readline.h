@@ -22,7 +22,7 @@ THE SOFTWARE.
 */
 
 size_t BarReadline (char *, size_t, const char *, char, char, FILE *);
-inline size_t BarReadlineStr (char *, size_t, char, FILE *);
+size_t BarReadlineStr (char *, size_t, char, FILE *);
 size_t BarReadlineInt (int *, FILE *);
 int BarReadlineYesNo (char def, FILE *);
 

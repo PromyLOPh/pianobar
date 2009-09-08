@@ -21,6 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#define _BSD_SOURCE /* required by strdup() */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

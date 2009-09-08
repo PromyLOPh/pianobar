@@ -31,16 +31,16 @@ THE SOFTWARE.
 typedef enum {MSG_NONE, MSG_INFO, MSG_PLAYING, MSG_TIME, MSG_ERR,
 		MSG_QUESTION, MSG_LIST} uiMsg_t;
 
-inline void BarUiMsg (uiMsg_t type, const char *format, ...);
-inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret);
+void BarUiMsg (uiMsg_t type, const char *format, ...);
+PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret);
 PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 		FILE *curFd);
 PianoSong_t *BarUiSelectSong (PianoSong_t *startSong, FILE *curFd);
 PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd);
 char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd, char *);
 void BarStationFromGenre (PianoHandle_t *ph, FILE *curFd);
-inline void BarUiPrintStation (PianoStation_t *);
-inline void BarUiPrintSong (PianoSong_t *, PianoStation_t *);
+void BarUiPrintStation (PianoStation_t *);
+void BarUiPrintSong (PianoSong_t *, PianoStation_t *);
 void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		const PianoStation_t *curStation, const PianoSong_t *curSong,
 		PianoReturn_t);

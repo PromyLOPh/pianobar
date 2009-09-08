@@ -21,6 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#define _POSIX_C_SOURCE 1 /* fileno() */
+#define _BSD_SOURCE /* setlinebuf() */
+
 #include <termios.h>
 #include <stdio.h>
 
@@ -60,14 +63,14 @@ void BarTermSetBuffer (char enable) {
 /*	Save old terminal settings
  *	@param save settings here
  */
-inline void BarTermSave (struct termios *termOrig) {
+void BarTermSave (struct termios *termOrig) {
 	tcgetattr (fileno (stdin), termOrig);
 }
 
 /*	Restore terminal settings
  *	@param Old settings
  */
-inline void BarTermRestore (struct termios *termOrig) {
+void BarTermRestore (struct termios *termOrig) {
 	tcsetattr (fileno (stdin), TCSANOW, termOrig);
 }
 

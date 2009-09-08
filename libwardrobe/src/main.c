@@ -53,7 +53,7 @@ inline void WardrobeInit (WardrobeHandle_t *wh) {
  *	@param pointer
  *	@param size or 0 to disable zeroing
  */
-inline void WardrobeFree (void *ptr, size_t size) {
+void WardrobeFree (void *ptr, size_t size) {
 	if (ptr != NULL) {
 		if (size > 0) {
 			memset (ptr, 0, size);

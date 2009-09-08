@@ -167,7 +167,7 @@ size_t BarReadline (char *buf, size_t bufSize, const char *mask,
  *	@param buffer size
  *	@return number of bytes read from stdin
  */
-inline size_t BarReadlineStr (char *buf, size_t bufSize, char noEcho,
+size_t BarReadlineStr (char *buf, size_t bufSize, char noEcho,
 		FILE *fd) {
 	return BarReadline (buf, bufSize, NULL, 0, noEcho, fd);
 }

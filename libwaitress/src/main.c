@@ -21,6 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#define _POSIX_C_SOURCE 1 /* required by getaddrinfo() */
+#define _BSD_SOURCE /* snprintf() */
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>

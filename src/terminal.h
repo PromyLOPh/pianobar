@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 void BarTermSetEcho (char);
 void BarTermSetBuffer (char);
-inline void BarTermSave (struct termios *);
-inline void BarTermRestore (struct termios *termOrig);
+void BarTermSave (struct termios *);
+void BarTermRestore (struct termios *termOrig);
 
 #endif /* _TERMINAL_H */
