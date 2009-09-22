@@ -2,6 +2,8 @@ set (CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set (CMAKE_C_FLAGS -Wall)
 set (ENABLE_MAD 0)
 set (ENABLE_FAAD 0)
+set (BIN_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/bin CACHE PATH "bin path")
+set (MAN_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/share/man CACHE PATH "man path")
 
 # This removes a warning on newer versions of cmake
 if(COMMAND cmake_policy)
@@ -68,5 +70,5 @@ add_executable (pianobar main.c terminal.c settings.c player.c ui.c ui_act.c
 target_link_libraries (pianobar piano wardrobe waitress ${FAAD_LIBRARIES}
 	${LIBAO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${MAD_LIBRARIES} ${LIBM})
 
-install (TARGETS pianobar RUNTIME DESTINATION bin)
-install (FILES pianobar.1 DESTINATION share/man/man1)
+install (TARGETS pianobar RUNTIME DESTINATION ${BIN_INSTALL_DIR})
+install (FILES pianobar.1 DESTINATION ${MAN_INSTALL_DIR}/man1)
