@@ -261,7 +261,7 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], *retStr;
 	PianoReturn_t ret;
 
-	/* FIXME: remove static numbers */
+	/* FIXME: remove static, "magic" numbers */
 	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 			"<methodCall><methodName>playlist.getFragment</methodName>"
 			"<params><param><value><int>%li</int></value></param>"
@@ -271,11 +271,13 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
 			"<param><value><string></string></value></param>"
 			"<param><value><string></string></value></param>"
 			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>0</string></value></param>"
+			"<param><value><string>0</string></value></param>"
 			"</params></methodCall>", time (NULL), ph->user.authToken,
 			stationId, PianoAudioFormatToString (format));
 	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
 			"rid=%s&lid=%s&method=getFragment&arg1=%s&arg2=0"
-			"&arg3=&arg4=&arg5=%s", ph->routeId,
+			"&arg3=&arg4=&arg5=%s&arg6=0&arg7=0", ph->routeId,
 			ph->user.listenerId, stationId,
 			PianoAudioFormatToString (format));
 
