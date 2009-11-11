@@ -189,7 +189,12 @@ int main (int argc, char **argv) {
 			WardrobeSongDestroy (&scrobbleSong);
 			/* FIXME: pthread_join blocks everything if network connection
 			 * is hung up e.g. */
-			pthread_join (playerThread, NULL);
+			void *threadRet;
+			pthread_join (playerThread, &threadRet);
+			/* don't continue playback if thread reports error */
+			if (threadRet != NULL) {
+				curStation = NULL;
+			}
 			memset (&player, 0, sizeof (player));
 		}
 

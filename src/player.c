@@ -197,8 +197,11 @@ static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 					format.channels = player->channels;
 					format.rate = player->samplerate;
 					format.byte_format = AO_FMT_LITTLE;
-					player->audioOutDevice = ao_open_live (audioOutDriver,
-							&format, NULL);
+					if ((player->audioOutDevice = ao_open_live (audioOutDriver,
+							&format, NULL)) == NULL) {
+						BarUiMsg (MSG_ERR, "Cannot open audio device\n");
+						return 0;
+					}
 					player->mode = PLAYER_AUDIO_INITIALIZED;
 					break;
 				}
@@ -351,8 +354,11 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 			format.channels = player->channels;
 			format.rate = player->samplerate;
 			format.byte_format = AO_FMT_LITTLE;
-			player->audioOutDevice = ao_open_live (audioOutDriver,
-					&format, NULL);
+			if ((player->audioOutDevice = ao_open_live (audioOutDriver,
+					&format, NULL)) == NULL) {
+				BarUiMsg (MSG_ERR, "Cannot open audio device\n");
+				return 0;
+			}
 
 			/* calc song length using the framerate of the first decoded frame */
 			player->songDuration = (float) player->waith.contentLength /
@@ -394,6 +400,7 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 void *BarPlayerThread (void *data) {
 	struct audioPlayer *player = data;
 	char extraHeaders[25];
+	void *ret = NULL;
 	#ifdef ENABLE_FAAD
 	NeAACDecConfigurationPtr conf;
 	#endif
@@ -468,6 +475,9 @@ void *BarPlayerThread (void *data) {
 			/* this should never happen: thread is aborted above */
 			break;
 	}
+	if (player->audioOutDevice == NULL && wRet == WAITRESS_RET_CB_ABORT) {
+		ret = (void *) 0x1;
+	}
 	ao_close(player->audioOutDevice);
 	WaitressFree (&player->waith);
 	#ifdef ENABLE_FAAD
@@ -479,5 +489,7 @@ void *BarPlayerThread (void *data) {
 
 	player->mode = PLAYER_FINISHED_PLAYBACK;
 
-	return NULL;
+	/* return NULL == everything's fine, everything else: hard error, stop
+	 * playback */
+	return ret;
 }
