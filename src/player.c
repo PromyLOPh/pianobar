@@ -150,9 +150,10 @@ static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 			ao_play (player->audioOutDevice, (char *) aacDecoded,
 					frameInfo.samples * 2);
 			/* add played frame length to played time, explained below */
-			player->songPlayed += (float) frameInfo.samples *
-					(float) BAR_PLAYER_MS_TO_S_FACTOR /
-					(float) player->samplerate / (float) player->channels;
+			player->songPlayed += (unsigned long long int) frameInfo.samples *
+					(unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR /
+					(unsigned long long int) player->samplerate /
+					(unsigned long long int) player->channels;
 			player->bufferRead += frameInfo.bytesconsumed;
 			player->sampleSizeCurr++;
 			/* going through this loop can take up to a few seconds =>
@@ -235,15 +236,14 @@ static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 					player->bufferRead += 4;
 					player->sampleSizeCurr = 0;
 					/* set up song duration (assuming one frame always contains
-					 * the same number of samples); numbers are too huge => use
-					 * float
+					 * the same number of samples)
 					 * calculation: channels * number of frames * samples per
 					 * frame / samplerate */
 					/* FIXME: Hard-coded number of samples per frame */
-					player->songDuration = (float) player->sampleSizeN *
-							4096.0 * (float) BAR_PLAYER_MS_TO_S_FACTOR /
-							(float) player->samplerate /
-							(float) player->channels;
+					player->songDuration = (unsigned long long int) player->sampleSizeN *
+							4096LL * (unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR /
+							(unsigned long long int) player->samplerate /
+							(unsigned long long int) player->channels;
 					break;
 				} else {
 					player->sampleSize[player->sampleSizeCurr] =
@@ -361,9 +361,9 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 			}
 
 			/* calc song length using the framerate of the first decoded frame */
-			player->songDuration = (float) player->waith.contentLength /
-					((float) player->mp3Frame.header.bitrate /
-					(float) BAR_PLAYER_MS_TO_S_FACTOR / 8.0);
+			player->songDuration = (unsigned long long int) player->waith.contentLength /
+					((unsigned long long int) player->mp3Frame.header.bitrate /
+					(unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR / 8LL);
 
 			/* must be > PLAYER_SAMPLESIZE_INITIALIZED, otherwise time won't
 			 * be visible to user (ugly, but mp3 decoding != aac decoding) */
@@ -377,9 +377,9 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 		if (player->mode == PLAYER_RECV_DATA) {
 			/* same calculation as in aac player; don't need to divide by
 			 * channels, length is number of samples for _one_ channel */
-			player->songPlayed += (float) player->mp3Synth.pcm.length *
-					(float) BAR_PLAYER_MS_TO_S_FACTOR /
-					(float) player->samplerate;
+			player->songPlayed += (unsigned long long int) player->mp3Synth.pcm.length *
+					(unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR /
+					(unsigned long long int) player->samplerate;
 		}
 
 		QUIT_PAUSE_CHECK;
