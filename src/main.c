@@ -231,30 +231,35 @@ int main (int argc, char **argv) {
 					BarUiPrintSong (curSong, curStation->isQuickMix ?
 							PianoFindStationById (ph.stations,
 							curSong->stationId) : NULL);
-					/* setup artist and song name for scrobbling (curSong
-					 * may be NULL later) */
-					WardrobeSongInit (&scrobbleSong);
-					scrobbleSong.artist = strdup (curSong->artist);
-					scrobbleSong.title = strdup (curSong->title);
-					scrobbleSong.album = strdup (curSong->album);
-					scrobbleSong.started = time (NULL);
 
-					/* setup player */
-					memset (&player, 0, sizeof (player));
+					if (curSong->audioUrl == NULL) {
+						BarUiMsg (MSG_ERR, "Invalid song url\n");
+					} else {
+						/* setup artist and song name for scrobbling (curSong
+						 * may be NULL later) */
+						WardrobeSongInit (&scrobbleSong);
+						scrobbleSong.artist = strdup (curSong->artist);
+						scrobbleSong.title = strdup (curSong->title);
+						scrobbleSong.album = strdup (curSong->album);
+						scrobbleSong.started = time (NULL);
 
-					WaitressInit (&player.waith);
-					WaitressSetUrl (&player.waith, curSong->audioUrl);
+						/* setup player */
+						memset (&player, 0, sizeof (player));
 
-					player.gain = curSong->fileGain;
-					player.audioFormat = curSong->audioFormat;
-		
-					/* throw event */
-					BarUiStartEventCmd (&settings, "songstart", curStation,
-							curSong, PIANO_RET_OK);
+						WaitressInit (&player.waith);
+						WaitressSetUrl (&player.waith, curSong->audioUrl);
 
-					/* start player */
-					pthread_create (&playerThread, NULL, BarPlayerThread,
-							&player);
+						player.gain = curSong->fileGain;
+						player.audioFormat = curSong->audioFormat;
+
+						/* throw event */
+						BarUiStartEventCmd (&settings, "songstart", curStation,
+								curSong, PIANO_RET_OK);
+
+						/* start player */
+						pthread_create (&playerThread, NULL, BarPlayerThread,
+								&player);
+					}
 				}
 			} /* end if curStation != NULL */
 		}
