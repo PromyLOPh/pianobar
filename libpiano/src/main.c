@@ -133,10 +133,10 @@ void PianoDestroyStations (PianoStation_t *stations) {
  *	@param piano handle
  *	@return nothing
  */
-void PianoDestroyPlaylist (PianoHandle_t *ph) {
+void PianoDestroyPlaylist (PianoSong_t *playlist) {
 	PianoSong_t *curSong, *lastSong;
 
-	curSong = ph->playlist;
+	curSong = playlist;
 	while (curSong != NULL) {
 		PianoFree (curSong->audioUrl, 0);
 		PianoFree (curSong->artist, 0);
@@ -152,7 +152,6 @@ void PianoDestroyPlaylist (PianoHandle_t *ph) {
 		curSong = curSong->next;
 		PianoFree (lastSong, sizeof (*lastSong));
 	}
-	ph->playlist = NULL;
 }
 
 /*	frees the whole piano handle structure
@@ -176,7 +175,6 @@ void PianoDestroy (PianoHandle_t *ph) {
 		curGenreCat = curGenreCat->next;
 		PianoFree (lastGenreCat, sizeof (*lastGenreCat));
 	}
-	PianoDestroyPlaylist (ph);
 	memset (ph, 0, sizeof (*ph));
 }
 
@@ -255,9 +253,11 @@ PianoReturn_t PianoGetStations (PianoHandle_t *ph) {
 /*	get next songs for station (usually four tracks)
  *	@param piano handle
  *	@param station id
+ *	@param audio format
+ *	@param return value: playlist
  */
 PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
-		PianoAudioFormat_t format) {
+		PianoAudioFormat_t format, PianoSong_t **retPlaylist) {
 	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], *retStr;
 	PianoReturn_t ret;
 
@@ -283,7 +283,7 @@ PianoReturn_t PianoGetPlaylist (PianoHandle_t *ph, const char *stationId,
 
 	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, &retStr)) ==
 			PIANO_RET_OK) {
-		ret = PianoXmlParsePlaylist (ph, retStr);
+		ret = PianoXmlParsePlaylist (ph, retStr, retPlaylist);
 		PianoFree (retStr, 0);
 	}
 

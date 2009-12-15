@@ -28,7 +28,8 @@ THE SOFTWARE.
 
 PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, const char *xml);
 PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml);
-PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, const char *xml);
+PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, const char *xml,
+		PianoSong_t **);
 PianoReturn_t PianoXmlParseSearch (const char *searchXml,
 		PianoSearchResult_t *searchResult);
 PianoReturn_t PianoXmlParseSimple (const char *xml);

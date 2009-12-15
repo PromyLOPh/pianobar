@@ -90,7 +90,6 @@ typedef struct PianoHandle {
 	PianoUserInfo_t user;
 	/* linked lists */
 	PianoStation_t *stations;
-	PianoSong_t *playlist;
 	PianoGenreCategory_t *genreStations;
 } PianoHandle_t;
 
@@ -109,13 +108,13 @@ typedef enum {PIANO_RET_OK, PIANO_RET_ERR, PIANO_RET_XML_INVALID,
 
 void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
-void PianoDestroyPlaylist (PianoHandle_t *);
+void PianoDestroyPlaylist (PianoSong_t *);
 void PianoDestroySearchResult (PianoSearchResult_t *);
 PianoReturn_t PianoConnect (PianoHandle_t *, const char *, const char *);
 
 PianoReturn_t PianoGetStations (PianoHandle_t *);
 PianoReturn_t PianoGetPlaylist (PianoHandle_t *, const char *,
-		PianoAudioFormat_t);
+		PianoAudioFormat_t, PianoSong_t **);
 
 PianoReturn_t PianoRateTrack (PianoHandle_t *, PianoSong_t *,
 		PianoSongRating_t);

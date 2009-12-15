@@ -163,7 +163,7 @@ void BarUiActDeleteStation (BAR_KS_ARGS) {
 		if ((pRet = BarUiPrintPianoStatus (PianoDeleteStation (ph,
 				*curStation))) == PIANO_RET_OK) {
 			BarUiDoSkipSong (player);
-			PianoDestroyPlaylist (ph);
+			PianoDestroyPlaylist (*curSong);
 			*curSong = NULL;
 			*curStation = NULL;
 		}
@@ -315,7 +315,7 @@ void BarUiActRenameStation (BAR_KS_ARGS) {
  */
 void BarUiActSelectStation (BAR_KS_ARGS) {
 	BarUiDoSkipSong (player);
-	PianoDestroyPlaylist (ph);
+	PianoDestroyPlaylist (*curSong);
 	*curSong = NULL;
 	*curStation = BarUiSelectStation (ph, "Select station: ", curFd);
 	if (*curStation != NULL) {
@@ -385,4 +385,61 @@ void BarUiActSelectQuickMix (BAR_KS_ARGS) {
 void BarUiActQuit (BAR_KS_ARGS) {
 	*doQuit = 1;
 	BarUiDoSkipSong (player);
+}
+
+/*	song history
+ */
+void BarUiActHistory (BAR_KS_ARGS) {
+	char selectBuf[2];
+	PianoSong_t *selectedSong;
+
+	if (*songHistory != NULL) {
+		selectedSong = BarUiSelectSong (*songHistory, curFd);
+		if (selectedSong != NULL) {
+			BarUiMsg (MSG_QUESTION, "%s - %s: [l]ove or [b]an? ",
+					selectedSong->artist, selectedSong->title);
+			BarReadline (selectBuf, sizeof (selectBuf), "lbs", 1, 0, curFd);
+			if (selectBuf[0] == 'l' || selectBuf[0] == 'b') {
+				PianoReturn_t pRet = PIANO_RET_ERR;
+				/* make sure we're transforming the _original_ station (not
+				 * curStation) */
+				PianoStation_t *songStation =
+						PianoFindStationById (ph->stations,
+								selectedSong->stationId);
+
+				if (songStation == NULL) {
+					BarUiMsg (MSG_ERR, "Station does not exist any more.\n");
+					return;
+				}
+
+				if (!BarTransformIfShared (ph, songStation)) {
+					return;
+				}
+
+				switch (selectBuf[0]) {
+					case 'l':
+						/* love */
+						/* FIXME: copy&waste */
+						BarUiMsg (MSG_INFO, "Loving song... ");
+						pRet = BarUiPrintPianoStatus (PianoRateTrack (ph,
+								selectedSong, PIANO_RATE_LOVE));
+						BarUiStartEventCmd (settings, "songlove", songStation,
+								selectedSong, pRet);
+						break;
+					
+					case 'b':
+						/* ban */
+						BarUiMsg (MSG_INFO, "Banning song... ");
+						pRet = BarUiPrintPianoStatus (PianoRateTrack (ph,
+								selectedSong, PIANO_RATE_BAN));
+						BarUiStartEventCmd (settings, "songban", songStation,
+								selectedSong, pRet);
+						break;
+				} /* end switch */
+			} /* end if selectBuf[0] */
+		} /* end if selectedSong != NULL */
+	} else {
+		BarUiMsg (MSG_INFO, (settings->history == 0) ? "History disabled.\n" :
+				"No history yet.\n");
+	}
 }

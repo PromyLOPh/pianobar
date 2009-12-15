@@ -30,7 +30,8 @@ THE SOFTWARE.
 
 #define BAR_KS_ARGS PianoHandle_t *ph, struct audioPlayer *player, \
 		struct BarSettings *settings, PianoSong_t **curSong, \
-		PianoStation_t **curStation, char *doQuit, FILE *curFd
+		PianoStation_t **curStation, PianoSong_t **songHistory, char *doQuit, \
+		FILE *curFd
 
 struct BarSettings {
 	char *username;
@@ -50,6 +51,7 @@ struct BarSettings {
 	PianoAudioFormat_t audioFormat;
 	char *autostartStation;
 	char *eventCmd;
+	unsigned int history;
 };
 
 typedef struct BarSettings BarSettings_t;

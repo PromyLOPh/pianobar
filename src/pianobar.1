@@ -63,6 +63,10 @@ Explain why this song is played.
 Add genre station provided by pandora.
 
 .TP
+.B act_history = h
+Show history.
+
+.TP
 .B act_songinfo = i
 Print information about currently played song/station.
 
@@ -131,6 +135,10 @@ will use this proxy. The music is streamed directly.
 .B event_command = path
 File that is executed when event occurs. The file is called with the event type
 as it's first argument. More information is supplied through stdin.
+
+.TP
+.B history = 5
+Keep a history of the last n songs (5, by default). You can rate these songs.
 
 .TP
 .B lastfm_user = your_username

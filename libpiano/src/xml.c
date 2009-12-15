@@ -484,8 +484,10 @@ PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
 /*	parses playlist; used when searching too
  *	@param piano handle
  *	@param xml document
+ *	@param return: playlist
  */
-PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
+PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml,
+		PianoSong_t **retPlaylist) {
 	ezxml_t xmlDoc, dataNode;
 	PianoReturn_t ret;
 
@@ -508,10 +510,10 @@ PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml) {
 		PianoXmlStructParser (ezxml_child (dataNode, "struct"),
 				PianoXmlParsePlaylistCb, tmpSong);
 		/* begin linked list or append */
-		if (ph->playlist == NULL) {
-			ph->playlist = tmpSong;
+		if (*retPlaylist == NULL) {
+			*retPlaylist = tmpSong;
 		} else {
-			PianoSong_t *curSong = ph->playlist;
+			PianoSong_t *curSong = *retPlaylist;
 			while (curSong->next != NULL) {
 				curSong = curSong->next;
 			}

@@ -149,6 +149,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 				"act_songexplain", NULL},
 			{'g', BarUiActStationFromGenre, "add genre station",
 				"act_stationaddbygenre", NULL},
+			{'h', BarUiActHistory, "song history",
+				"act_history", NULL},
 			{'i', BarUiActSongInfo,
 				"print information about current song/station",
 				"act_songinfo", NULL},
@@ -181,6 +183,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 		settings->audioFormat = PIANO_AF_MP3;
 		#endif
 	#endif
+	settings->history = 5;
 
 	BarGetXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
 	if ((configfd = fopen (configfile, "r")) == NULL) {
@@ -192,6 +195,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 		return;
 	}
 
+	/* read config file */
 	while (!feof (configfd)) {
 		memset (val, 0, sizeof (*val));
 		memset (key, 0, sizeof (*key));
@@ -233,6 +237,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->autostartStation = strdup (val);
 		} else if (strcmp ("event_command", key) == 0) {
 			settings->eventCmd = strdup (val);
+		} else if (strcmp ("history", key) == 0) {
+			settings->history = atoi (val);
 		}
 	}
 

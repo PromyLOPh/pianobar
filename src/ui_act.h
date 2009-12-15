@@ -46,5 +46,6 @@ void BarUiActPrintUpcoming (BAR_KS_ARGS);
 void BarUiActSelectQuickMix (BAR_KS_ARGS);
 void BarUiActQuit (BAR_KS_ARGS);
 void BarUiActDebug (BAR_KS_ARGS);
+void BarUiActHistory (BAR_KS_ARGS);
 
 #endif /* _UI_ACT_H */

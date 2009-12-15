@@ -62,8 +62,9 @@ int main (int argc, char **argv) {
 	BarSettings_t settings;
 	pthread_t playerThread;
 	WardrobeHandle_t wh;
-	/* currently playing */
-	PianoSong_t *curSong = NULL;
+	/* playlist; first item is current song */
+	PianoSong_t *playlist = NULL;
+	PianoSong_t *songHistory = NULL;
 	PianoStation_t *curStation = NULL;
 	WardrobeSong_t scrobbleSong;
 	char doQuit = 0;
@@ -204,53 +205,79 @@ int main (int argc, char **argv) {
 				player.mode == PLAYER_FREED) {
 			if (curStation != NULL) {
 				/* what's next? */
-				if (curSong != NULL) {
-					curSong = curSong->next;
+				if (playlist != NULL) {
+					if (settings.history != 0) {
+						/* prepend song to history list */
+						PianoSong_t *tmpSong = songHistory;
+						songHistory = playlist;
+						/* select next song */
+						playlist = playlist->next;
+						songHistory->next = tmpSong;
+
+						/* limit history's length */
+						/* start with 1, so we're stopping at n-1 and have the
+						 * chance to set ->next = NULL */
+						unsigned int i = 1;
+						tmpSong = songHistory;
+						while (i < settings.history && tmpSong != NULL) {
+							tmpSong = tmpSong->next;
+							++i;
+						}
+						/* if too many songs in history... */
+						if (tmpSong != NULL) {
+							PianoSong_t *delSong = tmpSong->next;
+							tmpSong->next = NULL;
+							if (delSong != NULL) {
+								PianoDestroyPlaylist (delSong);
+							}
+						}
+					} else {
+						/* don't keep history */
+						playlist = playlist->next;
+					}
 				}
-				if (curSong == NULL) {
+				if (playlist == NULL) {
 					PianoReturn_t pRet = PIANO_RET_ERR;
 
 					BarUiMsg (MSG_INFO, "Receiving new playlist... ");
-					PianoDestroyPlaylist (&ph);
 					if ((pRet = BarUiPrintPianoStatus (PianoGetPlaylist (&ph,
-							curStation->id, settings.audioFormat))) !=
-							PIANO_RET_OK) {
+							curStation->id, settings.audioFormat,
+							&playlist))) != PIANO_RET_OK) {
 						curStation = NULL;
 					} else {
-						curSong = ph.playlist;
-						if (curSong == NULL) {
+						if (playlist == NULL) {
 							BarUiMsg (MSG_INFO, "No tracks left.\n");
 							curStation = NULL;
 						}
 					}
 					BarUiStartEventCmd (&settings, "stationfetchplaylist",
-							curStation, curSong, pRet);
+							curStation, playlist, pRet);
 				}
 				/* song ready to play */
-				if (curSong != NULL) {
-					BarUiPrintSong (curSong, curStation->isQuickMix ?
+				if (playlist != NULL) {
+					BarUiPrintSong (playlist, curStation->isQuickMix ?
 							PianoFindStationById (ph.stations,
-							curSong->stationId) : NULL);
-					/* setup artist and song name for scrobbling (curSong
+							playlist->stationId) : NULL);
+					/* setup artist and song name for scrobbling (playlist
 					 * may be NULL later) */
 					WardrobeSongInit (&scrobbleSong);
-					scrobbleSong.artist = strdup (curSong->artist);
-					scrobbleSong.title = strdup (curSong->title);
-					scrobbleSong.album = strdup (curSong->album);
+					scrobbleSong.artist = strdup (playlist->artist);
+					scrobbleSong.title = strdup (playlist->title);
+					scrobbleSong.album = strdup (playlist->album);
 					scrobbleSong.started = time (NULL);
 
 					/* setup player */
 					memset (&player, 0, sizeof (player));
 
 					WaitressInit (&player.waith);
-					WaitressSetUrl (&player.waith, curSong->audioUrl);
+					WaitressSetUrl (&player.waith, playlist->audioUrl);
 
-					player.gain = curSong->fileGain;
-					player.audioFormat = curSong->audioFormat;
+					player.gain = playlist->fileGain;
+					player.audioFormat = playlist->audioFormat;
 		
 					/* throw event */
 					BarUiStartEventCmd (&settings, "songstart", curStation,
-							curSong, PIANO_RET_OK);
+							playlist, PIANO_RET_OK);
 
 					/* start player */
 					pthread_create (&playerThread, NULL, BarPlayerThread,
@@ -274,8 +301,8 @@ int main (int argc, char **argv) {
 
 			while (curShortcut != NULL) {
 				if (curShortcut->key == buf) {
-					curShortcut->cmd (&ph, &player, &settings, &curSong,
-							&curStation, &doQuit, curFd);
+					curShortcut->cmd (&ph, &player, &settings, &playlist,
+							&curStation, &songHistory, &doQuit, curFd);
 					break;
 				}
 				curShortcut = curShortcut->next;
@@ -310,6 +337,8 @@ int main (int argc, char **argv) {
 		fclose (ctlFd);
 	}
 	PianoDestroy (&ph);
+	PianoDestroyPlaylist (songHistory);
+	PianoDestroyPlaylist (playlist);
 	WardrobeDestroy (&wh);
 	ao_shutdown();
 	BarSettingsDestroy (&settings);
