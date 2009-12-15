@@ -49,7 +49,6 @@ THE SOFTWARE.
 
 #include "player.h"
 #include "settings.h"
-#include "main.h"
 #include "terminal.h"
 #include "config.h"
 #include "ui.h"

@@ -18,6 +18,6 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
-add_library (waitress STATIC main.c)
+add_library (waitress STATIC waitress.c)
 target_link_libraries (waitress ${EXTRA_LIBS})
 

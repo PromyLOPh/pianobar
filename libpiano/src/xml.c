@@ -31,7 +31,7 @@ THE SOFTWARE.
 #include "piano.h"
 #include "crypt.h"
 #include "config.h"
-#include "main.h"
+#include "piano_private.h"
 
 static void PianoXmlStructParser (const ezxml_t,
 		void (*callback) (const char *, const ezxml_t, void *), void *);

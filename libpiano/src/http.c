@@ -27,7 +27,7 @@ THE SOFTWARE.
 
 #include <waitress.h>
 
-#include "main.h"
+#include "piano_private.h"
 #include "crypt.h"
 #include "http.h"
 

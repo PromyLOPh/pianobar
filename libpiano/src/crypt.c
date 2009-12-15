@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 #include "crypt_key_output.h"
 #include "crypt_key_input.h"
-#include "main.h"
+#include "piano_private.h"
 
 #define byteswap32(x) ((((x) >> 24) & 0x000000ff) | \
 		(((x) >> 8) & 0x0000ff00) | \

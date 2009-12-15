@@ -6,5 +6,5 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/../../libwaitress/src
   ${CMAKE_CURRENT_BINARY_DIR} )
 
-add_library (wardrobe STATIC main.c md5.c)
+add_library (wardrobe STATIC wardrobe.c md5.c)
 target_link_libraries (wardrobe waitress)

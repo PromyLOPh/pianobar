@@ -28,7 +28,7 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <time.h>
 
-#include "main.h"
+#include "piano_private.h"
 #include "piano.h"
 #include "http.h"
 #include "xml.h"
