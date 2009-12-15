@@ -240,7 +240,10 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		char *urlTail = NULL,
 				*urlTailCrypted = &valueStr[valueStrN - urlTailN];
 
-		if ((urlTail = PianoDecryptString (urlTailCrypted)) != NULL) {
+		/* don't try to decrypt if string is too short (=> invalid memory
+		 * reads/writes) */
+		if (valueStrN > urlTailN &&
+				(urlTail = PianoDecryptString (urlTailCrypted)) != NULL) {
 			if ((song->audioUrl = calloc (valueStrN + 1,
 					sizeof (*song->audioUrl))) != NULL) {
 				memcpy (song->audioUrl, valueStr, valueStrN - urlTailN);

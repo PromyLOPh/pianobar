@@ -258,31 +258,36 @@ int main (int argc, char **argv) {
 					BarUiPrintSong (playlist, curStation->isQuickMix ?
 							PianoFindStationById (ph.stations,
 							playlist->stationId) : NULL);
-					/* setup artist and song name for scrobbling (playlist
-					 * may be NULL later) */
-					WardrobeSongInit (&scrobbleSong);
-					scrobbleSong.artist = strdup (playlist->artist);
-					scrobbleSong.title = strdup (playlist->title);
-					scrobbleSong.album = strdup (playlist->album);
-					scrobbleSong.started = time (NULL);
 
-					/* setup player */
-					memset (&player, 0, sizeof (player));
+					if (playlist->audioUrl == NULL) {
+						BarUiMsg (MSG_ERR, "Invalid song url.\n");
+					} else {
+						/* setup artist and song name for scrobbling (playlist
+						 * may be NULL later) */
+						WardrobeSongInit (&scrobbleSong);
+						scrobbleSong.artist = strdup (playlist->artist);
+						scrobbleSong.title = strdup (playlist->title);
+						scrobbleSong.album = strdup (playlist->album);
+						scrobbleSong.started = time (NULL);
 
-					WaitressInit (&player.waith);
-					WaitressSetUrl (&player.waith, playlist->audioUrl);
+						/* setup player */
+						memset (&player, 0, sizeof (player));
 
-					player.gain = playlist->fileGain;
-					player.audioFormat = playlist->audioFormat;
-		
-					/* throw event */
-					BarUiStartEventCmd (&settings, "songstart", curStation,
-							playlist, PIANO_RET_OK);
+						WaitressInit (&player.waith);
+						WaitressSetUrl (&player.waith, playlist->audioUrl);
 
-					/* start player */
-					pthread_create (&playerThread, NULL, BarPlayerThread,
-							&player);
-				}
+						player.gain = playlist->fileGain;
+						player.audioFormat = playlist->audioFormat;
+			
+						/* throw event */
+						BarUiStartEventCmd (&settings, "songstart", curStation,
+								playlist, PIANO_RET_OK);
+
+						/* start player */
+						pthread_create (&playerThread, NULL, BarPlayerThread,
+								&player);
+					} /* end if audioUrl == NULL */
+				} /* end if playlist != NULL */
 			} /* end if curStation != NULL */
 		}
 

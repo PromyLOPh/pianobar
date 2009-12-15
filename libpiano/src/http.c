@@ -51,7 +51,8 @@ PianoReturn_t PianoHttpPost (WaitressHandle_t *waith, const char *postData,
 	waith->postData = reqPostData;
 	waith->method = WAITRESS_METHOD_POST;
 
-	if (WaitressFetchBuf (waith, retData) == WAITRESS_RET_OK) {
+	if (WaitressFetchBuf (waith, retData) == WAITRESS_RET_OK &&
+			*retData != NULL) {
 		pRet = PIANO_RET_OK;
 	}
 
@@ -71,7 +72,8 @@ PianoReturn_t PianoHttpGet (WaitressHandle_t *waith, char **retData) {
 	waith->postData = NULL;
 	waith->method = WAITRESS_METHOD_GET;
 
-	if (WaitressFetchBuf (waith, retData) == WAITRESS_RET_OK) {
+	if (WaitressFetchBuf (waith, retData) == WAITRESS_RET_OK &&
+			*retData != NULL) {
 		return PIANO_RET_OK;
 	}
 	return PIANO_RET_NET_ERROR;
