@@ -372,7 +372,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	WRITE_RET (writeBuf, strlen (writeBuf));
 
 	if (waith->method == WAITRESS_METHOD_POST && waith->postData != NULL) {
-		snprintf (writeBuf, sizeof (writeBuf), "Content-Length: %u\r\n",
+		snprintf (writeBuf, sizeof (writeBuf), "Content-Length: %zu\r\n",
 				strlen (waith->postData));
 		WRITE_RET (writeBuf, strlen (writeBuf));
 	}
