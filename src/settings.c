@@ -196,10 +196,11 @@ void BarSettingsRead (BarSettings_t *settings) {
 	}
 
 	/* read config file */
-	while (!feof (configfd)) {
-		memset (val, 0, sizeof (*val));
-		memset (key, 0, sizeof (*key));
-		if (fscanf (configfd, "%255s = %255[^\n]", key, val) < 2) {
+	while (1) {
+		int scanRet = fscanf (configfd, "%255s = %255[^\n]", key, val);
+		if (scanRet == EOF) {
+			break;
+		} else if (scanRet != 2) {
 			/* invalid config line */
 			continue;
 		}
