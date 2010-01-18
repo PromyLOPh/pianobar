@@ -67,15 +67,36 @@ static int BarTransformIfShared (PianoHandle_t *ph, PianoStation_t *station) {
 /*	print current shortcut configuration
  */
 void BarUiActHelp (BAR_KS_ARGS) {
-	BarKeyShortcut_t *curShortcut = settings->keys;
+	const char *idToDesc[] = {
+			NULL,
+			"love current song",
+			"ban current song",
+			"add music to current station",
+			"create new station",
+			"delete current station",
+			"explain why this song is played",
+			"add genre station",
+			"song history",
+			"print information about current song/station",
+			"add shared station",
+			"move song to different station",
+			"next song",
+			"pause/continue",
+			"quit",
+			"rename current station",
+			"change station",
+			"tired (ban song for 1 month)",
+			"upcoming songs",
+			"select quickmix stations",
+			NULL,
+			};
+	size_t i;
 
 	BarUiMsg (MSG_NONE, "\r");
-	while (curShortcut != NULL) {
-		if (curShortcut->description != NULL) {
-			BarUiMsg (MSG_LIST, "%c    %s\n", curShortcut->key,
-					curShortcut->description);
+	for (i = 0; i < BAR_KS_COUNT; i++) {
+		if (idToDesc[i] != NULL) {
+			BarUiMsg (MSG_LIST, "%c    %s\n", settings->keys[i], idToDesc[i]);
 		}
-		curShortcut = curShortcut->next;
 	}
 }
 

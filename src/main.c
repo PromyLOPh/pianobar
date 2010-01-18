@@ -52,6 +52,7 @@ THE SOFTWARE.
 #include "terminal.h"
 #include "config.h"
 #include "ui.h"
+#include "ui_act.h"
 #include "ui_readline.h"
 
 int main (int argc, char **argv) {
@@ -74,7 +75,6 @@ int main (int argc, char **argv) {
 	struct pollfd polls[2];
 	nfds_t pollsLen = 0;
 	char buf = '\0';
-	BarKeyShortcut_t *curShortcut = NULL;
 	/* terminal attributes _before_ we started messing around with ~ECHO */
 	struct termios termOrig;
 
@@ -301,15 +301,25 @@ int main (int argc, char **argv) {
 				curFd = ctlFd;
 			}
 			buf = fgetc (curFd);
-			curShortcut = settings.keys;
 
-			while (curShortcut != NULL) {
-				if (curShortcut->key == buf) {
-					curShortcut->cmd (&ph, &player, &settings, &playlist,
+			size_t i;
+			for (i = 0; i < BAR_KS_COUNT; i++) {
+				if (settings.keys[i] == buf) {
+					BarKeyShortcutFunc_t idToF[] = {BarUiActHelp,
+							BarUiActLoveSong, BarUiActBanSong,
+							BarUiActAddMusic, BarUiActCreateStation,
+							BarUiActDeleteStation, BarUiActExplain,
+							BarUiActStationFromGenre, BarUiActHistory,
+							BarUiActSongInfo, BarUiActAddSharedStation,
+							BarUiActMoveSong, BarUiActSkipSong, BarUiActPause,
+							BarUiActQuit, BarUiActRenameStation,
+							BarUiActSelectStation, BarUiActTempBanSong,
+							BarUiActPrintUpcoming, BarUiActSelectQuickMix,
+							BarUiActDebug};
+					idToF[i] (&ph, &player, &settings, &playlist,
 							&curStation, &songHistory, &doQuit, curFd);
 					break;
 				}
-				curShortcut = curShortcut->next;
 			}
 		}
 

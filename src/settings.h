@@ -29,11 +29,39 @@ THE SOFTWARE.
 #include "player.h"
 
 #define BAR_KS_ARGS PianoHandle_t *ph, struct audioPlayer *player, \
-		struct BarSettings *settings, PianoSong_t **curSong, \
+		BarSettings_t *settings, PianoSong_t **curSong, \
 		PianoStation_t **curStation, PianoSong_t **songHistory, char *doQuit, \
 		FILE *curFd
 
-struct BarSettings {
+/* keep in mind that you have to update several arrays in main.c/ui_act.c too,
+ * if you're adding new shortcuts */
+typedef enum {
+	BAR_KS_HELP = 0,
+	BAR_KS_LOVE = 1,
+	BAR_KS_BAN = 2,
+	BAR_KS_ADDMUSIC = 3,
+	BAR_KS_CREATESTATION = 4,
+	BAR_KS_DELETESTATION = 5,
+	BAR_KS_EXPLAIN = 6,
+	BAR_KS_GENRESTATION = 7,
+	BAR_KS_HISTORY = 8,
+	BAR_KS_INFO = 9,
+	BAR_KS_ADDSHARED = 10,
+	BAR_KS_MOVESONG = 11,
+	BAR_KS_SKIP = 12,
+	BAR_KS_PLAYPAUSE = 13,
+	BAR_KS_QUIT = 14,
+	BAR_KS_RENAMESTATION = 15,
+	BAR_KS_SELECTSTATION = 16,
+	BAR_KS_TIRED = 17,
+	BAR_KS_UPCOMING = 18,
+	BAR_KS_SELECTQUICKMIX = 19,
+	BAR_KS_DEBUG = 20,
+	/* insert new shortcuts _before_ this element and increase its value */
+	BAR_KS_COUNT = 21,
+} BarKeyShortcutId_t;
+
+typedef struct {
 	char *username;
 	char *password;
 	char *controlProxy; /* non-american listeners need this */
@@ -41,28 +69,18 @@ struct BarSettings {
 	char *lastfmPassword;
 	unsigned char lastfmScrobblePercent;
 	char enableScrobbling;
-	struct BarKeyShortcut {
-		char key;
-		void (*cmd) (BAR_KS_ARGS);
-		char *description;
-		char *configKey;
-		struct BarKeyShortcut *next;
-	} *keys;
+	char keys[BAR_KS_COUNT];
 	PianoAudioFormat_t audioFormat;
 	char *autostartStation;
 	char *eventCmd;
 	unsigned int history;
-};
+} BarSettings_t;
 
-typedef struct BarSettings BarSettings_t;
-typedef struct BarKeyShortcut BarKeyShortcut_t;
+typedef void (*BarKeyShortcutFunc_t) (BAR_KS_ARGS);
 
-void BarSettingsInit (BarSettings_t *settings);
-void BarSettingsDestroy (BarSettings_t *settings);
-
-void BarSettingsRead (BarSettings_t *settings);
-
-void BarGetXdgConfigDir (const char *filename, char *retDir,
-		size_t retDirN);
+void BarSettingsInit (BarSettings_t *);
+void BarSettingsDestroy (BarSettings_t *);
+void BarSettingsRead (BarSettings_t *);
+void BarGetXdgConfigDir (const char *, char *, size_t);
 
 #endif /* _SETTINGS_H */

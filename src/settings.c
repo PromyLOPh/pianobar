@@ -31,7 +31,6 @@ THE SOFTWARE.
 
 #include "settings.h"
 #include "config.h"
-#include "ui_act.h"
 
 /*	tries to guess your config dir; somehow conforming to
  *	http://standards.freedesktop.org/basedir-spec/basedir-spec-0.6.html
@@ -72,19 +71,6 @@ void BarSettingsInit (BarSettings_t *settings) {
  *	@oaram pointer to struct
  */
 void BarSettingsDestroy (BarSettings_t *settings) {
-	BarKeyShortcut_t *curShortcut = settings->keys, *lastShortcut;
-
-	while (curShortcut != NULL) {
-		lastShortcut = curShortcut;
-		curShortcut = curShortcut->next;
-		if (lastShortcut->description != NULL) {
-			free (lastShortcut->description);
-		}
-		if (lastShortcut->configKey != NULL) {
-			free (lastShortcut->configKey);
-		}
-		free (lastShortcut);
-	}
 	free (settings->controlProxy);
 	free (settings->username);
 	free (settings->password);
@@ -93,35 +79,6 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->autostartStation);
 	free (settings->eventCmd);
 	memset (settings, 0, sizeof (*settings));
-}
-
-/*	copy key shortcut into settings structure
- *	@param shortcut to be copied
- *	@param destination settings structure
- */
-static void BarSettingsAppendKey (BarKeyShortcut_t *shortcut,
-		BarSettings_t *settings) {
-	BarKeyShortcut_t *tmp = calloc (1, sizeof (*tmp));
-
-	/* copy shortcut */
-	memcpy (tmp, shortcut, sizeof (*tmp));
-	if (shortcut->description != NULL) {
-		tmp->description = strdup (shortcut->description);
-	}
-	if (shortcut->configKey != NULL) {
-		tmp->configKey = strdup (shortcut->configKey);
-	}
-
-	/* insert into linked list */
-	if (settings->keys == NULL) {
-		settings->keys = tmp;
-	} else {
-		BarKeyShortcut_t *curShortcut = settings->keys;
-		while (curShortcut->next != NULL) {
-			curShortcut = curShortcut->next;
-		}
-		curShortcut->next = tmp;
-	}
 }
 
 /*	read app settings from file; format is: key = value\n
@@ -133,46 +90,17 @@ void BarSettingsRead (BarSettings_t *settings) {
 	char configfile[1024], key[256], val[256];
 	size_t i;
 	FILE *configfd;
-	BarKeyShortcut_t *curShortcut;
-	BarKeyShortcut_t defaultKeys[] = {
-			{'?', BarUiActHelp, NULL, "act_help", NULL},
-			{'+', BarUiActLoveSong, "love current song", "act_songlove",
-				NULL},
-			{'-', BarUiActBanSong, "ban current song", "act_songban", NULL},
-			{'a', BarUiActAddMusic, "add music to current station",
-				"act_stationaddmusic", NULL},
-			{'c', BarUiActCreateStation, "create new station",
-				"act_stationcreate", NULL},
-			{'d', BarUiActDeleteStation, "delete current station",
-				"act_stationdelete", NULL},
-			{'e', BarUiActExplain, "explain why this song is played",
-				"act_songexplain", NULL},
-			{'g', BarUiActStationFromGenre, "add genre station",
-				"act_stationaddbygenre", NULL},
-			{'h', BarUiActHistory, "song history",
-				"act_history", NULL},
-			{'i', BarUiActSongInfo,
-				"print information about current song/station",
-				"act_songinfo", NULL},
-			{'j', BarUiActAddSharedStation, "add shared station",
-				"act_addshared", NULL},
-			{'m', BarUiActMoveSong, "move song to different station",
-				"act_songmove", NULL},
-			{'n', BarUiActSkipSong, "next song", "act_songnext", NULL},
-			{'p', BarUiActPause, "pause/continue", "act_songpause", NULL},
-			{'q', BarUiActQuit, "quit", "act_quit", NULL},
-			{'r', BarUiActRenameStation, "rename current station",
-				"act_stationrename", NULL},
-			{'s', BarUiActSelectStation, "change station",
-				"act_stationchange", NULL},
-			{'t', BarUiActTempBanSong, "tired (ban song for 1 month)",
-				"act_songtired", NULL},
-			{'u', BarUiActPrintUpcoming, "upcoming songs", "act_upcoming",
-				NULL},
-			{'x', BarUiActSelectQuickMix, "select quickmix stations",
-				"act_stationselectquickmix", NULL},
-			{'$', BarUiActDebug, NULL,
-				"act_debug", NULL},
+	/* _must_ have same order as in BarKeyShortcutId_t */
+	const char defaultKeys[] = {'?', '+', '-', 'a', 'c', 'd', 'e', 'g',
+			'h', 'i', 'j', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'x', '$'};
+	const char *shortcutFileKeys[] = {
+			"act_help", "act_songlove", "act_songban", "act_stationaddmusic",
+			"act_stationcreate", "act_stationdelete", "act_songexplain",
+			"act_stationaddbygenre", "act_history", "act_songinfo",
+			"act_addshared", "act_songmove", "act_songnext", "act_songpause",
+			"act_quit", "act_stationrename", "act_stationchange",
+			"act_songtired", "act_upcoming", "act_stationselectquickmix",
+			"act_debug"
 			};
 
 	/* apply defaults */
@@ -184,14 +112,10 @@ void BarSettingsRead (BarSettings_t *settings) {
 		#endif
 	#endif
 	settings->history = 5;
+	memcpy (settings->keys, defaultKeys, sizeof (defaultKeys));
 
 	BarGetXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
 	if ((configfd = fopen (configfile, "r")) == NULL) {
-		/* use default keyboard shortcuts */
-		for (i = 0; i < sizeof (defaultKeys) / sizeof (*defaultKeys);
-				i++) {
-			BarSettingsAppendKey (&defaultKeys[i], settings);
-		}
 		return;
 	}
 
@@ -218,11 +142,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->lastfmScrobblePercent = atoi (val);
 		} else if (memcmp ("act_", key, 4) == 0) {
 			/* keyboard shortcuts */
-			for (i = 0; i < sizeof (defaultKeys) / sizeof (*defaultKeys);
-					i++) {
-				if (strcmp (defaultKeys[i].configKey, key) == 0) {
-					defaultKeys[i].key = val[0];
-					BarSettingsAppendKey (&defaultKeys[i], settings);
+			for (i = 0; i < BAR_KS_COUNT; i++) {
+				if (strcmp (shortcutFileKeys[i], key) == 0) {
+					settings->keys[i] = val[0];
 					break;
 				}
 			}
@@ -253,23 +175,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 	/* only scrobble tracks if username and password are set */
 	if (settings->lastfmUser != NULL && settings->lastfmPassword != NULL) {
 		settings->enableScrobbling = 1;
-	}
-
-	/* append missing keyboard shortcuts to ensure the functionality is
-	 * available */
-	for (i = 0; i < sizeof (defaultKeys) / sizeof (*defaultKeys); i++) {
-		char shortcutAvailable = 0;
-		curShortcut = settings->keys;
-		while (curShortcut != NULL) {
-			if (curShortcut->cmd == defaultKeys[i].cmd) {
-				shortcutAvailable = 1;
-				break;
-			}
-			curShortcut = curShortcut->next;
-		}
-		if (!shortcutAvailable) {
-			BarSettingsAppendKey (&defaultKeys[i], settings);
-		}
 	}
 
 	fclose (configfd);
