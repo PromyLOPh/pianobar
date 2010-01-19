@@ -271,9 +271,8 @@ char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd, char *similarToId) {
 		BarUiMsg (MSG_NONE, "\r");
 		if (searchResult.songs != NULL && searchResult.artists != NULL) {
 			/* songs and artists found */
-			BarUiMsg (MSG_QUESTION, "Is this an [a]rtist or [t]rack name? "
-					"Press c to abort. ");
-			BarReadline (selectBuf, sizeof (selectBuf), "atc", 1, 0, curFd);
+			BarUiMsg (MSG_QUESTION, "Is this an [a]rtist or [t]rack name? ");
+			BarReadline (selectBuf, sizeof (selectBuf), "at", 1, 0, curFd);
 			if (*selectBuf == 'a') {
 				tmpArtist = BarUiSelectArtist (searchResult.artists, curFd);
 				if (tmpArtist != NULL) {
