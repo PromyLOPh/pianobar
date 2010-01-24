@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2009
+Copyright (c) 2009-2010
 	Lars-Dominik Braun <PromyLOPh@lavabit.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
