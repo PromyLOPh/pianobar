@@ -334,6 +334,9 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	sockpoll.fd = sockfd;
 
 	fcntl (sockfd, F_SETFL, O_NONBLOCK);
+	/* increase socket receive buffer */
+	const int sockopt = 256*1024;
+	setsockopt (sockfd, SOL_SOCKET, SO_RCVBUF, &sockopt, sizeof (sockopt));
 
 	/* non-blocking connect will return immediately */
 	connect (sockfd, res->ai_addr, res->ai_addrlen);
