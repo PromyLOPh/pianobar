@@ -84,6 +84,7 @@ struct audioPlayer {
 
 	/* audio out */
 	ao_device *audioOutDevice;
+	unsigned char aoError;
 
 	WaitressHandle_t waith;
 

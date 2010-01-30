@@ -200,6 +200,8 @@ static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 					format.byte_format = AO_FMT_LITTLE;
 					if ((player->audioOutDevice = ao_open_live (audioOutDriver,
 							&format, NULL)) == NULL) {
+						/* we're not interested in the errno */
+						player->aoError = 1;
 						BarUiMsg (MSG_ERR, "Cannot open audio device\n");
 						return 0;
 					}
@@ -356,6 +358,7 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 			format.byte_format = AO_FMT_LITTLE;
 			if ((player->audioOutDevice = ao_open_live (audioOutDriver,
 					&format, NULL)) == NULL) {
+				player->aoError = 1;
 				BarUiMsg (MSG_ERR, "Cannot open audio device\n");
 				return 0;
 			}
@@ -475,7 +478,7 @@ void *BarPlayerThread (void *data) {
 			/* this should never happen: thread is aborted above */
 			break;
 	}
-	if (player->audioOutDevice == NULL && wRet == WAITRESS_RET_CB_ABORT) {
+	if (player->aoError) {
 		ret = (void *) 0x1;
 	}
 	ao_close(player->audioOutDevice);
