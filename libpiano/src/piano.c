@@ -867,6 +867,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Out of sync. Please correct your system's time.";
 			break;
 
+		case PIANO_RET_PLAYLIST_END:
+			return "Playlist end.";
+			break;
+
 		default:
 			return "No error message available.";
 			break;
