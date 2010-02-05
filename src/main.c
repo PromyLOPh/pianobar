@@ -29,7 +29,7 @@ THE SOFTWARE.
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <poll.h>
+#include <sys/select.h>
 #include <time.h>
 #include <ctype.h>
 /* open () */
@@ -68,12 +68,12 @@ int main (int argc, char **argv) {
 	PianoStation_t *curStation = NULL;
 	WardrobeSong_t scrobbleSong;
 	char doQuit = 0;
-	/* polls */
 	/* FIXME: max path length? */
 	char ctlPath[1024];
 	FILE *ctlFd = NULL;
-	struct pollfd polls[2];
-	nfds_t pollsLen = 0;
+	struct timeval selectTimeout;
+	int maxFd, selectFds[2];
+	fd_set readSet, readSetCopy;
 	char buf = '\0';
 	/* terminal attributes _before_ we started messing around with ~ECHO */
 	struct termios termOrig;
@@ -92,18 +92,20 @@ int main (int argc, char **argv) {
 	BarSettingsInit (&settings);
 	BarSettingsRead (&settings);
 
-	/* init polls */
-	polls[0].fd = fileno (stdin);
-	polls[0].events = POLLIN;
-	++pollsLen;
+	/* init fds */
+	FD_ZERO(&readSet);
+	selectFds[0] = fileno (stdin);
+	FD_SET(selectFds[0], &readSet);
+	maxFd = selectFds[0] + 1;
 
 	BarGetXdgConfigDir (PACKAGE "/ctl", ctlPath, sizeof (ctlPath));
 	/* FIXME: why is r_+_ required? */
 	ctlFd = fopen (ctlPath, "r+");
 	if (ctlFd != NULL) {
-		polls[1].fd = fileno (ctlFd);
-		polls[1].events = POLLIN;
-		++pollsLen;
+		selectFds[1] = fileno (ctlFd);
+		FD_SET(selectFds[1], &readSet);
+		/* assuming ctlFd is always > stdin */
+		maxFd = selectFds[1] + 1;
 		BarUiMsg (MSG_INFO, "Control fifo at %s opened\n", ctlPath);
 	}
 
@@ -290,14 +292,18 @@ int main (int argc, char **argv) {
 			} /* end if curStation != NULL */
 		}
 
-		/* in the meantime: wait for user actions;
-		 * 1000ms == 1s => refresh time display every second */
-		if (poll (polls, pollsLen, 1000) > 0) {
+		/* select modifies its arguments => copy the set */
+		memcpy (&readSetCopy, &readSet, sizeof (readSet));
+		selectTimeout.tv_sec = 1;
+		selectTimeout.tv_usec = 0;
+
+		/* in the meantime: wait for user actions */
+		if (select (maxFd, &readSetCopy, NULL, NULL, &selectTimeout) > 0) {
 			FILE *curFd = NULL;
 
-			if (polls[0].revents & POLLIN) {
+			if (FD_ISSET(selectFds[0], &readSetCopy)) {
 				curFd = stdin;
-			} else if (polls[1].revents & POLLIN) {
+			} else if (FD_ISSET(selectFds[1], &readSetCopy)) {
 				curFd = ctlFd;
 			}
 			buf = fgetc (curFd);
