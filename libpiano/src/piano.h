@@ -55,6 +55,7 @@ typedef enum {PIANO_AF_UNKNOWN = 0, PIANO_AF_AACPLUS, PIANO_AF_MP3,
 
 typedef struct PianoSong {
 	char *artist;
+	char *artistMusicId;
 	char *matchingSeed;
 	float fileGain;
 	PianoSongRating_t rating;
@@ -138,5 +139,7 @@ PianoReturn_t PianoExplain (PianoHandle_t *, const PianoSong_t *, char **);
 const char *PianoErrorToStr (PianoReturn_t);
 PianoReturn_t PianoSeedSuggestions (PianoHandle_t *, const char *,
 		unsigned int, PianoSearchResult_t *);
+PianoReturn_t PianoBookmarkSong (PianoHandle_t *, PianoSong_t *);
+PianoReturn_t PianoBookmarkArtist (PianoHandle_t *, PianoSong_t *);
 
 #endif /* _PIANO_H */

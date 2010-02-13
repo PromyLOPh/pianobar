@@ -92,7 +92,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 	FILE *configfd;
 	/* _must_ have same order as in BarKeyShortcutId_t */
 	const char defaultKeys[] = {'?', '+', '-', 'a', 'c', 'd', 'e', 'g',
-			'h', 'i', 'j', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'x', '$'};
+			'h', 'i', 'j', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'x', '$',
+			'b',
+			};
 	const char *shortcutFileKeys[] = {
 			"act_help", "act_songlove", "act_songban", "act_stationaddmusic",
 			"act_stationcreate", "act_stationdelete", "act_songexplain",
@@ -100,7 +102,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 			"act_addshared", "act_songmove", "act_songnext", "act_songpause",
 			"act_quit", "act_stationrename", "act_stationchange",
 			"act_songtired", "act_upcoming", "act_stationselectquickmix",
-			"act_debug"
+			"act_debug", "act_bookmark",
 			};
 
 	/* apply defaults */

@@ -148,6 +148,7 @@ void PianoDestroyPlaylist (PianoSong_t *playlist) {
 		PianoFree (curSong->identity, 0);
 		PianoFree (curSong->stationId, 0);
 		PianoFree (curSong->album, 0);
+		PianoFree (curSong->artistMusicId, 0);
 		lastSong = curSong;
 		curSong = curSong->next;
 		PianoFree (lastSong, sizeof (*lastSong));
@@ -797,6 +798,66 @@ PianoReturn_t PianoSeedSuggestions (PianoHandle_t *ph, const char *musicId,
 	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, &retStr)) ==
 			PIANO_RET_OK) {
 		ret = PianoXmlParseSeedSuggestions (retStr, searchResult);
+		PianoFree (retStr, 0);
+	}
+
+	return ret;
+}
+
+/*	Create song bookmark
+ *	@param piano handle
+ *	@param song
+ */
+PianoReturn_t PianoBookmarkSong (PianoHandle_t *ph, PianoSong_t *song) {
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], *retStr;
+	PianoReturn_t ret;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>station.createBookmark</methodName>"
+			"<params><param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			song->stationId, song->musicId);
+	
+	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
+			"rid=%s&lid=%s&method=method=createBookmark&arg1=%s&arg2=%s",
+			ph->routeId, ph->user.listenerId, song->stationId,
+			song->musicId);
+	
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseSimple (retStr);
+		PianoFree (retStr, 0);
+	}
+
+	return ret;
+}
+
+/*	Create artist bookmark
+ *	@param piano handle
+ *	@param song of artist
+ */
+PianoReturn_t PianoBookmarkArtist (PianoHandle_t *ph, PianoSong_t *song) {
+	char xmlSendBuf[PIANO_SEND_BUFFER_SIZE], *retStr;
+	PianoReturn_t ret;
+
+	snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+			"<methodCall><methodName>station.createArtistBookmark</methodName>"
+			"<params><param><value><int>%li</int></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"<param><value><string>%s</string></value></param>"
+			"</params></methodCall>", time (NULL), ph->user.authToken,
+			song->artistMusicId);
+	
+	snprintf (ph->waith.path, sizeof (ph->waith.path), PIANO_RPC_PATH
+			"rid=%s&lid=%s&method=method=createArtistBookmark&arg1=%s",
+			ph->routeId, ph->user.listenerId, song->artistMusicId);
+	
+	if ((ret = PianoHttpPost (&ph->waith, xmlSendBuf, &retStr)) ==
+			PIANO_RET_OK) {
+		ret = PianoXmlParseSimple (retStr);
 		PianoFree (retStr, 0);
 	}
 

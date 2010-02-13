@@ -291,6 +291,8 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		} else if (strcmp (valueStr, "mp3-hifi") == 0) {
 			song->audioFormat = PIANO_AF_MP3_HI;
 		}
+	} else if (strcmp ("artistMusicId", key) == 0) {
+		song->artistMusicId = strdup (valueStr);
  	}
 }
 

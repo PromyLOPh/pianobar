@@ -466,3 +466,25 @@ void BarUiActHistory (BAR_KS_ARGS) {
 				"No history yet.\n");
 	}
 }
+
+/*	create song bookmark
+ */
+void BarUiActBookmark (BAR_KS_ARGS) {
+	char selectBuf[2];
+	PianoReturn_t pRet = PIANO_RET_ERR;
+
+	RETURN_IF_NO_SONG;
+
+	BarUiMsg (MSG_QUESTION, "Bookmark [s]ong or [a]rtist? ");
+	BarReadline (selectBuf, sizeof (selectBuf), "sa", 1, 0, curFd);
+	if (selectBuf[0] == 's') {
+		BarUiMsg (MSG_INFO, "Bookmarking song... ");
+		pRet = BarUiPrintPianoStatus (PianoBookmarkSong (ph, *curSong));
+		BarUiStartEventCmd (settings, "songbookmark", *curStation, *curSong, pRet);
+	} else if (selectBuf[0] == 'a') {
+		BarUiMsg (MSG_INFO, "Bookmarking artist... ");
+		pRet = BarUiPrintPianoStatus (PianoBookmarkArtist (ph, *curSong));
+		BarUiStartEventCmd (settings, "artistbookmark", *curStation, *curSong, pRet);
+	}
+}
+
