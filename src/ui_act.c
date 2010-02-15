@@ -89,6 +89,7 @@ void BarUiActHelp (BAR_KS_ARGS) {
 			"upcoming songs",
 			"select quickmix stations",
 			NULL,
+			"bookmark song/artist",
 			};
 	size_t i;
 
