@@ -137,8 +137,8 @@ will use this proxy. The music is streamed directly.
 
 .TP
 .B event_command = path
-File that is executed when event occurs. The file is called with the event type
-as it's first argument. More information is supplied through stdin.
+File that is executed when event occurs. See section
+.B EVENTCMD
 
 .TP
 .B history = 5
@@ -190,6 +190,24 @@ Another example:
  done
 
  echo -ne 'n\\x1a' | nc -q 0 127.0.0.1 12345
+
+.SH EVENTCMD
+
+.B pianobar
+can report certain "events" to an external application (see
+.B CONFIGURATION
+). This application is started with the event name as it's first argument. More
+information (artist, title, album, stationName, error code, error description)
+is supplied through stdin.
+
+Currently supported events are: artistbookmark, songban, songbookmark,
+songexplain, songlove, songmove, songshelf, songstart, stationaddmusic,
+stationaddshared, stationcreate, stationdelete, stationfetchplaylist,
+stationquickmixtoggle, stationrename
+
+An example script can be found in the contrib/ directory of
+.B pianobar's
+source distribution.
 
 .SH AUTHOR
 Lars-Dominik Braun <PromyLOPh@lavabit.com>
