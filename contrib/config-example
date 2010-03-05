@@ -6,11 +6,6 @@
 #user = your@user.name
 #password = password
 
-# last.fm scrobbling
-#lastfm_user = username
-#lastfm_password = password
-#lastfm_scrobble_percent = 50
-
 # Proxy (for those who are not living in the USA)
 #control_proxy = http://127.0.0.1:9090/
 

@@ -74,8 +74,6 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->controlProxy);
 	free (settings->username);
 	free (settings->password);
-	free (settings->lastfmUser);
-	free (settings->lastfmPassword);
 	free (settings->autostartStation);
 	free (settings->eventCmd);
 	memset (settings, 0, sizeof (*settings));
@@ -136,12 +134,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->username = strdup (val);
 		} else if (strcmp ("password", key) == 0) {
 			settings->password = strdup (val);
-		} else if (strcmp ("lastfm_user", key) == 0) {
-			settings->lastfmUser = strdup (val);
-		} else if (strcmp ("lastfm_password", key) == 0) {
-			settings->lastfmPassword = strdup (val);
-		} else if (strcmp ("lastfm_scrobble_percent", key) == 0) {
-			settings->lastfmScrobblePercent = atoi (val);
 		} else if (memcmp ("act_", key, 4) == 0) {
 			/* keyboard shortcuts */
 			for (i = 0; i < BAR_KS_COUNT; i++) {
@@ -165,18 +157,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 		} else if (strcmp ("history", key) == 0) {
 			settings->history = atoi (val);
 		}
-	}
-
-	/* some checks */
-	/* last.fm requests tracks to be played at least 50% */
-	if (settings->lastfmScrobblePercent < 50 ||
-			settings->lastfmScrobblePercent > 100) {
-		settings->lastfmScrobblePercent = 50;
-	}
-
-	/* only scrobble tracks if username and password are set */
-	if (settings->lastfmUser != NULL && settings->lastfmPassword != NULL) {
-		settings->enableScrobbling = 1;
 	}
 
 	fclose (configfd);

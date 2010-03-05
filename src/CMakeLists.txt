@@ -59,7 +59,6 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 include_directories (
 	${pianobar_SOURCE_DIR}/libpiano/src
-	${pianobar_SOURCE_DIR}/libwardrobe/src
 	${pianobar_SOURCE_DIR}/libwaitress/src
 	${CMAKE_CURRENT_BINARY_DIR}
 	${FAAD_INCLUDE_DIRS} ${LIBAO_INCLUDE_DIRS}
@@ -67,7 +66,7 @@ include_directories (
 
 add_executable (pianobar main.c terminal.c settings.c player.c ui.c ui_act.c
 	ui_readline.c)
-target_link_libraries (pianobar piano wardrobe waitress ${FAAD_LIBRARIES}
+target_link_libraries (pianobar piano waitress ${FAAD_LIBRARIES}
 	${LIBAO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${MAD_LIBRARIES} ${LIBM})
 
 install (TARGETS pianobar RUNTIME DESTINATION ${BIN_INSTALL_DIR})

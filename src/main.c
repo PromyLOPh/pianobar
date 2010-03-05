@@ -38,10 +38,6 @@ THE SOFTWARE.
 #include <fcntl.h>
 /* tcset/getattr () */
 #include <termios.h>
-
-/* last.fm scrobbling library */
-#include <wardrobe.h>
-
 #include <pthread.h>
 
 /* pandora.com library */
@@ -61,12 +57,10 @@ int main (int argc, char **argv) {
 	static struct audioPlayer player;
 	BarSettings_t settings;
 	pthread_t playerThread;
-	WardrobeHandle_t wh;
 	/* playlist; first item is current song */
 	PianoSong_t *playlist = NULL;
 	PianoSong_t *songHistory = NULL;
 	PianoStation_t *curStation = NULL;
-	WardrobeSong_t scrobbleSong;
 	char doQuit = 0;
 	/* FIXME: max path length? */
 	char ctlPath[1024];
@@ -88,7 +82,6 @@ int main (int argc, char **argv) {
 	/* init some things */
 	ao_initialize ();
 	PianoInit (&ph);
-	WardrobeInit (&wh);
 	BarSettingsInit (&settings);
 	BarSettingsRead (&settings);
 
@@ -120,11 +113,6 @@ int main (int argc, char **argv) {
 		BarUiMsg (MSG_QUESTION, "Password: ");
 		BarReadlineStr (passBuf, sizeof (passBuf), 1, stdin);
 		settings.password = strdup (passBuf);
-	}
-
-	if (settings.enableScrobbling) {
-		wh.user = strdup (settings.lastfmUser);
-		wh.password = strdup (settings.lastfmPassword);
 	}
 
 	/* setup control connection */
@@ -171,24 +159,6 @@ int main (int argc, char **argv) {
 	while (!doQuit) {
 		/* song finished playing, clean up things/scrobble song */
 		if (player.mode == PLAYER_FINISHED_PLAYBACK) {
-			scrobbleSong.length = player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR;
-			/* scrobble when >= nn% are played; use seconds, not
-			 * milliseconds */
-			if (scrobbleSong.length > 0 && settings.enableScrobbling &&
-					player.songPlayed / BAR_PLAYER_MS_TO_S_FACTOR * 100 /
-					scrobbleSong.length >= settings.lastfmScrobblePercent) {
-				WardrobeReturn_t wRet;
-
-				BarUiMsg (MSG_INFO, "Scrobbling song... ");
-				if ((wRet = WardrobeSubmit (&wh, &scrobbleSong)) ==
-						WARDROBE_RET_OK) {
-					BarUiMsg (MSG_NONE, "Ok.\n");
-				} else {
-					BarUiMsg (MSG_ERR, "Error: %s\n",
-							WardrobeErrorToString (wRet));
-				}
-			}
-			WardrobeSongDestroy (&scrobbleSong);
 			/* FIXME: pthread_join blocks everything if network connection
 			 * is hung up e.g. */
 			void *threadRet;
@@ -263,14 +233,6 @@ int main (int argc, char **argv) {
 					if (playlist->audioUrl == NULL) {
 						BarUiMsg (MSG_ERR, "Invalid song url.\n");
 					} else {
-						/* setup artist and song name for scrobbling (playlist
-						 * may be NULL later) */
-						WardrobeSongInit (&scrobbleSong);
-						scrobbleSong.artist = strdup (playlist->artist);
-						scrobbleSong.title = strdup (playlist->title);
-						scrobbleSong.album = strdup (playlist->album);
-						scrobbleSong.started = time (NULL);
-
 						/* setup player */
 						memset (&player, 0, sizeof (player));
 
@@ -359,7 +321,6 @@ int main (int argc, char **argv) {
 	PianoDestroy (&ph);
 	PianoDestroyPlaylist (songHistory);
 	PianoDestroyPlaylist (playlist);
-	WardrobeDestroy (&wh);
 	ao_shutdown();
 	BarSettingsDestroy (&settings);
 

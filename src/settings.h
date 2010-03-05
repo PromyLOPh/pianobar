@@ -66,10 +66,6 @@ typedef struct {
 	char *username;
 	char *password;
 	char *controlProxy; /* non-american listeners need this */
-	char *lastfmUser;
-	char *lastfmPassword;
-	unsigned char lastfmScrobblePercent;
-	char enableScrobbling;
 	char keys[BAR_KS_COUNT];
 	PianoAudioFormat_t audioFormat;
 	char *autostartStation;
