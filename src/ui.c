@@ -377,7 +377,7 @@ inline void BarUiPrintSong (PianoSong_t *song, PianoStation_t *station) {
  */
 void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		const PianoStation_t *curStation, const PianoSong_t *curSong,
-		PianoReturn_t pRet) {
+		const struct audioPlayer *player, PianoReturn_t pRet) {
 	pid_t chld;
 	char pipeBuf[1024];
 	int pipeFd[2];
@@ -395,13 +395,20 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			"album=%s\n"
 			"stationName=%s\n"
 			"pRet=%i\n"
-			"pRetStr=%s\n",
+			"pRetStr=%s\n"
+			"songDuration=%lu\n"
+			"songPlayed=%lu\n"
+			"rating=%i\n",
 			curSong == NULL ? "" : curSong->artist,
 			curSong == NULL ? "" : curSong->title,
 			curSong == NULL ? "" : curSong->album,
 			curStation == NULL ? "" : curStation->name,
 			pRet,
-			PianoErrorToStr (pRet));
+			PianoErrorToStr (pRet),
+			player->songDuration,
+			player->songPlayed,
+			curSong == NULL ? PIANO_RATE_NONE : curSong->rating
+			);
 	
 	if (pipe (pipeFd) == -1) {
 		BarUiMsg (MSG_ERR, "Cannot create eventcmd pipe. (%s)\n", strerror (errno));

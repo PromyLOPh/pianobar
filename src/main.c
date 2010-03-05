@@ -159,6 +159,8 @@ int main (int argc, char **argv) {
 	while (!doQuit) {
 		/* song finished playing, clean up things/scrobble song */
 		if (player.mode == PLAYER_FINISHED_PLAYBACK) {
+			BarUiStartEventCmd (&settings, "songfinish", curStation, playlist,
+					&player, PIANO_RET_OK);
 			/* FIXME: pthread_join blocks everything if network connection
 			 * is hung up e.g. */
 			void *threadRet;
@@ -222,7 +224,7 @@ int main (int argc, char **argv) {
 						}
 					}
 					BarUiStartEventCmd (&settings, "stationfetchplaylist",
-							curStation, playlist, pRet);
+							curStation, playlist, &player, pRet);
 				}
 				/* song ready to play */
 				if (playlist != NULL) {
@@ -244,7 +246,7 @@ int main (int argc, char **argv) {
 			
 						/* throw event */
 						BarUiStartEventCmd (&settings, "songstart", curStation,
-								playlist, PIANO_RET_OK);
+								playlist, &player, PIANO_RET_OK);
 
 						/* start player */
 						pthread_create (&playerThread, NULL, BarPlayerThread,

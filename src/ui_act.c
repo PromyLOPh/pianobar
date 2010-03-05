@@ -118,7 +118,8 @@ void BarUiActAddMusic (BAR_KS_ARGS) {
 		pRet = BarUiPrintPianoStatus (PianoStationAddMusic (ph, *curStation, musicId));
 		free (musicId);
 
-		BarUiStartEventCmd (settings, "stationaddmusic", *curStation, *curSong, pRet);
+		BarUiStartEventCmd (settings, "stationaddmusic", *curStation, *curSong,
+				player, pRet);
 	}
 }
 
@@ -137,7 +138,8 @@ void BarUiActBanSong (BAR_KS_ARGS) {
 			PIANO_RATE_BAN))) == PIANO_RET_OK) {
 		BarUiDoSkipSong (player);
 	}
-	BarUiStartEventCmd (settings, "songban", *curStation, *curSong, pRet);
+	BarUiStartEventCmd (settings, "songban", *curStation, *curSong, player,
+			pRet);
 }
 
 /*	create new station
@@ -151,7 +153,8 @@ void BarUiActCreateStation (BAR_KS_ARGS) {
 		BarUiMsg (MSG_INFO, "Creating station... ");
 		pRet = BarUiPrintPianoStatus (PianoCreateStation (ph, "mi", musicId));
 		free (musicId);
-		BarUiStartEventCmd (settings, "stationcreate", *curStation, *curSong, pRet);
+		BarUiStartEventCmd (settings, "stationcreate", *curStation, *curSong,
+				player, pRet);
 	}
 }
 
@@ -167,7 +170,8 @@ void BarUiActAddSharedStation (BAR_KS_ARGS) {
 		BarUiMsg (MSG_INFO, "Adding shared station... ");
 		pRet = BarUiPrintPianoStatus (PianoCreateStation (ph, "sh",
 				(char *) stationId));
-		BarUiStartEventCmd (settings, "stationaddshared", *curStation, *curSong, pRet);
+		BarUiStartEventCmd (settings, "stationaddshared", *curStation,
+				*curSong, player, pRet);
 	}
 }
 
@@ -189,7 +193,8 @@ void BarUiActDeleteStation (BAR_KS_ARGS) {
 			*curSong = NULL;
 			*curStation = NULL;
 		}
-		BarUiStartEventCmd (settings, "stationdelete", *curStation, *curSong, pRet);
+		BarUiStartEventCmd (settings, "stationdelete", *curStation, *curSong,
+				player, pRet);
 	}
 }
 
@@ -207,7 +212,8 @@ void BarUiActExplain (BAR_KS_ARGS) {
 		BarUiMsg (MSG_INFO, "%s\n", explanation);
 		free (explanation);
 	}
-	BarUiStartEventCmd (settings, "songexplain", *curStation, *curSong, pRet);
+	BarUiStartEventCmd (settings, "songexplain", *curStation, *curSong, player,
+			pRet);
 }
 
 /*	choose genre station and add it as shared station
@@ -267,7 +273,8 @@ void BarUiActLoveSong (BAR_KS_ARGS) {
 	}
 	BarUiMsg (MSG_INFO, "Loving song... ");
 	pRet = BarUiPrintPianoStatus (PianoRateTrack (ph, *curSong, PIANO_RATE_LOVE));
-	BarUiStartEventCmd (settings, "songlove", *curStation, *curSong, pRet);
+	BarUiStartEventCmd (settings, "songlove", *curStation, *curSong, player,
+			pRet);
 }
 
 /*	skip song
@@ -300,7 +307,8 @@ void BarUiActMoveSong (BAR_KS_ARGS) {
 				moveStation, *curSong))) == PIANO_RET_OK) {
 			BarUiDoSkipSong (player);
 		}
-		BarUiStartEventCmd (settings, "songmove", *curStation, *curSong, pRet);
+		BarUiStartEventCmd (settings, "songmove", *curStation, *curSong,
+				player, pRet);
 	}
 }
 
@@ -329,7 +337,8 @@ void BarUiActRenameStation (BAR_KS_ARGS) {
 		BarUiMsg (MSG_INFO, "Renaming station... ");
 		pRet = BarUiPrintPianoStatus (PianoRenameStation (ph, *curStation,
 				(char *) lineBuf));
-		BarUiStartEventCmd (settings, "stationrename", *curStation, *curSong, pRet);
+		BarUiStartEventCmd (settings, "stationrename", *curStation, *curSong,
+				player, pRet);
 	}
 }
 
@@ -357,7 +366,8 @@ void BarUiActTempBanSong (BAR_KS_ARGS) {
 			PIANO_RET_OK) {
 		BarUiDoSkipSong (player);
 	}
-	BarUiStartEventCmd (settings, "songshelf", *curStation, *curSong, pRet);
+	BarUiStartEventCmd (settings, "songshelf", *curStation, *curSong, player,
+			pRet);
 }
 
 /*	print upcoming songs
@@ -396,7 +406,7 @@ void BarUiActSelectQuickMix (BAR_KS_ARGS) {
 		BarUiMsg (MSG_INFO, "Setting quickmix stations... ");
 		pRet = BarUiPrintPianoStatus (PianoSetQuickmix (ph));
 		BarUiStartEventCmd (settings, "stationquickmixtoggle", *curStation,
-				*curSong, pRet);
+				*curSong, player, pRet);
 	} else {
 		BarUiMsg (MSG_ERR, "Not a QuickMix station.\n");
 	}
@@ -452,13 +462,13 @@ void BarUiActHistory (BAR_KS_ARGS) {
 					pRet = BarUiPrintPianoStatus (PianoRateTrack (ph,
 							selectedSong, PIANO_RATE_LOVE));
 					BarUiStartEventCmd (settings, "songlove", songStation,
-							selectedSong, pRet);
+							selectedSong, player, pRet);
 				} else if (selectBuf[0] == settings->keys[BAR_KS_BAN]) {
 					BarUiMsg (MSG_INFO, "Banning song... ");
 					pRet = BarUiPrintPianoStatus (PianoRateTrack (ph,
 							selectedSong, PIANO_RATE_BAN));
 					BarUiStartEventCmd (settings, "songban", songStation,
-							selectedSong, pRet);
+							selectedSong, player, pRet);
 				} /* end if */
 			} /* end if selectBuf[0] */
 		} /* end if selectedSong != NULL */
@@ -481,11 +491,13 @@ void BarUiActBookmark (BAR_KS_ARGS) {
 	if (selectBuf[0] == 's') {
 		BarUiMsg (MSG_INFO, "Bookmarking song... ");
 		pRet = BarUiPrintPianoStatus (PianoBookmarkSong (ph, *curSong));
-		BarUiStartEventCmd (settings, "songbookmark", *curStation, *curSong, pRet);
+		BarUiStartEventCmd (settings, "songbookmark", *curStation, *curSong,
+				player, pRet);
 	} else if (selectBuf[0] == 'a') {
 		BarUiMsg (MSG_INFO, "Bookmarking artist... ");
 		pRet = BarUiPrintPianoStatus (PianoBookmarkArtist (ph, *curSong));
-		BarUiStartEventCmd (settings, "artistbookmark", *curStation, *curSong, pRet);
+		BarUiStartEventCmd (settings, "artistbookmark", *curStation, *curSong,
+				player, pRet);
 	}
 }
 

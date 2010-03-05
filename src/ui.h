@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <piano.h>
 
 #include "settings.h"
+#include "player.h"
 
 typedef enum {MSG_NONE, MSG_INFO, MSG_PLAYING, MSG_TIME, MSG_ERR,
 		MSG_QUESTION, MSG_LIST} uiMsg_t;
@@ -41,8 +42,8 @@ char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd, char *);
 void BarStationFromGenre (PianoHandle_t *ph, FILE *curFd);
 void BarUiPrintStation (PianoStation_t *);
 void BarUiPrintSong (PianoSong_t *, PianoStation_t *);
-void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
-		const PianoStation_t *curStation, const PianoSong_t *curSong,
-		PianoReturn_t);
+void BarUiStartEventCmd (const BarSettings_t *, const char *,
+		const PianoStation_t *, const PianoSong_t *,
+		const struct audioPlayer *, PianoReturn_t);
 
 #endif /* _UI_H */
