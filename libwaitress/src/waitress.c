@@ -394,6 +394,10 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	nextLine = recvBuf;
 	while (hdrParseMode != HDRM_FINISHED) {
 		READ_RET (recvBuf+bufFilled, sizeof (recvBuf)-1 - bufFilled, &recvSize);
+		if (recvSize == 0) {
+			/* connection closed too early */
+			CLOSE_RET (WAITRESS_RET_CONNECTION_CLOSED);
+		}
 		bufFilled += recvSize;
 		memset (recvBuf+bufFilled, 0, sizeof (recvBuf) - bufFilled);
 		thisLine = recvBuf;
