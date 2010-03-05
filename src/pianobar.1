@@ -183,13 +183,13 @@ Another example:
 can report certain "events" to an external application (see
 .B CONFIGURATION
 ). This application is started with the event name as it's first argument. More
-information (artist, title, album, stationName, error code, error description)
-is supplied through stdin.
+information (artist, title, album, stationName, error code, error description,
+song length in milliseconds, rating) is supplied through stdin.
 
 Currently supported events are: artistbookmark, songban, songbookmark,
-songexplain, songlove, songmove, songshelf, songstart, stationaddmusic,
-stationaddshared, stationcreate, stationdelete, stationfetchplaylist,
-stationquickmixtoggle, stationrename
+songexplain, songfinish, songlove, songmove, songshelf, songstart,
+stationaddmusic, stationaddshared, stationcreate, stationdelete,
+stationfetchplaylist, stationquickmixtoggle, stationrename
 
 An example script can be found in the contrib/ directory of
 .B pianobar's
