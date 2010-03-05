@@ -46,12 +46,19 @@ typedef struct PianoStation {
 	struct PianoStation *next;
 } PianoStation_t;
 
-typedef enum {PIANO_RATE_BAN, PIANO_RATE_LOVE, PIANO_RATE_NONE}
-		PianoSongRating_t;
+typedef enum {
+	PIANO_RATE_NONE = 0,
+	PIANO_RATE_LOVE = 1,
+	PIANO_RATE_BAN = 2
+} PianoSongRating_t;
 
 /* UNKNOWN should be 0, because memset sets audio format to 0 */
-typedef enum {PIANO_AF_UNKNOWN = 0, PIANO_AF_AACPLUS, PIANO_AF_MP3,
-		PIANO_AF_MP3_HI} PianoAudioFormat_t;
+typedef enum {
+	PIANO_AF_UNKNOWN = 0,
+	PIANO_AF_AACPLUS = 1,
+	PIANO_AF_MP3 = 2,
+	PIANO_AF_MP3_HI = 3
+} PianoAudioFormat_t;
 
 typedef struct PianoSong {
 	char *artist;
@@ -99,13 +106,23 @@ typedef struct PianoSearchResult {
 	PianoArtist_t *artists;
 } PianoSearchResult_t;
 
-typedef enum {PIANO_RET_OK, PIANO_RET_ERR, PIANO_RET_XML_INVALID,
-		PIANO_RET_AUTH_TOKEN_INVALID, PIANO_RET_AUTH_USER_PASSWORD_INVALID,
-		PIANO_RET_NET_ERROR, PIANO_RET_NOT_AUTHORIZED,
-		PIANO_RET_PROTOCOL_INCOMPATIBLE, PIANO_RET_READONLY_MODE,
-		PIANO_RET_STATION_CODE_INVALID, PIANO_RET_IP_REJECTED,
-		PIANO_RET_STATION_NONEXISTENT, PIANO_RET_OUT_OF_MEMORY,
-		PIANO_RET_OUT_OF_SYNC, PIANO_RET_PLAYLIST_END} PianoReturn_t;
+typedef enum {
+	PIANO_RET_ERR = 0,
+	PIANO_RET_OK = 1,
+	PIANO_RET_XML_INVALID = 2,
+	PIANO_RET_AUTH_TOKEN_INVALID = 3,
+	PIANO_RET_AUTH_USER_PASSWORD_INVALID = 4,
+	PIANO_RET_NET_ERROR = 5,
+	PIANO_RET_NOT_AUTHORIZED = 6,
+	PIANO_RET_PROTOCOL_INCOMPATIBLE = 7,
+	PIANO_RET_READONLY_MODE = 8,
+	PIANO_RET_STATION_CODE_INVALID = 9,
+	PIANO_RET_IP_REJECTED = 10,
+	PIANO_RET_STATION_NONEXISTENT = 11,
+	PIANO_RET_OUT_OF_MEMORY = 12,
+	PIANO_RET_OUT_OF_SYNC = 13,
+	PIANO_RET_PLAYLIST_END = 14
+} PianoReturn_t;
 
 void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
