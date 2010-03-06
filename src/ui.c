@@ -94,58 +94,47 @@ inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret) {
 	return ret;
 }
 
+/*	compare stations by name (ignore case)
+ *	@param station a
+ *	@param station b
+ *	@return -1, 0, 1
+ */
+static int BarStationCmp (const void *a, const void *b) {
+	const PianoStation_t *stationA = *((PianoStation_t **) a),
+			*stationB = *((PianoStation_t **) b);
+	return strcasecmp (stationA->name, stationB->name);
+}
+
 /*	sort linked list (station)
  *	@param stations
  *	@return NULL-terminated array with sorted stations
  */
-PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations) {
-	PianoStation_t *currStation, **sortedStations, **currSortedStation;
-	PianoStation_t *oldStation, *veryOldStation;
-	size_t unsortedStationsN = 0;
-	char inserted;
+PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
+		size_t *retStationCount) {
+	PianoStation_t **stationArray = NULL, *currStation = NULL;
+	size_t stationCount = 0, i;
 
 	/* get size */
 	currStation = unsortedStations;
 	while (currStation != NULL) {
-		unsortedStationsN++;
+		++stationCount;
 		currStation = currStation->next;
 	}
-	sortedStations = calloc (unsortedStationsN+1, sizeof (*sortedStations));
+	stationArray = calloc (stationCount, sizeof (*stationArray));
 
+	/* copy station pointers */
 	currStation = unsortedStations;
+	i = 0;
 	while (currStation != NULL) {
-		currSortedStation = sortedStations;
-		inserted = 0;
-		while (*currSortedStation != NULL && !inserted) {
-			/* item has to be inserted _before_ current item? */
-			/* FIXME: this doesn't handle multibyte chars correctly */
-			if (strcasecmp (currStation->name,
-					(*currSortedStation)->name) < 0) {
-				oldStation = *currSortedStation;
-				*currSortedStation = currStation;
-				currSortedStation++;
-				/* move items */
-				while (*currSortedStation != NULL) {
-					veryOldStation = *currSortedStation;
-					*currSortedStation = oldStation;
-					oldStation = veryOldStation;
-					currSortedStation++;
-				}
-				/* append last item */
-				if (oldStation != NULL) {
-					*currSortedStation = oldStation;
-				}
-				inserted = 1;
-			}
-			currSortedStation++;
-		}
-		/* item could not be inserted: append */
-		if (!inserted) {
-			*currSortedStation = currStation;
-		}
+		stationArray[i] = currStation;
 		currStation = currStation->next;
+		++i;
 	}
-	return sortedStations;
+
+	qsort (stationArray, stationCount, sizeof (*stationArray), BarStationCmp);
+
+	*retStationCount = stationCount;
+	return stationArray;
 }
 
 /*	let user pick one station
@@ -154,34 +143,31 @@ PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations) {
  */
 PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 		FILE *curFd) {
-	PianoStation_t **ss = NULL, **ssCurr = NULL, *retStation;
-	int i = 0;
+	PianoStation_t **sortedStations = NULL, *retStation = NULL;
+	size_t stationCount, i;
+	int input;
 
 	/* sort and print stations */
-	ss = BarSortedStations (ph->stations);
-	ssCurr = ss;
-	while (*ssCurr != NULL) {
+	sortedStations = BarSortedStations (ph->stations, &stationCount);
+	for (i = 0; i < stationCount; i++) {
+		const PianoStation_t *currStation = sortedStations[i];
 		BarUiMsg (MSG_LIST, "%2i) %c%c%c %s\n", i,
-				(*ssCurr)->useQuickMix ? 'q' : ' ',
-				(*ssCurr)->isQuickMix ? 'Q' : ' ',
-				!(*ssCurr)->isCreator ? 'S' : ' ',
-				(*ssCurr)->name);
-		ssCurr++;
-		i++;
+				currStation->useQuickMix ? 'q' : ' ',
+				currStation->isQuickMix ? 'Q' : ' ',
+				!currStation->isCreator ? 'S' : ' ',
+				currStation->name);
 	}
 
 	BarUiMsg (MSG_QUESTION, prompt);
-	if (BarReadlineInt (&i, curFd) == 0) {
-		free (ss);
+	/* FIXME: using a _signed_ int is ugly */
+	if (BarReadlineInt (&input, curFd) == 0) {
+		free (sortedStations);
 		return NULL;
 	}
-	ssCurr = ss;
-	while (*ssCurr != NULL && i > 0) {
-		ssCurr++;
-		i--;
+	if (input < stationCount) {
+		retStation = sortedStations[input];
 	}
-	retStation = *ssCurr;
-	free (ss);
+	free (sortedStations);
 	return retStation;
 }
 
