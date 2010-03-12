@@ -87,7 +87,7 @@ static inline int BarPlayerBufferFill (struct audioPlayer *player, char *data,
 		size_t dataSize) {
 	/* fill buffer */
 	if (player->bufferFilled + dataSize > sizeof (player->buffer)) {
-		BarUiMsg (MSG_ERR, PACKAGE ": Buffer overflow!\n");
+		BarUiMsg (MSG_ERR, "Buffer overflow!\n");
 		return 0;
 	}
 	memcpy (player->buffer+player->bufferFilled, data, dataSize);
@@ -139,7 +139,7 @@ static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 					player->buffer + player->bufferRead,
 					player->sampleSize[player->sampleSizeCurr]);
 			if (frameInfo.error != 0) {
-				BarUiMsg (MSG_ERR, PACKAGE ": Decoding error: %s\n",
+				BarUiMsg (MSG_ERR, "Decoding error: %s\n",
 						NeAACDecGetErrorMessage (frameInfo.error));
 				break;
 			}
@@ -188,7 +188,7 @@ static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 							&player->channels);
 					player->bufferRead += 5;
 					if (err != 0) {
-						BarUiMsg (MSG_ERR, PACKAGE ": Error while "
+						BarUiMsg (MSG_ERR, "Error while "
 								"initializing audio decoder"
 								"(%i)\n", err);
 						return 0;
@@ -327,7 +327,7 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 
 		if (mad_frame_decode (&player->mp3Frame, &player->mp3Stream) != 0) {
 			if (player->mp3Stream.error != MAD_ERROR_BUFLEN) {
-				BarUiMsg (MSG_ERR, PACKAGE ": mp3 decoding error: %s\n",
+				BarUiMsg (MSG_ERR, "mp3 decoding error: %s\n",
 						mad_stream_errorstr (&player->mp3Stream));
 				return 0;
 			} else {
@@ -442,7 +442,7 @@ void *BarPlayerThread (void *data) {
 		#endif /* ENABLE_MAD */
 
 		default:
-			BarUiMsg (MSG_ERR, PACKAGE ": Unsupported audio format!\n");
+			BarUiMsg (MSG_ERR, "Unsupported audio format!\n");
 			return NULL;
 			break;
 	}
