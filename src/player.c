@@ -37,12 +37,13 @@ THE SOFTWARE.
 		((x << 8) & 0x00ff0000) | ((x << 24) & 0xff000000))
 
 /* wait while locked, but don't slow down main thread by keeping
-* locks too long */
+ * locks too long */
 #define QUIT_PAUSE_CHECK \
 	pthread_mutex_lock (&player->pauseMutex); \
 	pthread_mutex_unlock (&player->pauseMutex); \
 	if (player->doQuit) { \
-		return 0; \
+		/* err => abort playback */ \
+		return WAITRESS_CB_RET_ERR; \
 	}
 
 /* pandora uses float values with 2 digits precision. Scale them by 100 to get
@@ -117,14 +118,14 @@ static inline void BarPlayerBufferMove (struct audioPlayer *player) {
  *	@param extra data (player data)
  *	@return received bytes or less on error
  */
-static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
+static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 	char *data = ptr;
 	struct audioPlayer *player = stream;
 
 	QUIT_PAUSE_CHECK;
 
 	if (!BarPlayerBufferFill (player, data, size)) {
-		return 0;
+		return WAITRESS_CB_RET_ERR;
 	}
 
 	if (player->mode == PLAYER_RECV_DATA) {
@@ -191,7 +192,7 @@ static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 						BarUiMsg (MSG_ERR, "Error while "
 								"initializing audio decoder"
 								"(%i)\n", err);
-						return 0;
+						return WAITRESS_CB_RET_ERR;
 					}
 					audioOutDriver = ao_default_driver_id();
 					format.bits = 16;
@@ -203,7 +204,7 @@ static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 						/* we're not interested in the errno */
 						player->aoError = 1;
 						BarUiMsg (MSG_ERR, "Cannot open audio device\n");
-						return 0;
+						return WAITRESS_CB_RET_ERR;
 					}
 					player->mode = PLAYER_AUDIO_INITIALIZED;
 					break;
@@ -278,7 +279,7 @@ static char BarPlayerAACCb (void *ptr, size_t size, void *stream) {
 
 	BarPlayerBufferMove (player);
 
-	return 1;
+	return WAITRESS_CB_RET_OK;
 }
 
 #endif /* ENABLE_FAAD */
@@ -301,7 +302,7 @@ static inline signed short int BarPlayerMadToShort (mad_fixed_t fixed) {
 	return (signed short int) (fixed >> (MAD_F_FRACBITS - 15));
 }
 
-static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
+static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 	char *data = ptr;
 	struct audioPlayer *player = stream;
 	size_t i;
@@ -309,13 +310,13 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 	QUIT_PAUSE_CHECK;
 
 	if (!BarPlayerBufferFill (player, data, size)) {
-		return 0;
+		return WAITRESS_CB_RET_ERR;
 	}
 
 	/* some "prebuffering" */
 	if (player->mode < PLAYER_RECV_DATA &&
 			player->bufferFilled < sizeof (player->buffer) / 2) {
-		return 1;
+		return WAITRESS_CB_RET_OK;
 	}
 
 	mad_stream_buffer (&player->mp3Stream, player->buffer,
@@ -329,7 +330,7 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 			if (player->mp3Stream.error != MAD_ERROR_BUFLEN) {
 				BarUiMsg (MSG_ERR, "mp3 decoding error: %s\n",
 						mad_stream_errorstr (&player->mp3Stream));
-				return 0;
+				return WAITRESS_CB_RET_ERR;
 			} else {
 				/* rebuffering required => exit loop */
 				break;
@@ -360,7 +361,7 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 					&format, NULL)) == NULL) {
 				player->aoError = 1;
 				BarUiMsg (MSG_ERR, "Cannot open audio device\n");
-				return 0;
+				return WAITRESS_CB_RET_ERR;
 			}
 
 			/* calc song length using the framerate of the first decoded frame */
@@ -392,7 +393,7 @@ static char BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
 
 	BarPlayerBufferMove (player);
 
-	return 1;
+	return WAITRESS_CB_RET_OK;
 }
 #endif /* ENABLE_MAD */
 

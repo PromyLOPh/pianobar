@@ -180,7 +180,7 @@ inline void WaitressSetHPP (WaitressHandle_t *waith, const char *host,
  *	@param data size
  *	@param buffer structure
  */
-static char WaitressFetchBufCb (void *recvData, size_t recvDataSize,
+static WaitressCbReturn_t WaitressFetchBufCb (void *recvData, size_t recvDataSize,
 		void *extraData) {
 	char *recvBytes = recvData;
 	WaitressFetchBufCbBuffer_t *buffer = extraData;
@@ -188,7 +188,7 @@ static char WaitressFetchBufCb (void *recvData, size_t recvDataSize,
 	if (buffer->buf == NULL) {
 		if ((buffer->buf = malloc (sizeof (*buffer->buf) *
 				(recvDataSize + 1))) == NULL) {
-			return 0;
+			return WAITRESS_CB_RET_ERR;
 		}
 	} else {
 		char *newbuf;
@@ -196,7 +196,7 @@ static char WaitressFetchBufCb (void *recvData, size_t recvDataSize,
 				sizeof (*buffer->buf) *
 				(buffer->pos + recvDataSize + 1))) == NULL) {
 			free (buffer->buf);
-			return 0;
+			return WAITRESS_CB_RET_ERR;
 		}
 		buffer->buf = newbuf;
 	}
@@ -204,7 +204,7 @@ static char WaitressFetchBufCb (void *recvData, size_t recvDataSize,
 	buffer->pos += recvDataSize;
 	*(buffer->buf+buffer->pos) = '\0';
 
-	return 1;
+	return WAITRESS_CB_RET_OK;
 }
 
 /*	Fetch string. Beware! This overwrites your waith->data pointer
@@ -457,7 +457,8 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	/* push remaining bytes */
 	if (bufFilled > 0) {
 		waith->contentReceived += bufFilled;
-		if (!waith->callback (thisLine, bufFilled, waith->data)) {
+		if (waith->callback (thisLine, bufFilled, waith->data) ==
+				WAITRESS_CB_RET_ERR) {
 			CLOSE_RET (WAITRESS_RET_CB_ABORT);
 		}
 	}
@@ -467,7 +468,8 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		READ_RET (recvBuf, sizeof (recvBuf), &recvSize);
 		if (recvSize > 0) {
 			waith->contentReceived += recvSize;
-			if (!waith->callback (recvBuf, recvSize, waith->data)) {
+			if (waith->callback (recvBuf, recvSize, waith->data) ==
+					WAITRESS_CB_RET_ERR) {
 				wRet = WAITRESS_RET_CB_ABORT;
 				break;
 			}

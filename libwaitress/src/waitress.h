@@ -34,6 +34,8 @@ THE SOFTWARE.
 
 typedef enum {WAITRESS_METHOD_GET = 0, WAITRESS_METHOD_POST} WaitressMethod_t;
 
+typedef enum {WAITRESS_CB_RET_ERR, WAITRESS_CB_RET_OK} WaitressCbReturn_t;
+
 typedef struct {
 	char host[WAITRESS_HOST_SIZE];
 	char port[WAITRESS_PORT_SIZE];
@@ -47,7 +49,7 @@ typedef struct {
 	char proxyPort[WAITRESS_PORT_SIZE];
 	/* extra data handed over to callback function */
 	void *data;
-	char (*callback) (void *, size_t, void *);
+	WaitressCbReturn_t (*callback) (void *, size_t, void *);
 	int socktimeout;
 } WaitressHandle_t;
 
