@@ -404,7 +404,7 @@ static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size, void *stream) 
 void *BarPlayerThread (void *data) {
 	struct audioPlayer *player = data;
 	char extraHeaders[25];
-	void *ret = NULL;
+	void *ret = PLAYER_RET_OK;
 	#ifdef ENABLE_FAAD
 	NeAACDecConfigurationPtr conf;
 	#endif
@@ -444,7 +444,7 @@ void *BarPlayerThread (void *data) {
 
 		default:
 			BarUiMsg (MSG_ERR, "Unsupported audio format!\n");
-			return NULL;
+			return PLAYER_RET_OK;
 			break;
 	}
 	
@@ -480,7 +480,7 @@ void *BarPlayerThread (void *data) {
 			break;
 	}
 	if (player->aoError) {
-		ret = (void *) 0x1;
+		ret = (void *) PLAYER_RET_ERR;
 	}
 	ao_close(player->audioOutDevice);
 	WaitressFree (&player->waith);
@@ -493,7 +493,5 @@ void *BarPlayerThread (void *data) {
 
 	player->mode = PLAYER_FINISHED_PLAYBACK;
 
-	/* return NULL == everything's fine, everything else: hard error, stop
-	 * playback */
 	return ret;
 }

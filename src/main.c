@@ -166,7 +166,7 @@ int main (int argc, char **argv) {
 			void *threadRet;
 			pthread_join (playerThread, &threadRet);
 			/* don't continue playback if thread reports error */
-			if (threadRet != NULL) {
+			if (threadRet != (void *) PLAYER_RET_OK) {
 				curStation = NULL;
 			}
 			memset (&player, 0, sizeof (player));
