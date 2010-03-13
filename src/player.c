@@ -69,10 +69,10 @@ static inline signed short int applyReplayGain (signed short int value,
 		unsigned int scale) {
 	int tmpReplayBuf = value * scale;
 	/* avoid clipping */
-	if (tmpReplayBuf > INT16_MAX*RG_SCALE_FACTOR) {
-		return INT16_MAX;
-	} else if (tmpReplayBuf < INT16_MIN*RG_SCALE_FACTOR) {
-		return INT16_MIN;
+	if (tmpReplayBuf > SHRT_MAX*RG_SCALE_FACTOR) {
+		return SHRT_MAX;
+	} else if (tmpReplayBuf < SHRT_MIN*RG_SCALE_FACTOR) {
+		return SHRT_MIN;
 	} else {
 		return tmpReplayBuf / RG_SCALE_FACTOR;
 	}
