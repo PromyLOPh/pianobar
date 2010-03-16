@@ -49,10 +49,17 @@ struct audioPlayer {
 	size_t bufferRead;
 	size_t bytesReceived;
 
-	enum {PLAYER_FREED = 0, PLAYER_INITIALIZED, PLAYER_FOUND_ESDS,
-			PLAYER_AUDIO_INITIALIZED, PLAYER_FOUND_STSZ,
-			PLAYER_SAMPLESIZE_INITIALIZED, PLAYER_RECV_DATA,
-			PLAYER_FINISHED_PLAYBACK} mode;
+	enum {
+		PLAYER_FREED = 0, /* thread is not running */
+		PLAYER_STARTING, /* thread is starting */
+		PLAYER_INITIALIZED, /* decoder/waitress initialized */
+		PLAYER_FOUND_ESDS,
+		PLAYER_AUDIO_INITIALIZED, /* audio device opened */
+		PLAYER_FOUND_STSZ,
+		PLAYER_SAMPLESIZE_INITIALIZED,
+		PLAYER_RECV_DATA, /* playing track */
+		PLAYER_FINISHED_PLAYBACK
+	} mode;
 
 	PianoAudioFormat_t audioFormat;
 

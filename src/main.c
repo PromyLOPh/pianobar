@@ -248,6 +248,9 @@ int main (int argc, char **argv) {
 						BarUiStartEventCmd (&settings, "songstart", curStation,
 								playlist, &player, PIANO_RET_OK);
 
+						/* prevent race condition, mode must _not_ be FREED if
+						 * thread has been started */
+						player.mode = PLAYER_STARTING;
 						/* start player */
 						pthread_create (&playerThread, NULL, BarPlayerThread,
 								&player);
