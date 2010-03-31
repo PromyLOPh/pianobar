@@ -39,6 +39,7 @@ THE SOFTWARE.
 /* tcset/getattr () */
 #include <termios.h>
 #include <pthread.h>
+#include <assert.h>
 
 /* pandora.com library */
 #include <piano.h>
@@ -54,6 +55,7 @@ THE SOFTWARE.
 int main (int argc, char **argv) {
 	/* handles */
 	PianoHandle_t ph;
+	WaitressHandle_t waith;
 	static struct audioPlayer player;
 	BarSettings_t settings;
 	pthread_t playerThread;
@@ -82,6 +84,11 @@ int main (int argc, char **argv) {
 	/* init some things */
 	ao_initialize ();
 	PianoInit (&ph);
+
+	WaitressInit (&waith);
+	strncpy (waith.host, PIANO_RPC_HOST, sizeof (waith.host)-1);
+	strncpy (waith.port, PIANO_RPC_PORT, sizeof (waith.port)-1);
+
 	BarSettingsInit (&settings);
 	BarSettingsRead (&settings);
 
@@ -118,22 +125,36 @@ int main (int argc, char **argv) {
 	/* setup control connection */
 	if (settings.controlProxy != NULL) {
 		char tmpPath[2];
-		WaitressSplitUrl (settings.controlProxy, ph.waith.proxyHost,
-				sizeof (ph.waith.proxyHost), ph.waith.proxyPort,
-				sizeof (ph.waith.proxyPort), tmpPath, sizeof (tmpPath));
+		WaitressSplitUrl (settings.controlProxy, waith.proxyHost,
+				sizeof (waith.proxyHost), waith.proxyPort,
+				sizeof (waith.proxyPort), tmpPath, sizeof (tmpPath));
 	}
 
-	BarUiMsg (MSG_INFO, "Login... ");
-	if (BarUiPrintPianoStatus (PianoConnect (&ph, settings.username,
-			settings.password)) !=
-			PIANO_RET_OK) {
-		BarTermRestore (&termOrig);
-		return 0;
+	{
+		PianoReturn_t pRet;
+		WaitressReturn_t wRet;
+		PianoRequestDataLogin_t reqData;
+		reqData.user = settings.username;
+		reqData.password = settings.password;
+		
+		BarUiMsg (MSG_INFO, "Login... ");
+		if (!BarUiPianoCall (&ph, PIANO_REQUEST_LOGIN, &waith, &reqData, &pRet,
+				&wRet)) {
+			BarTermRestore (&termOrig);
+			return 0;
+		}
 	}
-	BarUiMsg (MSG_INFO, "Get stations... ");
-	if (BarUiPrintPianoStatus (PianoGetStations (&ph)) != PIANO_RET_OK) {
-		BarTermRestore (&termOrig);
-		return 0;
+
+	{
+		PianoReturn_t pRet;
+		WaitressReturn_t wRet;
+
+		BarUiMsg (MSG_INFO, "Get stations... ");
+		if (!BarUiPianoCall (&ph, PIANO_REQUEST_GET_STATIONS, &waith, NULL,
+				&pRet, &wRet)) {
+			BarTermRestore (&termOrig);
+			return 0;
+		}
 	}
 
 	/* try to get autostart station */
@@ -160,7 +181,7 @@ int main (int argc, char **argv) {
 		/* song finished playing, clean up things/scrobble song */
 		if (player.mode == PLAYER_FINISHED_PLAYBACK) {
 			BarUiStartEventCmd (&settings, "songfinish", curStation, playlist,
-					&player, PIANO_RET_OK);
+					&player, PIANO_RET_OK, WAITRESS_RET_OK);
 			/* FIXME: pthread_join blocks everything if network connection
 			 * is hung up e.g. */
 			void *threadRet;
@@ -210,21 +231,25 @@ int main (int argc, char **argv) {
 					}
 				}
 				if (playlist == NULL) {
-					PianoReturn_t pRet = PIANO_RET_ERR;
+					PianoReturn_t pRet;
+					WaitressReturn_t wRet;
+					PianoRequestDataGetPlaylist_t reqData;
+					reqData.station = curStation;
+					reqData.format = settings.audioFormat;
 
 					BarUiMsg (MSG_INFO, "Receiving new playlist... ");
-					if ((pRet = BarUiPrintPianoStatus (PianoGetPlaylist (&ph,
-							curStation->id, settings.audioFormat,
-							&playlist))) != PIANO_RET_OK) {
+					if (!BarUiPianoCall (&ph, PIANO_REQUEST_GET_PLAYLIST,
+							&waith, &reqData, &pRet, &wRet)) {
 						curStation = NULL;
 					} else {
+						playlist = reqData.retPlaylist;
 						if (playlist == NULL) {
 							BarUiMsg (MSG_INFO, "No tracks left.\n");
 							curStation = NULL;
 						}
 					}
 					BarUiStartEventCmd (&settings, "stationfetchplaylist",
-							curStation, playlist, &player, pRet);
+							curStation, playlist, &player, pRet, wRet);
 				}
 				/* song ready to play */
 				if (playlist != NULL) {
@@ -246,7 +271,8 @@ int main (int argc, char **argv) {
 			
 						/* throw event */
 						BarUiStartEventCmd (&settings, "songstart", curStation,
-								playlist, &player, PIANO_RET_OK);
+								playlist, &player, PIANO_RET_OK,
+								WAITRESS_RET_OK);
 
 						/* prevent race condition, mode must _not_ be FREED if
 						 * thread has been started */
@@ -289,7 +315,7 @@ int main (int argc, char **argv) {
 							BarUiActSelectStation, BarUiActTempBanSong,
 							BarUiActPrintUpcoming, BarUiActSelectQuickMix,
 							BarUiActDebug, BarUiActBookmark};
-					idToF[i] (&ph, &player, &settings, &playlist,
+					idToF[i] (&ph, &waith, &player, &settings, &playlist,
 							&curStation, &songHistory, &doQuit, curFd);
 					break;
 				}

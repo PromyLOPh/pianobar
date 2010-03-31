@@ -94,6 +94,81 @@ inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret) {
 	return ret;
 }
 
+/*	fetch http resource (post request)
+ *	@param waitress handle
+ *	@param piano request (initialized by PianoRequest())
+ */
+static WaitressReturn_t BarPianoHttpRequest (WaitressHandle_t *waith,
+		PianoRequest_t *req) {
+	waith->extraHeaders = "Content-Type: text/xml\r\n";
+	waith->postData = req->postData;
+	waith->method = WAITRESS_METHOD_POST;
+	strncpy (waith->path, req->urlPath, sizeof (waith->path)-1);
+
+	return WaitressFetchBuf (waith, &req->responseData);
+}
+
+/*	piano wrapper: prepare/execute http request and pass result back to
+ *	libpiano (updates data structures)
+ *	@param piano handle
+ *	@param request type
+ *	@param waitress handle
+ *	@param data pointer (used as request data)
+ *	@return 1 on success, 0 otherwise
+ */
+int BarUiPianoCall (PianoHandle_t *ph, PianoRequestType_t type,
+		WaitressHandle_t *waith, void *data, PianoReturn_t *pRet,
+		WaitressReturn_t *wRet) {
+	PianoRequest_t req;
+
+	memset (&req, 0, sizeof (req));
+
+	/* repeat as long as there are http requests to do */
+	do {
+		req.data = data;
+
+		*pRet = PianoRequest (ph, &req, type);
+		if (*pRet != PIANO_RET_OK) {
+			BarUiMsg (MSG_NONE, "Error: %s\n", PianoErrorToStr (*pRet));
+			PianoDestroyRequest (&req);
+			return 0;
+		}
+
+		*wRet = BarPianoHttpRequest (waith, &req);
+		if (*wRet != WAITRESS_RET_OK) {
+			BarUiMsg (MSG_NONE, "Network error: %s\n", WaitressErrorToStr (*wRet));
+			PianoDestroyRequest (&req);
+			if (req.responseData != NULL) {
+				free (req.responseData);
+			}
+			return 0;
+		}
+
+		*pRet = PianoResponse (ph, &req);
+		if (*pRet != PIANO_RET_CONTINUE_REQUEST) {
+			if (*pRet != PIANO_RET_OK) {
+				BarUiMsg (MSG_NONE, "Error: %s\n", PianoErrorToStr (*pRet));
+				PianoDestroyRequest (&req);
+				if (req.responseData != NULL) {
+					free (req.responseData);
+				}
+				return 0;
+			} else {
+				BarUiMsg (MSG_NONE, "Ok.\n");
+			}
+		}
+		/* we can destroy the request at this point, even when this call needs
+		 * more than one http request. persistend data (step counter, e.g.) is
+		 * stored in req.data */
+		if (req.responseData != NULL) {
+			free (req.responseData);
+		}
+		PianoDestroyRequest (&req);
+	} while (*pRet == PIANO_RET_CONTINUE_REQUEST);
+
+	return 1;
+}
+
 /*	compare stations by name (ignore case)
  *	@param station a
  *	@param station b
@@ -232,7 +307,8 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd) {
  *	@param allow seed suggestions if != NULL
  *	@return musicId or NULL on abort/error
  */
-char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd, char *similarToId) {
+char *BarUiSelectMusicId (PianoHandle_t *ph, WaitressHandle_t *waith,
+		FILE *curFd, char *similarToId) {
 	char *musicId = NULL;
 	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;
@@ -242,20 +318,36 @@ char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd, char *similarToId) {
 	BarUiMsg (MSG_QUESTION, "Search for artist/title: ");
 	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0, curFd) > 0) {
 		if (strcmp ("?", lineBuf) == 0 && similarToId != NULL) {
+			PianoReturn_t pRet;
+			WaitressReturn_t wRet;
+			PianoRequestDataGetSeedSuggestions_t reqData;
+
+			reqData.musicId = similarToId;
+			reqData.max = 20;
+
 			BarUiMsg (MSG_INFO, "Receiving suggestions... ");
-			if (BarUiPrintPianoStatus (PianoSeedSuggestions (ph, similarToId,
-					20, &searchResult)) != PIANO_RET_OK) {
+			if (!BarUiPianoCall (ph, PIANO_REQUEST_GET_SEED_SUGGESTIONS,
+					waith, &reqData, &pRet, &wRet)) {
 				return NULL;
 			}
+			memcpy (&searchResult, &reqData.searchResult, sizeof (searchResult));
 		} else {
+			PianoReturn_t pRet;
+			WaitressReturn_t wRet;
+			PianoRequestDataSearch_t reqData;
+
+			reqData.searchStr = lineBuf;
+
 			BarUiMsg (MSG_INFO, "Searching... ");
-			if (BarUiPrintPianoStatus (PianoSearchMusic (ph, lineBuf,
-					&searchResult)) != PIANO_RET_OK) {
+			if (!BarUiPianoCall (ph, PIANO_REQUEST_SEARCH, waith, &reqData,
+					&pRet, &wRet)) {
 				return NULL;
 			}
+			memcpy (&searchResult, &reqData.searchResult, sizeof (searchResult));
 		}
 		BarUiMsg (MSG_NONE, "\r");
-		if (searchResult.songs != NULL && searchResult.artists != NULL) {
+		if (searchResult.songs != NULL &&
+				searchResult.artists != NULL) {
 			/* songs and artists found */
 			BarUiMsg (MSG_QUESTION, "Is this an [a]rtist or [t]rack name? ");
 			BarReadline (selectBuf, sizeof (selectBuf), "at", 1, 0, curFd);
@@ -294,16 +386,22 @@ char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd, char *similarToId) {
 /*	browse genre stations and create shared station
  *	@param piano handle
  */
-void BarStationFromGenre (PianoHandle_t *ph, FILE *curFd) {
-	int i;
+void BarStationFromGenre (PianoHandle_t *ph, WaitressHandle_t *waith, FILE *curFd) {
+	PianoReturn_t pRet;
+	WaitressReturn_t wRet;
 	PianoGenreCategory_t *curCat;
 	PianoStation_t *curStation;
+	PianoRequestDataCreateStation_t reqData;
+	int i;
 
 	/* receive genre stations list if not yet available */
 	if (ph->genreStations == NULL) {
+		PianoReturn_t pRet;
+		WaitressReturn_t wRet;
+
 		BarUiMsg (MSG_INFO, "Receiving genre stations... ");
-		if (BarUiPrintPianoStatus (PianoGetGenreStations (ph)) !=
-				PIANO_RET_OK) {
+		if (!BarUiPianoCall (ph, PIANO_REQUEST_GET_GENRE_STATIONS, waith, NULL,
+				&pRet, &wRet)) {
 			return;
 		}
 	}
@@ -346,7 +444,10 @@ void BarStationFromGenre (PianoHandle_t *ph, FILE *curFd) {
 	}
 	/* create station */
 	BarUiMsg (MSG_INFO, "Adding shared station \"%s\"... ", curStation->name);
-	BarUiPrintPianoStatus (PianoCreateStation (ph, "sh", curStation->id));
+	reqData.id = curStation->id;
+	reqData.type = "sh";
+	BarUiPianoCall (ph, PIANO_REQUEST_CREATE_STATION, waith, &reqData, &pRet,
+			&wRet);
 }
 
 /*	Print station infos (including station id)
@@ -373,11 +474,13 @@ inline void BarUiPrintSong (PianoSong_t *song, PianoStation_t *station) {
  *	@param event type
  *	@param current station
  *	@param current song
- *	@param piano error-code
+ *	@param piano error-code (PIANO_RET_OK if not applicable)
+ *	@param waitress error-code (WAITRESS_RET_OK if not applicable)
  */
 void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		const PianoStation_t *curStation, const PianoSong_t *curSong,
-		const struct audioPlayer *player, PianoReturn_t pRet) {
+		const struct audioPlayer *player, PianoReturn_t pRet,
+		WaitressReturn_t wRet) {
 	pid_t chld;
 	char pipeBuf[1024];
 	int pipeFd[2];
@@ -396,6 +499,8 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			"stationName=%s\n"
 			"pRet=%i\n"
 			"pRetStr=%s\n"
+			"wRet=%i\n"
+			"wRetStr=%s\n"
 			"songDuration=%lu\n"
 			"songPlayed=%lu\n"
 			"rating=%i\n",
@@ -405,6 +510,8 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			curStation == NULL ? "" : curStation->name,
 			pRet,
 			PianoErrorToStr (pRet),
+			wRet,
+			WaitressErrorToStr (wRet),
 			player->songDuration,
 			player->songPlayed,
 			curSong == NULL ? PIANO_RATE_NONE : curSong->rating

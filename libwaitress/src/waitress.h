@@ -72,6 +72,7 @@ void WaitressSetHPP (WaitressHandle_t *, const char *, const char *,
 		const char *);
 WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *, char **);
 WaitressReturn_t WaitressFetchCall (WaitressHandle_t *);
+const char *WaitressErrorToStr (WaitressReturn_t);
 
 #endif /* _WAITRESS_H */
 

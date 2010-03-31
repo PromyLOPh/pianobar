@@ -25,6 +25,7 @@ THE SOFTWARE.
 #define _UI_H
 
 #include <piano.h>
+#include <waitress.h>
 
 #include "settings.h"
 #include "player.h"
@@ -38,12 +39,14 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 		FILE *curFd);
 PianoSong_t *BarUiSelectSong (PianoSong_t *startSong, FILE *curFd);
 PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd);
-char *BarUiSelectMusicId (PianoHandle_t *ph, FILE *curFd, char *);
-void BarStationFromGenre (PianoHandle_t *ph, FILE *curFd);
+char *BarUiSelectMusicId (PianoHandle_t *ph, WaitressHandle_t *, FILE *curFd, char *);
+void BarStationFromGenre (PianoHandle_t *ph, WaitressHandle_t *, FILE *curFd);
 void BarUiPrintStation (PianoStation_t *);
 void BarUiPrintSong (PianoSong_t *, PianoStation_t *);
 void BarUiStartEventCmd (const BarSettings_t *, const char *,
-		const PianoStation_t *, const PianoSong_t *,
-		const struct audioPlayer *, PianoReturn_t);
+		const PianoStation_t *, const PianoSong_t *, const struct audioPlayer *,
+		PianoReturn_t, WaitressReturn_t);
+int BarUiPianoCall (PianoHandle_t *, PianoRequestType_t, WaitressHandle_t *,
+		void *, PianoReturn_t *, WaitressReturn_t *);
 
 #endif /* _UI_H */

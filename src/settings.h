@@ -25,10 +25,12 @@ THE SOFTWARE.
 #define _SETTINGS_H
 
 #include <piano.h>
+#include <waitress.h>
 
 #include "player.h"
 
-#define BAR_KS_ARGS PianoHandle_t *ph, struct audioPlayer *player, \
+#define BAR_KS_ARGS PianoHandle_t *ph, WaitressHandle_t *waith, \
+		struct audioPlayer *player, \
 		BarSettings_t *settings, PianoSong_t **curSong, \
 		PianoStation_t **curStation, PianoSong_t **songHistory, char *doQuit, \
 		FILE *curFd

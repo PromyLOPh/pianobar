@@ -488,3 +488,67 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 #undef WRITE_RET
 #undef READ_RET
 
+const char *WaitressErrorToStr (WaitressReturn_t wRet) {
+	switch (wRet) {
+		case WAITRESS_RET_OK:
+			return "Everything's fine :)";
+			break;
+
+		case WAITRESS_RET_ERR:
+			return "Unknown.";
+			break;
+
+		case WAITRESS_RET_STATUS_UNKNOWN:
+			return "Unknown HTTP status code.";
+			break;
+
+		case WAITRESS_RET_NOTFOUND:
+			return "File not found.";
+			break;
+		
+		case WAITRESS_RET_FORBIDDEN:
+			return "Forbidden.";
+			break;
+
+		case WAITRESS_RET_CONNECT_REFUSED:
+			return "Connection refused.";
+			break;
+
+		case WAITRESS_RET_SOCK_ERR:
+			return "Socket error.";
+			break;
+
+		case WAITRESS_RET_GETADDR_ERR:
+			return "getaddr failed.";
+			break;
+
+		case WAITRESS_RET_CB_ABORT:
+			return "Callback aborted request.";
+			break;
+
+		case WAITRESS_RET_HDR_OVERFLOW:
+			return "HTTP header overflow.";
+			break;
+
+		case WAITRESS_RET_PARTIAL_FILE:
+			return "Partial file.";
+			break;
+	
+		case WAITRESS_RET_TIMEOUT:
+			return "Timeout.";
+			break;
+
+		case WAITRESS_RET_READ_ERR:
+			return "Read error.";
+			break;
+
+		case WAITRESS_RET_CONNECTION_CLOSED:
+			return "Connection closed by remote host.";
+			break;
+
+		default:
+			return "No error message available.";
+			break;
+	}
+}
+
