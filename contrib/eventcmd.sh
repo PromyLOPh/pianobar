@@ -5,7 +5,9 @@ while read L; do
 	k="`echo "$L" | cut -d '=' -f 1`"
 	v="`echo "$L" | cut -d '=' -f 2`"
 	export "$k=$v"
-done < <(grep -e '^\(title\|artist\|album\|stationName\|pRet\|pRetStr\|songDuration\|songPlayed\|rating\)=' /dev/stdin) # don't overwrite $1...
+done < <(grep -e '^\(title\|artist\|album\|stationName\|pRet\|pRetStr\|wRet\|wRetStr\|songDuration\|songPlayed\|rating\)=' /dev/stdin) # don't overwrite $1...
+
+env > /tmp/pianobar-env
 
 case "$1" in
 #	songstart)
@@ -30,6 +32,8 @@ case "$1" in
 	*)
 		if [ "$pRet" -ne 1 ]; then
 			echo "naughty.notify({title = \"pianobar\", text = \"$1 failed: $pRetStr\"})" | awesome-client -
+		elif [ "$wRet" -ne 1 ]; then
+			echo "naughty.notify({title = \"pianobar\", text = \"$1 failed: Network error: $wRetStr\"})" | awesome-client -
 		fi
 		;;
 esac
