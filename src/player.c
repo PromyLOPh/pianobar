@@ -195,6 +195,7 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size, void *stream) 
 						return WAITRESS_CB_RET_ERR;
 					}
 					audioOutDriver = ao_default_driver_id();
+					memset (&format, 0, sizeof (format));
 					format.bits = 16;
 					format.channels = player->channels;
 					format.rate = player->samplerate;
@@ -353,6 +354,7 @@ static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size, void *stream) 
 			player->channels = player->mp3Synth.pcm.channels;
 			player->samplerate = player->mp3Synth.pcm.samplerate;
 			audioOutDriver = ao_default_driver_id();
+			memset (&format, 0, sizeof (format));
 			format.bits = 16;
 			format.channels = player->channels;
 			format.rate = player->samplerate;
