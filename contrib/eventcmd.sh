@@ -7,8 +7,6 @@ while read L; do
 	export "$k=$v"
 done < <(grep -e '^\(title\|artist\|album\|stationName\|pRet\|pRetStr\|wRet\|wRetStr\|songDuration\|songPlayed\|rating\)=' /dev/stdin) # don't overwrite $1...
 
-env > /tmp/pianobar-env
-
 case "$1" in
 #	songstart)
 #		echo 'naughty.notify({title = "pianobar", text = "Now playing: ' "$title" ' by ' "$artist" '"})' | awesome-client -
