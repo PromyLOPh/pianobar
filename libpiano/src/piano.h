@@ -217,6 +217,7 @@ typedef enum {
 	PIANO_RET_OUT_OF_MEMORY = 12,
 	PIANO_RET_OUT_OF_SYNC = 13,
 	PIANO_RET_PLAYLIST_END = 14,
+	PIANO_RET_QUICKMIX_NOT_PLAYABLE = 15,
 } PianoReturn_t;
 
 void PianoInit (PianoHandle_t *);

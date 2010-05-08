@@ -85,6 +85,8 @@ static void PianoXmlIsFaultCb (const char *key, const ezxml_t value,
 						*ret = PIANO_RET_OUT_OF_SYNC;
 					} else if (strcmp ("PLAYLIST_END", matchStart) == 0) {
 						*ret = PIANO_RET_PLAYLIST_END;
+					} else if (strcmp ("QUICKMIX_NOT_PLAYABLE", matchStart) == 0) {
+						*ret = PIANO_RET_QUICKMIX_NOT_PLAYABLE;
 					} else {
 						*ret = PIANO_RET_ERR;
 						printf (PACKAGE ": Unknown error %s in %s\n",
