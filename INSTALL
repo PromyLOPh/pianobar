@@ -4,9 +4,7 @@ Install
 Dependencies
 ------------
 
-Versions may vary :) Just get the newest one:
-
-cmake
+make
 libao				http://www.xiph.org/ao/
 libfaad2			http://www.audiocoding.com/downloads.html
 AND/OR libmad		http://www.underbit.com/products/mad/
@@ -16,10 +14,28 @@ UTF-8 console/locale!
 Building
 --------
 
-cmake .
-make
-make install
+If you have all of the dependencies listed above just type
 
-You can run the client directly from the source directory:
+	make clean && make
+
+You can run the client directly from the source directory now
  
-./src/pianobar
+	./pianobar
+
+Or install it by issuing
+	
+	make install
+
+In case you don't want to install libmad OR libfaad you probably want to
+disable one of them:
+
+	make clean && make DISABLE_FAAD=1
+
+or
+
+	make clean && make DISABLE_MAD=1
+
+libpiano can be built and installed by running
+	
+	make clean && make libpiano && make install-libpiano
+
