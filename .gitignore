@@ -2,4 +2,4 @@
 *.lo
 # vim swap files
 .*.sw*
-config.h
+pianobar
