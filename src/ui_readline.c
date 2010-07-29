@@ -100,13 +100,11 @@ size_t BarReadline (char *buf, size_t bufSize, const char *mask,
 					} else {
 						/* delete utf-8 multibyte chars */
 						/* char content */
-						while (bufPos >= 0 &&
-								BarReadlineIsUtf8Content (buf[bufPos-1])) {
+						while (BarReadlineIsUtf8Content (buf[bufPos-1])) {
 							BarReadlineMoveLeft (buf, &bufPos, &bufLen);
 						}
 						/* char length */
-						if (bufPos >= 0 &&
-								BarReadlineIsUtf8Start (buf[bufPos-1])) {
+						if (BarReadlineIsUtf8Start (buf[bufPos-1])) {
 							BarReadlineMoveLeft (buf, &bufPos, &bufLen);
 						}
 					}
