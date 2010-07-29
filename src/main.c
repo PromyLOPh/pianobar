@@ -125,15 +125,15 @@ int main (int argc, char **argv) {
 
 	/* set up proxy (control proxy for non-us citizen or global proxy for poor
 	 * firewalled fellows) */
-	if (settings.proxy != NULL && strlen (settings.proxy) > 0) {
-		char tmpPath[2];
-		WaitressSplitUrl (settings.proxy, waith.proxyHost,
-				sizeof (waith.proxyHost), waith.proxyPort,
-				sizeof (waith.proxyPort), tmpPath, sizeof (tmpPath));
-	} else if (settings.controlProxy != NULL) {
-		/* global proxy overrides control proxy */
+	if (settings.controlProxy != NULL) {
+		/* control proxy overrides global proxy */
 		char tmpPath[2];
 		WaitressSplitUrl (settings.controlProxy, waith.proxyHost,
+				sizeof (waith.proxyHost), waith.proxyPort,
+				sizeof (waith.proxyPort), tmpPath, sizeof (tmpPath));
+	} else if (settings.proxy != NULL && strlen (settings.proxy) > 0) {
+		char tmpPath[2];
+		WaitressSplitUrl (settings.proxy, waith.proxyHost,
 				sizeof (waith.proxyHost), waith.proxyPort,
 				sizeof (waith.proxyPort), tmpPath, sizeof (tmpPath));
 	}
