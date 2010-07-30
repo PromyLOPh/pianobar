@@ -87,7 +87,6 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 void BarSettingsRead (BarSettings_t *settings) {
 	/* FIXME: what is the max length of a path? */
 	char configfile[1024], key[256], val[256];
-	size_t i;
 	FILE *configfd;
 	/* _must_ have same order as in BarKeyShortcutId_t */
 	const char defaultKeys[] = {'?', '+', '-', 'a', 'c', 'd', 'e', 'g',
@@ -113,6 +112,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 		#endif
 	#endif
 	settings->history = 5;
+	settings->sortOrder = BAR_SORT_NAME_AZ;
 	memcpy (settings->keys, defaultKeys, sizeof (defaultKeys));
 
 	BarGetXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
@@ -138,6 +138,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 		} else if (strcmp ("password", key) == 0) {
 			settings->password = strdup (val);
 		} else if (memcmp ("act_", key, 4) == 0) {
+			size_t i;
 			/* keyboard shortcuts */
 			for (i = 0; i < BAR_KS_COUNT; i++) {
 				if (strcmp (shortcutFileKeys[i], key) == 0) {
@@ -159,6 +160,21 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->eventCmd = strdup (val);
 		} else if (strcmp ("history", key) == 0) {
 			settings->history = atoi (val);
+		} else if (strcmp ("sort", key) == 0) {
+			size_t i;
+			char *mapping[] = {"name_az",
+					"name_za",
+					"quickmix_01_name_az",
+					"quickmix_01_name_za",
+					"quickmix_10_name_az",
+					"quickmix_10_name_za",
+					};
+			for (i = 0; i < BAR_SORT_COUNT; i++) {
+				if (strcmp (mapping[i], val) == 0) {
+					settings->sortOrder = i;
+					break;
+				}
+			}
 		}
 	}
 

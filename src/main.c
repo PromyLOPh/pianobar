@@ -175,7 +175,8 @@ int main (int argc, char **argv) {
 	}
 	/* no autostart? ask the user */
 	if (curStation == NULL) {
-		curStation = BarUiSelectStation (&ph, "Select station: ", stdin);
+		curStation = BarUiSelectStation (&ph, "Select station: ",
+				settings.sortOrder, stdin);
 	}
 	if (curStation != NULL) {
 		BarUiPrintStation (curStation);

@@ -327,7 +327,8 @@ void BarUiActMoveSong (BAR_KS_ARGS) {
 
 	RETURN_IF_NO_SONG;
 
-	reqData.to = BarUiSelectStation (ph, "Move song to station: ", curFd);
+	reqData.to = BarUiSelectStation (ph, "Move song to station: ",
+			settings->sortOrder, curFd);
 	if (reqData.to != NULL) {
 		/* find original station (just is case we're playing a quickmix
 		 * station) */
@@ -392,7 +393,7 @@ void BarUiActRenameStation (BAR_KS_ARGS) {
  */
 void BarUiActSelectStation (BAR_KS_ARGS) {
 	PianoStation_t *newStation = BarUiSelectStation (ph, "Select station: ",
-			curFd);
+			settings->sortOrder, curFd);
 	if (newStation != NULL) {
 		*curStation = newStation;
 		BarUiPrintStation ((*curStation));
@@ -450,7 +451,8 @@ void BarUiActSelectQuickMix (BAR_KS_ARGS) {
 	if ((*curStation)->isQuickMix) {
 		PianoStation_t *selStation;
 		while ((selStation = BarUiSelectStation (ph,
-				"Toggle quickmix for station: ", curFd)) != NULL) {
+				"Toggle quickmix for station: ", settings->sortOrder,
+				curFd)) != NULL) {
 			selStation->useQuickMix = !selStation->useQuickMix;
 		}
 		BarUiMsg (MSG_INFO, "Setting quickmix stations... ");

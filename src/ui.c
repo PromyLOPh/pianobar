@@ -33,6 +33,7 @@ THE SOFTWARE.
 #include <string.h>
 #include <errno.h>
 #include <strings.h>
+#include <assert.h>
 
 /* waitpid () */
 #include <sys/types.h>
@@ -40,6 +41,8 @@ THE SOFTWARE.
 
 #include "ui.h"
 #include "ui_readline.h"
+
+typedef int (*BarSortFunc_t) (const void *, const void *);
 
 /*	output message and flush stdout
  *	@param message
@@ -169,15 +172,58 @@ int BarUiPianoCall (PianoHandle_t *ph, PianoRequestType_t type,
 	return 1;
 }
 
-/*	compare stations by name (ignore case)
- *	@param station a
- *	@param station b
- *	@return -1, 0, 1
+/*	Station sorting functions */
+
+static inline int BarStationQuickmix01Cmp (const void *a, const void *b) {
+	const PianoStation_t *stationA = *((PianoStation_t **) a),
+			*stationB = *((PianoStation_t **) b);
+	return stationA->isQuickMix - stationB->isQuickMix;
+}
+
+/*	sort by station name from a to z, case insensitive
  */
-static int BarStationCmp (const void *a, const void *b) {
+static inline int BarStationNameAZCmp (const void *a, const void *b) {
 	const PianoStation_t *stationA = *((PianoStation_t **) a),
 			*stationB = *((PianoStation_t **) b);
 	return strcasecmp (stationA->name, stationB->name);
+}
+
+/*	sort by station name from z to a, case insensitive
+ */
+static int BarStationNameZACmp (const void *a, const void *b) {
+	return BarStationNameAZCmp (b, a);
+}
+
+/*	helper for quickmix/name sorting
+ */
+static inline int BarStationQuickmixNameCmp (const void *a, const void *b,
+		const void *c, const void *d) {
+	int qmc = BarStationQuickmix01Cmp (a, b);
+	return qmc == 0 ? BarStationNameAZCmp (c, d) : qmc;
+}
+
+/*	sort by quickmix (no to yes) and name (a to z)
+ */
+static int BarStationCmpQuickmix01NameAZ (const void *a, const void *b) {
+	return BarStationQuickmixNameCmp (a, b, a, b);
+}
+
+/*	sort by quickmix (no to yes) and name (z to a)
+ */
+static int BarStationCmpQuickmix01NameZA (const void *a, const void *b) {
+	return BarStationQuickmixNameCmp (a, b, b, a);
+}
+
+/*	sort by quickmix (yes to no) and name (a to z)
+ */
+static int BarStationCmpQuickmix10NameAZ (const void *a, const void *b) {
+	return BarStationQuickmixNameCmp (b, a, a, b);
+}
+
+/*	sort by quickmix (yes to no) and name (z to a)
+ */
+static int BarStationCmpQuickmix10NameZA (const void *a, const void *b) {
+	return BarStationQuickmixNameCmp (b, a, b, a);
 }
 
 /*	sort linked list (station)
@@ -185,9 +231,18 @@ static int BarStationCmp (const void *a, const void *b) {
  *	@return NULL-terminated array with sorted stations
  */
 PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
-		size_t *retStationCount) {
+		size_t *retStationCount, BarStationSorting_t order) {
+	static const BarSortFunc_t orderMapping[] = {BarStationNameAZCmp,
+			BarStationNameZACmp,
+			BarStationCmpQuickmix01NameAZ,
+			BarStationCmpQuickmix01NameZA,
+			BarStationCmpQuickmix10NameAZ,
+			BarStationCmpQuickmix10NameZA,
+			};
 	PianoStation_t **stationArray = NULL, *currStation = NULL;
 	size_t stationCount = 0, i;
+
+	assert (order < sizeof (orderMapping)/sizeof(*orderMapping));
 
 	/* get size */
 	currStation = unsortedStations;
@@ -206,7 +261,7 @@ PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
 		++i;
 	}
 
-	qsort (stationArray, stationCount, sizeof (*stationArray), BarStationCmp);
+	qsort (stationArray, stationCount, sizeof (*stationArray), orderMapping[order]);
 
 	*retStationCount = stationCount;
 	return stationArray;
@@ -217,13 +272,13 @@ PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
  *	@return pointer to selected station or NULL
  */
 PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
-		FILE *curFd) {
+		BarStationSorting_t order, FILE *curFd) {
 	PianoStation_t **sortedStations = NULL, *retStation = NULL;
 	size_t stationCount, i;
 	int input;
 
 	/* sort and print stations */
-	sortedStations = BarSortedStations (ph->stations, &stationCount);
+	sortedStations = BarSortedStations (ph->stations, &stationCount, order);
 	for (i = 0; i < stationCount; i++) {
 		const PianoStation_t *currStation = sortedStations[i];
 		BarUiMsg (MSG_LIST, "%2i) %c%c%c %s\n", i,

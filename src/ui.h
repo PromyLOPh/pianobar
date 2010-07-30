@@ -35,8 +35,8 @@ typedef enum {MSG_NONE, MSG_INFO, MSG_PLAYING, MSG_TIME, MSG_ERR,
 
 void BarUiMsg (uiMsg_t type, const char *format, ...);
 PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret);
-PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
-		FILE *curFd);
+PianoStation_t *BarUiSelectStation (PianoHandle_t *, const char *,
+		BarStationSorting_t, FILE *);
 PianoSong_t *BarUiSelectSong (PianoSong_t *startSong, FILE *curFd);
 PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd);
 char *BarUiSelectMusicId (PianoHandle_t *ph, WaitressHandle_t *, FILE *curFd, char *);
