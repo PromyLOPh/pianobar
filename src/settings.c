@@ -89,11 +89,11 @@ void BarSettingsRead (BarSettings_t *settings) {
 	char configfile[1024], key[256], val[256];
 	FILE *configfd;
 	/* _must_ have same order as in BarKeyShortcutId_t */
-	const char defaultKeys[] = {'?', '+', '-', 'a', 'c', 'd', 'e', 'g',
+	static const char defaultKeys[] = {'?', '+', '-', 'a', 'c', 'd', 'e', 'g',
 			'h', 'i', 'j', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'x', '$',
 			'b',
 			};
-	const char *shortcutFileKeys[] = {
+	static const char *shortcutFileKeys[] = {
 			"act_help", "act_songlove", "act_songban", "act_stationaddmusic",
 			"act_stationcreate", "act_stationdelete", "act_songexplain",
 			"act_stationaddbygenre", "act_history", "act_songinfo",
@@ -162,7 +162,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->history = atoi (val);
 		} else if (strcmp ("sort", key) == 0) {
 			size_t i;
-			char *mapping[] = {"name_az",
+			static const char *mapping[] = {"name_az",
 					"name_za",
 					"quickmix_01_name_az",
 					"quickmix_01_name_za",

@@ -324,7 +324,7 @@ int main (int argc, char **argv) {
 			size_t i;
 			for (i = 0; i < BAR_KS_COUNT; i++) {
 				if (settings.keys[i] == buf) {
-					BarKeyShortcutFunc_t idToF[] = {BarUiActHelp,
+					static const BarKeyShortcutFunc_t idToF[] = {BarUiActHelp,
 							BarUiActLoveSong, BarUiActBanSong,
 							BarUiActAddMusic, BarUiActCreateStation,
 							BarUiActDeleteStation, BarUiActExplain,

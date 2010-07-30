@@ -71,7 +71,7 @@ static int BarTransformIfShared (PianoHandle_t *ph, WaitressHandle_t *waith,
 /*	print current shortcut configuration
  */
 void BarUiActHelp (BAR_KS_ARGS) {
-	const char *idToDesc[] = {
+	static const char *idToDesc[] = {
 			NULL,
 			"love current song",
 			"ban current song",
