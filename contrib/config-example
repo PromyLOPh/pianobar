@@ -31,8 +31,9 @@
 #act_stationselectquickmix = x
 
 # Misc
-# mp3 or aacplus
+# mp3, mp3-hifi or aacplus
 #audio_format = mp3
 #autostart_station = 123456
 #event_command = /home/user/.config/pianobar/eventcmd
+#sort = quickmix_10_name_az
 
