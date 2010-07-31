@@ -263,12 +263,8 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		song->artist = strdup (valueStr);
 	} else if (strcmp ("musicId", key) == 0) {
 		song->musicId = strdup (valueStr);
-	} else if (strcmp ("matchingSeed", key) == 0) {
-		song->matchingSeed = strdup (valueStr);
 	} else if (strcmp ("userSeed", key) == 0) {
 		song->userSeed = strdup (valueStr);
-	} else if (strcmp ("focusTraitId", key) == 0) {
-		song->focusTraitId = strdup (valueStr);
 	} else if (strcmp ("songTitle", key) == 0) {
 		song->title = strdup (valueStr);
 	} else if (strcmp ("identity", key) == 0) {
@@ -295,7 +291,11 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		}
 	} else if (strcmp ("artistMusicId", key) == 0) {
 		song->artistMusicId = strdup (valueStr);
- 	}
+ 	} else if (strcmp ("testStrategy", key) == 0) {
+		song->testStrategy = atoi (valueStr);
+	} else if (strcmp ("songType", key) == 0) {
+		song->songType = atoi (valueStr);
+	}
 }
 
 /*	parses userinfos sent by pandora as login response

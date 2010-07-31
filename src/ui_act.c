@@ -273,20 +273,20 @@ BarUiActCallback(BarUiActDebug) {
 			"audioFormat:\t%i\n"
 			"audioUrl:\t%s\n"
 			"fileGain:\t%f\n"
-			"focusTraitId:\t%s\n"
 			"identity:\t%s\n"
-			"matchingSeed:\t%s\n"
 			"musicId:\t%s\n"
 			"rating:\t%i\n"
+			"songType:\t%i\n"
 			"stationId:\t%s\n"
+			"testStrategy:\t%i\n"
 			"title:\t%s\n"
 			"userSeed:\t%s\n",
 			app->playlist->album, app->playlist->artist,
 			app->playlist->audioFormat, app->playlist->audioUrl,
-			app->playlist->fileGain, app->playlist->focusTraitId,
-			app->playlist->identity, app->playlist->matchingSeed,
+			app->playlist->fileGain, app->playlist->identity,
 			app->playlist->musicId, app->playlist->rating,
-			app->playlist->stationId, app->playlist->title,
+			app->playlist->songType, app->playlist->stationId,
+			app->playlist->testStrategy, app->playlist->title,
 			app->playlist->userSeed);
 }
 

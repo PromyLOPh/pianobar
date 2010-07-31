@@ -135,8 +135,6 @@ void PianoDestroyPlaylist (PianoSong_t *playlist) {
 	while (curSong != NULL) {
 		PianoFree (curSong->audioUrl, 0);
 		PianoFree (curSong->artist, 0);
-		PianoFree (curSong->focusTraitId, 0);
-		PianoFree (curSong->matchingSeed, 0);
 		PianoFree (curSong->musicId, 0);
 		PianoFree (curSong->title, 0);
 		PianoFree (curSong->userSeed, 0);
@@ -312,30 +310,37 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>station.addFeedback</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* station id */
 					"<param><value><string>%s</string></value></param>"
+					/* music id */
 					"<param><value><string>%s</string></value></param>"
+					/* user seed */
 					"<param><value><string>%s</string></value></param>"
-					"<param><value><string>%s</string></value></param>"
-					"<param><value><string>%s</string></value></param>"
-					"<param><value></value></param>"
+					/* test strategy */
+					"<param><value>%u</value></param>"
+					/* positive */
 					"<param><value><boolean>%i</boolean></value></param>"
+					/* "is-creator-quickmix" */
 					"<param><value><boolean>0</boolean></value></param>"
+					/* song type */
+					"<param><value><int>%u</int></value></param>"
 					"</params></methodCall>", (unsigned long) time (NULL),
 					ph->user.authToken, reqData->stationId, reqData->musicId,
-					(reqData->matchingSeed == NULL) ? "" : reqData->matchingSeed,
 					(reqData->userSeed == NULL) ? "" : reqData->userSeed,
-					(reqData->focusTraitId == NULL) ? "" : reqData->focusTraitId,
-					(reqData->rating == PIANO_RATE_LOVE) ? 1 : 0);
+					reqData->testStrategy,
+					(reqData->rating == PIANO_RATE_LOVE) ? 1 : 0,
+					reqData->songType);
 			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
 					"rid=%s&lid=%s&method=addFeedback&arg1=%s&arg2=%s"
-					"&arg3=%s&arg4=%s&arg5=%s&arg6=&arg7=%s&arg8=false",
+					"&arg3=%s&arg4=%u&arg5=%s&arg6=false&arg7=%u",
 					ph->routeId, ph->user.listenerId, reqData->stationId,
 					reqData->musicId,
-					(reqData->matchingSeed == NULL) ? "" : reqData->matchingSeed,
 					(reqData->userSeed == NULL) ? "" : reqData->userSeed,
-					(reqData->focusTraitId == NULL) ? "" : reqData->focusTraitId,
-					(reqData->rating == PIANO_RATE_LOVE) ? "true" : "false");
+					reqData->testStrategy,
+					(reqData->rating == PIANO_RATE_LOVE) ? "true" : "false",
+					reqData->songType);
 			break;
 		}
 
@@ -653,10 +658,10 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			PianoRequestDataAddFeedback_t transformedReqData;
 			transformedReqData.stationId = reqData->song->stationId;
 			transformedReqData.musicId = reqData->song->musicId;
-			transformedReqData.matchingSeed = reqData->song->matchingSeed;
 			transformedReqData.userSeed = reqData->song->userSeed;
-			transformedReqData.focusTraitId = reqData->song->focusTraitId;
 			transformedReqData.rating = reqData->rating;
+			transformedReqData.testStrategy = reqData->song->testStrategy;
+			transformedReqData.songType = reqData->song->songType;
 			req->data = &transformedReqData;
 
 			/* create request data (url, post data) */
@@ -682,9 +687,9 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			assert (reqData->step < 2);
 
 			transformedReqData.musicId = reqData->song->musicId;
-			transformedReqData.matchingSeed = "";
 			transformedReqData.userSeed = "";
-			transformedReqData.focusTraitId = "";
+			transformedReqData.songType = reqData->song->songType;
+			transformedReqData.testStrategy = reqData->song->testStrategy;
 			req->data = &transformedReqData;
 
 			switch (reqData->step) {

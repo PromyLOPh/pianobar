@@ -64,18 +64,18 @@ typedef enum {
 typedef struct PianoSong {
 	char *artist;
 	char *artistMusicId;
-	char *matchingSeed;
-	float fileGain;
-	PianoSongRating_t rating;
 	char *stationId;
 	char *album;
 	char *userSeed;
 	char *audioUrl;
 	char *musicId;
 	char *title;
-	char *focusTraitId;
 	char *identity;
+	float fileGain;
+	PianoSongRating_t rating;
 	PianoAudioFormat_t audioFormat;
+	int testStrategy;
+	unsigned int songType;
 	struct PianoSong *next;
 } PianoSong_t;
 
@@ -163,10 +163,10 @@ typedef struct {
 typedef struct {
 	char *stationId;
 	char *musicId;
-	char *matchingSeed;
 	char *userSeed;
-	char *focusTraitId;
 	PianoSongRating_t rating;
+	unsigned int testStrategy;
+	unsigned int songType;
 } PianoRequestDataAddFeedback_t;
 
 typedef struct {
