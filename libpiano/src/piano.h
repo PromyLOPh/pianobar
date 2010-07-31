@@ -87,9 +87,15 @@ typedef struct PianoArtist {
 	struct PianoArtist *next;
 } PianoArtist_t;
 
+typedef struct PianoGenre {
+	char *name;
+	char *musicId;
+	struct PianoGenre *next;
+} PianoGenre_t;
+
 typedef struct PianoGenreCategory {
 	char *name;
-	PianoStation_t *stations;
+	PianoGenre_t *genres;
 	struct PianoGenreCategory *next;
 } PianoGenreCategory_t;
 

@@ -150,6 +150,21 @@ void PianoDestroyPlaylist (PianoSong_t *playlist) {
 	}
 }
 
+/*	destroy genre linked list
+ */
+void PianoDestroyGenres (PianoGenre_t *genres) {
+	PianoGenre_t *curGenre, *lastGenre;
+
+	curGenre = genres;
+	while (curGenre != NULL) {
+		PianoFree (curGenre->name, 0);
+		PianoFree (curGenre->musicId, 0);
+		lastGenre = curGenre;
+		curGenre = curGenre->next;
+		PianoFree (lastGenre, sizeof (*lastGenre));
+	}
+}
+
 /*	frees the whole piano handle structure
  *	@param piano handle
  *	@return nothing
@@ -163,7 +178,7 @@ void PianoDestroy (PianoHandle_t *ph) {
 	/* destroy genre stations */
 	PianoGenreCategory_t *curGenreCat = ph->genreStations, *lastGenreCat;
 	while (curGenreCat != NULL) {
-		PianoDestroyStations (curGenreCat->stations);
+		PianoDestroyGenres (curGenreCat->genres);
 		PianoFree (curGenreCat->name, 0);
 		lastGenreCat = curGenreCat;
 		curGenreCat = curGenreCat->next;

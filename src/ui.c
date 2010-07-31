@@ -445,7 +445,7 @@ void BarStationFromGenre (PianoHandle_t *ph, WaitressHandle_t *waith, FILE *curF
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
 	PianoGenreCategory_t *curCat;
-	PianoStation_t *curStation;
+	PianoGenre_t *curGenre;
 	PianoRequestDataCreateStation_t reqData;
 	int i;
 
@@ -481,26 +481,26 @@ void BarStationFromGenre (PianoHandle_t *ph, WaitressHandle_t *waith, FILE *curF
 	}
 	
 	/* print all available stations */
-	curStation = curCat->stations;
+	curGenre = curCat->genres;
 	i = 0;
-	while (curStation != NULL) {
-		BarUiMsg (MSG_LIST, "%2i) %s\n", i, curStation->name);
+	while (curGenre != NULL) {
+		BarUiMsg (MSG_LIST, "%2i) %s\n", i, curGenre->name);
 		i++;
-		curStation = curStation->next;
+		curGenre = curGenre->next;
 	}
 	BarUiMsg (MSG_QUESTION, "Select genre: ");
 	if (BarReadlineInt (&i, curFd) == 0) {
 		return;
 	}
-	curStation = curCat->stations;
-	while (curStation != NULL && i > 0) {
-		curStation = curStation->next;
+	curGenre = curCat->genres;
+	while (curGenre != NULL && i > 0) {
+		curGenre = curGenre->next;
 		i--;
 	}
 	/* create station */
-	BarUiMsg (MSG_INFO, "Adding shared station \"%s\"... ", curStation->name);
-	reqData.id = curStation->id;
-	reqData.type = "sh";
+	BarUiMsg (MSG_INFO, "Adding shared station \"%s\"... ", curGenre->name);
+	reqData.id = curGenre->musicId;
+	reqData.type = "mi";
 	BarUiPianoCall (ph, PIANO_REQUEST_CREATE_STATION, waith, &reqData, &pRet,
 			&wRet);
 }
