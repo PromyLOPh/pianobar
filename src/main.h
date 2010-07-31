@@ -21,34 +21,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _UI_ACT_H
-#define _UI_ACT_H
+#ifndef _MAIN_H
+#define _MAIN_H
 
-#include "main.h"
+#include <piano.h>
+#include <waitress.h>
 
-#define BarUiActCallback(name) void name (BarApp_t *app, FILE *curFd)
+#include "player.h"
+#include "settings.h"
 
-BarUiActCallback(BarUiActHelp);
-BarUiActCallback(BarUiActAddMusic);
-BarUiActCallback(BarUiActBanSong);
-BarUiActCallback(BarUiActCreateStation);
-BarUiActCallback(BarUiActAddSharedStation);
-BarUiActCallback(BarUiActDeleteStation);
-BarUiActCallback(BarUiActExplain);
-BarUiActCallback(BarUiActStationFromGenre);
-BarUiActCallback(BarUiActSongInfo);
-BarUiActCallback(BarUiActLoveSong);
-BarUiActCallback(BarUiActSkipSong);
-BarUiActCallback(BarUiActMoveSong);
-BarUiActCallback(BarUiActPause);
-BarUiActCallback(BarUiActRenameStation);
-BarUiActCallback(BarUiActSelectStation);
-BarUiActCallback(BarUiActTempBanSong);
-BarUiActCallback(BarUiActPrintUpcoming);
-BarUiActCallback(BarUiActSelectQuickMix);
-BarUiActCallback(BarUiActQuit);
-BarUiActCallback(BarUiActDebug);
-BarUiActCallback(BarUiActHistory);
-BarUiActCallback(BarUiActBookmark);
+typedef struct {
+	PianoHandle_t ph;
+	WaitressHandle_t waith;
+	struct audioPlayer player;
+	BarSettings_t settings;
+	/* first item is current song */
+	PianoSong_t *playlist;
+	PianoSong_t *songHistory;
+	PianoStation_t *curStation;
+	char doQuit;
+} BarApp_t;
 
-#endif /* _UI_ACT_H */
+#endif /* _MAIN_H */
+

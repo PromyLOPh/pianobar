@@ -44,26 +44,18 @@ THE SOFTWARE.
 /* pandora.com library */
 #include <piano.h>
 
-#include "player.h"
-#include "settings.h"
+#include "main.h"
 #include "terminal.h"
 #include "config.h"
 #include "ui.h"
 #include "ui_act.h"
 #include "ui_readline.h"
 
+typedef void (*BarKeyShortcutFunc_t) (BarApp_t *app, FILE *curFd);
+
 int main (int argc, char **argv) {
-	/* handles */
-	PianoHandle_t ph;
-	WaitressHandle_t waith;
-	static struct audioPlayer player;
-	BarSettings_t settings;
+	static BarApp_t app;
 	pthread_t playerThread;
-	/* playlist; first item is current song */
-	PianoSong_t *playlist = NULL;
-	PianoSong_t *songHistory = NULL;
-	PianoStation_t *curStation = NULL;
-	char doQuit = 0;
 	/* FIXME: max path length? */
 	char ctlPath[1024];
 	FILE *ctlFd = NULL;
@@ -74,6 +66,8 @@ int main (int argc, char **argv) {
 	/* terminal attributes _before_ we started messing around with ~ECHO */
 	struct termios termOrig;
 
+	memset (&app, 0, sizeof (app));
+
 	/* save terminal attributes, before disabling echoing */
 	BarTermSave (&termOrig);
 
@@ -81,17 +75,17 @@ int main (int argc, char **argv) {
 	BarTermSetBuffer (0);
 	/* init some things */
 	ao_initialize ();
-	PianoInit (&ph);
+	PianoInit (&app.ph);
 
-	WaitressInit (&waith);
-	strncpy (waith.host, PIANO_RPC_HOST, sizeof (waith.host)-1);
-	strncpy (waith.port, PIANO_RPC_PORT, sizeof (waith.port)-1);
+	WaitressInit (&app.waith);
+	strncpy (app.waith.host, PIANO_RPC_HOST, sizeof (app.waith.host)-1);
+	strncpy (app.waith.port, PIANO_RPC_PORT, sizeof (app.waith.port)-1);
 
-	BarSettingsInit (&settings);
-	BarSettingsRead (&settings);
+	BarSettingsInit (&app.settings);
+	BarSettingsRead (&app.settings);
 
 	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE "! Press %c for a list of commands.\n",
-			settings.keys[BAR_KS_HELP]);
+			app.settings.keys[BAR_KS_HELP]);
 
 	/* init fds */
 	FD_ZERO(&readSet);
@@ -110,44 +104,44 @@ int main (int argc, char **argv) {
 		BarUiMsg (MSG_INFO, "Control fifo at %s opened\n", ctlPath);
 	}
 
-	if (settings.username == NULL) {
+	if (app.settings.username == NULL) {
 		char nameBuf[100];
 		BarUiMsg (MSG_QUESTION, "Username: ");
 		BarReadlineStr (nameBuf, sizeof (nameBuf), 0, stdin);
-		settings.username = strdup (nameBuf);
+		app.settings.username = strdup (nameBuf);
 	}
-	if (settings.password == NULL) {
+	if (app.settings.password == NULL) {
 		char passBuf[100];
 		BarUiMsg (MSG_QUESTION, "Password: ");
 		BarReadlineStr (passBuf, sizeof (passBuf), 1, stdin);
-		settings.password = strdup (passBuf);
+		app.settings.password = strdup (passBuf);
 	}
 
 	/* set up proxy (control proxy for non-us citizen or global proxy for poor
 	 * firewalled fellows) */
-	if (settings.controlProxy != NULL) {
+	if (app.settings.controlProxy != NULL) {
 		/* control proxy overrides global proxy */
 		char tmpPath[2];
-		WaitressSplitUrl (settings.controlProxy, waith.proxyHost,
-				sizeof (waith.proxyHost), waith.proxyPort,
-				sizeof (waith.proxyPort), tmpPath, sizeof (tmpPath));
-	} else if (settings.proxy != NULL && strlen (settings.proxy) > 0) {
+		WaitressSplitUrl (app.settings.controlProxy, app.waith.proxyHost,
+				sizeof (app.waith.proxyHost), app.waith.proxyPort,
+				sizeof (app.waith.proxyPort), tmpPath, sizeof (tmpPath));
+	} else if (app.settings.proxy != NULL && strlen (app.settings.proxy) > 0) {
 		char tmpPath[2];
-		WaitressSplitUrl (settings.proxy, waith.proxyHost,
-				sizeof (waith.proxyHost), waith.proxyPort,
-				sizeof (waith.proxyPort), tmpPath, sizeof (tmpPath));
+		WaitressSplitUrl (app.settings.proxy, app.waith.proxyHost,
+				sizeof (app.waith.proxyHost), app.waith.proxyPort,
+				sizeof (app.waith.proxyPort), tmpPath, sizeof (tmpPath));
 	}
 
 	{
 		PianoReturn_t pRet;
 		WaitressReturn_t wRet;
 		PianoRequestDataLogin_t reqData;
-		reqData.user = settings.username;
-		reqData.password = settings.password;
+		reqData.user = app.settings.username;
+		reqData.password = app.settings.password;
 		
 		BarUiMsg (MSG_INFO, "Login... ");
-		if (!BarUiPianoCall (&ph, PIANO_REQUEST_LOGIN, &waith, &reqData, &pRet,
-				&wRet)) {
+		if (!BarUiPianoCall (&app.ph, PIANO_REQUEST_LOGIN, &app.waith,
+				&reqData, &pRet, &wRet)) {
 			BarTermRestore (&termOrig);
 			return 0;
 		}
@@ -158,71 +152,71 @@ int main (int argc, char **argv) {
 		WaitressReturn_t wRet;
 
 		BarUiMsg (MSG_INFO, "Get stations... ");
-		if (!BarUiPianoCall (&ph, PIANO_REQUEST_GET_STATIONS, &waith, NULL,
-				&pRet, &wRet)) {
+		if (!BarUiPianoCall (&app.ph, PIANO_REQUEST_GET_STATIONS, &app.waith,
+				NULL, &pRet, &wRet)) {
 			BarTermRestore (&termOrig);
 			return 0;
 		}
 	}
 
 	/* try to get autostart station */
-	if (settings.autostartStation != NULL) {
-		curStation = PianoFindStationById (ph.stations,
-				settings.autostartStation);
-		if (curStation == NULL) {
+	if (app.settings.autostartStation != NULL) {
+		app.curStation = PianoFindStationById (app.ph.stations,
+				app.settings.autostartStation);
+		if (app.curStation == NULL) {
 			BarUiMsg (MSG_ERR, "Error: Autostart station not found.\n");
 		}
 	}
 	/* no autostart? ask the user */
-	if (curStation == NULL) {
-		curStation = BarUiSelectStation (&ph, "Select station: ",
-				settings.sortOrder, stdin);
+	if (app.curStation == NULL) {
+		app.curStation = BarUiSelectStation (&app.ph, "Select station: ",
+				app.settings.sortOrder, stdin);
 	}
-	if (curStation != NULL) {
-		BarUiPrintStation (curStation);
+	if (app.curStation != NULL) {
+		BarUiPrintStation (app.curStation);
 	}
 
 	/* little hack, needed to signal: hey! we need a playlist, but don't
 	 * free anything (there is nothing to be freed yet) */
-	memset (&player, 0, sizeof (player));
+	memset (&app.player, 0, sizeof (app.player));
 
-	while (!doQuit) {
+	while (!app.doQuit) {
 		/* song finished playing, clean up things/scrobble song */
-		if (player.mode == PLAYER_FINISHED_PLAYBACK) {
-			BarUiStartEventCmd (&settings, "songfinish", curStation, playlist,
-					&player, PIANO_RET_OK, WAITRESS_RET_OK);
+		if (app.player.mode == PLAYER_FINISHED_PLAYBACK) {
+			BarUiStartEventCmd (&app.settings, "songfinish", app.curStation,
+					app.playlist, &app.player, PIANO_RET_OK, WAITRESS_RET_OK);
 			/* FIXME: pthread_join blocks everything if network connection
 			 * is hung up e.g. */
 			void *threadRet;
 			pthread_join (playerThread, &threadRet);
 			/* don't continue playback if thread reports error */
 			if (threadRet != (void *) PLAYER_RET_OK) {
-				curStation = NULL;
+				app.curStation = NULL;
 			}
-			memset (&player, 0, sizeof (player));
+			memset (&app.player, 0, sizeof (app.player));
 		}
 
 		/* check whether player finished playing and start playing new
 		 * song */
-		if (player.mode >= PLAYER_FINISHED_PLAYBACK ||
-				player.mode == PLAYER_FREED) {
-			if (curStation != NULL) {
+		if (app.player.mode >= PLAYER_FINISHED_PLAYBACK ||
+				app.player.mode == PLAYER_FREED) {
+			if (app.curStation != NULL) {
 				/* what's next? */
-				if (playlist != NULL) {
-					if (settings.history != 0) {
+				if (app.playlist != NULL) {
+					if (app.settings.history != 0) {
 						/* prepend song to history list */
-						PianoSong_t *tmpSong = songHistory;
-						songHistory = playlist;
+						PianoSong_t *tmpSong = app.songHistory;
+						app.songHistory = app.playlist;
 						/* select next song */
-						playlist = playlist->next;
-						songHistory->next = tmpSong;
+						app.playlist = app.playlist->next;
+						app.songHistory->next = tmpSong;
 
 						/* limit history's length */
 						/* start with 1, so we're stopping at n-1 and have the
 						 * chance to set ->next = NULL */
 						unsigned int i = 1;
-						tmpSong = songHistory;
-						while (i < settings.history && tmpSong != NULL) {
+						tmpSong = app.songHistory;
+						while (i < app.settings.history && tmpSong != NULL) {
 							tmpSong = tmpSong->next;
 							++i;
 						}
@@ -236,70 +230,71 @@ int main (int argc, char **argv) {
 						}
 					} else {
 						/* don't keep history */
-						playlist = playlist->next;
+						app.playlist = app.playlist->next;
 					}
 				}
-				if (playlist == NULL) {
+				if (app.playlist == NULL) {
 					PianoReturn_t pRet;
 					WaitressReturn_t wRet;
 					PianoRequestDataGetPlaylist_t reqData;
-					reqData.station = curStation;
-					reqData.format = settings.audioFormat;
+					reqData.station = app.curStation;
+					reqData.format = app.settings.audioFormat;
 
 					BarUiMsg (MSG_INFO, "Receiving new playlist... ");
-					if (!BarUiPianoCall (&ph, PIANO_REQUEST_GET_PLAYLIST,
-							&waith, &reqData, &pRet, &wRet)) {
-						curStation = NULL;
+					if (!BarUiPianoCall (&app.ph, PIANO_REQUEST_GET_PLAYLIST,
+							&app.waith, &reqData, &pRet, &wRet)) {
+						app.curStation = NULL;
 					} else {
-						playlist = reqData.retPlaylist;
-						if (playlist == NULL) {
+						app.playlist = reqData.retPlaylist;
+						if (app.playlist == NULL) {
 							BarUiMsg (MSG_INFO, "No tracks left.\n");
-							curStation = NULL;
+							app.curStation = NULL;
 						}
 					}
-					BarUiStartEventCmd (&settings, "stationfetchplaylist",
-							curStation, playlist, &player, pRet, wRet);
+					BarUiStartEventCmd (&app.settings, "stationfetchplaylist",
+							app.curStation, app.playlist, &app.player, pRet,
+							wRet);
 				}
 				/* song ready to play */
-				if (playlist != NULL) {
-					BarUiPrintSong (playlist, curStation->isQuickMix ?
-							PianoFindStationById (ph.stations,
-							playlist->stationId) : NULL);
+				if (app.playlist != NULL) {
+					BarUiPrintSong (app.playlist, app.curStation->isQuickMix ?
+							PianoFindStationById (app.ph.stations,
+							app.playlist->stationId) : NULL);
 
-					if (playlist->audioUrl == NULL) {
+					if (app.playlist->audioUrl == NULL) {
 						BarUiMsg (MSG_ERR, "Invalid song url.\n");
 					} else {
 						/* setup player */
-						memset (&player, 0, sizeof (player));
+						memset (&app.player, 0, sizeof (app.player));
 
-						WaitressInit (&player.waith);
-						WaitressSetUrl (&player.waith, playlist->audioUrl);
+						WaitressInit (&app.player.waith);
+						WaitressSetUrl (&app.player.waith, app.playlist->audioUrl);
 
 						/* set up global proxy, player is NULLed on songfinish */
-						if (settings.proxy != NULL) {
+						if (app.settings.proxy != NULL) {
 							char tmpPath[2];
-							WaitressSplitUrl (settings.proxy,
-									player.waith.proxyHost,
-									sizeof (player.waith.proxyHost),
-									player.waith.proxyPort,
-									sizeof (player.waith.proxyPort), tmpPath,
+							WaitressSplitUrl (app.settings.proxy,
+									app.player.waith.proxyHost,
+									sizeof (app.player.waith.proxyHost),
+									app.player.waith.proxyPort,
+									sizeof (app.player.waith.proxyPort), tmpPath,
 									sizeof (tmpPath));
 						}
 
-						player.gain = playlist->fileGain;
-						player.audioFormat = playlist->audioFormat;
+						app.player.gain = app.playlist->fileGain;
+						app.player.audioFormat = app.playlist->audioFormat;
 			
 						/* throw event */
-						BarUiStartEventCmd (&settings, "songstart", curStation,
-								playlist, &player, PIANO_RET_OK,
-								WAITRESS_RET_OK);
+						BarUiStartEventCmd (&app.settings, "songstart",
+								app.curStation, app.playlist, &app.player,
+								PIANO_RET_OK, WAITRESS_RET_OK);
 
 						/* prevent race condition, mode must _not_ be FREED if
 						 * thread has been started */
-						player.mode = PLAYER_STARTING;
+						app.player.mode = PLAYER_STARTING;
 						/* start player */
 						pthread_create (&playerThread, NULL, BarPlayerThread,
-								&player);
+								&app.player);
 					} /* end if audioUrl == NULL */
 				} /* end if playlist != NULL */
 			} /* end if curStation != NULL */
@@ -323,7 +318,7 @@ int main (int argc, char **argv) {
 
 			size_t i;
 			for (i = 0; i < BAR_KS_COUNT; i++) {
-				if (settings.keys[i] == buf) {
+				if (app.settings.keys[i] == buf) {
 					static const BarKeyShortcutFunc_t idToF[] = {BarUiActHelp,
 							BarUiActLoveSong, BarUiActBanSong,
 							BarUiActAddMusic, BarUiActCreateStation,
@@ -335,20 +330,19 @@ int main (int argc, char **argv) {
 							BarUiActSelectStation, BarUiActTempBanSong,
 							BarUiActPrintUpcoming, BarUiActSelectQuickMix,
 							BarUiActDebug, BarUiActBookmark};
-					idToF[i] (&ph, &waith, &player, &settings, &playlist,
-							&curStation, &songHistory, &doQuit, curFd);
+					idToF[i] (&app, curFd);
 					break;
 				}
 			}
 		}
 
 		/* show time */
-		if (player.mode >= PLAYER_SAMPLESIZE_INITIALIZED &&
-				player.mode < PLAYER_FINISHED_PLAYBACK) {
+		if (app.player.mode >= PLAYER_SAMPLESIZE_INITIALIZED &&
+				app.player.mode < PLAYER_FINISHED_PLAYBACK) {
 			/* Ugly: songDuration is unsigned _long_ int! Lets hope this won't
 			 * overflow */
-			int songRemaining = (signed long int) (player.songDuration - player.songPlayed)
-					/ BAR_PLAYER_MS_TO_S_FACTOR;
+			int songRemaining = (signed long int) (app.player.songDuration -
+					app.player.songPlayed) / BAR_PLAYER_MS_TO_S_FACTOR;
 			char pos = 0;
 			if (songRemaining < 0) {
 				/* Use plus sign if song is longer than expected */
@@ -357,23 +351,23 @@ int main (int argc, char **argv) {
 			}
 			BarUiMsg (MSG_TIME, "%c%02i:%02i/%02i:%02i\r", (pos ? '+' : '-'),
 					songRemaining / 60, songRemaining % 60,
-					player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
-					player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
+					app.player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
+					app.player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
 		}
 	}
 
 	/* destroy everything (including the world...) */
-	if (player.mode != PLAYER_FREED) {
+	if (app.player.mode != PLAYER_FREED) {
 		pthread_join (playerThread, NULL);
 	}
 	if (ctlFd != NULL) {
 		fclose (ctlFd);
 	}
-	PianoDestroy (&ph);
-	PianoDestroyPlaylist (songHistory);
-	PianoDestroyPlaylist (playlist);
+	PianoDestroy (&app.ph);
+	PianoDestroyPlaylist (app.songHistory);
+	PianoDestroyPlaylist (app.playlist);
 	ao_shutdown();
-	BarSettingsDestroy (&settings);
+	BarSettingsDestroy (&app.settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */
 	BarTermRestore (&termOrig);

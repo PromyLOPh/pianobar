@@ -27,14 +27,6 @@ THE SOFTWARE.
 #include <piano.h>
 #include <waitress.h>
 
-#include "player.h"
-
-#define BAR_KS_ARGS PianoHandle_t *ph, WaitressHandle_t *waith, \
-		struct audioPlayer *player, \
-		BarSettings_t *settings, PianoSong_t **curSong, \
-		PianoStation_t **curStation, PianoSong_t **songHistory, char *doQuit, \
-		FILE *curFd
-
 /* keep in mind that you have to update several arrays in main.c/ui_act.c too,
  * if you're adding new shortcuts */
 typedef enum {
@@ -86,8 +78,6 @@ typedef struct {
 	char *autostartStation;
 	char *eventCmd;
 } BarSettings_t;
-
-typedef void (*BarKeyShortcutFunc_t) (BAR_KS_ARGS);
 
 void BarSettingsInit (BarSettings_t *);
 void BarSettingsDestroy (BarSettings_t *);
