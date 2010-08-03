@@ -577,7 +577,7 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					ph->user.authToken, reqData->song->stationId,
 					reqData->song->musicId);
 			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
-					"rid=%s&lid=%s&method=method=narrative&arg1=%s&arg2=%s",
+					"rid=%s&lid=%s&method=narrative&arg1=%s&arg2=%s",
 					ph->routeId, ph->user.listenerId, reqData->song->stationId,
 					reqData->song->musicId);
 			break;
@@ -600,7 +600,7 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					"</params></methodCall>", (unsigned long) time (NULL),
 					ph->user.authToken, reqData->musicId, reqData->max);
 			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
-					"rid=%s&lid=%s&method=method=getSeedSuggestions&arg1=%s&arg2=%u",
+					"rid=%s&lid=%s&method=getSeedSuggestions&arg1=%s&arg2=%u",
 					ph->routeId, ph->user.listenerId, reqData->musicId, reqData->max);
 			break;
 		}
@@ -620,7 +620,7 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					"</params></methodCall>", (unsigned long) time (NULL),
 					ph->user.authToken, song->stationId, song->musicId);
 			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
-					"rid=%s&lid=%s&method=method=createBookmark&arg1=%s&arg2=%s",
+					"rid=%s&lid=%s&method=createBookmark&arg1=%s&arg2=%s",
 					ph->routeId, ph->user.listenerId, song->stationId,
 					song->musicId);
 			break;
@@ -640,7 +640,7 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					"</params></methodCall>", (unsigned long) time (NULL),
 					ph->user.authToken, song->artistMusicId);
 			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
-					"rid=%s&lid=%s&method=method=createArtistBookmark&arg1=%s",
+					"rid=%s&lid=%s&method=createArtistBookmark&arg1=%s",
 					ph->routeId, ph->user.listenerId, song->artistMusicId);
 			break;
 		}
