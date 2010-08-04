@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include <ctype.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <errno.h>
 
 #include "config.h"
 #include "waitress.h"
@@ -225,6 +226,22 @@ WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char **buf) {
 	return wRet;
 }
 
+/*	poll wrapper that retries after signal interrupts, required for socksify
+ *	wrapper
+ */
+static int WaitressPollLoop (struct pollfd *fds, nfds_t nfds, int timeout) {
+	int pollres = -1;
+	int pollerr = 0;
+
+	do {
+		pollres = poll (fds, nfds, timeout);
+		pollerr = errno;
+		errno = 0;
+	} while (pollerr == EINTR || pollerr == EINPROGRESS || pollerr == EAGAIN);
+
+	return pollres;
+}
+
 /*	write () wrapper with poll () timeout
  *	@param socket fd
  *	@param write buffer
@@ -238,7 +255,7 @@ static WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf, size_t c
 	int pollres = -1;
 
 	sockpoll->events = POLLOUT;
-	pollres = poll (sockpoll, 1, timeout);
+	pollres = WaitressPollLoop (sockpoll, 1, timeout);
 	if (pollres == 0) {
 		return WAITRESS_RET_TIMEOUT;
 	} else if (pollres == -1) {
@@ -264,7 +281,7 @@ static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
 	int pollres = -1;
 
 	sockpoll->events = POLLIN;
-	pollres = poll (sockpoll, 1, timeout);
+	pollres = WaitressPollLoop (sockpoll, 1, timeout);
 	if (pollres == 0) {
 		return WAITRESS_RET_TIMEOUT;
 	} else if (pollres == -1) {
@@ -344,7 +361,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	connect (sockfd, res->ai_addr, res->ai_addrlen);
 
 	sockpoll.events = POLLOUT;
-	pollres = poll (&sockpoll, 1, waith->socktimeout);
+	pollres = WaitressPollLoop (&sockpoll, 1, waith->socktimeout);
 	freeaddrinfo (res);
 	if (pollres == 0) {
 		return WAITRESS_RET_TIMEOUT;
