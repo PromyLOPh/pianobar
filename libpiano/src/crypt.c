@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <arpa/inet.h>
 
 #include "crypt_key_output.h"
 #include "crypt_key_input.h"
@@ -34,6 +35,9 @@ THE SOFTWARE.
 		(((x) >> 8) & 0x0000ff00) | \
 		(((x) << 8) & 0x00ff0000) | \
 		(((x) << 24) & 0xff000000))
+
+#define hostToBigEndian32(x) htonl(x)
+#define bigToHostEndian32(x) ntohl(x)
 
 /*	decrypt hex-encoded, blowfish-crypted string: decode 2 hex-encoded blocks,
  *	decrypt, byteswap
@@ -98,8 +102,8 @@ unsigned char *PianoDecryptString (const unsigned char *strInput) {
 			r ^= in_key_p [1];
 			l ^= in_key_p [0];
 
-			*(iDecrypt-2) = byteswap32 (l);
-			*(iDecrypt-1) = byteswap32 (r);
+			*(iDecrypt-2) = bigToHostEndian32 (l);
+			*(iDecrypt-1) = bigToHostEndian32 (r);
 
 			intsDecoded = 0;
 		}
@@ -142,8 +146,8 @@ unsigned char *PianoEncryptString (const unsigned char *strInput) {
 		register uint32_t l, r;
 		int i;
 
-		l = byteswap32 (*blockPtr);
-		r = byteswap32 (*(blockPtr+1));
+		l = hostToBigEndian32 (*blockPtr);
+		r = hostToBigEndian32 (*(blockPtr+1));
 		
 		/* encrypt blocks */
 		for (i = 0; i < out_key_n; i++) {

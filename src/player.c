@@ -28,13 +28,13 @@ THE SOFTWARE.
 #include <math.h>
 #include <stdint.h>
 #include <limits.h>
+#include <arpa/inet.h>
 
 #include "player.h"
 #include "config.h"
 #include "ui.h"
 
-#define byteswap32(x) (((x >> 24) & 0x000000ff) | ((x >> 8) & 0x0000ff00) | \
-		((x << 8) & 0x00ff0000) | ((x << 24) & 0xff000000))
+#define bigToHostEndian32(x) ntohl(x)
 
 /* wait while locked, but don't slow down main thread by keeping
  * locks too long */
@@ -233,7 +233,7 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size, void *stream) 
 				if (player->sampleSizeN == 0) {
 					/* mp4 uses big endian, convert */
 					player->sampleSizeN =
-							byteswap32 (*((int *) (player->buffer +
+							bigToHostEndian32 (*((int *) (player->buffer +
 							player->bufferRead)));
 					player->sampleSize = calloc (player->sampleSizeN,
 							sizeof (player->sampleSizeN));
@@ -251,7 +251,7 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size, void *stream) 
 					break;
 				} else {
 					player->sampleSize[player->sampleSizeCurr] =
-							byteswap32 (*((int *) (player->buffer +
+							bigToHostEndian32 (*((int *) (player->buffer +
 							player->bufferRead)));
 					player->sampleSizeCurr++;
 					player->bufferRead += 4;
