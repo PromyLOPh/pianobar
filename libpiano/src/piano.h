@@ -105,6 +105,7 @@ typedef struct PianoHandle {
 	/* linked lists */
 	PianoStation_t *stations;
 	PianoGenreCategory_t *genreStations;
+	int timeOffset;
 } PianoHandle_t;
 
 typedef struct PianoSearchResult {
@@ -147,6 +148,7 @@ typedef struct PianoRequest {
 typedef struct {
 	char *user;
 	char *password;
+	unsigned char step;
 } PianoRequestDataLogin_t;
 
 typedef struct {

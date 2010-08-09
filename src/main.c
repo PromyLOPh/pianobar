@@ -138,6 +138,7 @@ int main (int argc, char **argv) {
 		PianoRequestDataLogin_t reqData;
 		reqData.user = app.settings.username;
 		reqData.password = app.settings.password;
+		reqData.step = 0;
 		
 		BarUiMsg (MSG_INFO, "Login... ");
 		if (!BarUiPianoCall (&app.ph, PIANO_REQUEST_LOGIN, &app.waith,
