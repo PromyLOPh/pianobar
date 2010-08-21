@@ -22,7 +22,8 @@ PIANOBAR_HDR=\
 		${PIANOBAR_DIR}/ui_act.h \
 		${PIANOBAR_DIR}/ui.h \
 		${PIANOBAR_DIR}/ui_readline.h \
-		${PIANOBAR_DIR}/main.h
+		${PIANOBAR_DIR}/main.h \
+		${PIANOBAR_DIR}/config.h
 PIANOBAR_OBJ=${PIANOBAR_SRC:.c=.o}
 
 LIBPIANO_DIR=libpiano/src

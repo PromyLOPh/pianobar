@@ -84,7 +84,8 @@ int main (int argc, char **argv) {
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
 
-	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE "! Press %c for a list of commands.\n",
+	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE " (" VERSION ")! "
+			"Press %c for a list of commands.\n",
 			app.settings.keys[BAR_KS_HELP]);
 
 	/* init fds */
