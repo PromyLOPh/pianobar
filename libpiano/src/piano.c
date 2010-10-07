@@ -39,7 +39,7 @@ THE SOFTWARE.
 #include "crypt.h"
 #include "config.h"
 
-#define PIANO_PROTOCOL_VERSION "27"
+#define PIANO_PROTOCOL_VERSION "28"
 #define PIANO_RPC_HOST "www.pandora.com"
 #define PIANO_RPC_PORT "80"
 #define PIANO_RPC_PATH "/radio/xmlrpc/v" PIANO_PROTOCOL_VERSION "?"
@@ -541,11 +541,14 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 				}
 			}
 			strncat (xmlSendBuf,
-					"</data></array></value></param></params></methodCall>",
+					"</data></array></value></param>"
+					"<param><value><string>CUSTOM</string></value></param>"
+					"<param><value><string></string></value></param>"
+					"</params></methodCall>",
 					sizeof (xmlSendBuf) - strlen (xmlSendBuf) - 1);
 
 			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
-					"rid=%s&lid=%s&method=setQuickMix&arg1=RANDOM&arg2=%s",
+					"rid=%s&lid=%s&method=setQuickMix&arg1=RANDOM&arg2=%s&arg3=CUSTOM&arg4=",
 					ph->routeId, ph->user.listenerId, urlArgBuf);
 			break;
 		}
