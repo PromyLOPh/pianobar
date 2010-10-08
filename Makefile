@@ -101,6 +101,7 @@ libpiano: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 %.o: %.c
 	${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
 			-I ${LIBEZXML_INCLUDE} ${LIBFAAD_SWITCH} ${LIBMAD_SWITCH} -c \
+			-I ${LIBAO_INCLUDE} -I ${LIBFAAD_INCLUDE} -I ${LIBMAD_INCLUDE} \
 			-o $@ $<
 
 # create position independent code (for shared libraries)
