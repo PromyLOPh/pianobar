@@ -60,7 +60,7 @@ int main (int argc, char **argv) {
 	char ctlPath[1024];
 	FILE *ctlFd = NULL;
 	struct timeval selectTimeout;
-	int maxFd, selectFds[2];
+	int maxFd, selectFds[2] = {-1, -1};
 	fd_set readSet, readSetCopy;
 	char buf = '\0';
 	/* terminal attributes _before_ we started messing around with ~ECHO */
@@ -313,7 +313,7 @@ int main (int argc, char **argv) {
 
 			if (FD_ISSET(selectFds[0], &readSetCopy)) {
 				curFd = stdin;
-			} else if (FD_ISSET(selectFds[1], &readSetCopy)) {
+			} else if (selectFds[1] != -1 && FD_ISSET(selectFds[1], &readSetCopy)) {
 				curFd = ctlFd;
 			}
 			buf = fgetc (curFd);
