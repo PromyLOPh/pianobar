@@ -747,11 +747,6 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 	return PIANO_RET_OK;
 }
 
-#define byteswap32(x) ((((x) >> 24) & 0x000000ff) | \
-		(((x) >> 8) & 0x0000ff00) | \
-		(((x) << 8) & 0x00ff0000) | \
-		(((x) << 24) & 0xff000000))
-
 /*	parse xml response and update data structures/return new data structure
  *	@param piano handle
  *	@param initialized request (expects responseData to be a NUL-terminated
