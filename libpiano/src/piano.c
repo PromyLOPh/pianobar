@@ -164,15 +164,20 @@ void PianoDestroyGenres (PianoGenre_t *genres) {
 	}
 }
 
+/*	destroy user information
+ */
+void PianoDestroyUserInfo (PianoUserInfo_t *user) {
+	PianoFree (user->webAuthToken, 0);
+	PianoFree (user->authToken, 0);
+	PianoFree (user->listenerId, 0);
+}
+
 /*	frees the whole piano handle structure
  *	@param piano handle
  *	@return nothing
  */
 void PianoDestroy (PianoHandle_t *ph) {
-	PianoFree (ph->user.webAuthToken, 0);
-	PianoFree (ph->user.authToken, 0);
-	PianoFree (ph->user.listenerId, 0);
-
+	PianoDestroyUserInfo (&ph->user);
 	PianoDestroyStations (ph->stations);
 	/* destroy genre stations */
 	PianoGenreCategory_t *curGenreCat = ph->genreStations, *lastGenreCat;
@@ -796,6 +801,11 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				}
 
 				case 1:
+					/* information exists when reauthenticating, destroy to
+					 * avoid memleak */
+					if (ph->user.listenerId != NULL) {
+						PianoDestroyUserInfo (&ph->user);
+					}
 					ret = PianoXmlParseUserinfo (ph, req->responseData);
 					break;
 			}
