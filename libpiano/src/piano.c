@@ -191,7 +191,8 @@ void PianoDestroy (PianoHandle_t *ph) {
 	memset (ph, 0, sizeof (*ph));
 }
 
-/*	destroy request, free post data. req->responseData is *not* freed here!
+/*	destroy request, free post data. req->responseData is *not* freed here, as
+ *	it might be allocated by something else than malloc!
  *	@param piano request
  */
 void PianoDestroyRequest (PianoRequest_t *req) {
