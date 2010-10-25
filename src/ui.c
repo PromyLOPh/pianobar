@@ -148,7 +148,33 @@ int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
 
 		*pRet = PianoResponse (&app->ph, &req);
 		if (*pRet != PIANO_RET_CONTINUE_REQUEST) {
-			if (*pRet != PIANO_RET_OK) {
+			/* checking for request type avoids infinite loops */
+			if (*pRet == PIANO_RET_AUTH_TOKEN_INVALID &&
+					type != PIANO_REQUEST_LOGIN) {
+				/* reauthenticate */
+				PianoReturn_t authpRet;
+				WaitressReturn_t authwRet;
+				PianoRequestDataLogin_t reqData;
+				reqData.user = app->settings.username;
+				reqData.password = app->settings.password;
+				reqData.step = 0;
+
+				BarUiMsg (MSG_NONE, "Reauthentication required... ");
+				if (!BarUiPianoCall (app, PIANO_REQUEST_LOGIN, &reqData, &authpRet,
+						&authwRet)) {
+					*pRet = authpRet;
+					*wRet = authwRet;
+					if (req.responseData != NULL) {
+						free (req.responseData);
+					}
+					PianoDestroyRequest (&req);
+					return 0;
+				} else {
+					/* try again */
+					*pRet = PIANO_RET_CONTINUE_REQUEST;
+					BarUiMsg (MSG_INFO, "Trying again... ");
+				}
+			} else if (*pRet != PIANO_RET_OK) {
 				BarUiMsg (MSG_NONE, "Error: %s\n", PianoErrorToStr (*pRet));
 				PianoDestroyRequest (&req);
 				if (req.responseData != NULL) {
@@ -160,7 +186,7 @@ int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
 			}
 		}
 		/* we can destroy the request at this point, even when this call needs
-		 * more than one http request. persistend data (step counter, e.g.) is
+		 * more than one http request. persistent data (step counter, e.g.) is
 		 * stored in req.data */
 		if (req.responseData != NULL) {
 			free (req.responseData);
