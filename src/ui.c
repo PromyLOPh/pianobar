@@ -139,10 +139,10 @@ int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
 		*wRet = BarPianoHttpRequest (&app->waith, &req);
 		if (*wRet != WAITRESS_RET_OK) {
 			BarUiMsg (MSG_NONE, "Network error: %s\n", WaitressErrorToStr (*wRet));
-			PianoDestroyRequest (&req);
 			if (req.responseData != NULL) {
 				free (req.responseData);
 			}
+			PianoDestroyRequest (&req);
 			return 0;
 		}
 
@@ -176,10 +176,10 @@ int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
 				}
 			} else if (*pRet != PIANO_RET_OK) {
 				BarUiMsg (MSG_NONE, "Error: %s\n", PianoErrorToStr (*pRet));
-				PianoDestroyRequest (&req);
 				if (req.responseData != NULL) {
 					free (req.responseData);
 				}
+				PianoDestroyRequest (&req);
 				return 0;
 			} else {
 				BarUiMsg (MSG_NONE, "Ok.\n");
