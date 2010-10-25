@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #include "settings.h"
 #include "player.h"
+#include "main.h"
 
 typedef enum {MSG_NONE, MSG_INFO, MSG_PLAYING, MSG_TIME, MSG_ERR,
 		MSG_QUESTION, MSG_LIST} uiMsg_t;
@@ -39,14 +40,14 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *, const char *,
 		BarStationSorting_t, FILE *);
 PianoSong_t *BarUiSelectSong (PianoSong_t *startSong, FILE *curFd);
 PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd);
-char *BarUiSelectMusicId (PianoHandle_t *ph, WaitressHandle_t *, FILE *curFd, char *);
-void BarStationFromGenre (PianoHandle_t *ph, WaitressHandle_t *, FILE *curFd);
+char *BarUiSelectMusicId (BarApp_t *, FILE *, char *);
+void BarStationFromGenre (BarApp_t *, FILE *);
 void BarUiPrintStation (PianoStation_t *);
 void BarUiPrintSong (PianoSong_t *, PianoStation_t *);
 void BarUiStartEventCmd (const BarSettings_t *, const char *,
 		const PianoStation_t *, const PianoSong_t *, const struct audioPlayer *,
 		PianoReturn_t, WaitressReturn_t);
-int BarUiPianoCall (PianoHandle_t *, PianoRequestType_t, WaitressHandle_t *,
+int BarUiPianoCall (BarApp_t * const, PianoRequestType_t,
 		void *, PianoReturn_t *, WaitressReturn_t *);
 
 #endif /* _UI_H */

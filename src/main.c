@@ -142,8 +142,8 @@ int main (int argc, char **argv) {
 		reqData.step = 0;
 		
 		BarUiMsg (MSG_INFO, "Login... ");
-		if (!BarUiPianoCall (&app.ph, PIANO_REQUEST_LOGIN, &app.waith,
-				&reqData, &pRet, &wRet)) {
+		if (!BarUiPianoCall (&app, PIANO_REQUEST_LOGIN, &reqData, &pRet,
+				&wRet)) {
 			BarTermRestore (&termOrig);
 			return 0;
 		}
@@ -154,8 +154,8 @@ int main (int argc, char **argv) {
 		WaitressReturn_t wRet;
 
 		BarUiMsg (MSG_INFO, "Get stations... ");
-		if (!BarUiPianoCall (&app.ph, PIANO_REQUEST_GET_STATIONS, &app.waith,
-				NULL, &pRet, &wRet)) {
+		if (!BarUiPianoCall (&app, PIANO_REQUEST_GET_STATIONS, NULL, &pRet,
+				&wRet)) {
 			BarTermRestore (&termOrig);
 			return 0;
 		}
@@ -243,8 +243,8 @@ int main (int argc, char **argv) {
 					reqData.format = app.settings.audioFormat;
 
 					BarUiMsg (MSG_INFO, "Receiving new playlist... ");
-					if (!BarUiPianoCall (&app.ph, PIANO_REQUEST_GET_PLAYLIST,
-							&app.waith, &reqData, &pRet, &wRet)) {
+					if (!BarUiPianoCall (&app, PIANO_REQUEST_GET_PLAYLIST,
+							&reqData, &pRet, &wRet)) {
 						app.curStation = NULL;
 					} else {
 						app.playlist = reqData.retPlaylist;

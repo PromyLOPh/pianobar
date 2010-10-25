@@ -46,8 +46,8 @@ THE SOFTWARE.
 
 /*	standard piano call
  */
-#define BarUiActDefaultPianoCall(call, arg) BarUiPianoCall (&app->ph, \
-		call, &app->waith, arg, &pRet, &wRet)
+#define BarUiActDefaultPianoCall(call, arg) BarUiPianoCall (app, \
+		call, arg, &pRet, &wRet)
 
 /*	helper to _really_ skip a song (unlock mutex, quit player)
  *	@param player handle
@@ -62,16 +62,15 @@ static inline void BarUiDoSkipSong (struct audioPlayer *player) {
  *	@param transform this station
  *	@return 0 = error, 1 = everything went well
  */
-static int BarTransformIfShared (PianoHandle_t *ph, WaitressHandle_t *waith,
-		PianoStation_t *station) {
+static int BarTransformIfShared (BarApp_t *app, PianoStation_t *station) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
 
 	/* shared stations must be transformed */
 	if (!station->isCreator) {
 		BarUiMsg (MSG_INFO, "Transforming station... ");
-		if (!BarUiPianoCall (ph, PIANO_REQUEST_TRANSFORM_STATION, waith,
-				station, &pRet, &wRet)) {
+		if (!BarUiPianoCall (app, PIANO_REQUEST_TRANSFORM_STATION, station,
+				&pRet, &wRet)) {
 			return 0;
 		}
 	}
@@ -124,10 +123,9 @@ BarUiActCallback(BarUiActAddMusic) {
 
 	RETURN_IF_NO_STATION;
 
-	reqData.musicId = BarUiSelectMusicId (&app->ph, &app->waith, curFd,
-			app->playlist->musicId);
+	reqData.musicId = BarUiSelectMusicId (app, curFd, app->playlist->musicId);
 	if (reqData.musicId != NULL) {
-		if (!BarTransformIfShared (&app->ph, &app->waith, app->curStation)) {
+		if (!BarTransformIfShared (app, app->curStation)) {
 			return;
 		}
 		reqData.station = app->curStation;
@@ -149,7 +147,7 @@ BarUiActCallback(BarUiActBanSong) {
 
 	RETURN_IF_NO_SONG;
 
-	if (!BarTransformIfShared (&app->ph, &app->waith, app->curStation)) {
+	if (!BarTransformIfShared (app, app->curStation)) {
 		return;
 	}
 
@@ -171,7 +169,7 @@ BarUiActCallback(BarUiActCreateStation) {
 	WaitressReturn_t wRet;
 	PianoRequestDataCreateStation_t reqData;
 
-	reqData.id = BarUiSelectMusicId (&app->ph, &app->waith, curFd, NULL);
+	reqData.id = BarUiSelectMusicId (app, curFd, NULL);
 	if (reqData.id != NULL) {
 		reqData.type = "mi";
 		BarUiMsg (MSG_INFO, "Creating station... ");
@@ -246,7 +244,7 @@ BarUiActCallback(BarUiActExplain) {
  */
 BarUiActCallback(BarUiActStationFromGenre) {
 	/* use genre station */
-	BarStationFromGenre (&app->ph, &app->waith, curFd);
+	BarStationFromGenre (app, curFd);
 }
 
 /*	print verbose song information
@@ -298,7 +296,7 @@ BarUiActCallback(BarUiActLoveSong) {
 
 	RETURN_IF_NO_SONG;
 
-	if (!BarTransformIfShared (&app->ph, &app->waith, app->curStation)) {
+	if (!BarTransformIfShared (app, app->curStation)) {
 		return;
 	}
 
@@ -340,8 +338,8 @@ BarUiActCallback(BarUiActMoveSong) {
 			return;
 		}
 
-		if (!BarTransformIfShared (&app->ph, &app->waith, reqData.from) ||
-				!BarTransformIfShared (&app->ph, &app->waith, reqData.to)) {
+		if (!BarTransformIfShared (app, reqData.from) ||
+				!BarTransformIfShared (app, reqData.to)) {
 			return;
 		}
 		BarUiMsg (MSG_INFO, "Moving song to \"%s\"... ", reqData.to->name);
@@ -374,7 +372,7 @@ BarUiActCallback(BarUiActRenameStation) {
 	BarUiMsg (MSG_QUESTION, "New name: ");
 	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0, curFd) > 0) {
 		PianoRequestDataRenameStation_t reqData;
-		if (!BarTransformIfShared (&app->ph, &app->waith, app->curStation)) {
+		if (!BarTransformIfShared (app, app->curStation)) {
 			return;
 		}
 
@@ -501,7 +499,7 @@ BarUiActCallback(BarUiActHistory) {
 					return;
 				}
 
-				if (!BarTransformIfShared (&app->ph, &app->waith, songStation)) {
+				if (!BarTransformIfShared (app, songStation)) {
 					return;
 				}
 
