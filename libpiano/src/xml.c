@@ -257,7 +257,7 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 				memcpy (&song->audioUrl[valueStrN - urlTailN], urlTail,
 						urlTailN/2 - 8);
 			}
-			PianoFree (urlTail, urlTailN/2);
+			free (urlTail);
 		}
 	} else if (strcmp ("artistSummary", key) == 0) {
 		song->artist = strdup (valueStr);

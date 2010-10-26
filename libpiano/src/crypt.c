@@ -191,7 +191,7 @@ unsigned char *PianoEncryptString (const unsigned char *strInput) {
 		--blockN;
 	}
 
-	PianoFree (blockInput, 0);
+	free (blockInput);
 
 	return strHex;
 }

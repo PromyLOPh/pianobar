@@ -45,21 +45,6 @@ THE SOFTWARE.
 #define PIANO_RPC_PATH "/radio/xmlrpc/v" PIANO_PROTOCOL_VERSION "?"
 #define PIANO_SEND_BUFFER_SIZE 10000
 
-/*	more "secure" free version
- *	@param free this pointer
- *	@param zero n bytes; 0 disables zeroing (for strings with unknown size,
- *			e.g.)
- */
-void PianoFree (void *ptr, size_t size) {
-	if (ptr != NULL) {
-		if (size > 0) {
-			/* avoid reuse of freed memory */
-			memset ((char *) ptr, 0, size);
-		}
-		free (ptr);
-	}
-}
-
 /*	initialize piano handle
  *	@param piano handle
  *	@return nothing
@@ -82,21 +67,21 @@ void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
 
 	curArtist = searchResult->artists;
 	while (curArtist != NULL) {
-		PianoFree (curArtist->name, 0);
-		PianoFree (curArtist->musicId, 0);
+		free (curArtist->name);
+		free (curArtist->musicId);
 		lastArtist = curArtist;
 		curArtist = curArtist->next;
-		PianoFree (lastArtist, sizeof (*lastArtist));
+		free (lastArtist);
 	}
 
 	curSong = searchResult->songs;
 	while (curSong != NULL) {
-		PianoFree (curSong->title, 0);
-		PianoFree (curSong->artist, 0);
-		PianoFree (curSong->musicId, 0);
+		free (curSong->title);
+		free (curSong->artist);
+		free (curSong->musicId);
 		lastSong = curSong;
 		curSong = curSong->next;
-		PianoFree (lastSong, sizeof (*lastSong));
+		free (lastSong);
 	}
 }
 
@@ -104,8 +89,8 @@ void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
  *	@param station
  */
 void PianoDestroyStation (PianoStation_t *station) {
-	PianoFree (station->name, 0);
-	PianoFree (station->id, 0);
+	free (station->name);
+	free (station->id);
 	memset (station, 0, sizeof (station));
 }
 
@@ -120,7 +105,7 @@ void PianoDestroyStations (PianoStation_t *stations) {
 		lastStation = curStation;
 		curStation = curStation->next;
 		PianoDestroyStation (lastStation);
-		PianoFree (lastStation, sizeof (*lastStation));
+		free (lastStation);
 	}
 }
 
@@ -134,18 +119,18 @@ void PianoDestroyPlaylist (PianoSong_t *playlist) {
 
 	curSong = playlist;
 	while (curSong != NULL) {
-		PianoFree (curSong->audioUrl, 0);
-		PianoFree (curSong->artist, 0);
-		PianoFree (curSong->musicId, 0);
-		PianoFree (curSong->title, 0);
-		PianoFree (curSong->userSeed, 0);
-		PianoFree (curSong->identity, 0);
-		PianoFree (curSong->stationId, 0);
-		PianoFree (curSong->album, 0);
-		PianoFree (curSong->artistMusicId, 0);
+		free (curSong->audioUrl);
+		free (curSong->artist);
+		free (curSong->musicId);
+		free (curSong->title);
+		free (curSong->userSeed);
+		free (curSong->identity);
+		free (curSong->stationId);
+		free (curSong->album);
+		free (curSong->artistMusicId);
 		lastSong = curSong;
 		curSong = curSong->next;
-		PianoFree (lastSong, sizeof (*lastSong));
+		free (lastSong);
 	}
 }
 
@@ -156,20 +141,20 @@ void PianoDestroyGenres (PianoGenre_t *genres) {
 
 	curGenre = genres;
 	while (curGenre != NULL) {
-		PianoFree (curGenre->name, 0);
-		PianoFree (curGenre->musicId, 0);
+		free (curGenre->name);
+		free (curGenre->musicId);
 		lastGenre = curGenre;
 		curGenre = curGenre->next;
-		PianoFree (lastGenre, sizeof (*lastGenre));
+		free (lastGenre);
 	}
 }
 
 /*	destroy user information
  */
 void PianoDestroyUserInfo (PianoUserInfo_t *user) {
-	PianoFree (user->webAuthToken, 0);
-	PianoFree (user->authToken, 0);
-	PianoFree (user->listenerId, 0);
+	free (user->webAuthToken);
+	free (user->authToken);
+	free (user->listenerId);
 }
 
 /*	frees the whole piano handle structure
@@ -183,10 +168,10 @@ void PianoDestroy (PianoHandle_t *ph) {
 	PianoGenreCategory_t *curGenreCat = ph->genreStations, *lastGenreCat;
 	while (curGenreCat != NULL) {
 		PianoDestroyGenres (curGenreCat->genres);
-		PianoFree (curGenreCat->name, 0);
+		free (curGenreCat->name);
 		lastGenreCat = curGenreCat;
 		curGenreCat = curGenreCat->next;
-		PianoFree (lastGenreCat, sizeof (*lastGenreCat));
+		free (lastGenreCat);
 	}
 	memset (ph, 0, sizeof (*ph));
 }
@@ -196,7 +181,7 @@ void PianoDestroy (PianoHandle_t *ph) {
  *	@param piano request
  */
 void PianoDestroyRequest (PianoRequest_t *req) {
-	PianoFree (req->postData, 0);
+	free (req->postData);
 	memset (req, 0, sizeof (*req));
 }
 
@@ -394,8 +379,8 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					ph->routeId, ph->user.listenerId, reqData->station->id,
 					urlencodedNewName);
 
-			PianoFree (urlencodedNewName, 0);
-			PianoFree (xmlencodedNewName, 0);
+			free (urlencodedNewName);
+			free (xmlencodedNewName);
 			break;
 		}
 
@@ -442,8 +427,8 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					"rid=%s&lid=%s&method=search&arg1=%s", ph->routeId,
 					ph->user.listenerId, urlencodedSearchStr);
 
-			PianoFree (urlencodedSearchStr, 0);
-			PianoFree (xmlencodedSearchStr, 0);
+			free (urlencodedSearchStr);
+			free (xmlencodedSearchStr);
 			break;
 		}
 
@@ -787,9 +772,9 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 							timestamp = strtoul (decryptedPos, NULL, 0);
 							ph->timeOffset = realTimestamp - timestamp;
 
-							PianoFree (decryptedTimestamp, 0);
+							free (decryptedTimestamp);
 						}
-						PianoFree (cryptedTimestamp, 0);
+						free (cryptedTimestamp);
 					}
 					ret = PIANO_RET_CONTINUE_REQUEST;
 					++reqData->step;
@@ -871,7 +856,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				assert (reqData->station != NULL);
 				assert (reqData->newName != NULL);
 
-				PianoFree (reqData->station->name, 0);
+				free (reqData->station->name);
 				reqData->station->name = strdup (reqData->newName);
 			}
 			break;
@@ -896,7 +881,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 							ph->stations = curStation->next;
 						}
 						PianoDestroyStation (curStation);
-						PianoFree (curStation, sizeof (*curStation));
+						free (curStation);
 						break;
 					}
 					lastStation = curStation;

@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 #include "piano.h"
 
-void PianoFree (void *ptr, size_t size);
 void PianoDestroyStation (PianoStation_t *station);
 
 #endif /* _MAIN_H */
