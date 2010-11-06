@@ -267,8 +267,6 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		song->userSeed = strdup (valueStr);
 	} else if (strcmp ("songTitle", key) == 0) {
 		song->title = strdup (valueStr);
-	} else if (strcmp ("identity", key) == 0) {
-		song->identity = strdup (valueStr);
 	} else if (strcmp ("rating", key) == 0) {
 		if (strcmp (valueStr, "1") == 0) {
 			song->rating = PIANO_RATE_LOVE;

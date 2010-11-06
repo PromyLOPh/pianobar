@@ -271,7 +271,6 @@ BarUiActCallback(BarUiActDebug) {
 			"audioFormat:\t%i\n"
 			"audioUrl:\t%s\n"
 			"fileGain:\t%f\n"
-			"identity:\t%s\n"
 			"musicId:\t%s\n"
 			"rating:\t%i\n"
 			"songType:\t%i\n"
@@ -281,7 +280,7 @@ BarUiActCallback(BarUiActDebug) {
 			"userSeed:\t%s\n",
 			app->playlist->album, app->playlist->artist,
 			app->playlist->audioFormat, app->playlist->audioUrl,
-			app->playlist->fileGain, app->playlist->identity,
+			app->playlist->fileGain,
 			app->playlist->musicId, app->playlist->rating,
 			app->playlist->songType, app->playlist->stationId,
 			app->playlist->testStrategy, app->playlist->title,

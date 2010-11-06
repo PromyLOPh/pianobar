@@ -39,7 +39,7 @@ THE SOFTWARE.
 #include "crypt.h"
 #include "config.h"
 
-#define PIANO_PROTOCOL_VERSION "28"
+#define PIANO_PROTOCOL_VERSION "29"
 #define PIANO_RPC_HOST "www.pandora.com"
 #define PIANO_RPC_PORT "80"
 #define PIANO_RPC_PATH "/radio/xmlrpc/v" PIANO_PROTOCOL_VERSION "?"
@@ -124,7 +124,6 @@ void PianoDestroyPlaylist (PianoSong_t *playlist) {
 		free (curSong->musicId);
 		free (curSong->title);
 		free (curSong->userSeed);
-		free (curSong->identity);
 		free (curSong->stationId);
 		free (curSong->album);
 		free (curSong->artistMusicId);
@@ -282,17 +281,24 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			assert (reqData->station->id != NULL);
 			assert (reqData->format != PIANO_AF_UNKNOWN);
 
-			/* FIXME: remove static, "magic" numbers */
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>playlist.getFragment</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* station id */
 					"<param><value><string>%s</string></value></param>"
+					/* total listening time */
 					"<param><value><string>0</string></value></param>"
+					/* time since last session */
 					"<param><value><string></string></value></param>"
+					/* tracking code */
 					"<param><value><string></string></value></param>"
+					/* audio format */
 					"<param><value><string>%s</string></value></param>"
+					/* delta listening time */
 					"<param><value><string>0</string></value></param>"
+					/* listening timestamp */
 					"<param><value><string>0</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, reqData->station->id,
@@ -368,8 +374,11 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>station.setStationName</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* station id */
 					"<param><value><string>%s</string></value></param>"
+					/* new name */
 					"<param><value><string>%s</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, reqData->station->id,
@@ -393,7 +402,9 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>station.removeStation</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* station id */
 					"<param><value><string>%s</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, station->id);
@@ -419,7 +430,9 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>music.search</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* search string */
 					"<param><value><string>%s</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, xmlencodedSearchStr);
@@ -487,12 +500,23 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					"<methodCall><methodName>listener.addTiredSong</methodName><params>"
 					"<param><value><int>%lu</int></value></param>"
 					"<param><value><string>%s</string></value></param>"
+					/* key */
+					"<param><value><string>%s</string></value></param>"
+					/* user seed */
+					"<param><value><string>%s</string></value></param>"
+					/* station id */
 					"<param><value><string>%s</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
-					ph->user.authToken, song->identity);
+					ph->user.authToken,
+					(song->musicId == NULL) ? "" : song->musicId,
+					(song->userSeed == NULL) ? "" : song->userSeed,
+					song->stationId);
 			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
-					"rid=%s&lid=%s&method=addTiredSong&arg1=%s", ph->routeId,
-					ph->user.listenerId, song->identity);
+					"rid=%s&lid=%s&method=addTiredSong&arg1=%s&arg2=%s&arg3=%s",
+					ph->routeId, ph->user.listenerId,
+					(song->musicId == NULL) ? "" : song->musicId,
+					(song->userSeed == NULL) ? "" : song->userSeed,
+					song->stationId);
 			break;
 		}
 
@@ -507,6 +531,7 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					"<methodCall><methodName>station.setQuickMix</methodName><params>"
 					"<param><value><int>%lu</int></value></param>"
 					"<param><value><string>%s</string></value></param>"
+					/* quick mix type */
 					"<param><value><string>RANDOM</string></value></param>"
 					"<param><value><array><data>", (unsigned long) timestamp,
 					ph->user.authToken);
@@ -533,7 +558,9 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			}
 			strncat (xmlSendBuf,
 					"</data></array></value></param>"
+					/* content type */
 					"<param><value><string>CUSTOM</string></value></param>"
+					/* genre */
 					"<param><value><string></string></value></param>"
 					"</params></methodCall>",
 					sizeof (xmlSendBuf) - strlen (xmlSendBuf) - 1);
@@ -560,7 +587,9 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>station.transformShared</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* station id */
 					"<param><value><string>%s</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, station->id);
@@ -580,8 +609,11 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>playlist.narrative</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* station id */
 					"<param><value><string>%s</string></value></param>"
+					/* music id */
 					"<param><value><string>%s</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, reqData->song->stationId,
@@ -604,8 +636,11 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>music.getSeedSuggestions</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* seed music id */
 					"<param><value><string>%s</string></value></param>"
+					/* max */
 					"<param><value><int>%u</int></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, reqData->musicId, reqData->max);
@@ -624,8 +659,11 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>station.createBookmark</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* station id */
 					"<param><value><string>%s</string></value></param>"
+					/* music id */
 					"<param><value><string>%s</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, song->stationId, song->musicId);
@@ -645,7 +683,9 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>station.createArtistBookmark</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* music id */
 					"<param><value><string>%s</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, song->artistMusicId);
