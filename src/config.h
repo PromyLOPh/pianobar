@@ -4,6 +4,6 @@
 /* package name */
 #define PACKAGE "pianobar"
 
-#define VERSION "2010.10.07-dev"
+#define VERSION "2010.11.06"
 
 #endif /* _CONFIG_H */

@@ -1,3 +1,10 @@
+Release 2010.11.06
+
+- XMLRLC api version bump (v29)
+- Automatic reauthentication
+- Minor bugfixes/code cleanup
+- Documentation fix
+
 Release 2010.10.07
 
 - XMLRPC api version bump (v28)
