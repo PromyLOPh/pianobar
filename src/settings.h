@@ -77,6 +77,8 @@ typedef struct {
 	char keys[BAR_KS_COUNT];
 	char *autostartStation;
 	char *eventCmd;
+	char *loveIcon;
+	char *banIcon;
 } BarSettings_t;
 
 void BarSettingsInit (BarSettings_t *);

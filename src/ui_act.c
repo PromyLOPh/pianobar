@@ -254,7 +254,8 @@ BarUiActCallback(BarUiActSongInfo) {
 
 	BarUiPrintStation (app->curStation);
 	/* print real station if quickmix */
-	BarUiPrintSong (app->playlist, app->curStation->isQuickMix ?
+	BarUiPrintSong (&app->settings, app->playlist,
+			app->curStation->isQuickMix ?
 			PianoFindStationById (app->ph.stations, app->playlist->stationId) :
 			NULL);
 }
@@ -420,13 +421,7 @@ BarUiActCallback(BarUiActPrintUpcoming) {
 
 	PianoSong_t *nextSong = app->playlist->next;
 	if (nextSong != NULL) {
-		int i = 0;
-		while (nextSong != NULL) {
-			BarUiMsg (MSG_LIST, "%2i) \"%s\" by \"%s\"\n", i, nextSong->title,
-					nextSong->artist);
-			nextSong = nextSong->next;
-			i++;
-		}
+		BarUiListSongs (&app->settings, nextSong);
 	} else {
 		BarUiMsg (MSG_INFO, "No songs in queue.\n");
 	}
@@ -472,7 +467,8 @@ BarUiActCallback(BarUiActHistory) {
 	PianoSong_t *selectedSong;
 
 	if (app->songHistory != NULL) {
-		selectedSong = BarUiSelectSong (app->songHistory, curFd);
+		selectedSong = BarUiSelectSong (&app->settings, app->songHistory,
+				curFd);
 		if (selectedSong != NULL) {
 			/* use user-defined keybindings */
 			allowedBuf[0] = app->settings.keys[BAR_KS_LOVE];

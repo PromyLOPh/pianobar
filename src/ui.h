@@ -38,12 +38,14 @@ void BarUiMsg (uiMsg_t type, const char *format, ...);
 PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret);
 PianoStation_t *BarUiSelectStation (PianoHandle_t *, const char *,
 		BarStationSorting_t, FILE *);
-PianoSong_t *BarUiSelectSong (PianoSong_t *startSong, FILE *curFd);
+PianoSong_t *BarUiSelectSong (const BarSettings_t *, PianoSong_t *, FILE *);
 PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd);
 char *BarUiSelectMusicId (BarApp_t *, FILE *, char *);
 void BarStationFromGenre (BarApp_t *, FILE *);
 void BarUiPrintStation (PianoStation_t *);
-void BarUiPrintSong (PianoSong_t *, PianoStation_t *);
+void BarUiPrintSong (const BarSettings_t *, const PianoSong_t *, 
+		const PianoStation_t *);
+size_t BarUiListSongs (const BarSettings_t *, const PianoSong_t *);
 void BarUiStartEventCmd (const BarSettings_t *, const char *,
 		const PianoStation_t *, const PianoSong_t *, const struct audioPlayer *,
 		PianoReturn_t, WaitressReturn_t);

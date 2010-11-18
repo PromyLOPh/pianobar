@@ -36,4 +36,5 @@
 #autostart_station = 123456
 #event_command = /home/user/.config/pianobar/eventcmd
 #sort = quickmix_10_name_az
-
+#love_icon = [+]
+#ban_icon = [-]

@@ -77,6 +77,8 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->password);
 	free (settings->autostartStation);
 	free (settings->eventCmd);
+	free (settings->loveIcon);
+	free (settings->banIcon);
 	memset (settings, 0, sizeof (*settings));
 }
 
@@ -175,6 +177,10 @@ void BarSettingsRead (BarSettings_t *settings) {
 					break;
 				}
 			}
+		} else if (strcmp ("love_icon", key) == 0) {
+			settings->loveIcon = strdup (val);
+		} else if (strcmp ("ban_icon", key) == 0) {
+			settings->banIcon = strdup (val);
 		}
 	}
 
@@ -184,6 +190,14 @@ void BarSettingsRead (BarSettings_t *settings) {
 		if (tmpProxy != NULL && strlen (tmpProxy) > 0) {
 			settings->proxy = strdup (tmpProxy);
 		}
+	}
+
+	/* use default strings */
+	if (settings->loveIcon == NULL) {
+		settings->loveIcon = strdup ("<3");
+	}
+	if (settings->banIcon == NULL) {
+		settings->banIcon = strdup ("</3");
 	}
 
 	fclose (configfd);

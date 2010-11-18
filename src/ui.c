@@ -330,27 +330,24 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
  *	@param song list
  *	@return pointer to selected item in song list or NULL
  */
-PianoSong_t *BarUiSelectSong (PianoSong_t *startSong, FILE *curFd) {
+PianoSong_t *BarUiSelectSong (const BarSettings_t *settings,
+		PianoSong_t *startSong, FILE *curFd) {
 	PianoSong_t *tmpSong = NULL;
 	int i = 0;
 
-	/* print all songs */
-	tmpSong = startSong;
-	while (tmpSong != NULL) {
-		BarUiMsg (MSG_LIST, "%2u) %s - %s\n", i, tmpSong->artist,
-				tmpSong->title);
-		i++;
-		tmpSong = tmpSong->next;
-	}
+	i = BarUiListSongs (settings, startSong);
+
 	BarUiMsg (MSG_QUESTION, "Select song: ");
 	if (BarReadlineInt (&i, curFd) == 0) {
 		return NULL;
 	}
+
 	tmpSong = startSong;
 	while (tmpSong != NULL && i > 0) {
 		tmpSong = tmpSong->next;
 		i--;
 	}
+
 	return tmpSong;
 }
 
@@ -436,14 +433,16 @@ char *BarUiSelectMusicId (BarApp_t *app, FILE *curFd, char *similarToId) {
 					musicId = strdup (tmpArtist->musicId);
 				}
 			} else if (*selectBuf == 't') {
-				tmpSong = BarUiSelectSong (searchResult.songs, curFd);
+				tmpSong = BarUiSelectSong (&app->settings, searchResult.songs,
+						curFd);
 				if (tmpSong != NULL) {
 					musicId = strdup (tmpSong->musicId);
 				}
 			}
 		} else if (searchResult.songs != NULL) {
 			/* songs found */
-			tmpSong = BarUiSelectSong (searchResult.songs, curFd);
+			tmpSong = BarUiSelectSong (&app->settings, searchResult.songs,
+					curFd);
 			if (tmpSong != NULL) {
 				musicId = strdup (tmpSong->musicId);
 			}
@@ -539,12 +538,35 @@ inline void BarUiPrintStation (PianoStation_t *station) {
  *	@param the song
  *	@param alternative station info (show real station for quickmix, e.g.)
  */
-inline void BarUiPrintSong (PianoSong_t *song, PianoStation_t *station) {
-	BarUiMsg (MSG_PLAYING, "\"%s\" by \"%s\" on \"%s\"%s%s%s\n",
+inline void BarUiPrintSong (const BarSettings_t *settings,
+		const PianoSong_t *song, const PianoStation_t *station) {
+	BarUiMsg (MSG_PLAYING, "\"%s\" by \"%s\" on \"%s\"%s%s%s%s\n",
 			song->title, song->artist, song->album,
-			(song->rating == PIANO_RATE_LOVE) ? " <3" : "",
+			(song->rating == PIANO_RATE_LOVE) ? " " : "",
+			(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
 			station != NULL ? " @ " : "",
 			station != NULL ? station->name : "");
+}
+
+/*	Print list of songs
+ *	@param pianobar settings
+ *	@param linked list of songs
+ *	@return # of songs
+ */
+size_t BarUiListSongs (const BarSettings_t *settings,
+		const PianoSong_t *song) {
+	size_t i = 0;
+
+	while (song != NULL) {
+		BarUiMsg (MSG_LIST, "%2lu) %s - %s %s%s\n", i, song->artist,
+				song->title,
+				(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
+				(song->rating == PIANO_RATE_BAN) ? settings->banIcon : "");
+		song = song->next;
+		i++;
+	}
+
+	return i;
 }
 
 /*	Excute external event handler

@@ -259,7 +259,8 @@ int main (int argc, char **argv) {
 				}
 				/* song ready to play */
 				if (app.playlist != NULL) {
-					BarUiPrintSong (app.playlist, app.curStation->isQuickMix ?
+					BarUiPrintSong (&app.settings, app.playlist,
+							app.curStation->isQuickMix ?
 							PianoFindStationById (app.ph.stations,
 							app.playlist->stationId) : NULL);
 
