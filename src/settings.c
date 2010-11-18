@@ -32,6 +32,8 @@ THE SOFTWARE.
 #include "settings.h"
 #include "config.h"
 
+#define streq(a, b) (strcmp (a, b) == 0)
+
 /*	tries to guess your config dir; somehow conforming to
  *	http://standards.freedesktop.org/basedir-spec/basedir-spec-0.6.html
  *	@param name of the config file (can contain subdirs too)
@@ -131,38 +133,38 @@ void BarSettingsRead (BarSettings_t *settings) {
 			/* invalid config line */
 			continue;
 		}
-		if (strcmp ("control_proxy", key) == 0) {
+		if (streq ("control_proxy", key)) {
 			settings->controlProxy = strdup (val);
-		} else if (strcmp ("proxy", key) == 0) {
+		} else if (streq ("proxy", key)) {
 			settings->proxy = strdup (val);
-		} else if (strcmp ("user", key) == 0) {
+		} else if (streq ("user", key)) {
 			settings->username = strdup (val);
-		} else if (strcmp ("password", key) == 0) {
+		} else if (streq ("password", key)) {
 			settings->password = strdup (val);
 		} else if (memcmp ("act_", key, 4) == 0) {
 			size_t i;
 			/* keyboard shortcuts */
 			for (i = 0; i < BAR_KS_COUNT; i++) {
-				if (strcmp (shortcutFileKeys[i], key) == 0) {
+				if (streq (shortcutFileKeys[i], key)) {
 					settings->keys[i] = val[0];
 					break;
 				}
 			}
-		} else if (strcmp ("audio_format", key) == 0) {
-			if (strcmp (val, "aacplus") == 0) {
+		} else if (streq ("audio_format", key)) {
+			if (streq (val, "aacplus")) {
 				settings->audioFormat = PIANO_AF_AACPLUS;
-			} else if (strcmp (val, "mp3") == 0) {
+			} else if (streq (val, "mp3")) {
 				settings->audioFormat = PIANO_AF_MP3;
-			} else if (strcmp (val, "mp3-hifi") == 0) {
+			} else if (streq (val, "mp3-hifi")) {
 				settings->audioFormat = PIANO_AF_MP3_HI;
 			}
-		} else if (strcmp ("autostart_station", key) == 0) {
+		} else if (streq ("autostart_station", key)) {
 			settings->autostartStation = strdup (val);
-		} else if (strcmp ("event_command", key) == 0) {
+		} else if (streq ("event_command", key)) {
 			settings->eventCmd = strdup (val);
-		} else if (strcmp ("history", key) == 0) {
+		} else if (streq ("history", key)) {
 			settings->history = atoi (val);
-		} else if (strcmp ("sort", key) == 0) {
+		} else if (streq ("sort", key)) {
 			size_t i;
 			static const char *mapping[] = {"name_az",
 					"name_za",
@@ -172,14 +174,14 @@ void BarSettingsRead (BarSettings_t *settings) {
 					"quickmix_10_name_za",
 					};
 			for (i = 0; i < BAR_SORT_COUNT; i++) {
-				if (strcmp (mapping[i], val) == 0) {
+				if (streq (mapping[i], val)) {
 					settings->sortOrder = i;
 					break;
 				}
 			}
-		} else if (strcmp ("love_icon", key) == 0) {
+		} else if (streq ("love_icon", key)) {
 			settings->loveIcon = strdup (val);
-		} else if (strcmp ("ban_icon", key) == 0) {
+		} else if (streq ("ban_icon", key)) {
 			settings->banIcon = strdup (val);
 		}
 	}
