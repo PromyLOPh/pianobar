@@ -327,7 +327,9 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 }
 
 /*	let user pick one song
+ *	@param pianobar settings
  *	@param song list
+ *	@param current fd
  *	@return pointer to selected item in song list or NULL
  */
 PianoSong_t *BarUiSelectSong (const BarSettings_t *settings,
@@ -535,6 +537,7 @@ inline void BarUiPrintStation (PianoStation_t *station) {
 }
 
 /*	Print song infos (artist, title, album, loved)
+ *	@param pianobar settings
  *	@param the song
  *	@param alternative station info (show real station for quickmix, e.g.)
  */
