@@ -26,7 +26,7 @@ PIANOBAR_HDR=\
 		${PIANOBAR_DIR}/config.h
 PIANOBAR_OBJ=${PIANOBAR_SRC:.c=.o}
 
-LIBPIANO_DIR=libpiano/src
+LIBPIANO_DIR=src/libpiano
 LIBPIANO_SRC=\
 		${LIBPIANO_DIR}/crypt.c \
 		${LIBPIANO_DIR}/piano.c \
@@ -43,7 +43,7 @@ LIBPIANO_OBJ=${LIBPIANO_SRC:.c=.o}
 LIBPIANO_RELOBJ=${LIBPIANO_SRC:.c=.lo}
 LIBPIANO_INCLUDE=${LIBPIANO_DIR}
 
-LIBWAITRESS_DIR=libwaitress/src
+LIBWAITRESS_DIR=src/libwaitress
 LIBWAITRESS_SRC=${LIBWAITRESS_DIR}/waitress.c
 LIBWAITRESS_HDR=\
 		${LIBWAITRESS_DIR}/config.h \
@@ -52,11 +52,12 @@ LIBWAITRESS_OBJ=${LIBWAITRESS_SRC:.c=.o}
 LIBWAITRESS_RELOBJ=${LIBWAITRESS_SRC:.c=.lo}
 LIBWAITRESS_INCLUDE=${LIBWAITRESS_DIR}
 
-LIBEZXML_SRC=libezxml/src/ezxml.c
-LIBEZXML_HDR=libezxml/src/ezxml.h
+LIBEZXML_DIR=src/libezxml
+LIBEZXML_SRC=${LIBEZXML_DIR}/ezxml.c
+LIBEZXML_HDR=${LIBEZXML_DIR}/ezxml.h
 LIBEZXML_OBJ=${LIBEZXML_SRC:.c=.o}
 LIBEZXML_RELOBJ=${LIBEZXML_SRC:.c=.lo}
-LIBEZXML_INCLUDE=libezxml/src
+LIBEZXML_INCLUDE=${LIBEZXML_DIR}
 
 LIBAO_INCLUDE=/usr/include
 LIBAO_LIB=-lao
@@ -119,7 +120,7 @@ install: pianobar
 	install -d ${DESTDIR}/${BINDIR}/
 	install -m755 pianobar ${DESTDIR}/${BINDIR}/
 	install -d ${DESTDIR}/${MANDIR}/man1/
-	install -m644 src/pianobar.1 ${DESTDIR}/${MANDIR}/man1/
+	install -m644 contrib/pianobar.1 ${DESTDIR}/${MANDIR}/man1/
 
 install-libpiano: libpiano
 	install -d ${DESTDIR}/${LIBDIR}/
