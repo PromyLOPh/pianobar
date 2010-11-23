@@ -50,6 +50,5 @@ BarUiActCallback(BarUiActQuit);
 BarUiActCallback(BarUiActDebug);
 BarUiActCallback(BarUiActHistory);
 BarUiActCallback(BarUiActBookmark);
-BarUiActCallback(BarUiActStop);
 
 #endif /* _UI_ACT_H */

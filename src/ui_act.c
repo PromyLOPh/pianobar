@@ -94,7 +94,6 @@ BarUiActCallback(BarUiActHelp) {
 			"add shared station",
 			"move song to different station",
 			"next song",
-			"stop playing, always pause, never continue",
 			"pause/continue",
 			"quit",
 			"rename current station",
@@ -351,13 +350,6 @@ BarUiActCallback(BarUiActMoveSong) {
 		}
 		BarUiActDefaultEventcmd ("songmove");
 	}
-}
-
-/*	pause
- */
-BarUiActCallback(BarUiActStop) {
-	/* pause if locked, if locked, stay paused */
-	pthread_mutex_trylock (&app->player.pauseMutex);
 }
 
 /*	pause

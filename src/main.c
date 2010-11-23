@@ -328,7 +328,7 @@ int main (int argc, char **argv) {
 							BarUiActDeleteStation, BarUiActExplain,
 							BarUiActStationFromGenre, BarUiActHistory,
 							BarUiActSongInfo, BarUiActAddSharedStation,
-							BarUiActMoveSong, BarUiActSkipSong, BarUiActStop, BarUiActPause,
+							BarUiActMoveSong, BarUiActSkipSong, BarUiActPause,
 							BarUiActQuit, BarUiActRenameStation,
 							BarUiActSelectStation, BarUiActTempBanSong,
 							BarUiActPrintUpcoming, BarUiActSelectQuickMix,
