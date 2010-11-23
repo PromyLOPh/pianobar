@@ -599,6 +599,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			"artist=%s\n"
 			"title=%s\n"
 			"album=%s\n"
+			"coverArt=%s\n"
 			"stationName=%s\n"
 			"pRet=%i\n"
 			"pRetStr=%s\n"
@@ -610,6 +611,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			curSong == NULL ? "" : curSong->artist,
 			curSong == NULL ? "" : curSong->title,
 			curSong == NULL ? "" : curSong->album,
+			curSong == NULL ? "" : curSong->coverArt,
 			curStation == NULL ? "" : curStation->name,
 			pRet,
 			PianoErrorToStr (pRet),
