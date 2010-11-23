@@ -259,6 +259,8 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 			}
 			free (urlTail);
 		}
+	} else if (strcmp ("artRadio", key) == 0) {
+		song->artRadio = strdup (valueStr);
 	} else if (strcmp ("artistSummary", key) == 0) {
 		song->artist = strdup (valueStr);
 	} else if (strcmp ("musicId", key) == 0) {

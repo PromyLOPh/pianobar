@@ -270,6 +270,7 @@ BarUiActCallback(BarUiActDebug) {
 	BarUiMsg (MSG_NONE,
 			"album:\t%s\n"
 			"artist:\t%s\n"
+			"artRadio:\t%s\n"
 			"audioFormat:\t%i\n"
 			"audioUrl:\t%s\n"
 			"fileGain:\t%f\n"
@@ -281,8 +282,8 @@ BarUiActCallback(BarUiActDebug) {
 			"title:\t%s\n"
 			"userSeed:\t%s\n",
 			app->playlist->album, app->playlist->artist,
-			app->playlist->audioFormat, app->playlist->audioUrl,
-			app->playlist->fileGain,
+			app->playlist->artRadio, app->playlist->audioFormat,
+			app->playlist->audioUrl, app->playlist->fileGain,
 			app->playlist->musicId, app->playlist->rating,
 			app->playlist->songType, app->playlist->stationId,
 			app->playlist->testStrategy, app->playlist->title,

@@ -68,6 +68,7 @@ typedef struct PianoSong {
 	char *album;
 	char *userSeed;
 	char *audioUrl;
+	char *artRadio;
 	char *musicId;
 	char *title;
 	float fileGain;
