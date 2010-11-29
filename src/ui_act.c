@@ -269,7 +269,7 @@ BarUiActCallback(BarUiActDebug) {
 	BarUiMsg (MSG_NONE,
 			"album:\t%s\n"
 			"artist:\t%s\n"
-			"audioFormat:\t%i\n"
+			"audioFormat:\t%s\n"
 			"audioUrl:\t%s\n"
 			"coverArt:\t%s\n"
 			"fileGain:\t%f\n"
@@ -281,7 +281,7 @@ BarUiActCallback(BarUiActDebug) {
 			"title:\t%s\n"
 			"userSeed:\t%s\n",
 			app->playlist->album, app->playlist->artist,
-			app->playlist->audioFormat,
+			PianoAudioFormatToString( app->playlist->audioFormat ),
 			app->playlist->audioUrl,
 			app->playlist->coverArt,
 			app->playlist->fileGain,

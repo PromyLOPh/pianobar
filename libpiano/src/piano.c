@@ -189,7 +189,7 @@ void PianoDestroyRequest (PianoRequest_t *req) {
  *	@param format id
  *	@return constant string
  */
-static const char *PianoAudioFormatToString (PianoAudioFormat_t format) {
+const char *PianoAudioFormatToString (PianoAudioFormat_t format) {
 	switch (format) {
 		case PIANO_AF_AACPLUS:
 			return "aacplus";

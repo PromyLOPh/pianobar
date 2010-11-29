@@ -233,6 +233,7 @@ void PianoDestroy (PianoHandle_t *);
 void PianoDestroyPlaylist (PianoSong_t *);
 void PianoDestroySearchResult (PianoSearchResult_t *);
 
+const char *PianoAudioFormatToString (PianoAudioFormat_t format);
 PianoReturn_t PianoRequest (PianoHandle_t *, PianoRequest_t *,
 		PianoRequestType_t);
 PianoReturn_t PianoResponse (PianoHandle_t *, PianoRequest_t *);
