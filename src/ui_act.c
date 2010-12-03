@@ -466,7 +466,7 @@ BarUiActCallback(BarUiActQuit) {
 BarUiActCallback(BarUiActHistory) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
-	char selectBuf[2], allowedBuf[3];
+	char selectBuf[2], allowedBuf[4];
 	PianoSong_t *selectedSong;
 
 	if (app->songHistory != NULL) {
@@ -476,16 +476,19 @@ BarUiActCallback(BarUiActHistory) {
 			/* use user-defined keybindings */
 			allowedBuf[0] = app->settings.keys[BAR_KS_LOVE];
 			allowedBuf[1] = app->settings.keys[BAR_KS_BAN];
-			allowedBuf[2] = '\0';
+			allowedBuf[2] = app->settings.keys[BAR_KS_TIRED];
+			allowedBuf[3] = '\0';
 
-			BarUiMsg (MSG_QUESTION, "%s - %s: love[%c] or ban[%c]? ",
+			BarUiMsg (MSG_QUESTION, "%s - %s: love[%c], ban[%c] or tired[%c]? ",
 					selectedSong->artist, selectedSong->title,
 					app->settings.keys[BAR_KS_LOVE],
-					app->settings.keys[BAR_KS_BAN]);
+					app->settings.keys[BAR_KS_BAN],
+					app->settings.keys[BAR_KS_TIRED]);
 			BarReadline (selectBuf, sizeof (selectBuf), allowedBuf, 1, 0, curFd);
 
 			if (selectBuf[0] == app->settings.keys[BAR_KS_LOVE] ||
-					selectBuf[0] == app->settings.keys[BAR_KS_BAN]) {
+					selectBuf[0] == app->settings.keys[BAR_KS_BAN] ||
+					selectBuf[0] == app->settings.keys[BAR_KS_TIRED]) {
 				/* make sure we're transforming the _original_ station (not
 				 * curStation) */
 				PianoStation_t *songStation =
@@ -522,6 +525,12 @@ BarUiActCallback(BarUiActHistory) {
 					BarUiActDefaultPianoCall (PIANO_REQUEST_RATE_SONG,
 							&reqData);
 					BarUiStartEventCmd (&app->settings, "songban", songStation,
+							selectedSong, &app->player, pRet, wRet);
+				} else if (selectBuf[0] == app->settings.keys[BAR_KS_TIRED]) {
+					BarUiMsg (MSG_INFO, "Putting song on shelf... ");
+					BarUiActDefaultPianoCall (PIANO_REQUEST_ADD_TIRED_SONG, selectedSong);
+
+					BarUiStartEventCmd (&app->settings, "songshelf", songStation,
 							selectedSong, &app->player, pRet, wRet);
 				} /* end if */
 			} /* end if selectBuf[0] */
