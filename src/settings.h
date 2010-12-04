@@ -27,8 +27,7 @@ THE SOFTWARE.
 #include <piano.h>
 #include <waitress.h>
 
-/* keep in mind that you have to update several arrays in main.c/ui_act.c too,
- * if you're adding new shortcuts */
+/* update structure in ui_dispatch.h if you add shortcuts here */
 typedef enum {
 	BAR_KS_HELP = 0,
 	BAR_KS_LOVE = 1,

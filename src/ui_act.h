@@ -24,9 +24,14 @@ THE SOFTWARE.
 #ifndef _UI_ACT_H
 #define _UI_ACT_H
 
-#include "main.h"
+#include <piano.h>
 
-#define BarUiActCallback(name) void name (BarApp_t *app)
+#include "main.h"
+#include "ui_dispatch.h"
+
+#define BarUiActCallback(name) void name (BarApp_t *app, \
+		PianoStation_t *selStation, PianoSong_t *selSong, \
+		BarUiDispatchContext_t context)
 
 BarUiActCallback(BarUiActHelp);
 BarUiActCallback(BarUiActAddMusic);

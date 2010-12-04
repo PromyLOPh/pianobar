@@ -50,10 +50,8 @@ THE SOFTWARE.
 #include "terminal.h"
 #include "config.h"
 #include "ui.h"
-#include "ui_act.h"
+#include "ui_dispatch.h"
 #include "ui_readline.h"
-
-typedef void (*BarKeyShortcutFunc_t) (BarApp_t *app);
 
 /*	copy proxy settings to waitress handle
  */
@@ -154,26 +152,9 @@ static void BarMainHandleUserInput (BarApp_t *app) {
 	char buf[2];
 	if (BarReadline (buf, sizeof (buf), NULL, &app->input,
 			BAR_RL_FULLRETURN | BAR_RL_NOECHO, 1) > 0) {
-		for (size_t i = 0; i < BAR_KS_COUNT; i++) {
-			if (app->settings.keys[i] != BAR_KS_DISABLED &&
-					app->settings.keys[i] == buf[0]) {
-				static const BarKeyShortcutFunc_t idToF[] = {BarUiActHelp,
-						BarUiActLoveSong, BarUiActBanSong,
-						BarUiActAddMusic, BarUiActCreateStation,
-						BarUiActDeleteStation, BarUiActExplain,
-						BarUiActStationFromGenre, BarUiActHistory,
-						BarUiActSongInfo, BarUiActAddSharedStation,
-						BarUiActMoveSong, BarUiActSkipSong, BarUiActPause,
-						BarUiActQuit, BarUiActRenameStation,
-						BarUiActSelectStation, BarUiActTempBanSong,
-						BarUiActPrintUpcoming, BarUiActSelectQuickMix,
-						BarUiActDebug, BarUiActBookmark, BarUiActVolDown,
-						BarUiActVolUp};
-				idToF[i] (app);
-				break;
-			}
-		} /* end for */
-	} /* end if */
+		BarUiDispatch (app, buf[0], app->curStation, app->playlist, true,
+				BAR_DC_GLOBAL);
+	}
 }
 
 /*	append current song to history list and move to the next song
