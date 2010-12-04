@@ -118,6 +118,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->history = 5;
 	settings->sortOrder = BAR_SORT_NAME_AZ;
 	memcpy (settings->keys, defaultKeys, sizeof (defaultKeys));
+	settings->loveIcon = strdup ("<3");
+	settings->banIcon = strdup ("</3");
 
 	BarGetXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
 	if ((configfd = fopen (configfile, "r")) == NULL) {
@@ -180,8 +182,10 @@ void BarSettingsRead (BarSettings_t *settings) {
 				}
 			}
 		} else if (streq ("love_icon", key)) {
+			free (settings->loveIcon);
 			settings->loveIcon = strdup (val);
 		} else if (streq ("ban_icon", key)) {
+			free (settings->banIcon);
 			settings->banIcon = strdup (val);
 		}
 	}
@@ -192,14 +196,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 		if (tmpProxy != NULL && strlen (tmpProxy) > 0) {
 			settings->proxy = strdup (tmpProxy);
 		}
-	}
-
-	/* use default strings */
-	if (settings->loveIcon == NULL) {
-		settings->loveIcon = strdup ("<3");
-	}
-	if (settings->banIcon == NULL) {
-		settings->banIcon = strdup ("</3");
 	}
 
 	fclose (configfd);
