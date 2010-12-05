@@ -24,6 +24,9 @@ THE SOFTWARE.
 #ifndef _MAIN_H
 #define _MAIN_H
 
+#include <termios.h>
+#include <sys/select.h>
+
 #include <piano.h>
 #include <waitress.h>
 
@@ -41,6 +44,29 @@ typedef struct {
 	PianoStation_t *curStation;
 	char doQuit;
 } BarApp_t;
+#ifdef __cplusplus
+extern "C"{
+//int pbarmain();
+#endif
+
+
+
+void run(BarApp_t *app, pthread_t *playerThread, fd_set *readSet, struct termios *termOrig, int *maxFd, int *selectFds, FILE *ctlFd);
+void loadUser(BarApp_t *app);
+void loadProxy(BarApp_t *app);
+int  loginUser(BarApp_t *app, struct termios* termOrig);
+int  loadStations(BarApp_t *app, struct termios* termOrig);
+void loadStation(BarApp_t *app);
+void loadPlaylist(BarApp_t *app);
+void playSong(BarApp_t *app, pthread_t *playerThread);
+void handlePlayerEnded(BarApp_t *app, pthread_t *playerThread);
+void moveSongToHistory(BarApp_t *app);
+void handleUserInput(BarApp_t *app, fd_set *readSet, int *maxFd, int *selectFds, FILE *ctlFd);
+void outputTime(BarApp_t *app);
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* _MAIN_H */
 
