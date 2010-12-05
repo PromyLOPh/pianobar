@@ -27,6 +27,8 @@ THE SOFTWARE.
 #include <piano.h>
 #include <waitress.h>
 
+#include <sys/select.h>
+
 #include "player.h"
 #include "settings.h"
 
@@ -40,6 +42,10 @@ typedef struct {
 	PianoSong_t *songHistory;
 	PianoStation_t *curStation;
 	char doQuit;
+	fd_set readSet;
+	int maxFd;
+	int selectFds[2];
+	FILE *ctlFd;
 } BarApp_t;
 
 #endif /* _MAIN_H */
