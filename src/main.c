@@ -79,7 +79,6 @@ int main (int argc, char **argv) {
 	strncpy (app.waith.host, PIANO_RPC_HOST, sizeof (app.waith.host)-1);
 	strncpy (app.waith.port, PIANO_RPC_PORT, sizeof (app.waith.port)-1);
 
-	//disable settings read. this will need integrated somewhere else
 	BarSettingsInit (&app.settings);
 
 	BarSettingsRead (&app.settings);
@@ -130,7 +129,7 @@ void run(BarApp_t *app){
 	loadUser(app);
 
 	loadProxy(app);
-	//probably makes sense to combine loadUser and loginUser to one function
+	//TODO probably makes sense to combine loadUser and loginUser to one function
 	if(!loginUser(app)){
 		return;
 	}
