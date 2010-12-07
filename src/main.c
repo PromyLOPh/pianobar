@@ -55,7 +55,6 @@ typedef void (*BarKeyShortcutFunc_t) (BarApp_t *app, FILE *curFd);
 
 int main (int argc, char **argv) {
 	static BarApp_t app;
-	pthread_t playerThread;
 	/* FIXME: max path length? */
 	char ctlPath[1024];
 	FILE *ctlFd = NULL;
@@ -106,15 +105,13 @@ int main (int argc, char **argv) {
 		BarUiMsg (MSG_INFO, "Control fifo at %s opened\n", ctlPath);
 	}
 
-	run(&app, &playerThread, &readSet, &termOrig, &maxFd, selectFds, ctlFd);
+	app.userInputSettings.ctlFd = ctlFd;
+	app.userInputSettings.maxFd = &maxFd;
+	app.userInputSettings.readSet = &readSet;
+	app.userInputSettings.selectFds = selectFds;
 
-	/* destroy everything (including the world...) */
-	if (app.player.mode != PLAYER_FREED) {
-		pthread_join (playerThread, NULL);
-	}
-	if (ctlFd != NULL) {
-		fclose (ctlFd);
-	}
+	run(&app);
+
 	PianoDestroy (&app.ph);
 	PianoDestroyPlaylist (app.songHistory);
 	PianoDestroyPlaylist (app.playlist);
@@ -127,16 +124,18 @@ int main (int argc, char **argv) {
 	return 0;
 }
 
-void run(BarApp_t *app, pthread_t *playerThread, fd_set *readSet, struct termios *termOrig, int *maxFd, int *selectFds, FILE *ctlFd){
+void run(BarApp_t *app){
+	pthread_t playerThread;
+
 	loadUser(app);
 
 	loadProxy(app);
 	//probably makes sense to combine loadUser and loginUser to one function
-	if(!loginUser(app, termOrig)){
+	if(!loginUser(app)){
 		return;
 	}
 
-	if(!loadStations(app, termOrig)){
+	if(!loadStations(app)){
 		return;
 	}
 
@@ -149,7 +148,7 @@ void run(BarApp_t *app, pthread_t *playerThread, fd_set *readSet, struct termios
 	while (!app->doQuit) {
 		/* song finished playing, clean up things/scrobble song */
 		if (app->player.mode == PLAYER_FINISHED_PLAYBACK) {
-			handlePlayerEnded(app, playerThread);
+			handlePlayerEnded(app, &playerThread);
 		}
 
 		/* check whether player finished playing and start playing new
@@ -166,18 +165,27 @@ void run(BarApp_t *app, pthread_t *playerThread, fd_set *readSet, struct termios
 				}
 				/* song ready to play */
 				if (app->playlist != NULL) {
-					playSong(app, playerThread);
+					playSong(app, &playerThread);
 				} /* end if playlist != NULL */
 			} /* end if curStation != NULL */
 		}
 
-		handleUserInput(app, readSet, maxFd, selectFds, ctlFd);
+		handleUserInput(app);
 
 		/* show time */
 		if (app->player.mode >= PLAYER_SAMPLESIZE_INITIALIZED &&
 				app->player.mode < PLAYER_FINISHED_PLAYBACK) {
 			outputTime(app);
 		}
+	}
+
+
+	/* destroy everything (including the world...) */
+	if (app->player.mode != PLAYER_FREED) {
+		pthread_join (playerThread, NULL);
+	}
+	if (app->userInputSettings.ctlFd != NULL) {
+		fclose (app->userInputSettings.ctlFd);
 	}
 }
 
@@ -198,7 +206,7 @@ void loadProxy(BarApp_t *app){
 	}
 }
 
-int loginUser(BarApp_t *app, struct termios* termOrig){
+int loginUser(BarApp_t *app){
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
 	PianoRequestDataLogin_t reqData;
@@ -209,7 +217,6 @@ int loginUser(BarApp_t *app, struct termios* termOrig){
 	BarUiMsg (MSG_INFO, "Login... ");
 	if (!BarUiPianoCall (app, PIANO_REQUEST_LOGIN, &reqData, &pRet,
 			&wRet)) {
-		BarTermRestore (termOrig);
 		return 0;
 	}
 	return 1;
@@ -230,14 +237,13 @@ void loadUser(BarApp_t *app){
 	}
 }
 
-int loadStations(BarApp_t *app, struct termios* termOrig){
+int loadStations(BarApp_t *app){
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
 
 	BarUiMsg (MSG_INFO, "Get stations... ");
 	if (!BarUiPianoCall (app, PIANO_REQUEST_GET_STATIONS, NULL, &pRet,
 			&wRet)) {
-		BarTermRestore (termOrig);
 		return 0;
 	}
 	return 1;
@@ -262,24 +268,23 @@ void loadStation(BarApp_t *app){
 	}
 }
 
-//disable for now since it totally doesn't fit out model
-void handleUserInput(BarApp_t *app, fd_set *readSet, int *maxFd, int *selectFds, FILE *ctlFd){
+void handleUserInput(BarApp_t *app){
 	struct timeval selectTimeout;
 	fd_set readSetCopy;
 	char buf = '\0';
 	/* select modifies its arguments => copy the set */
-	memcpy (&readSetCopy, readSet, sizeof (*readSet));
+	memcpy (&readSetCopy, app->userInputSettings.readSet, sizeof (*(app->userInputSettings.readSet)));
 	selectTimeout.tv_sec = 1;
 	selectTimeout.tv_usec = 0;
 
 	/* in the meantime: wait for user actions */
-	if (select (*maxFd, &readSetCopy, NULL, NULL, &selectTimeout) > 0) {
+	if (select (*app->userInputSettings.maxFd, &readSetCopy, NULL, NULL, &selectTimeout) > 0) {
 		FILE *curFd = NULL;
 
-		if (FD_ISSET(selectFds[0], &readSetCopy)) {
+		if (FD_ISSET(app->userInputSettings.selectFds[0], &readSetCopy)) {
 			curFd = stdin;
-		} else if (selectFds[1] != -1 && FD_ISSET(selectFds[1], &readSetCopy)) {
-			curFd = ctlFd;
+		} else if (app->userInputSettings.selectFds[1] != -1 && FD_ISSET(app->userInputSettings.selectFds[1], &readSetCopy)) {
+			curFd = app->userInputSettings.ctlFd;
 		}
 		buf = fgetc (curFd);
 

@@ -24,14 +24,20 @@ THE SOFTWARE.
 #ifndef _MAIN_H
 #define _MAIN_H
 
-#include <termios.h>
-#include <sys/select.h>
-
 #include <piano.h>
 #include <waitress.h>
 
+#include <sys/select.h>
+
 #include "player.h"
 #include "settings.h"
+
+typedef struct {
+	fd_set *readSet;
+	int *maxFd;
+	int *selectFds;
+	FILE *ctlFd;
+} UserInputSettings;
 
 typedef struct {
 	PianoHandle_t ph;
@@ -43,26 +49,25 @@ typedef struct {
 	PianoSong_t *songHistory;
 	PianoStation_t *curStation;
 	char doQuit;
+	UserInputSettings userInputSettings;
 } BarApp_t;
 #ifdef __cplusplus
 extern "C"{
-//int pbarmain();
 #endif
 
-
-
-void run(BarApp_t *app, pthread_t *playerThread, fd_set *readSet, struct termios *termOrig, int *maxFd, int *selectFds, FILE *ctlFd);
+void run(BarApp_t *app);
 void loadUser(BarApp_t *app);
 void loadProxy(BarApp_t *app);
-int  loginUser(BarApp_t *app, struct termios* termOrig);
-int  loadStations(BarApp_t *app, struct termios* termOrig);
+int  loginUser(BarApp_t *app);
+int  loadStations(BarApp_t *app);
 void loadStation(BarApp_t *app);
 void loadPlaylist(BarApp_t *app);
 void playSong(BarApp_t *app, pthread_t *playerThread);
 void handlePlayerEnded(BarApp_t *app, pthread_t *playerThread);
 void moveSongToHistory(BarApp_t *app);
-void handleUserInput(BarApp_t *app, fd_set *readSet, int *maxFd, int *selectFds, FILE *ctlFd);
+void handleUserInput(BarApp_t *app);
 void outputTime(BarApp_t *app);
+
 #ifdef __cplusplus
 }
 #endif
