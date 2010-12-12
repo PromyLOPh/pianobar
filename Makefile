@@ -4,7 +4,7 @@ PREFIX:=/usr/local
 BINDIR:=${PREFIX}/bin
 LIBDIR:=${PREFIX}/lib
 MANDIR:=${PREFIX}/share/man
-CFLAGS:=-Wall -g -std=c99 -pedantic
+CFLAGS:=-std=c99 -O2 -DNDEBUG
 
 PIANOBAR_DIR=src
 PIANOBAR_SRC=\
