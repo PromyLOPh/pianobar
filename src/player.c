@@ -199,7 +199,7 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size, void *stream) 
 					format.bits = 16;
 					format.channels = player->channels;
 					format.rate = player->samplerate;
-					format.byte_format = AO_FMT_LITTLE;
+					format.byte_format = AO_FMT_NATIVE;
 					if ((player->audioOutDevice = ao_open_live (audioOutDriver,
 							&format, NULL)) == NULL) {
 						/* we're not interested in the errno */
@@ -358,7 +358,7 @@ static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size, void *stream) 
 			format.bits = 16;
 			format.channels = player->channels;
 			format.rate = player->samplerate;
-			format.byte_format = AO_FMT_LITTLE;
+			format.byte_format = AO_FMT_NATIVE;
 			if ((player->audioOutDevice = ao_open_live (audioOutDriver,
 					&format, NULL)) == NULL) {
 				player->aoError = 1;
