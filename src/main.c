@@ -96,7 +96,7 @@ static bool BarMainLoginUser (BarApp_t *app) {
 static void BarMainGetLoginCredentials (BarSettings_t *settings) {
 	if (settings->username == NULL) {
 		char nameBuf[100];
-		BarUiMsg (MSG_QUESTION, "Username: ");
+		BarUiMsg (MSG_QUESTION, "Email: ");
 		BarReadlineStr (nameBuf, sizeof (nameBuf), 0, stdin);
 		settings->username = strdup (nameBuf);
 	}
