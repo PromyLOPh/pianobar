@@ -302,6 +302,11 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 	size_t stationCount, i;
 	int input;
 
+	if (ph->stations == NULL) {
+		BarUiMsg (MSG_ERR, "No station available.\n");
+		return NULL;
+	}
+
 	/* sort and print stations */
 	sortedStations = BarSortedStations (ph->stations, &stationCount, order);
 	for (i = 0; i < stationCount; i++) {
