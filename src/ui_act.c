@@ -103,6 +103,8 @@ BarUiActCallback(BarUiActHelp) {
 			"select quickmix stations",
 			NULL,
 			"bookmark song/artist",
+			"decrease volume",
+			"increase volume",
 			};
 	size_t i;
 
@@ -562,5 +564,21 @@ BarUiActCallback(BarUiActBookmark) {
 				app->playlist);
 		BarUiActDefaultEventcmd ("artistbookmark");
 	}
+}
+
+/*	decrease volume
+ */
+BarUiActCallback(BarUiActVolDown) {
+	--app->settings.volume;
+	/* FIXME: assuming unsigned integer store is atomic operation */
+	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
+}
+
+/*	increase volume
+ */
+BarUiActCallback(BarUiActVolUp) {
+	++app->settings.volume;
+	/* FIXME: assuming unsigned integer store is atomic operation */
+	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
 }
 

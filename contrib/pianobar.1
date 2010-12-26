@@ -126,6 +126,14 @@ Show next songs in playlist.
 Select quickmix stations.
 
 .TP
+.B act_voldown = (
+Decrease volume.
+
+.TP
+.B act_volup = )
+Increase volume.
+
+.TP
 .B audio_format = {aacplus,mp3,mp3-hifi}
 Select audio format. aacplus is default if both libraries (faad, mad) are
 available. mp3-hifi is available for Pandora One customers only.
@@ -179,6 +187,10 @@ bottom) and name from z to a.
 .TP
 .B user = your@user.name
 Your pandora.com username.
+
+.TP
+.B volume = 0
+Initial volume correction in dB. Usually between -30 and +5.
 
 .SH REMOTE CONTROL
 .B pianobar

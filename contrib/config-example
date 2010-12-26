@@ -29,6 +29,8 @@
 #act_songtired = t
 #act_upcoming = u
 #act_stationselectquickmix = x
+#act_voldown = (
+#act_volup = )
 
 # Misc
 # mp3, mp3-hifi or aacplus
@@ -38,3 +40,4 @@
 #sort = quickmix_10_name_az
 #love_icon = [+]
 #ban_icon = [-]
+#volume = 0

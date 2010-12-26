@@ -102,5 +102,6 @@ struct audioPlayer {
 enum {PLAYER_RET_OK = 0, PLAYER_RET_ERR = 1};
 
 void *BarPlayerThread (void *data);
+unsigned int BarPlayerCalcScale (float);
 
 #endif /* _PLAYER_H */

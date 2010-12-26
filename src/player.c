@@ -56,7 +56,7 @@ THE SOFTWARE.
  *	@param apply this gain
  *	@return this * yourvalue = newgain value
  */
-static inline unsigned int computeReplayGainScale (float applyGain) {
+unsigned int BarPlayerCalcScale (float applyGain) {
 	return pow (10.0, applyGain / 20.0) * RG_SCALE_FACTOR;
 }
 
@@ -414,7 +414,6 @@ void *BarPlayerThread (void *data) {
 
 	/* init handles */
 	pthread_mutex_init (&player->pauseMutex, NULL);
-	player->scale = computeReplayGainScale (player->gain);
 	player->waith.data = (void *) player;
 	/* extraHeaders will be initialized later */
 	player->waith.extraHeaders = extraHeaders;

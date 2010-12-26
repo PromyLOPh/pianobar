@@ -52,8 +52,10 @@ typedef enum {
 	BAR_KS_SELECTQUICKMIX = 19,
 	BAR_KS_DEBUG = 20,
 	BAR_KS_BOOKMARK = 21,
+	BAR_KS_VOLDOWN = 22,
+	BAR_KS_VOLUP = 23,
 	/* insert new shortcuts _before_ this element and increase its value */
-	BAR_KS_COUNT = 22,
+	BAR_KS_COUNT = 24,
 } BarKeyShortcutId_t;
 
 typedef enum {
@@ -68,6 +70,7 @@ typedef enum {
 
 typedef struct {
 	unsigned int history;
+	int volume;
 	BarStationSorting_t sortOrder;
 	PianoAudioFormat_t audioFormat;
 	char *username;

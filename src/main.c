@@ -180,7 +180,8 @@ static void BarMainHandleUserInput (BarApp_t *app) {
 						BarUiActQuit, BarUiActRenameStation,
 						BarUiActSelectStation, BarUiActTempBanSong,
 						BarUiActPrintUpcoming, BarUiActSelectQuickMix,
-						BarUiActDebug, BarUiActBookmark};
+						BarUiActDebug, BarUiActBookmark, BarUiActVolDown,
+						BarUiActVolUp};
 				idToF[i] (app, curFd);
 				break;
 			}
@@ -275,6 +276,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 		}
 
 		app->player.gain = app->playlist->fileGain;
+		app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
 		app->player.audioFormat = app->playlist->audioFormat;
 
 		/* throw event */

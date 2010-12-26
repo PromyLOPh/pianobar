@@ -95,7 +95,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	/* _must_ have same order as in BarKeyShortcutId_t */
 	static const char defaultKeys[] = {'?', '+', '-', 'a', 'c', 'd', 'e', 'g',
 			'h', 'i', 'j', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'x', '$',
-			'b',
+			'b', '(', ')',
 			};
 	static const char *shortcutFileKeys[] = {
 			"act_help", "act_songlove", "act_songban", "act_stationaddmusic",
@@ -104,7 +104,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 			"act_addshared", "act_songmove", "act_songnext", "act_songpause",
 			"act_quit", "act_stationrename", "act_stationchange",
 			"act_songtired", "act_upcoming", "act_stationselectquickmix",
-			"act_debug", "act_bookmark",
+			"act_debug", "act_bookmark", "act_voldown", "act_volup",
 			};
 
 	/* apply defaults */
@@ -116,6 +116,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 		#endif
 	#endif
 	settings->history = 5;
+	settings->volume = 0;
 	settings->sortOrder = BAR_SORT_NAME_AZ;
 	memcpy (settings->keys, defaultKeys, sizeof (defaultKeys));
 	settings->loveIcon = strdup ("<3");
@@ -187,6 +188,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 		} else if (streq ("ban_icon", key)) {
 			free (settings->banIcon);
 			settings->banIcon = strdup (val);
+		} else if (streq ("volume", key)) {
+			settings->volume = atoi (val);
 		}
 	}
 
