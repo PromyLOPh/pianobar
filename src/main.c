@@ -167,6 +167,10 @@ static void BarMainHandleUserInput (BarApp_t *app) {
 			curFd = app->ctlFd;
 		}
 		buf = fgetc (curFd);
+		if (buf == EOF) {
+			/* select() is going wild if fdset contains EOFed fd's */
+			FD_CLR (fileno (curFd), &app->readSet);
+		}
 
 		size_t i;
 		for (i = 0; i < BAR_KS_COUNT; i++) {
