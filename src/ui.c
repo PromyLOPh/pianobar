@@ -48,31 +48,32 @@ typedef int (*BarSortFunc_t) (const void *, const void *);
  *	@param message
  */
 inline void BarUiMsg (uiMsg_t type, const char *format, ...) {
+	#define ANSI_CLEAR_LINE "\033[2K"
 	va_list fmtargs;
 
 	switch (type) {
 		case MSG_INFO:
-			printf ("(i) ");
+			printf (ANSI_CLEAR_LINE "(i) ");
 			break;
 
 		case MSG_PLAYING:
-			printf ("|>  ");
+			printf (ANSI_CLEAR_LINE "|>  ");
 			break;
 
 		case MSG_TIME:
-			printf ("#   ");
+			printf (ANSI_CLEAR_LINE "#   ");
 			break;
 		
 		case MSG_ERR:
-			printf ("/!\\ ");
+			printf (ANSI_CLEAR_LINE "/!\\ ");
 			break;
 
 		case MSG_QUESTION:
-			printf ("[?] ");
+			printf (ANSI_CLEAR_LINE "[?] ");
 			break;
 
 		case MSG_LIST:
-			printf ("       ");
+			printf (ANSI_CLEAR_LINE "\t");
 			break;
 	
 		default:
@@ -83,6 +84,8 @@ inline void BarUiMsg (uiMsg_t type, const char *format, ...) {
 	va_end (fmtargs);
 
 	fflush (stdout);
+
+	#undef ANSI_CLEAR_LINE
 }
 
 /*	prints human readable status message based on return value
