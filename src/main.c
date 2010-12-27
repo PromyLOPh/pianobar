@@ -41,6 +41,7 @@ THE SOFTWARE.
 #include <pthread.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <limits.h>
 
 /* pandora.com library */
 #include <piano.h>
@@ -397,8 +398,7 @@ static void BarMainLoop (BarApp_t *app) {
 
 int main (int argc, char **argv) {
 	static BarApp_t app;
-	/* FIXME: max path length? */
-	char ctlPath[1024];
+	char ctlPath[PATH_MAX];
 	/* terminal attributes _before_ we started messing around with ~ECHO */
 	struct termios termOrig;
 

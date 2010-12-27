@@ -23,11 +23,13 @@ THE SOFTWARE.
 
 /* application settings */
 
+#define _POSIX_C_SOURCE 1 /* PATH_MAX */
 #define _BSD_SOURCE /* strdup() */
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "settings.h"
 #include "config.h"
@@ -89,8 +91,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
  *	@return nothing yet
  */
 void BarSettingsRead (BarSettings_t *settings) {
-	/* FIXME: what is the max length of a path? */
-	char configfile[1024], key[256], val[256];
+	char configfile[PATH_MAX], key[256], val[256];
 	FILE *configfd;
 	/* _must_ have same order as in BarKeyShortcutId_t */
 	static const char defaultKeys[] = {'?', '+', '-', 'a', 'c', 'd', 'e', 'g',
