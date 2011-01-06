@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2011
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -126,7 +126,7 @@ BarUiActCallback(BarUiActAddMusic) {
 
 	RETURN_IF_NO_STATION;
 
-	reqData.musicId = BarUiSelectMusicId (app, curFd, app->playlist->musicId);
+	reqData.musicId = BarUiSelectMusicId (app, app->playlist->musicId);
 	if (reqData.musicId != NULL) {
 		if (!BarTransformIfShared (app, app->curStation)) {
 			return;
@@ -172,7 +172,7 @@ BarUiActCallback(BarUiActCreateStation) {
 	WaitressReturn_t wRet;
 	PianoRequestDataCreateStation_t reqData;
 
-	reqData.id = BarUiSelectMusicId (app, curFd, NULL);
+	reqData.id = BarUiSelectMusicId (app, NULL);
 	if (reqData.id != NULL) {
 		reqData.type = "mi";
 		BarUiMsg (MSG_INFO, "Creating station... ");
@@ -191,8 +191,8 @@ BarUiActCallback(BarUiActAddSharedStation) {
 	char stationId[50];
 
 	BarUiMsg (MSG_QUESTION, "Station id: ");
-	if (BarReadline (stationId, sizeof (stationId), "0123456789", 0, 0,
-			curFd) > 0) {
+	if (BarReadline (stationId, sizeof (stationId), "0123456789", &app->input,
+			BAR_RL_DEFAULT, -1) > 0) {
 		reqData.id = stationId;
 		reqData.type = "sh";
 		BarUiMsg (MSG_INFO, "Adding shared station... ");
@@ -211,7 +211,7 @@ BarUiActCallback(BarUiActDeleteStation) {
 
 	BarUiMsg (MSG_QUESTION, "Really delete \"%s\"? [yN] ",
 			app->curStation->name);
-	if (BarReadlineYesNo (0, curFd)) {
+	if (BarReadlineYesNo (false, &app->input)) {
 		BarUiMsg (MSG_INFO, "Deleting station... ");
 		if (BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_STATION,
 				app->curStation)) {
@@ -247,7 +247,7 @@ BarUiActCallback(BarUiActExplain) {
  */
 BarUiActCallback(BarUiActStationFromGenre) {
 	/* use genre station */
-	BarStationFromGenre (app, curFd);
+	BarStationFromGenre (app);
 }
 
 /*	print verbose song information
@@ -333,7 +333,7 @@ BarUiActCallback(BarUiActMoveSong) {
 	RETURN_IF_NO_SONG;
 
 	reqData.to = BarUiSelectStation (&app->ph, "Move song to station: ",
-			app->settings.sortOrder, curFd);
+			app->settings.sortOrder, &app->input);
 	if (reqData.to != NULL) {
 		/* find original station (just is case we're playing a quickmix
 		 * station) */
@@ -376,7 +376,7 @@ BarUiActCallback(BarUiActRenameStation) {
 	RETURN_IF_NO_STATION;
 
 	BarUiMsg (MSG_QUESTION, "New name: ");
-	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0, curFd) > 0) {
+	if (BarReadlineStr (lineBuf, sizeof (lineBuf), &app->input, BAR_RL_DEFAULT) > 0) {
 		PianoRequestDataRenameStation_t reqData;
 		if (!BarTransformIfShared (app, app->curStation)) {
 			return;
@@ -395,7 +395,7 @@ BarUiActCallback(BarUiActRenameStation) {
  */
 BarUiActCallback(BarUiActSelectStation) {
 	PianoStation_t *newStation = BarUiSelectStation (&app->ph, "Select station: ",
-			app->settings.sortOrder, curFd);
+			app->settings.sortOrder, &app->input);
 	if (newStation != NULL) {
 		app->curStation = newStation;
 		BarUiPrintStation (app->curStation);
@@ -446,7 +446,7 @@ BarUiActCallback(BarUiActSelectQuickMix) {
 		PianoStation_t *selStation;
 		while ((selStation = BarUiSelectStation (&app->ph,
 				"Toggle quickmix for station: ", app->settings.sortOrder,
-				curFd)) != NULL) {
+				&app->input)) != NULL) {
 			selStation->useQuickMix = !selStation->useQuickMix;
 		}
 		BarUiMsg (MSG_INFO, "Setting quickmix stations... ");
@@ -474,7 +474,7 @@ BarUiActCallback(BarUiActHistory) {
 
 	if (app->songHistory != NULL) {
 		selectedSong = BarUiSelectSong (&app->settings, app->songHistory,
-				curFd);
+				&app->input);
 		if (selectedSong != NULL) {
 			/* use user-defined keybindings */
 			allowedBuf[0] = app->settings.keys[BAR_KS_LOVE];
@@ -487,7 +487,8 @@ BarUiActCallback(BarUiActHistory) {
 					app->settings.keys[BAR_KS_LOVE],
 					app->settings.keys[BAR_KS_BAN],
 					app->settings.keys[BAR_KS_TIRED]);
-			BarReadline (selectBuf, sizeof (selectBuf), allowedBuf, 1, 0, curFd);
+			BarReadline (selectBuf, sizeof (selectBuf), allowedBuf,
+					&app->input, BAR_RL_FULLRETURN, -1);
 
 			if (selectBuf[0] == app->settings.keys[BAR_KS_LOVE] ||
 					selectBuf[0] == app->settings.keys[BAR_KS_BAN] ||
@@ -557,7 +558,8 @@ BarUiActCallback(BarUiActBookmark) {
 	RETURN_IF_NO_SONG;
 
 	BarUiMsg (MSG_QUESTION, "Bookmark [s]ong or [a]rtist? ");
-	BarReadline (selectBuf, sizeof (selectBuf), "sa", 1, 0, curFd);
+	BarReadline (selectBuf, sizeof (selectBuf), "sa", &app->input,
+			BAR_RL_FULLRETURN, -1);
 	if (selectBuf[0] == 's') {
 		BarUiMsg (MSG_INFO, "Bookmarking song... ");
 		BarUiActDefaultPianoCall (PIANO_REQUEST_BOOKMARK_SONG, app->playlist);

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2011
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -297,13 +297,16 @@ PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
 
 /*	let user pick one station
  *	@param piano handle
+ *	@param prompt string
+ *	@param station list sort order
+ *	@param input fds
  *	@return pointer to selected station or NULL
  */
 PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
-		BarStationSorting_t order, FILE *curFd) {
+		BarStationSorting_t order, BarReadlineFds_t *input) {
 	PianoStation_t **sortedStations = NULL, *retStation = NULL;
 	size_t stationCount, i;
-	int input;
+	int selected;
 
 	if (ph->stations == NULL) {
 		BarUiMsg (MSG_ERR, "No station available.\n");
@@ -323,12 +326,12 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 
 	BarUiMsg (MSG_QUESTION, prompt);
 	/* FIXME: using a _signed_ int is ugly */
-	if (BarReadlineInt (&input, curFd) == 0) {
+	if (BarReadlineInt (&selected, input) == 0) {
 		free (sortedStations);
 		return NULL;
 	}
-	if (input < stationCount) {
-		retStation = sortedStations[input];
+	if (selected < stationCount) {
+		retStation = sortedStations[selected];
 	}
 	free (sortedStations);
 	return retStation;
@@ -337,18 +340,18 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 /*	let user pick one song
  *	@param pianobar settings
  *	@param song list
- *	@param current fd
+ *	@param input fds
  *	@return pointer to selected item in song list or NULL
  */
 PianoSong_t *BarUiSelectSong (const BarSettings_t *settings,
-		PianoSong_t *startSong, FILE *curFd) {
+		PianoSong_t *startSong, BarReadlineFds_t *input) {
 	PianoSong_t *tmpSong = NULL;
 	int i = 0;
 
 	i = BarUiListSongs (settings, startSong);
 
 	BarUiMsg (MSG_QUESTION, "Select song: ");
-	if (BarReadlineInt (&i, curFd) == 0) {
+	if (BarReadlineInt (&i, input) == 0) {
 		return NULL;
 	}
 
@@ -363,9 +366,11 @@ PianoSong_t *BarUiSelectSong (const BarSettings_t *settings,
 
 /*	let user pick one artist
  *	@param artists (linked list)
+ *	@param input fds
  *	@return pointer to selected artist or NULL on abort
  */
-PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd) {
+PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist,
+		BarReadlineFds_t *input) {
 	PianoArtist_t *tmpArtist = NULL;
 	int i = 0;
 
@@ -377,7 +382,7 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd) {
 		tmpArtist = tmpArtist->next;
 	}
 	BarUiMsg (MSG_QUESTION, "Select artist: ");
-	if (BarReadlineInt (&i, curFd) == 0) {
+	if (BarReadlineInt (&i, input) == 0) {
 		return NULL;
 	}
 	tmpArtist = startArtist;
@@ -389,12 +394,11 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd) {
 }
 
 /*	search music: query, search request, return music id
- *	@param piano handle
- *	@param read data from fd
+ *	@param app handle
  *	@param allow seed suggestions if != NULL
  *	@return musicId or NULL on abort/error
  */
-char *BarUiSelectMusicId (BarApp_t *app, FILE *curFd, char *similarToId) {
+char *BarUiSelectMusicId (BarApp_t *app, char *similarToId) {
 	char *musicId = NULL;
 	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;
@@ -402,7 +406,8 @@ char *BarUiSelectMusicId (BarApp_t *app, FILE *curFd, char *similarToId) {
 	PianoSong_t *tmpSong;
 
 	BarUiMsg (MSG_QUESTION, "Search for artist/title: ");
-	if (BarReadlineStr (lineBuf, sizeof (lineBuf), 0, curFd) > 0) {
+	if (BarReadlineStr (lineBuf, sizeof (lineBuf), &app->input,
+			BAR_RL_DEFAULT) > 0) {
 		if (strcmp ("?", lineBuf) == 0 && similarToId != NULL) {
 			PianoReturn_t pRet;
 			WaitressReturn_t wRet;
@@ -436,15 +441,17 @@ char *BarUiSelectMusicId (BarApp_t *app, FILE *curFd, char *similarToId) {
 				searchResult.artists != NULL) {
 			/* songs and artists found */
 			BarUiMsg (MSG_QUESTION, "Is this an [a]rtist or [t]rack name? ");
-			BarReadline (selectBuf, sizeof (selectBuf), "at", 1, 0, curFd);
+			BarReadline (selectBuf, sizeof (selectBuf), "at", &app->input,
+					BAR_RL_FULLRETURN, -1);
 			if (*selectBuf == 'a') {
-				tmpArtist = BarUiSelectArtist (searchResult.artists, curFd);
+				tmpArtist = BarUiSelectArtist (searchResult.artists,
+						&app->input);
 				if (tmpArtist != NULL) {
 					musicId = strdup (tmpArtist->musicId);
 				}
 			} else if (*selectBuf == 't') {
 				tmpSong = BarUiSelectSong (&app->settings, searchResult.songs,
-						curFd);
+						&app->input);
 				if (tmpSong != NULL) {
 					musicId = strdup (tmpSong->musicId);
 				}
@@ -452,13 +459,13 @@ char *BarUiSelectMusicId (BarApp_t *app, FILE *curFd, char *similarToId) {
 		} else if (searchResult.songs != NULL) {
 			/* songs found */
 			tmpSong = BarUiSelectSong (&app->settings, searchResult.songs,
-					curFd);
+					&app->input);
 			if (tmpSong != NULL) {
 				musicId = strdup (tmpSong->musicId);
 			}
 		} else if (searchResult.artists != NULL) {
 			/* artists found */
-			tmpArtist = BarUiSelectArtist (searchResult.artists, curFd);
+			tmpArtist = BarUiSelectArtist (searchResult.artists, &app->input);
 			if (tmpArtist != NULL) {
 				musicId = strdup (tmpArtist->musicId);
 			}
@@ -472,9 +479,9 @@ char *BarUiSelectMusicId (BarApp_t *app, FILE *curFd, char *similarToId) {
 }
 
 /*	browse genre stations and create shared station
- *	@param piano handle
+ *	@param app handle
  */
-void BarStationFromGenre (BarApp_t *app, FILE *curFd) {
+void BarStationFromGenre (BarApp_t *app) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
 	PianoGenreCategory_t *curCat;
@@ -504,7 +511,7 @@ void BarStationFromGenre (BarApp_t *app, FILE *curFd) {
 	}
 	/* select category or exit */
 	BarUiMsg (MSG_QUESTION, "Select category: ");
-	if (BarReadlineInt (&i, curFd) == 0) {
+	if (BarReadlineInt (&i, &app->input) == 0) {
 		return;
 	}
 	curCat = app->ph.genreStations;
@@ -522,7 +529,7 @@ void BarStationFromGenre (BarApp_t *app, FILE *curFd) {
 		curGenre = curGenre->next;
 	}
 	BarUiMsg (MSG_QUESTION, "Select genre: ");
-	if (BarReadlineInt (&i, curFd) == 0) {
+	if (BarReadlineInt (&i, &app->input) == 0) {
 		return;
 	}
 	curGenre = curCat->genres;

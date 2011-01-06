@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2011
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 #include "main.h"
 
-#define BarUiActCallback(name) void name (BarApp_t *app, FILE *curFd)
+#define BarUiActCallback(name) void name (BarApp_t *app)
 
 BarUiActCallback(BarUiActHelp);
 BarUiActCallback(BarUiActAddMusic);

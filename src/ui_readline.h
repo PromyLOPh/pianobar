@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2011
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,8 +21,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-size_t BarReadline (char *, size_t, const char *, char, char, FILE *);
-size_t BarReadlineStr (char *, size_t, char, FILE *);
-size_t BarReadlineInt (int *, FILE *);
-int BarReadlineYesNo (char def, FILE *);
+#ifndef _UI_READLINE_H
+#define _UI_READLINE_H
+
+#include <stdbool.h>
+#include <sys/select.h>
+
+typedef enum {
+	BAR_RL_DEFAULT = 0,
+	BAR_RL_FULLRETURN = 1, /* return if buffer is full */
+	BAR_RL_NOECHO = 2, /* don't echo to stdout */
+} BarReadlineFlags_t;
+
+typedef struct {
+	fd_set set;
+	int maxfd;
+	int fds[2];
+} BarReadlineFds_t;
+
+size_t BarReadline (char *, const size_t, const char *,
+		BarReadlineFds_t *, const BarReadlineFlags_t, int);
+size_t BarReadlineStr (char *, const size_t,
+		BarReadlineFds_t *, const BarReadlineFlags_t);
+size_t BarReadlineInt (int *, BarReadlineFds_t *);
+bool BarReadlineYesNo (bool, BarReadlineFds_t *);
+
+#endif /* _UI_READLINE_H */
 
