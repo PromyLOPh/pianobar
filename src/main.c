@@ -249,8 +249,8 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 		}
 	}
 	BarUiStartEventCmd (&app->settings, "stationfetchplaylist",
-			app->curStation, app->playlist, &app->player, pRet,
-			wRet);
+			app->curStation, app->playlist, &app->player, app->ph.stations,
+			pRet, wRet);
 }
 
 /*	start new player thread
@@ -286,7 +286,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 
 		/* throw event */
 		BarUiStartEventCmd (&app->settings, "songstart",
-				app->curStation, app->playlist, &app->player,
+				app->curStation, app->playlist, &app->player, app->ph.stations,
 				PIANO_RET_OK, WAITRESS_RET_OK);
 
 		/* prevent race condition, mode must _not_ be FREED if
@@ -304,7 +304,8 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 	void *threadRet;
 
 	BarUiStartEventCmd (&app->settings, "songfinish", app->curStation,
-			app->playlist, &app->player, PIANO_RET_OK, WAITRESS_RET_OK);
+			app->playlist, &app->player, app->ph.stations, PIANO_RET_OK,
+			WAITRESS_RET_OK);
 
 	/* FIXME: pthread_join blocks everything if network connection
 	 * is hung up e.g. */

@@ -590,8 +590,8 @@ size_t BarUiListSongs (const BarSettings_t *settings,
  */
 void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		const PianoStation_t *curStation, const PianoSong_t *curSong,
-		const struct audioPlayer *player, PianoReturn_t pRet,
-		WaitressReturn_t wRet) {
+		const struct audioPlayer *player, PianoStation_t *stations,
+                PianoReturn_t pRet, WaitressReturn_t wRet) {
 	pid_t chld;
 	char pipeBuf[1024];
 	int pipeFd[2];
@@ -629,7 +629,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			player->songPlayed,
 			curSong == NULL ? PIANO_RATE_NONE : curSong->rating
 			);
-	
+
 	if (pipe (pipeFd) == -1) {
 		BarUiMsg (MSG_ERR, "Cannot create eventcmd pipe. (%s)\n", strerror (errno));
 		return;
@@ -651,6 +651,30 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		int status;
 		close (pipeFd[0]);
 		write (pipeFd[1], pipeBuf, strlen (pipeBuf));
+
+		if (stations != NULL) {
+			/* send station list */
+			PianoStation_t **sortedStations = NULL;
+			size_t stationCount;
+			sortedStations = BarSortedStations (stations, &stationCount,
+					settings->sortOrder);
+			assert (sortedStations != NULL);
+
+			snprintf (pipeBuf, sizeof (pipeBuf), "stationCount=%zd\n", stationCount);
+			write (pipeFd[1], pipeBuf, strlen (pipeBuf));
+
+			for (size_t i = 0; i < stationCount; i++) {
+				const PianoStation_t *currStation = sortedStations[i];
+				snprintf (pipeBuf, sizeof (pipeBuf), "station%zd=%s\n", i,
+						currStation->name);
+				write (pipeFd[1], pipeBuf, strlen (pipeBuf));
+			}
+			free (sortedStations);
+		} else {
+			const char *msg = "stationCount=0\n";
+			write (pipeFd[1], msg, strlen (msg));
+		}
+	
 		close (pipeFd[1]);
 		/* wait to get rid of the zombie */
 		waitpid (chld, &status, 0);

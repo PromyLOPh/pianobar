@@ -42,7 +42,8 @@ THE SOFTWARE.
 /*	standard eventcmd call
  */
 #define BarUiActDefaultEventcmd(name) BarUiStartEventCmd (&app->settings, \
-		name, app->curStation, app->playlist, &app->player, pRet, wRet)
+		name, app->curStation, app->playlist, &app->player, app->ph.stations, \
+		pRet, wRet)
 
 /*	standard piano call
  */
@@ -517,7 +518,8 @@ BarUiActCallback(BarUiActHistory) {
 							&reqData);
 
 					BarUiStartEventCmd (&app->settings, "songlove", songStation,
-							selectedSong, &app->player, pRet, wRet);
+							selectedSong, &app->player, app->ph.stations,
+							pRet, wRet);
 				} else if (selectBuf[0] == app->settings.keys[BAR_KS_BAN]) {
 					PianoRequestDataRateSong_t reqData;
 					reqData.song = selectedSong;
@@ -527,13 +529,15 @@ BarUiActCallback(BarUiActHistory) {
 					BarUiActDefaultPianoCall (PIANO_REQUEST_RATE_SONG,
 							&reqData);
 					BarUiStartEventCmd (&app->settings, "songban", songStation,
-							selectedSong, &app->player, pRet, wRet);
+							selectedSong, &app->player, app->ph.stations,
+							pRet, wRet);
 				} else if (selectBuf[0] == app->settings.keys[BAR_KS_TIRED]) {
 					BarUiMsg (MSG_INFO, "Putting song on shelf... ");
 					BarUiActDefaultPianoCall (PIANO_REQUEST_ADD_TIRED_SONG, selectedSong);
 
 					BarUiStartEventCmd (&app->settings, "songshelf", songStation,
-							selectedSong, &app->player, pRet, wRet);
+							selectedSong, &app->player, app->ph.stations,
+							pRet, wRet);
 				} /* end if */
 			} /* end if selectBuf[0] */
 		} /* end if selectedSong != NULL */
