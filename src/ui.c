@@ -590,8 +590,8 @@ size_t BarUiListSongs (const BarSettings_t *settings,
  */
 void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		const PianoStation_t *curStation, const PianoSong_t *curSong,
-		const struct audioPlayer *player, PianoReturn_t pRet,
-		WaitressReturn_t wRet) {
+		const struct audioPlayer *player, PianoHandle_t *ph,
+                PianoReturn_t pRet, WaitressReturn_t wRet) {
 	pid_t chld;
 	char pipeBuf[1024];
 	int pipeFd[2];
@@ -629,7 +629,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			player->songPlayed,
 			curSong == NULL ? PIANO_RATE_NONE : curSong->rating
 			);
-	
+
 	if (pipe (pipeFd) == -1) {
 		BarUiMsg (MSG_ERR, "Cannot create eventcmd pipe. (%s)\n", strerror (errno));
 		return;
@@ -651,6 +651,27 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		int status;
 		close (pipeFd[0]);
 		write (pipeFd[1], pipeBuf, strlen (pipeBuf));
+
+                // Print station list - added by Matthew L Beckler - matthew at mbeckler dot org - Jan 13, 2011
+                // Uploaded to his fork of pianobar, located at: https://github.com/matthewbeckler/pianobar
+                if (ph->stations != NULL) {
+                    // send station list to the eventcmd script
+                    PianoStation_t **sortedStations = NULL;
+                    size_t stationCount, i;
+                    sortedStations = BarSortedStations(ph->stations, &stationCount, BAR_SORT_NAME_AZ);
+
+                    snprintf (pipeBuf, sizeof (pipeBuf), "stationCount=%d\n", stationCount);
+                    write (pipeFd[1], pipeBuf, strlen (pipeBuf));
+
+                    for (i = 0; i < stationCount; i++) {
+                        const PianoStation_t *currStation = sortedStations[i];
+                        snprintf (pipeBuf, sizeof (pipeBuf), "station%d=%s\n", i, currStation->name);
+                        write (pipeFd[1], pipeBuf, strlen (pipeBuf));
+                    }
+                    free (sortedStations);
+                }
+                // end section added by MLB
+	
 		close (pipeFd[1]);
 		/* wait to get rid of the zombie */
 		waitpid (chld, &status, 0);
