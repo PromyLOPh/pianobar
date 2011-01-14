@@ -658,7 +658,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
                     // send station list to the eventcmd script
                     PianoStation_t **sortedStations = NULL;
                     size_t stationCount, i;
-                    sortedStations = BarSortedStations(ph->stations, &stationCount, BAR_SORT_NAME_AZ);
+                    sortedStations = BarSortedStations(ph->stations, &stationCount, settings->sortOrder);
 
                     snprintf (pipeBuf, sizeof (pipeBuf), "stationCount=%d\n", stationCount);
                     write (pipeFd[1], pipeBuf, strlen (pipeBuf));
