@@ -7,7 +7,7 @@
 
 STATION=$(cat /tmp/pianobar_stations | \
 	dmenu -nf '#888888' -nb '#222222' -sf '#ffffff' -i \
-	-sb '#285577' -p 'run application:' -fn 'Terminus 8' | \
+	-sb '#285577' -p 'choose station:' -fn 'Terminus 8' | \
 	sed -e 's/\([0-9]\+\)\..*/\1/')
 
 
