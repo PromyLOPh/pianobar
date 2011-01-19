@@ -332,11 +332,12 @@ static void BarMainPrintTime (BarApp_t *app) {
 		sign = POSITIVE;
 		songRemaining = -songRemaining;
 	}
-	BarUiMsg (MSG_TIME, "%c%02i:%02i/%02i:%02i\r",
+	BarUiMsg (MSG_TIME, "%c%02i:%02i/%02i:%02i (%i)\r",
 			(sign == POSITIVE ? '+' : '-'),
 			songRemaining / 60, songRemaining % 60,
 			app->player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
-			app->player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
+			app->player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60,
+			app->settings.volume);
 }
 
 /*	main loop
