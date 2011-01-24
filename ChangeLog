@@ -1,3 +1,13 @@
+Release 2011.01.24
+
+- Temporary banning song via history
+- Software volume control
+- Extended eventcmd api (includes station list now)
+- Custom loved/banned icons in upcoming songs/history
+- Fix playback on big-endian machines
+- Fix DISABLE_MAD/FAAD make switches
+- Several bugfixes, code cleanup and refactoring
+
 Release 2010.11.06
 
 - XMLRLC api version bump (v29)
