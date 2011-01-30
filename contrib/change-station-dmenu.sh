@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# Use contrib/eventcmd.pl to capture station names
+# Use contrib/eventcmd-examples/dmenu.pl to capture station names
 
 STATION=$(cat /tmp/pianobar_stations | \
 	dmenu -nf '#888888' -nb '#222222' -sf '#ffffff' -i \

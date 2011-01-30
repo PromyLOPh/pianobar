@@ -1,10 +1,7 @@
-#!/usr/bin/ruby
+#!/usr/bin/perl
 
-# pianobar event script to make rbot send currently playing song to an IRC
-# channel
-
-# Copyright (c) 2010
-# Matthew M. Boedicker <matthewm@boedicker.org>
+# Copyright (c) 2011
+# Juan C. Muller <jcmuller@gmail.com>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,27 +21,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# for setting up rbot-remote see rbot/bin/rbot-remote
+use strict;
+use warnings;
 
-# add this script to ~/.config/pianobar/config by adding
-# event_command = /home/user/.config/pianobar/eventcmd.rb
+# Use this script to be able to use change-station-dmenu.sh as
+# event_command = $HOME/.config/pianobar/dmenu.pl
 
-# make sure these are quoted correctly for popen
-rbot_remote = '/home/user/src/rbot/bin/rbot-remote'
-rbot_user = 'remote'
-rbot_password = 'secret'
-channel = '#current'
+# (taken from https://github.com/jcmuller/pianobar-notify)
 
-event = ARGV.first
+if (my $action = shift @ARGV)
+{
+	if ($action eq 'songstart')
+	{
+		my $stations = '/tmp/pianobar_stations';
+		open(my $fh, ">$stations") or die "Couldn't open $stations for writing: $!";
 
-if event == 'songstart'
-  d = {}
+		while (<STDIN>)
+		{
+			print $fh "$1. $2\n" if (/station(\d+)=(.+)$/);
+		}
 
-  STDIN.each_line { |line| d.store(*line.chomp.split('=', 2)) }
+		close($fh);
+	}
+}
 
-  IO.popen("#{rbot_remote} -u #{rbot_user} -p #{rbot_password} -d '#{channel}'",
-    'w') do |p|
-    p.write("now playing \"#{d['title']}\" by \"#{d['artist']}\"")
-  end
-
-end
