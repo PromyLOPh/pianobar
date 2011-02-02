@@ -58,6 +58,8 @@ typedef enum {
 	BAR_KS_COUNT = 24,
 } BarKeyShortcutId_t;
 
+#define BAR_KS_DISABLED '\x00'
+
 typedef enum {
 	BAR_SORT_NAME_AZ = 0,
 	BAR_SORT_NAME_ZA = 1,

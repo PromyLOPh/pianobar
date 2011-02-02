@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2011
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -150,7 +150,11 @@ void BarSettingsRead (BarSettings_t *settings) {
 			/* keyboard shortcuts */
 			for (i = 0; i < BAR_KS_COUNT; i++) {
 				if (streq (shortcutFileKeys[i], key)) {
-					settings->keys[i] = val[0];
+					if (streq (val, "disabled")) {
+						settings->keys[i] = BAR_KS_DISABLED;
+					} else {
+						settings->keys[i] = val[0];
+					}
 					break;
 				}
 			}

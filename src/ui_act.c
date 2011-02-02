@@ -111,7 +111,7 @@ BarUiActCallback(BarUiActHelp) {
 
 	BarUiMsg (MSG_NONE, "\r");
 	for (i = 0; i < BAR_KS_COUNT; i++) {
-		if (idToDesc[i] != NULL) {
+		if (idToDesc[i] != NULL && app->settings.keys[i] != BAR_KS_DISABLED) {
 			BarUiMsg (MSG_LIST, "%c    %s\n", app->settings.keys[i], idToDesc[i]);
 		}
 	}

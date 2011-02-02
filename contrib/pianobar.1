@@ -32,9 +32,14 @@ http://xiph.org/ao/doc/config.html
 The configuration file consists of simple
 .B key = value
 lines. Each terminated with a newline (\\n) character. Keys and values are both
-case sensitive. act_*-keys control 
+case sensitive.
+
+act_* keys control 
 .B pianobar's
-key-bindings.
+key-bindings. Every one-byte character except for \\x00 and the
+special value
+.B disabled
+are allowed here.
 
 .TP
 .B act_help = ?

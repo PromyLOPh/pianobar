@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2011
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -174,7 +174,8 @@ static void BarMainHandleUserInput (BarApp_t *app) {
 
 		size_t i;
 		for (i = 0; i < BAR_KS_COUNT; i++) {
-			if (app->settings.keys[i] == buf) {
+			if (app->settings.keys[i] != BAR_KS_DISABLED &&
+					app->settings.keys[i] == buf) {
 				static const BarKeyShortcutFunc_t idToF[] = {BarUiActHelp,
 						BarUiActLoveSong, BarUiActBanSong,
 						BarUiActAddMusic, BarUiActCreateStation,
@@ -425,9 +426,13 @@ int main (int argc, char **argv) {
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
 
-	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE " (" VERSION ")! "
-			"Press %c for a list of commands.\n",
-			app.settings.keys[BAR_KS_HELP]);
+	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE " (" VERSION ")! ");
+	if (app.settings.keys[BAR_KS_HELP] == BAR_KS_DISABLED) {
+		BarUiMsg (MSG_NONE, "\n");
+	} else {
+		BarUiMsg (MSG_NONE, "Press %c for a list of commands.\n",
+				app.settings.keys[BAR_KS_HELP]);
+	}
 
 	/* init fds */
 	FD_ZERO(&app.readSet);
