@@ -81,15 +81,17 @@ static bool BarMainLoginUser (BarApp_t *app) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
 	PianoRequestDataLogin_t reqData;
+	bool ret;
+
 	reqData.user = app->settings.username;
 	reqData.password = app->settings.password;
 	reqData.step = 0;
 
 	BarUiMsg (MSG_INFO, "Login... ");
-	if (!BarUiPianoCall (app, PIANO_REQUEST_LOGIN, &reqData, &pRet, &wRet)) {
-		return false;
-	}
-	return true;
+	ret = BarUiPianoCall (app, PIANO_REQUEST_LOGIN, &reqData, &pRet, &wRet);
+	BarUiStartEventCmd (&app->settings, "userlogin", NULL, NULL, &app->player,
+			NULL, pRet, wRet);
+	return ret;
 }
 
 /*	ask for username/password if none were provided in settings
@@ -116,13 +118,13 @@ static void BarMainGetLoginCredentials (BarSettings_t *settings,
 static bool BarMainGetStations (BarApp_t *app) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
+	bool ret;
 
 	BarUiMsg (MSG_INFO, "Get stations... ");
-	if (!BarUiPianoCall (app, PIANO_REQUEST_GET_STATIONS, NULL, &pRet,
-			&wRet)) {
-		return false;
-	}
-	return true;
+	ret = BarUiPianoCall (app, PIANO_REQUEST_GET_STATIONS, NULL, &pRet, &wRet);
+	BarUiStartEventCmd (&app->settings, "usergetstations", NULL, NULL, &app->player,
+			app->ph.stations, pRet, wRet);
+	return ret;
 }
 
 /*	get initial station from autostart setting or user input
