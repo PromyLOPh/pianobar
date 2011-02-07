@@ -242,7 +242,16 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 							"rid=%s&method=sync", ph->routeId);
 					break;
 
-				case 1:
+				case 1: {
+					char *xmlencodedPassword = NULL;
+
+					/* username == email address does not contain &,<,>," */
+					if ((xmlencodedPassword =
+							PianoXmlEncodeString (logindata->password)) ==
+							NULL) {
+						return PIANO_RET_OUT_OF_MEMORY;
+					}
+
 					snprintf (xmlSendBuf, sizeof (xmlSendBuf), 
 							"<?xml version=\"1.0\"?><methodCall>"
 							"<methodName>listener.authenticateListener</methodName>"
@@ -250,10 +259,13 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 							"<param><value><string>%s</string></value></param>"
 							"<param><value><string>%s</string></value></param>"
 							"</params></methodCall>", (unsigned long) timestamp,
-							logindata->user, logindata->password);
+							logindata->user, xmlencodedPassword);
 					snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
 							"rid=%s&method=authenticateListener", ph->routeId);
+
+					free (xmlencodedPassword);
 					break;
+				}
 			}
 			break;
 		}
