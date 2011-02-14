@@ -154,6 +154,7 @@ static void BarMainHandleUserInput (BarApp_t *app) {
 	char buf[2];
 	if (BarReadline (buf, sizeof (buf), NULL, &app->input,
 			BAR_RL_FULLRETURN | BAR_RL_NOECHO, 1) > 0) {
+		buf[0] = tolower(buf[0]);
 		for (size_t i = 0; i < BAR_KS_COUNT; i++) {
 			if (app->settings.keys[i] != BAR_KS_DISABLED &&
 					app->settings.keys[i] == buf[0]) {
