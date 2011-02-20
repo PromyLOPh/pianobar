@@ -602,10 +602,15 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 	pid_t chld;
 	char pipeBuf[1024];
 	int pipeFd[2];
+	PianoStation_t *songStation = NULL;
 
 	if (settings->eventCmd == NULL) {
 		/* nothing to do... */
 		return;
+	}
+
+	if (curSong != NULL && stations != NULL && curStation->isQuickMix) {
+		songStation = PianoFindStationById (stations, curSong->stationId);
 	}
 
 	/* prepare stdin content */
@@ -616,6 +621,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			"album=%s\n"
 			"coverArt=%s\n"
 			"stationName=%s\n"
+			"songStationName=%s\n"
 			"pRet=%i\n"
 			"pRetStr=%s\n"
 			"wRet=%i\n"
@@ -628,6 +634,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			curSong == NULL ? "" : curSong->album,
 			curSong == NULL ? "" : curSong->coverArt,
 			curStation == NULL ? "" : curStation->name,
+			songStation == NULL ? "" : songStation->name,
 			pRet,
 			PianoErrorToStr (pRet),
 			wRet,
