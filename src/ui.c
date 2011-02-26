@@ -694,3 +694,33 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		waitpid (chld, &status, 0);
 	}
 }
+
+/*	prepend song to history, must not be a list of songs as ->next is modified!
+ */
+void BarUiHistoryPrepend (BarApp_t *app, PianoSong_t *song) {
+	if (app->settings.history != 0) {
+		PianoSong_t *tmpSong;
+
+		song->next = app->songHistory;
+		app->songHistory = song;
+
+		/* limit history's length */
+		/* start with 1, so we're stopping at n-1 and have the
+		 * chance to set ->next = NULL */
+		unsigned int i = 1;
+		tmpSong = app->songHistory;
+		while (i < app->settings.history && tmpSong != NULL) {
+			tmpSong = tmpSong->next;
+			++i;
+		}
+		/* if too many songs in history... */
+		if (tmpSong != NULL) {
+			PianoSong_t *delSong = tmpSong->next;
+			tmpSong->next = NULL;
+			if (delSong != NULL) {
+				PianoDestroyPlaylist (delSong);
+			}
+		}
+	}
+}
+

@@ -53,5 +53,6 @@ void BarUiStartEventCmd (const BarSettings_t *, const char *,
 		PianoStation_t *, PianoReturn_t, WaitressReturn_t);
 int BarUiPianoCall (BarApp_t * const, PianoRequestType_t,
 		void *, PianoReturn_t *, WaitressReturn_t *);
+void BarUiHistoryPrepend (BarApp_t *app, PianoSong_t *song);
 
 #endif /* _UI_H */

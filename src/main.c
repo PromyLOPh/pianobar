@@ -157,40 +157,6 @@ static void BarMainHandleUserInput (BarApp_t *app) {
 	}
 }
 
-/*	append current song to history list and move to the next song
- */
-static void BarMainNextSong (BarApp_t *app) {
-	if (app->settings.history != 0) {
-		/* prepend song to history list */
-		PianoSong_t *tmpSong = app->songHistory;
-		app->songHistory = app->playlist;
-		/* select next song */
-		app->playlist = app->playlist->next;
-		app->songHistory->next = tmpSong;
-
-		/* limit history's length */
-		/* start with 1, so we're stopping at n-1 and have the
-		 * chance to set ->next = NULL */
-		unsigned int i = 1;
-		tmpSong = app->songHistory;
-		while (i < app->settings.history && tmpSong != NULL) {
-			tmpSong = tmpSong->next;
-			++i;
-		}
-		/* if too many songs in history... */
-		if (tmpSong != NULL) {
-			PianoSong_t *delSong = tmpSong->next;
-			tmpSong->next = NULL;
-			if (delSong != NULL) {
-				PianoDestroyPlaylist (delSong);
-			}
-		}
-	} else {
-		/* don't keep history */
-		app->playlist = app->playlist->next;
-	}
-}
-
 /*	fetch new playlist
  */
 static void BarMainGetPlaylist (BarApp_t *app) {
@@ -338,7 +304,9 @@ static void BarMainLoop (BarApp_t *app) {
 			if (app->curStation != NULL) {
 				/* what's next? */
 				if (app->playlist != NULL) {
-					BarMainNextSong (app);
+					PianoSong_t *histsong = app->playlist;
+					app->playlist = app->playlist->next;
+					BarUiHistoryPrepend (app, histsong);
 				}
 				if (app->playlist == NULL) {
 					BarMainGetPlaylist (app);

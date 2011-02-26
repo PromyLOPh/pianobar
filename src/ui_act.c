@@ -190,7 +190,8 @@ BarUiActCallback(BarUiActDeleteStation) {
 		if (BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_STATION,
 				selStation) && selStation == app->curStation) {
 			BarUiDoSkipSong (&app->player);
-			PianoDestroyPlaylist (app->playlist);
+			PianoDestroyPlaylist (app->playlist->next);
+			BarUiHistoryPrepend (app, app->playlist);
 			app->playlist = NULL;
 			app->curStation = NULL;
 		}
@@ -381,8 +382,11 @@ BarUiActCallback(BarUiActSelectStation) {
 		app->curStation = newStation;
 		BarUiPrintStation (app->curStation);
 		BarUiDoSkipSong (&app->player);
-		PianoDestroyPlaylist (app->playlist);
-		app->playlist = NULL;
+		if (app->playlist != NULL) {
+			PianoDestroyPlaylist (app->playlist->next);
+			BarUiHistoryPrepend (app, app->playlist);
+			app->playlist = NULL;
+		}
 	}
 }
 
