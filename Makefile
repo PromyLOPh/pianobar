@@ -4,7 +4,8 @@ PREFIX:=/usr/local
 BINDIR:=${PREFIX}/bin
 LIBDIR:=${PREFIX}/lib
 MANDIR:=${PREFIX}/share/man
-CFLAGS:=-std=c99 -O2 -DNDEBUG
+CFLAGS:=-O2 -DNDEBUG
+CC:=c99
 
 PIANOBAR_DIR=src
 PIANOBAR_SRC=\
@@ -118,7 +119,7 @@ clean:
 all: pianobar libpiano
 
 debug: pianobar
-debug: CFLAGS=-Wall -pedantic -std=c99 -ggdb
+debug: CFLAGS=-Wall -pedantic -ggdb
 
 install: pianobar
 	install -d ${DESTDIR}/${BINDIR}/
