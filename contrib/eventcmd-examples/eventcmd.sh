@@ -25,7 +25,7 @@ case "$1" in
 #	songfinish)
 #		# scrobble if 75% of song have been played, but only if the song hasn't
 #		# been banned
-#		if [ -n "$songDuration" ] &&
+#		if [ -n "$songDuration" ] && [ "$songDuration" -ne 0 ] &&
 #				[ $(echo "scale=4; ($songPlayed/$songDuration*100)>50" | bc) -eq 1 ] &&
 #				[ "$rating" -ne 2 ]; then
 #			# scrobbler-helper is part of the Audio::Scrobble package at cpan
