@@ -57,5 +57,6 @@ BarUiActCallback(BarUiActHistory);
 BarUiActCallback(BarUiActBookmark);
 BarUiActCallback(BarUiActVolDown);
 BarUiActCallback(BarUiActVolUp);
+BarUiActCallback(BarUiActManageStation);
 
 #endif /* _UI_ACT_H */
