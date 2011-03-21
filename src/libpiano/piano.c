@@ -735,6 +735,26 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			break;
 		}
 
+		case PIANO_REQUEST_DELETE_FEEDBACK: {
+			PianoSong_t *song = req->data;
+
+			assert (song != NULL);
+
+			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+					"<methodCall><methodName>station.deleteFeedback</methodName>"
+					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
+					"<param><value><string>%s</string></value></param>"
+					/* feedback id */
+					"<param><value><string>%s</string></value></param>"
+					"</params></methodCall>", (unsigned long) timestamp,
+					ph->user.authToken, song->feedbackId);
+			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
+					"rid=%s&lid=%s&method=deleteFeedback&arg1=%s",
+					ph->routeId, ph->user.listenerId, song->feedbackId);
+			break;
+		}
+
 		/* "high-level" wrapper */
 		case PIANO_REQUEST_RATE_SONG: {
 			/* love/ban song */
@@ -1006,6 +1026,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 		case PIANO_REQUEST_SET_QUICKMIX:
 		case PIANO_REQUEST_BOOKMARK_SONG:
 		case PIANO_REQUEST_BOOKMARK_ARTIST:
+		case PIANO_REQUEST_DELETE_FEEDBACK:
 			assert (req->responseData != NULL);
 
 			ret = PianoXmlParseSimple (req->responseData);
