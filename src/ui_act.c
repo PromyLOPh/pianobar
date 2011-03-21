@@ -562,7 +562,9 @@ BarUiActCallback(BarUiActManageStation) {
 			PianoSong_t *song = BarUiSelectSong (&app->settings,
 					reqData.info.feedback, &app->input);
 			if (song != NULL) {
-				BarUiMsg (MSG_INFO, "Deleting feedback for %s\n", song->title);
+				BarUiMsg (MSG_INFO, "Deleting feedback...");
+				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_FEEDBACK, song);
+				BarUiActDefaultEventcmd ("stationdeletefeedback");
 			}
 		}
 	}
