@@ -755,6 +755,36 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			break;
 		}
 
+		case PIANO_REQUEST_DELETE_SEED: {
+			PianoRequestDataDeleteSeed_t *reqData = req->data;
+			char *seedId = NULL;
+
+			assert (reqData != NULL);
+			assert (reqData->song != NULL || reqData->artist != NULL);
+
+			if (reqData->song != NULL) {
+				seedId = reqData->song->seedId;
+			} else if (reqData->artist != NULL) {
+				seedId = reqData->artist->seedId;
+			}
+
+			assert (seedId != NULL);
+
+			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+					"<methodCall><methodName>station.deleteSeed</methodName>"
+					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
+					"<param><value><string>%s</string></value></param>"
+					/* seed id */
+					"<param><value><string>%s</string></value></param>"
+					"</params></methodCall>", (unsigned long) timestamp,
+					ph->user.authToken, seedId);
+			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
+					"rid=%s&lid=%s&method=deleteSeed&arg1=%s",
+					ph->routeId, ph->user.listenerId, seedId);
+			break;
+		}
+
 		/* "high-level" wrapper */
 		case PIANO_REQUEST_RATE_SONG: {
 			/* love/ban song */
@@ -1088,6 +1118,13 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			ret = PianoXmlParseGetStationInfo (req->responseData,
 					&reqData->info);
 			break;
+		}
+
+		case PIANO_REQUEST_DELETE_SEED: {
+			assert (req->responseData != NULL);
+
+			/* dummy function, checks for errors only */
+			ret = PianoXmlParseTranformStation (req->responseData);
 		}
 	}
 

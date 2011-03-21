@@ -145,6 +145,7 @@ typedef enum {
 	PIANO_REQUEST_BOOKMARK_ARTIST = 19,
 	PIANO_REQUEST_GET_STATION_INFO = 20,
 	PIANO_REQUEST_DELETE_FEEDBACK = 21,
+	PIANO_REQUEST_DELETE_SEED = 22,
 } PianoRequestType_t;
 
 typedef struct PianoRequest {
@@ -224,6 +225,11 @@ typedef struct {
 	PianoStation_t *station;
 	PianoStationInfo_t info;
 } PianoRequestDataGetStationInfo_t;
+
+typedef struct {
+	PianoSong_t *song;
+	PianoArtist_t *artist;
+} PianoRequestDataDeleteSeed_t;
 
 typedef enum {
 	PIANO_RET_ERR = 0,
