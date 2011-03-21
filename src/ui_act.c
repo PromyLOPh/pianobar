@@ -550,13 +550,27 @@ BarUiActCallback(BarUiActManageStation) {
 			PianoArtist_t *artist = BarUiSelectArtist (reqData.info.artistSeeds,
 					&app->input);
 			if (artist != NULL) {
-				BarUiMsg (MSG_INFO, "Deleting artist %s\n", artist->name);
+				PianoRequestDataDeleteSeed_t reqData;
+
+				memset (&reqData, 0, sizeof (reqData));
+				reqData.artist = artist;
+
+				BarUiMsg (MSG_INFO, "Deleting artist seed...");
+				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &reqData);
+				BarUiActDefaultEventcmd ("stationdeleteartistseed");
 			}
 		} else if (selectBuf[0] == 's') {
 			PianoSong_t *song = BarUiSelectSong (&app->settings,
 					reqData.info.songSeeds, &app->input);
 			if (song != NULL) {
-				BarUiMsg (MSG_INFO, "Deleting seed %s\n", song->title);
+				PianoRequestDataDeleteSeed_t reqData;
+
+				memset (&reqData, 0, sizeof (reqData));
+				reqData.song = song;
+
+				BarUiMsg (MSG_INFO, "Deleting song seed...");
+				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &reqData);
+				BarUiActDefaultEventcmd ("stationdeletesongseed");
 			}
 		} else if (selectBuf[0] == 'f') {
 			PianoSong_t *song = BarUiSelectSong (&app->settings,
