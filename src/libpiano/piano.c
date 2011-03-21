@@ -1215,6 +1215,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Quickmix not playable.";
 			break;
 
+		case PIANO_RET_REMOVING_TOO_MANY_SEEDS:
+			return "Last seed cannot be removed.";
+			break;
+
 		default:
 			return "No error message available.";
 			break;
