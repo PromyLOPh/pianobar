@@ -94,6 +94,10 @@ Add shared station by id. id is a very long integer without "sh" at the
 beginning.
 
 .TP
+.B act_managestation = =
+Delete artist/song seeds or feedback.
+
+.TP
 .B act_songmove = m
 Move current song to another station
 
@@ -234,8 +238,9 @@ song length in milliseconds, rating, album art url) is supplied through stdin.
 Currently supported events are: artistbookmark, songban, songbookmark,
 songexplain, songfinish, songlove, songmove, songshelf, songstart,
 stationaddmusic, stationaddshared, stationcreate, stationdelete,
-stationfetchplaylist, stationquickmixtoggle, stationrename, userlogin,
-usergetstations
+stationdeleteartistseed, stationdeletefeedback, stationdeletesongseed,
+stationfetchinfo, stationfetchplaylist, stationquickmixtoggle, stationrename,
+userlogin, usergetstations
 
 An example script can be found in the contrib/ directory of
 .B pianobar's
