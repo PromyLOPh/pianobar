@@ -71,6 +71,8 @@ typedef struct PianoSong {
 	char *coverArt;
 	char *musicId;
 	char *title;
+	char *seedId;
+	char *feedbackId;
 	float fileGain;
 	PianoSongRating_t rating;
 	PianoAudioFormat_t audioFormat;
@@ -83,6 +85,7 @@ typedef struct PianoSong {
 typedef struct PianoArtist {
 	char *name;
 	char *musicId;
+	char *seedId;
 	int score;
 	struct PianoArtist *next;
 } PianoArtist_t;
@@ -113,6 +116,12 @@ typedef struct PianoSearchResult {
 	PianoArtist_t *artists;
 } PianoSearchResult_t;
 
+typedef struct {
+	PianoSong_t *songSeeds;
+	PianoArtist_t *artistSeeds;
+	PianoSong_t *feedback;
+} PianoStationInfo_t;
+
 typedef enum {
 	/* 0 is reserved: memset (x, 0, sizeof (x)) */
 	PIANO_REQUEST_LOGIN = 1,
@@ -134,6 +143,7 @@ typedef enum {
 	PIANO_REQUEST_GET_SEED_SUGGESTIONS = 17,
 	PIANO_REQUEST_BOOKMARK_SONG = 18,
 	PIANO_REQUEST_BOOKMARK_ARTIST = 19,
+	PIANO_REQUEST_GET_STATION_INFO = 20,
 } PianoRequestType_t;
 
 typedef struct PianoRequest {
@@ -209,6 +219,11 @@ typedef struct {
 	PianoSearchResult_t searchResult;
 } PianoRequestDataGetSeedSuggestions_t;
 
+typedef struct {
+	PianoStation_t *station;
+	PianoStationInfo_t info;
+} PianoRequestDataGetStationInfo_t;
+
 typedef enum {
 	PIANO_RET_ERR = 0,
 	PIANO_RET_OK = 1,
@@ -232,6 +247,7 @@ void PianoInit (PianoHandle_t *);
 void PianoDestroy (PianoHandle_t *);
 void PianoDestroyPlaylist (PianoSong_t *);
 void PianoDestroySearchResult (PianoSearchResult_t *);
+void PianoDestroyStationInfo (PianoStationInfo_t *);
 
 PianoReturn_t PianoRequest (PianoHandle_t *, PianoRequest_t *,
 		PianoRequestType_t);

@@ -57,32 +57,29 @@ void PianoInit (PianoHandle_t *ph) {
 			(unsigned long) time (NULL) % 10000000);
 }
 
+/*	destroy artist linked list
+ */
+void PianoDestroyArtists (PianoArtist_t *artists) {
+	PianoArtist_t *curArtist, *lastArtist;
+
+	curArtist = artists;
+	while (curArtist != NULL) {
+		free (curArtist->name);
+		free (curArtist->musicId);
+		free (curArtist->seedId);
+		lastArtist = curArtist;
+		curArtist = curArtist->next;
+		free (lastArtist);
+	}
+}
+
 /*	free complete search result
  *	@public yes
  *	@param search result
  */
 void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
-	PianoArtist_t *curArtist, *lastArtist;
-	PianoSong_t *curSong, *lastSong;
-
-	curArtist = searchResult->artists;
-	while (curArtist != NULL) {
-		free (curArtist->name);
-		free (curArtist->musicId);
-		lastArtist = curArtist;
-		curArtist = curArtist->next;
-		free (lastArtist);
-	}
-
-	curSong = searchResult->songs;
-	while (curSong != NULL) {
-		free (curSong->title);
-		free (curSong->artist);
-		free (curSong->musicId);
-		lastSong = curSong;
-		curSong = curSong->next;
-		free (lastSong);
-	}
+	PianoDestroyArtists (searchResult->artists);
+	PianoDestroyPlaylist (searchResult->songs);
 }
 
 /*	free single station
@@ -128,10 +125,18 @@ void PianoDestroyPlaylist (PianoSong_t *playlist) {
 		free (curSong->stationId);
 		free (curSong->album);
 		free (curSong->artistMusicId);
+		free (curSong->feedbackId);
+		free (curSong->seedId);
 		lastSong = curSong;
 		curSong = curSong->next;
 		free (lastSong);
 	}
+}
+
+void PianoDestroyStationInfo (PianoStationInfo_t *info) {
+	PianoDestroyPlaylist (info->feedback);
+	PianoDestroyPlaylist (info->songSeeds);
+	PianoDestroyArtists (info->artistSeeds);
 }
 
 /*	destroy genre linked list
@@ -708,6 +713,28 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			break;
 		}
 
+		case PIANO_REQUEST_GET_STATION_INFO: {
+			/* get station information (seeds and feedback) */
+			PianoRequestDataGetStationInfo_t *reqData = req->data;
+
+			assert (reqData != NULL);
+			assert (reqData->station != NULL);
+
+			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
+					"<methodCall><methodName>station.getStation</methodName>"
+					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
+					"<param><value><string>%s</string></value></param>"
+					/* station id */
+					"<param><value><string>%s</string></value></param>"
+					"</params></methodCall>", (unsigned long) timestamp,
+					ph->user.authToken, reqData->station->id);
+			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
+					"rid=%s&lid=%s&method=getStation&arg1=%s",
+					ph->routeId, ph->user.listenerId, reqData->station->id);
+			break;
+		}
+
 		/* "high-level" wrapper */
 		case PIANO_REQUEST_RATE_SONG: {
 			/* love/ban song */
@@ -1027,6 +1054,18 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 
 			ret = PianoXmlParseSeedSuggestions (req->responseData,
 					&reqData->searchResult);
+			break;
+		}
+
+		case PIANO_REQUEST_GET_STATION_INFO: {
+			/* get station information (seeds and feedback) */
+			PianoRequestDataGetStationInfo_t *reqData = req->data;
+
+			assert (req->responseData != NULL);
+			assert (reqData != NULL);
+
+			ret = PianoXmlParseGetStationInfo (req->responseData,
+					&reqData->info);
 			break;
 		}
 	}

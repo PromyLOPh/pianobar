@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <string.h>
 #include <stdlib.h>
 #include <ezxml.h>
+#include <assert.h>
 
 #include "piano.h"
 #include "crypt.h"
@@ -275,6 +276,12 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		} else {
 			song->rating = PIANO_RATE_NONE;
 		}
+	} else if (strcmp ("isPositive", key) == 0) {
+		if (strcmp (valueStr, "1") == 0) {
+			song->rating = PIANO_RATE_LOVE;
+		} else {
+			song->rating = PIANO_RATE_BAN;
+		}
 	} else if (strcmp ("stationId", key) == 0) {
 		song->stationId = strdup (valueStr);
 	} else if (strcmp ("albumTitle", key) == 0) {
@@ -295,6 +302,8 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		song->testStrategy = atoi (valueStr);
 	} else if (strcmp ("songType", key) == 0) {
 		song->songType = atoi (valueStr);
+	} else if (strcmp ("feedbackId", key) == 0) {
+		song->feedbackId = strdup (valueStr);
 	}
 }
 
@@ -490,6 +499,32 @@ PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
 	return PIANO_RET_OK;
 }
 
+static PianoReturn_t PianoXmlParsePlaylistStruct (ezxml_t xml,
+		PianoSong_t **retSong) {
+	PianoSong_t *playlist = *retSong, *tmpSong;
+	
+	if ((tmpSong = calloc (1, sizeof (*tmpSong))) == NULL) {
+		return PIANO_RET_OUT_OF_MEMORY;
+	}
+
+	PianoXmlStructParser (ezxml_child (xml, "struct"), PianoXmlParsePlaylistCb,
+			tmpSong);
+	/* begin linked list or append */
+	if (playlist == NULL) {
+		playlist = tmpSong;
+	} else {
+		PianoSong_t *curSong = playlist;
+		while (curSong->next != NULL) {
+			curSong = curSong->next;
+		}
+		curSong->next = tmpSong;
+	}
+
+	*retSong = playlist;
+
+	return PIANO_RET_OK;
+}
+
 /*	parses playlist; used when searching too
  *	@param piano handle
  *	@param xml document
@@ -498,7 +533,7 @@ PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
 PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml,
 		PianoSong_t **retPlaylist) {
 	ezxml_t xmlDoc, dataNode;
-	PianoReturn_t ret;
+	PianoReturn_t ret = PIANO_RET_OK;
 
 	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
@@ -509,30 +544,15 @@ PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml,
 
 	for (dataNode = ezxml_child (dataNode, "value"); dataNode;
 			dataNode = dataNode->next) {
-		PianoSong_t *tmpSong;
-		
-		if ((tmpSong = calloc (1, sizeof (*tmpSong))) == NULL) {
-			ezxml_free (xmlDoc);
-			return PIANO_RET_OUT_OF_MEMORY;
-		}
-
-		PianoXmlStructParser (ezxml_child (dataNode, "struct"),
-				PianoXmlParsePlaylistCb, tmpSong);
-		/* begin linked list or append */
-		if (*retPlaylist == NULL) {
-			*retPlaylist = tmpSong;
-		} else {
-			PianoSong_t *curSong = *retPlaylist;
-			while (curSong->next != NULL) {
-				curSong = curSong->next;
-			}
-			curSong->next = tmpSong;
+		if ((ret = PianoXmlParsePlaylistStruct (dataNode, retPlaylist)) !=
+				PIANO_RET_OK) {
+			break;
 		}
 	}
 
 	ezxml_free (xmlDoc);
 
-	return PIANO_RET_OK;
+	return ret;
 }
 
 /*	parse simple answers like this: <?xml version="1.0" encoding="UTF-8"?>
@@ -614,25 +634,9 @@ static void PianoXmlParseSearchCb (const char *key, const ezxml_t value,
 	} else if (strcmp ("songs", key) == 0) {
 		for (curNode = ezxml_child (ezxml_get (value, "array", 0, "data", -1), "value");
 				curNode; curNode = curNode->next) {
-			/* FIXME: copy & waste */
-			PianoSong_t *tmpSong;
-			
-			if ((tmpSong = calloc (1, sizeof (*tmpSong))) == NULL) {
-				/* fail silently */
+			if (PianoXmlParsePlaylistStruct (curNode, &searchResult->songs) !=
+					PIANO_RET_OK) {
 				break;
-			}
-
-			PianoXmlStructParser (ezxml_child (curNode, "struct"),
-					PianoXmlParsePlaylistCb, tmpSong);
-			/* begin linked list or append */
-			if (searchResult->songs == NULL) {
-				searchResult->songs = tmpSong;
-			} else {
-				PianoSong_t *curSong = searchResult->songs;
-				while (curSong->next != NULL) {
-					curSong = curSong->next;
-				}
-				curSong->next = tmpSong;
 			}
 		}
 	}
@@ -822,5 +826,119 @@ PianoReturn_t PianoXmlParseNarrative (char *xml, char **retNarrative) {
 	ezxml_free (xmlDoc);
 
 	return ret;
+}
+
+/*	seed bag, required because seedId is not part of artist/song struct in
+ *	pandora's xml response
+ */
+struct PianoXmlParseSeedBag {
+	char *seedId;
+	PianoSong_t *song;
+	PianoArtist_t *artist;
+};
+
+/*	parse seed struct
+ */
+static void PianoXmlParseSeedCb (const char *key, const ezxml_t value,
+		void *data) {
+	struct PianoXmlParseSeedBag *bag = data;
+
+	if (strcmp ("song", key) == 0) {
+		if ((bag->song = calloc (1, sizeof (*bag->song))) == NULL) {
+			return;
+		}
+
+		PianoXmlStructParser (ezxml_child (value, "struct"),
+				PianoXmlParsePlaylistCb, bag->song);
+	} else if (strcmp ("artist", key) == 0) {
+		if ((bag->artist = calloc (1, sizeof (*bag->artist))) == NULL) {
+			return;
+		}
+
+		PianoXmlStructParser (ezxml_child (value, "struct"),
+				PianoXmlParseSearchArtistCb, bag->artist);
+	} else if (strcmp ("seedId", key) == 0) {
+		char *valueStr = PianoXmlGetNodeText (value);
+		bag->seedId = strdup (valueStr);
+	}
+}
+
+/*	parse getStation xml struct
+ */
+static void PianoXmlParseGetStationInfoCb (const char *key, const ezxml_t value,
+		void *data) {
+	PianoStationInfo_t *info = data;
+
+	if (strcmp ("seeds", key) == 0) {
+		const ezxml_t dataNode = ezxml_get (value, "array", 0, "data", -1);
+		for (ezxml_t seedNode = ezxml_child (dataNode, "value"); seedNode;
+					seedNode = seedNode->next) {
+			struct PianoXmlParseSeedBag bag;
+			memset (&bag, 0, sizeof (bag));
+
+			PianoXmlStructParser (ezxml_child (seedNode, "struct"),
+					PianoXmlParseSeedCb, &bag);
+
+			/* FIXME: use if-clause */
+			assert (bag.seedId != NULL);
+			assert (bag.song != NULL || bag.artist != NULL);
+
+			if (bag.song != NULL) {
+				bag.song->seedId = bag.seedId;
+
+				if (info->songSeeds == NULL) {
+					info->songSeeds = bag.song;
+				} else {
+					PianoSong_t *curSong = info->songSeeds;
+					while (curSong->next != NULL) {
+						curSong = curSong->next;
+					}
+					curSong->next = bag.song;
+				}
+			} else if (bag.artist != NULL) {
+				bag.artist->seedId = bag.seedId;
+
+				if (info->artistSeeds == NULL) {
+					info->artistSeeds = bag.artist;
+				} else {
+					PianoArtist_t *curSong = info->artistSeeds;
+					while (curSong->next != NULL) {
+						curSong = curSong->next;
+					}
+					curSong->next = bag.artist;
+				}
+			} else {
+				free (bag.seedId);
+			}
+		}
+	} else if (strcmp ("feedback", key) == 0) {
+		const ezxml_t dataNode = ezxml_get (value, "array", 0, "data", -1);
+		for (ezxml_t feedbackNode = ezxml_child (dataNode, "value"); feedbackNode;
+					feedbackNode = feedbackNode->next) {
+			if (PianoXmlParsePlaylistStruct (feedbackNode, &info->feedback) !=
+					PIANO_RET_OK) {
+				break;
+			}
+		}
+	}
+}
+
+/*	parse getStation response
+ */
+PianoReturn_t PianoXmlParseGetStationInfo (char *xml,
+		PianoStationInfo_t *stationInfo) {
+	ezxml_t xmlDoc, dataNode;
+	PianoReturn_t ret;
+
+	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
+		return ret;
+	}
+	
+	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", 0, "struct", -1);
+	PianoXmlStructParser (dataNode, PianoXmlParseGetStationInfoCb, stationInfo);
+
+	ezxml_free (xmlDoc);
+
+	return PIANO_RET_OK;
 }
 
