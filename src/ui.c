@@ -45,6 +45,48 @@ THE SOFTWARE.
 
 typedef int (*BarSortFunc_t) (const void *, const void *);
 
+/*	is string a number?
+ */
+static bool isnumeric (const char *s) {
+	if (*s == '\0') {
+		return false;
+	}
+	while (*s != '\0') {
+		if (!isdigit ((unsigned char) *s)) {
+			return false;
+		}
+		++s;
+	}
+	return true;
+}
+
+/*	find needle in haystack, ignoring case, and return first position
+ */
+const char *strcasestr (const char *haystack, const char *needle) {
+	const char *needlePos = needle;
+
+	assert (haystack != NULL);
+	assert (needle != NULL);
+
+	if (*needle == '\0') {
+		return haystack;
+	}
+
+	while (*haystack != '\0') {
+		if (tolower ((unsigned char) *haystack) == tolower ((unsigned char) *needlePos)) {
+			++needlePos;
+		} else {
+			needlePos = needle;
+		}
+		++haystack;
+		if (*needlePos == '\0') {
+			return haystack - strlen (needle);
+		}
+	}
+
+	return NULL;
+}
+
 /*	output message and flush stdout
  *	@param message
  */
@@ -307,50 +349,46 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 		BarStationSorting_t order, BarReadlineFds_t *input) {
 	PianoStation_t **sortedStations = NULL, *retStation = NULL;
 	size_t stationCount, i;
-	int selected;
+	char buf[100];
 
 	if (ph->stations == NULL) {
 		BarUiMsg (MSG_ERR, "No station available.\n");
 		return NULL;
 	}
 
+	memset (buf, 0, sizeof (buf));
+
 	/* sort and print stations */
 	sortedStations = BarSortedStations (ph->stations, &stationCount, order);
-	for (i = 0; i < stationCount; i++) {
-		const PianoStation_t *currStation = sortedStations[i];
-		BarUiMsg (MSG_LIST, "%2i) %c%c%c %s\n", i,
-				currStation->useQuickMix ? 'q' : ' ',
-				currStation->isQuickMix ? 'Q' : ' ',
-				!currStation->isCreator ? 'S' : ' ',
-				currStation->name);
-	}
 
-	BarUiMsg (MSG_QUESTION, prompt);
-	/* FIXME: using a _signed_ int is ugly */
-	if (BarReadlineInt (&selected, input) == 0) {
-		free (sortedStations);
-		return NULL;
-	}
-	if (selected < stationCount) {
-		retStation = sortedStations[selected];
-	}
+	do {
+		for (i = 0; i < stationCount; i++) {
+			const PianoStation_t *currStation = sortedStations[i];
+			if (strcasestr (currStation->name, buf) != NULL) {
+				BarUiMsg (MSG_LIST, "%2i) %c%c%c %s\n", i,
+						currStation->useQuickMix ? 'q' : ' ',
+						currStation->isQuickMix ? 'Q' : ' ',
+						!currStation->isCreator ? 'S' : ' ',
+						currStation->name);
+			}
+		}
+
+		BarUiMsg (MSG_QUESTION, prompt);
+		if (BarReadlineStr (buf, sizeof (buf), input, BAR_RL_DEFAULT) == 0) {
+			free (sortedStations);
+			return NULL;
+		}
+
+		if (isnumeric (buf)) {
+			unsigned long selected = strtoul (buf, NULL, 0);
+			if (selected < stationCount) {
+				retStation = sortedStations[selected];
+			}
+		}
+	} while (retStation == NULL);
+
 	free (sortedStations);
 	return retStation;
-}
-
-/*	is string a number?
- */
-static bool isnumeric (const char *s) {
-	if (*s == '\0') {
-		return false;
-	}
-	while (*s != '\0') {
-		if (!isdigit ((unsigned char) *s)) {
-			return false;
-		}
-		++s;
-	}
-	return true;
 }
 
 /*	let user pick one song
@@ -587,33 +625,6 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 			(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
 			station != NULL ? " @ " : "",
 			station != NULL ? station->name : "");
-}
-
-/*	find needle in haystack, ignoring case, and return first position
- */
-const char *strcasestr (const char *haystack, const char *needle) {
-	const char *needlePos = needle;
-
-	assert (haystack != NULL);
-	assert (needle != NULL);
-
-	if (*needle == '\0') {
-		return haystack;
-	}
-
-	while (*haystack != '\0') {
-		if (tolower ((unsigned char) *haystack) == tolower ((unsigned char) *needlePos)) {
-			++needlePos;
-		} else {
-			needlePos = needle;
-		}
-		++haystack;
-		if (*needlePos == '\0') {
-			return haystack - strlen (needle);
-		}
-	}
-
-	return NULL;
 }
 
 /*	Print list of songs
