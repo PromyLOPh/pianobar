@@ -413,7 +413,7 @@ BarUiActCallback(BarUiActPrintUpcoming) {
 
 	PianoSong_t *nextSong = selSong->next;
 	if (nextSong != NULL) {
-		BarUiListSongs (&app->settings, nextSong);
+		BarUiListSongs (&app->settings, nextSong, NULL);
 	} else {
 		BarUiMsg (MSG_INFO, "No songs in queue.\n");
 	}

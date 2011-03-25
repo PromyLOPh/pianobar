@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include <errno.h>
 #include <strings.h>
 #include <assert.h>
+#include <ctype.h> /* tolower() */
 
 /* waitpid () */
 #include <sys/types.h>
@@ -337,6 +338,21 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 	return retStation;
 }
 
+/*	is string a number?
+ */
+static bool isnumeric (const char *s) {
+	if (*s == '\0') {
+		return false;
+	}
+	while (*s != '\0') {
+		if (!isdigit ((unsigned char) *s)) {
+			return false;
+		}
+		++s;
+	}
+	return true;
+}
+
 /*	let user pick one song
  *	@param pianobar settings
  *	@param song list
@@ -346,20 +362,27 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 PianoSong_t *BarUiSelectSong (const BarSettings_t *settings,
 		PianoSong_t *startSong, BarReadlineFds_t *input) {
 	PianoSong_t *tmpSong = NULL;
-	int i = 0;
+	char buf[100];
 
-	i = BarUiListSongs (settings, startSong);
+	memset (buf, 0, sizeof (buf));
 
-	BarUiMsg (MSG_QUESTION, "Select song: ");
-	if (BarReadlineInt (&i, input) == 0) {
-		return NULL;
-	}
+	do {
+		BarUiListSongs (settings, startSong, buf);
 
-	tmpSong = startSong;
-	while (tmpSong != NULL && i > 0) {
-		tmpSong = tmpSong->next;
-		i--;
-	}
+		BarUiMsg (MSG_QUESTION, "Select song: ");
+		if (BarReadlineStr (buf, sizeof (buf), input, BAR_RL_DEFAULT) == 0) {
+			return NULL;
+		}
+
+		if (isnumeric (buf)) {
+			unsigned long i = strtoul (buf, NULL, 0);
+			tmpSong = startSong;
+			while (tmpSong != NULL && i > 0) {
+				tmpSong = tmpSong->next;
+				i--;
+			}
+		}
+	} while (tmpSong == NULL);
 
 	return tmpSong;
 }
@@ -566,20 +589,52 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 			station != NULL ? station->name : "");
 }
 
+/*	find needle in haystack, ignoring case, and return first position
+ */
+const char *strcasestr (const char *haystack, const char *needle) {
+	const char *needlePos = needle;
+
+	assert (haystack != NULL);
+	assert (needle != NULL);
+
+	if (*needle == '\0') {
+		return haystack;
+	}
+
+	while (*haystack != '\0') {
+		if (tolower ((unsigned char) *haystack) == tolower ((unsigned char) *needlePos)) {
+			++needlePos;
+		} else {
+			needlePos = needle;
+		}
+		++haystack;
+		if (*needlePos == '\0') {
+			return haystack - strlen (needle);
+		}
+	}
+
+	return NULL;
+}
+
 /*	Print list of songs
  *	@param pianobar settings
  *	@param linked list of songs
+ *	@param artist/song filter string
  *	@return # of songs
  */
 size_t BarUiListSongs (const BarSettings_t *settings,
-		const PianoSong_t *song) {
+		const PianoSong_t *song, const char *filter) {
 	size_t i = 0;
 
 	while (song != NULL) {
-		BarUiMsg (MSG_LIST, "%2lu) %s - %s %s%s\n", i, song->artist,
-				song->title,
-				(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
-				(song->rating == PIANO_RATE_BAN) ? settings->banIcon : "");
+		if (filter == NULL ||
+				(filter != NULL && (strcasestr (song->artist, filter) != NULL ||
+				strcasestr (song->title, filter) != NULL))) {
+			BarUiMsg (MSG_LIST, "%2lu) %s - %s %s%s\n", i, song->artist,
+					song->title,
+					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
+					(song->rating == PIANO_RATE_BAN) ? settings->banIcon : "");
+		}
 		song = song->next;
 		i++;
 	}
