@@ -433,24 +433,38 @@ PianoSong_t *BarUiSelectSong (const BarSettings_t *settings,
 PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist,
 		BarReadlineFds_t *input) {
 	PianoArtist_t *tmpArtist = NULL;
-	int i = 0;
+	char buf[100];
+	unsigned long i;
 
-	/* print all artists */
-	tmpArtist = startArtist;
-	while (tmpArtist != NULL) {
-		BarUiMsg (MSG_LIST, "%2u) %s\n", i, tmpArtist->name);
-		i++;
-		tmpArtist = tmpArtist->next;
-	}
-	BarUiMsg (MSG_QUESTION, "Select artist: ");
-	if (BarReadlineInt (&i, input) == 0) {
-		return NULL;
-	}
-	tmpArtist = startArtist;
-	while (tmpArtist != NULL && i > 0) {
-		tmpArtist = tmpArtist->next;
-		i--;
-	}
+	memset (buf, 0, sizeof (buf));
+
+	do {
+		/* print all artists */
+		i = 0;
+		tmpArtist = startArtist;
+		while (tmpArtist != NULL) {
+			if (strcasestr (tmpArtist->name, buf) != NULL) {
+				BarUiMsg (MSG_LIST, "%2u) %s\n", i, tmpArtist->name);
+			}
+			i++;
+			tmpArtist = tmpArtist->next;
+		}
+
+		BarUiMsg (MSG_QUESTION, "Select artist: ");
+		if (BarReadlineStr (buf, sizeof (buf), input, BAR_RL_DEFAULT) == 0) {
+			return NULL;
+		}
+
+		if (isnumeric (buf)) {
+			i = strtoul (buf, NULL, 0);
+			tmpArtist = startArtist;
+			while (tmpArtist != NULL && i > 0) {
+				tmpArtist = tmpArtist->next;
+				i--;
+			}
+		}
+	} while (tmpArtist == NULL);
+
 	return tmpArtist;
 }
 
