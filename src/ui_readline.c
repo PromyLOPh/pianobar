@@ -79,7 +79,7 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 	 * it, stdin will block */
 	while (1) {
 		int curFd = -1;
-		char chr;
+		unsigned char chr;
 		struct timeval timeoutstruct;
 
 		/* select modifies set and timeout */
