@@ -306,6 +306,8 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		song->songType = atoi (valueStr);
 	} else if (strcmp ("feedbackId", key) == 0) {
 		song->feedbackId = strdup (valueStr);
+	} else if (strcmp ("songDetailURL", key) == 0) {
+		song->detailUrl = strdup (valueStr);
 	}
 }
 

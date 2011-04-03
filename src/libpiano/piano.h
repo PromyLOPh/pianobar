@@ -73,6 +73,7 @@ typedef struct PianoSong {
 	char *title;
 	char *seedId;
 	char *feedbackId;
+	char *detailUrl;
 	float fileGain;
 	PianoSongRating_t rating;
 	PianoAudioFormat_t audioFormat;
