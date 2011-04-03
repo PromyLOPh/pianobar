@@ -680,49 +680,12 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		const struct audioPlayer *player, PianoStation_t *stations,
                 PianoReturn_t pRet, WaitressReturn_t wRet) {
 	pid_t chld;
-	char pipeBuf[1024];
 	int pipeFd[2];
-	PianoStation_t *songStation = NULL;
 
 	if (settings->eventCmd == NULL) {
 		/* nothing to do... */
 		return;
 	}
-
-	if (curSong != NULL && stations != NULL && curStation->isQuickMix) {
-		songStation = PianoFindStationById (stations, curSong->stationId);
-	}
-
-	/* prepare stdin content */
-	memset (pipeBuf, 0, sizeof (pipeBuf));
-	snprintf (pipeBuf, sizeof (pipeBuf),
-			"artist=%s\n"
-			"title=%s\n"
-			"album=%s\n"
-			"coverArt=%s\n"
-			"stationName=%s\n"
-			"songStationName=%s\n"
-			"pRet=%i\n"
-			"pRetStr=%s\n"
-			"wRet=%i\n"
-			"wRetStr=%s\n"
-			"songDuration=%lu\n"
-			"songPlayed=%lu\n"
-			"rating=%i\n",
-			curSong == NULL ? "" : curSong->artist,
-			curSong == NULL ? "" : curSong->title,
-			curSong == NULL ? "" : curSong->album,
-			curSong == NULL ? "" : curSong->coverArt,
-			curStation == NULL ? "" : curStation->name,
-			songStation == NULL ? "" : songStation->name,
-			pRet,
-			PianoErrorToStr (pRet),
-			wRet,
-			WaitressErrorToStr (wRet),
-			player->songDuration,
-			player->songPlayed,
-			curSong == NULL ? PIANO_RATE_NONE : curSong->rating
-			);
 
 	if (pipe (pipeFd) == -1) {
 		BarUiMsg (MSG_ERR, "Cannot create eventcmd pipe. (%s)\n", strerror (errno));
@@ -742,8 +705,48 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		BarUiMsg (MSG_ERR, "Cannot fork eventcmd. (%s)\n", strerror (errno));
 	} else {
 		/* parent */
-		int status;
+		int status, printfret;
+		char pipeBuf[1024];
+		PianoStation_t *songStation = NULL;
+
 		close (pipeFd[0]);
+
+		if (curSong != NULL && stations != NULL && curStation->isQuickMix) {
+			songStation = PianoFindStationById (stations, curSong->stationId);
+		}
+
+		printfret = snprintf (pipeBuf, sizeof (pipeBuf),
+				"artist=%s\n"
+				"title=%s\n"
+				"album=%s\n"
+				"coverArt=%s\n"
+				"stationName=%s\n"
+				"songStationName=%s\n"
+				"pRet=%i\n"
+				"pRetStr=%s\n"
+				"wRet=%i\n"
+				"wRetStr=%s\n"
+				"songDuration=%lu\n"
+				"songPlayed=%lu\n"
+				"rating=%i\n"
+				"detailUrl=%s\n",
+				curSong == NULL ? "" : curSong->artist,
+				curSong == NULL ? "" : curSong->title,
+				curSong == NULL ? "" : curSong->album,
+				curSong == NULL ? "" : curSong->coverArt,
+				curStation == NULL ? "" : curStation->name,
+				songStation == NULL ? "" : songStation->name,
+				pRet,
+				PianoErrorToStr (pRet),
+				wRet,
+				WaitressErrorToStr (wRet),
+				player->songDuration,
+				player->songPlayed,
+				curSong == NULL ? PIANO_RATE_NONE : curSong->rating,
+				curSong == NULL ? "" : curSong->detailUrl
+				);
+		assert (printfret < sizeof (pipeBuf));
+
 		write (pipeFd[1], pipeBuf, strlen (pipeBuf));
 
 		if (stations != NULL) {
@@ -759,8 +762,9 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 
 			for (size_t i = 0; i < stationCount; i++) {
 				const PianoStation_t *currStation = sortedStations[i];
-				snprintf (pipeBuf, sizeof (pipeBuf), "station%zd=%s\n", i,
+				printfret = snprintf (pipeBuf, sizeof (pipeBuf), "station%zd=%s\n", i,
 						currStation->name);
+				assert (printfret < sizeof (pipeBuf));
 				write (pipeFd[1], pipeBuf, strlen (pipeBuf));
 			}
 			free (sortedStations);

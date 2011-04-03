@@ -251,6 +251,7 @@ BarUiActCallback(BarUiActDebug) {
 			"audioFormat:\t%i\n"
 			"audioUrl:\t%s\n"
 			"coverArt:\t%s\n"
+			"detailUrl:\t%s\n"
 			"fileGain:\t%f\n"
 			"musicId:\t%s\n"
 			"rating:\t%i\n"
@@ -264,6 +265,7 @@ BarUiActCallback(BarUiActDebug) {
 			selSong->audioFormat,
 			selSong->audioUrl,
 			selSong->coverArt,
+			selSong->detailUrl,
 			selSong->fileGain,
 			selSong->musicId,
 			selSong->rating,
