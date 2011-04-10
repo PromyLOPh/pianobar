@@ -1,3 +1,12 @@
+Release 2011.04.10
+
+- Keybindings can be disabled
+- Expose login/fetch stations events and songDetailUrl to eventcmd
+- New eventcmd/lastfm scrobbling scripts
+- Support for deleting seeds and feedback
+- Filterable station/artist/song lists
+- Bugfixes/rewrites
+
 Release 2011.01.24
 
 - Temporary banning song via history
