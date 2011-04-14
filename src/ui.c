@@ -137,9 +137,9 @@ inline void BarUiMsg (uiMsg_t type, const char *format, ...) {
  */
 inline PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret) {
 	if (ret != PIANO_RET_OK) {
-		BarUiMsg (MSG_NONE, "Error: %s\n", PianoErrorToStr (ret));
+		BarUiMsg (MSG_NONE, "%sError%s: %s\n", BLDGRN, TXTRST, PianoErrorToStr (ret));
 	} else {
-		BarUiMsg (MSG_NONE, "Ok.\n");
+		BarUiMsg (MSG_NONE, "%sOk.%s\n", BLDGRN, TXTRST);
 	}
 	return ret;
 }
@@ -178,7 +178,7 @@ int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
 
 		*pRet = PianoRequest (&app->ph, &req, type);
 		if (*pRet != PIANO_RET_OK) {
-			BarUiMsg (MSG_NONE, "Error: %s\n", PianoErrorToStr (*pRet));
+			BarUiMsg (MSG_NONE, "%sError%s: %s\n", BLDGRN, TXTRST, PianoErrorToStr (*pRet));
 			PianoDestroyRequest (&req);
 			return 0;
 		}
@@ -222,14 +222,14 @@ int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
 					BarUiMsg (MSG_INFO, "Trying again... ");
 				}
 			} else if (*pRet != PIANO_RET_OK) {
-				BarUiMsg (MSG_NONE, "Error: %s\n", PianoErrorToStr (*pRet));
+				BarUiMsg (MSG_NONE, "%sError%s: %s\n", BLDGRN, TXTRST, PianoErrorToStr (*pRet));
 				if (req.responseData != NULL) {
 					free (req.responseData);
 				}
 				PianoDestroyRequest (&req);
 				return 0;
 			} else {
-				BarUiMsg (MSG_NONE, "Ok.\n");
+				BarUiMsg (MSG_NONE, "%sOk.%s\n", BLDGRN, TXTRST);
 			}
 		}
 		/* we can destroy the request at this point, even when this call needs
@@ -634,7 +634,7 @@ inline void BarUiPrintStation (PianoStation_t *station) {
  */
 inline void BarUiPrintSong (const BarSettings_t *settings,
 		const PianoSong_t *song, const PianoStation_t *station) {
-	BarUiMsg (MSG_PLAYING, "\"%s%s%s\" by \"%s%s%s\" on \"%s%s%s\"%s%s%s%s\n", BLDRED,
+	BarUiMsg (MSG_PLAYING, "%s%s%s by %s%s%s on %s%s%s%s%s%s%s\n", BLDRED,
 			song->title, TXTRST, BLDBLU, song->artist, TXTRST, BLDGRN, song->album, TXTRST,
 			(song->rating == PIANO_RATE_LOVE) ? " " : "",
 			(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
