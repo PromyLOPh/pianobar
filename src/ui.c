@@ -42,6 +42,7 @@ THE SOFTWARE.
 
 #include "ui.h"
 #include "ui_readline.h"
+#include "colors.h"
 
 typedef int (*BarSortFunc_t) (const void *, const void *);
 
@@ -96,7 +97,7 @@ inline void BarUiMsg (uiMsg_t type, const char *format, ...) {
 
 	switch (type) {
 		case MSG_INFO:
-			printf (ANSI_CLEAR_LINE "(i) ");
+			printf (ANSI_CLEAR_LINE "(i) ", TXTBLU, TXTRST);
 			break;
 
 		case MSG_PLAYING:
@@ -633,8 +634,8 @@ inline void BarUiPrintStation (PianoStation_t *station) {
  */
 inline void BarUiPrintSong (const BarSettings_t *settings,
 		const PianoSong_t *song, const PianoStation_t *station) {
-	BarUiMsg (MSG_PLAYING, "\"%s\" by \"%s\" on \"%s\"%s%s%s%s\n",
-			song->title, song->artist, song->album,
+	BarUiMsg (MSG_PLAYING, "\"%s%s%s\" by \"%s%s%s\" on \"%s%s%s\"%s%s%s%s\n", BLDRED,
+			song->title, TXTRST, BLDBLU, song->artist, TXTRST, BLDGRN, song->album, TXTRST,
 			(song->rating == PIANO_RATE_LOVE) ? " " : "",
 			(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
 			station != NULL ? " @ " : "",
