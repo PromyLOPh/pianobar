@@ -97,7 +97,7 @@ inline void BarUiMsg (uiMsg_t type, const char *format, ...) {
 
 	switch (type) {
 		case MSG_INFO:
-			printf (ANSI_CLEAR_LINE "(i) ", TXTBLU, TXTRST);
+			printf (ANSI_CLEAR_LINE "(" BLDBLU "i" TXTRST ") ");
 			break;
 
 		case MSG_PLAYING:
@@ -109,7 +109,7 @@ inline void BarUiMsg (uiMsg_t type, const char *format, ...) {
 			break;
 		
 		case MSG_ERR:
-			printf (ANSI_CLEAR_LINE "/!\\ ");
+			printf (ANSI_CLEAR_LINE "/" BLDRED "!" TXTRST "\\ ");
 			break;
 
 		case MSG_QUESTION:
