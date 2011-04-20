@@ -3,7 +3,9 @@
 PREFIX:=/usr/local
 BINDIR:=${PREFIX}/bin
 LIBDIR:=${PREFIX}/lib
+INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
+DYNLINK:=0
 CFLAGS:=-O2 -DNDEBUG
 LDFLAGS:=
 CC:=c99
@@ -79,17 +81,28 @@ else
 endif
 
 # build pianobar
+ifeq (${DYNLINK},1)
+pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} libpiano.so.0
+	${CC} -o $@ ${PIANOBAR_OBJ} ${LDFLAGS} -lao -lpthread -lm -L. -lpiano \
+			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS}
+else
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
 		${LIBWAITRESS_HDR} ${LIBEZXML_OBJ} ${LIBEZXML_HDR}
 	${CC} ${CFLAGS} ${LDFLAGS} -lao -lpthread -lm ${LIBFAAD_LDFLAGS} \
 			${LIBMAD_LDFLAGS} -o $@ ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} \
 			${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ}
+endif
 
-# build shared libpiano
-libpiano: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
-		${LIBWAITRESS_HDR} ${LIBEZXML_RELOBJ} ${LIBEZXML_HDR}
-	${CC} -shared ${CFLAGS} ${LDFLAGS} -o $@.so.0.0.0 ${LIBPIANO_RELOBJ} \
+# build shared and static libpiano
+libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
+		${LIBWAITRESS_HDR} ${LIBEZXML_RELOBJ} ${LIBEZXML_HDR} \
+		${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ}
+	${CC} -shared -Wl,-soname,libpiano.so.0 ${CFLAGS} ${LDFLAGS} \
+			-o libpiano.so.0.0.0 ${LIBPIANO_RELOBJ} \
 			${LIBWAITRESS_RELOBJ} ${LIBEZXML_RELOBJ}
+	ln -s libpiano.so.0.0.0 libpiano.so.0
+	ln -s libpiano.so.0 libpiano.so
+	${AR} rcs libpiano.a ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ}
 
 %.o: %.c
 	${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
@@ -104,20 +117,28 @@ libpiano: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 clean:
 	${RM} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ} \
 			${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} ${LIBEZXML_RELOBJ} pianobar \
-			libpiano.so.0.0.0
+			libpiano.so* libpiano.a
 
-all: pianobar libpiano
+all: pianobar
 
 debug: pianobar
 debug: CFLAGS=-Wall -pedantic -ggdb
 
+ifeq (${DYNLINK},1)
+install: pianobar install-libpiano
+else
 install: pianobar
+endif
 	install -d ${DESTDIR}/${BINDIR}/
 	install -m755 pianobar ${DESTDIR}/${BINDIR}/
 	install -d ${DESTDIR}/${MANDIR}/man1/
 	install -m644 contrib/pianobar.1 ${DESTDIR}/${MANDIR}/man1/
 
-install-libpiano: libpiano
+install-libpiano:
 	install -d ${DESTDIR}/${LIBDIR}/
-	install -m755 libpiano.so.0.0.0 ${DESTDIR}/${LIBDIR}/
-
+	install -m644 libpiano.so.0.0.0 ${DESTDIR}/${LIBDIR}/
+	ln -s libpiano.so.0.0.0 ${DESTDIR}/${LIBDIR}/libpiano.so.0
+	ln -s libpiano.so.0 ${DESTDIR}/${LIBDIR}/libpiano.so
+	install -m644 libpiano.a ${DESTDIR}/${LIBDIR}/
+	install -d ${DESTDIR}/${INCDIR}/
+	install -m644 src/libpiano/piano.h ${DESTDIR}/${INCDIR}/
