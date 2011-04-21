@@ -634,7 +634,7 @@ inline void BarUiPrintStation (PianoStation_t *station) {
  */
 inline void BarUiPrintSong (const BarSettings_t *settings,
 		const PianoSong_t *song, const PianoStation_t *station) {
-	BarUiMsg (MSG_PLAYING, BLDRED "%s" TXTRST " by " BLDBLU "%s" TXTRST " on "  BLDRED "%s" TXTRST "%s%s%s%s\n",
+	BarUiMsg (MSG_PLAYING, BLDRED "%s" TXTRST " by " BLDBLU "%s" TXTRST " on "  BLDGRN "%s" TXTRST "%s%s%s%s\n",
 			song->title, song->artist, song->album,
 			(song->rating == PIANO_RATE_LOVE) ? " " : "",
 			(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
