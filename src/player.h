@@ -42,6 +42,8 @@ THE SOFTWARE.
 #include <piano.h>
 #include <waitress.h>
 
+#include "settings.h"
+
 #define BAR_PLAYER_MS_TO_S_FACTOR 1000
 
 struct audioPlayer {
@@ -99,6 +101,8 @@ struct audioPlayer {
 
 	char doQuit;
 	pthread_mutex_t pauseMutex;
+
+	const BarSettings_t *settings;
 };
 
 enum {PLAYER_RET_OK = 0, PLAYER_RET_ERR = 1};

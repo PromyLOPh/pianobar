@@ -31,20 +31,16 @@ THE SOFTWARE.
 #include "player.h"
 #include "main.h"
 #include "ui_readline.h"
+#include "ui_types.h"
 
-typedef enum {MSG_NONE, MSG_INFO, MSG_PLAYING, MSG_TIME, MSG_ERR,
-		MSG_QUESTION, MSG_LIST} uiMsg_t;
-
-void BarUiMsg (uiMsg_t type, const char *format, ...);
-PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret);
-PianoStation_t *BarUiSelectStation (PianoHandle_t *, const char *,
-		BarStationSorting_t, BarReadlineFds_t *);
+void BarUiMsg (const BarSettings_t *, const BarUiMsg_t, const char *, ...);
+PianoStation_t *BarUiSelectStation (BarApp_t *, const char *);
 PianoSong_t *BarUiSelectSong (const BarSettings_t *, PianoSong_t *,
 		BarReadlineFds_t *);
-PianoArtist_t *BarUiSelectArtist (PianoArtist_t *, BarReadlineFds_t *);
+PianoArtist_t *BarUiSelectArtist (BarApp_t *, PianoArtist_t *);
 char *BarUiSelectMusicId (BarApp_t *, char *, const char *);
 void BarStationFromGenre (BarApp_t *);
-void BarUiPrintStation (PianoStation_t *);
+void BarUiPrintStation (const BarSettings_t *, PianoStation_t *);
 void BarUiPrintSong (const BarSettings_t *, const PianoSong_t *, 
 		const PianoStation_t *);
 size_t BarUiListSongs (const BarSettings_t *, const PianoSong_t *, const char *);

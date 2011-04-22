@@ -66,7 +66,7 @@ static int BarTransformIfShared (BarApp_t *app, PianoStation_t *station) {
 
 	/* shared stations must be transformed */
 	if (!station->isCreator) {
-		BarUiMsg (MSG_INFO, "Transforming station... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Transforming station... ");
 		if (!BarUiPianoCall (app, PIANO_REQUEST_TRANSFORM_STATION, station,
 				&pRet, &wRet)) {
 			return 0;
@@ -78,12 +78,12 @@ static int BarTransformIfShared (BarApp_t *app, PianoStation_t *station) {
 /*	print current shortcut configuration
  */
 BarUiActCallback(BarUiActHelp) {
-	BarUiMsg (MSG_NONE, "\r");
+	BarUiMsg (&app->settings, MSG_NONE, "\r");
 	for (size_t i = 0; i < BAR_KS_COUNT; i++) {
 		if (dispatchActions[i].helpText != NULL &&
 				(context & dispatchActions[i].context) == dispatchActions[i].context &&
 				app->settings.keys[i] != BAR_KS_DISABLED) {
-			BarUiMsg (MSG_LIST, "%c    %s\n", app->settings.keys[i],
+			BarUiMsg (&app->settings, MSG_LIST, "%c    %s\n", app->settings.keys[i],
 					dispatchActions[i].helpText);
 		}
 	}
@@ -106,7 +106,7 @@ BarUiActCallback(BarUiActAddMusic) {
 		}
 		reqData.station = selStation;
 
-		BarUiMsg (MSG_INFO, "Adding music to station... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Adding music to station... ");
 		BarUiActDefaultPianoCall (PIANO_REQUEST_ADD_SEED, &reqData);
 
 		free (reqData.musicId);
@@ -132,7 +132,7 @@ BarUiActCallback(BarUiActBanSong) {
 	reqData.song = selSong;
 	reqData.rating = PIANO_RATE_BAN;
 
-	BarUiMsg (MSG_INFO, "Banning song... ");
+	BarUiMsg (&app->settings, MSG_INFO, "Banning song... ");
 	if (BarUiActDefaultPianoCall (PIANO_REQUEST_RATE_SONG, &reqData) &&
 			selSong == app->playlist) {
 		BarUiDoSkipSong (&app->player);
@@ -151,7 +151,7 @@ BarUiActCallback(BarUiActCreateStation) {
 			"Create station from artist or title: ");
 	if (reqData.id != NULL) {
 		reqData.type = "mi";
-		BarUiMsg (MSG_INFO, "Creating station... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Creating station... ");
 		BarUiActDefaultPianoCall (PIANO_REQUEST_CREATE_STATION, &reqData);
 		free (reqData.id);
 		BarUiActDefaultEventcmd ("stationcreate");
@@ -166,12 +166,12 @@ BarUiActCallback(BarUiActAddSharedStation) {
 	PianoRequestDataCreateStation_t reqData;
 	char stationId[50];
 
-	BarUiMsg (MSG_QUESTION, "Station id: ");
+	BarUiMsg (&app->settings, MSG_QUESTION, "Station id: ");
 	if (BarReadline (stationId, sizeof (stationId), "0123456789", &app->input,
 			BAR_RL_DEFAULT, -1) > 0) {
 		reqData.id = stationId;
 		reqData.type = "sh";
-		BarUiMsg (MSG_INFO, "Adding shared station... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Adding shared station... ");
 		BarUiActDefaultPianoCall (PIANO_REQUEST_CREATE_STATION, &reqData);
 		BarUiActDefaultEventcmd ("stationaddshared");
 	}
@@ -185,10 +185,10 @@ BarUiActCallback(BarUiActDeleteStation) {
 
 	assert (selStation != NULL);
 
-	BarUiMsg (MSG_QUESTION, "Really delete \"%s\"? [yN] ",
+	BarUiMsg (&app->settings, MSG_QUESTION, "Really delete \"%s\"? [yN] ",
 			app->curStation->name);
 	if (BarReadlineYesNo (false, &app->input)) {
-		BarUiMsg (MSG_INFO, "Deleting station... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Deleting station... ");
 		if (BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_STATION,
 				selStation) && selStation == app->curStation) {
 			BarUiDoSkipSong (&app->player);
@@ -212,9 +212,9 @@ BarUiActCallback(BarUiActExplain) {
 
 	reqData.song = selSong;
 
-	BarUiMsg (MSG_INFO, "Receiving explanation... ");
+	BarUiMsg (&app->settings, MSG_INFO, "Receiving explanation... ");
 	if (BarUiActDefaultPianoCall (PIANO_REQUEST_EXPLAIN, &reqData)) {
-		BarUiMsg (MSG_INFO, "%s\n", reqData.retExplain);
+		BarUiMsg (&app->settings, MSG_INFO, "%s\n", reqData.retExplain);
 		free (reqData.retExplain);
 	}
 	BarUiActDefaultEventcmd ("songexplain");
@@ -233,7 +233,7 @@ BarUiActCallback(BarUiActSongInfo) {
 	assert (selStation != NULL);
 	assert (selSong != NULL);
 
-	BarUiPrintStation (selStation);
+	BarUiPrintStation (&app->settings, selStation);
 	/* print real station if quickmix */
 	BarUiPrintSong (&app->settings, selSong,
 			selStation->isQuickMix ?
@@ -247,7 +247,7 @@ BarUiActCallback(BarUiActDebug) {
 	assert (selSong != NULL);
 
 	/* print debug-alike infos */
-	BarUiMsg (MSG_NONE,
+	BarUiMsg (&app->settings, MSG_NONE,
 			"album:\t%s\n"
 			"artist:\t%s\n"
 			"audioFormat:\t%i\n"
@@ -295,7 +295,7 @@ BarUiActCallback(BarUiActLoveSong) {
 	reqData.song = selSong;
 	reqData.rating = PIANO_RATE_LOVE;
 
-	BarUiMsg (MSG_INFO, "Loving song... ");
+	BarUiMsg (&app->settings, MSG_INFO, "Loving song... ");
 	BarUiActDefaultPianoCall (PIANO_REQUEST_RATE_SONG, &reqData);
 	BarUiActDefaultEventcmd ("songlove");
 }
@@ -317,15 +317,14 @@ BarUiActCallback(BarUiActMoveSong) {
 
 	reqData.step = 0;
 
-	reqData.to = BarUiSelectStation (&app->ph, "Move song to station: ",
-			app->settings.sortOrder, &app->input);
+	reqData.to = BarUiSelectStation (app, "Move song to station: ");
 	if (reqData.to != NULL) {
 		/* find original station (just is case we're playing a quickmix
 		 * station) */
 		reqData.from = PianoFindStationById (app->ph.stations,
 				selSong->stationId);
 		if (reqData.from == NULL) {
-			BarUiMsg (MSG_ERR, "Station not found\n");
+			BarUiMsg (&app->settings, MSG_ERR, "Station not found\n");
 			return;
 		}
 
@@ -333,7 +332,7 @@ BarUiActCallback(BarUiActMoveSong) {
 				!BarTransformIfShared (app, reqData.to)) {
 			return;
 		}
-		BarUiMsg (MSG_INFO, "Moving song to \"%s\"... ", reqData.to->name);
+		BarUiMsg (&app->settings, MSG_INFO, "Moving song to \"%s\"... ", reqData.to->name);
 		reqData.song = selSong;
 		if (BarUiActDefaultPianoCall (PIANO_REQUEST_MOVE_SONG, &reqData) &&
 				selSong == app->playlist) {
@@ -361,7 +360,7 @@ BarUiActCallback(BarUiActRenameStation) {
 
 	assert (selStation != NULL);
 
-	BarUiMsg (MSG_QUESTION, "New name: ");
+	BarUiMsg (&app->settings, MSG_QUESTION, "New name: ");
 	if (BarReadlineStr (lineBuf, sizeof (lineBuf), &app->input, BAR_RL_DEFAULT) > 0) {
 		PianoRequestDataRenameStation_t reqData;
 		if (!BarTransformIfShared (app, selStation)) {
@@ -371,7 +370,7 @@ BarUiActCallback(BarUiActRenameStation) {
 		reqData.station = selStation;
 		reqData.newName = lineBuf;
 
-		BarUiMsg (MSG_INFO, "Renaming station... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Renaming station... ");
 		BarUiActDefaultPianoCall (PIANO_REQUEST_RENAME_STATION, &reqData);
 		BarUiActDefaultEventcmd ("stationrename");
 	}
@@ -380,11 +379,10 @@ BarUiActCallback(BarUiActRenameStation) {
 /*	play another station
  */
 BarUiActCallback(BarUiActSelectStation) {
-	PianoStation_t *newStation = BarUiSelectStation (&app->ph, "Select station: ",
-			app->settings.sortOrder, &app->input);
+	PianoStation_t *newStation = BarUiSelectStation (app, "Select station: ");
 	if (newStation != NULL) {
 		app->curStation = newStation;
-		BarUiPrintStation (app->curStation);
+		BarUiPrintStation (&app->settings, app->curStation);
 		BarUiDoSkipSong (&app->player);
 		if (app->playlist != NULL) {
 			PianoDestroyPlaylist (app->playlist->next);
@@ -402,7 +400,7 @@ BarUiActCallback(BarUiActTempBanSong) {
 
 	assert (selSong != NULL);
 
-	BarUiMsg (MSG_INFO, "Putting song on shelf... ");
+	BarUiMsg (&app->settings, MSG_INFO, "Putting song on shelf... ");
 	if (BarUiActDefaultPianoCall (PIANO_REQUEST_ADD_TIRED_SONG, selSong) &&
 			selSong == app->playlist) {
 		BarUiDoSkipSong (&app->player);
@@ -419,7 +417,7 @@ BarUiActCallback(BarUiActPrintUpcoming) {
 	if (nextSong != NULL) {
 		BarUiListSongs (&app->settings, nextSong, NULL);
 	} else {
-		BarUiMsg (MSG_INFO, "No songs in queue.\n");
+		BarUiMsg (&app->settings, MSG_INFO, "No songs in queue.\n");
 	}
 }
 
@@ -434,16 +432,15 @@ BarUiActCallback(BarUiActSelectQuickMix) {
 
 	if (selStation->isQuickMix) {
 		PianoStation_t *toggleStation;
-		while ((toggleStation = BarUiSelectStation (&app->ph,
-				"Toggle quickmix for station: ", app->settings.sortOrder,
-				&app->input)) != NULL) {
+		while ((toggleStation = BarUiSelectStation (app,
+				"Toggle quickmix for station: ")) != NULL) {
 			toggleStation->useQuickMix = !toggleStation->useQuickMix;
 		}
-		BarUiMsg (MSG_INFO, "Setting quickmix stations... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Setting quickmix stations... ");
 		BarUiActDefaultPianoCall (PIANO_REQUEST_SET_QUICKMIX, NULL);
 		BarUiActDefaultEventcmd ("stationquickmixtoggle");
 	} else {
-		BarUiMsg (MSG_ERR, "Not a QuickMix station.\n");
+		BarUiMsg (&app->settings, MSG_ERR, "Not a QuickMix station.\n");
 	}
 }
 
@@ -469,14 +466,14 @@ BarUiActCallback(BarUiActHistory) {
 					histSong->stationId);
 
 			if (songStation == NULL) {
-				BarUiMsg (MSG_ERR, "Station does not exist any more.\n");
+				BarUiMsg (&app->settings, MSG_ERR, "Station does not exist any more.\n");
 				return;
 			}
 
 			do {
 				action = BAR_KS_COUNT;
 
-				BarUiMsg (MSG_QUESTION, "What to do with this song? ");
+				BarUiMsg (&app->settings, MSG_QUESTION, "What to do with this song? ");
 
 				if (BarReadline (buf, sizeof (buf), NULL, &app->input,
 						BAR_RL_FULLRETURN, -1) > 0) {
@@ -488,7 +485,7 @@ BarUiActCallback(BarUiActHistory) {
 			} while (action == BAR_KS_HELP);
 		} /* end if histSong != NULL */
 	} else {
-		BarUiMsg (MSG_INFO, (app->settings.history == 0) ? "History disabled.\n" :
+		BarUiMsg (&app->settings, MSG_INFO, (app->settings.history == 0) ? "History disabled.\n" :
 				"No history yet.\n");
 	}
 }
@@ -502,15 +499,15 @@ BarUiActCallback(BarUiActBookmark) {
 
 	assert (selSong != NULL);
 
-	BarUiMsg (MSG_QUESTION, "Bookmark [s]ong or [a]rtist? ");
+	BarUiMsg (&app->settings, MSG_QUESTION, "Bookmark [s]ong or [a]rtist? ");
 	BarReadline (selectBuf, sizeof (selectBuf), "sa", &app->input,
 			BAR_RL_FULLRETURN, -1);
 	if (selectBuf[0] == 's') {
-		BarUiMsg (MSG_INFO, "Bookmarking song... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Bookmarking song... ");
 		BarUiActDefaultPianoCall (PIANO_REQUEST_BOOKMARK_SONG, selSong);
 		BarUiActDefaultEventcmd ("songbookmark");
 	} else if (selectBuf[0] == 'a') {
-		BarUiMsg (MSG_INFO, "Bookmarking artist... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Bookmarking artist... ");
 		BarUiActDefaultPianoCall (PIANO_REQUEST_BOOKMARK_ARTIST, selSong);
 		BarUiActDefaultEventcmd ("artistbookmark");
 	}
@@ -543,23 +540,23 @@ BarUiActCallback(BarUiActManageStation) {
 	memset (&reqData, 0, sizeof (reqData));
 	reqData.station = selStation;
 
-	BarUiMsg (MSG_INFO, "Fetching station info... ");
+	BarUiMsg (&app->settings, MSG_INFO, "Fetching station info... ");
 	BarUiActDefaultPianoCall (PIANO_REQUEST_GET_STATION_INFO, &reqData);
 	BarUiActDefaultEventcmd ("stationfetchinfo");
 
-	BarUiMsg (MSG_QUESTION, "Delete [a]rtist/[s]ong seeds or [f]eedback? ");
+	BarUiMsg (&app->settings, MSG_QUESTION, "Delete [a]rtist/[s]ong seeds or [f]eedback? ");
 	if (BarReadline (selectBuf, sizeof (selectBuf), "asf", &app->input,
 					BAR_RL_FULLRETURN, -1)) {
 		if (selectBuf[0] == 'a') {
-			PianoArtist_t *artist = BarUiSelectArtist (reqData.info.artistSeeds,
-					&app->input);
+			PianoArtist_t *artist = BarUiSelectArtist (app,
+					reqData.info.artistSeeds);
 			if (artist != NULL) {
 				PianoRequestDataDeleteSeed_t reqData;
 
 				memset (&reqData, 0, sizeof (reqData));
 				reqData.artist = artist;
 
-				BarUiMsg (MSG_INFO, "Deleting artist seed... ");
+				BarUiMsg (&app->settings, MSG_INFO, "Deleting artist seed... ");
 				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &reqData);
 				BarUiActDefaultEventcmd ("stationdeleteartistseed");
 			}
@@ -572,7 +569,7 @@ BarUiActCallback(BarUiActManageStation) {
 				memset (&reqData, 0, sizeof (reqData));
 				reqData.song = song;
 
-				BarUiMsg (MSG_INFO, "Deleting song seed... ");
+				BarUiMsg (&app->settings, MSG_INFO, "Deleting song seed... ");
 				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &reqData);
 				BarUiActDefaultEventcmd ("stationdeletesongseed");
 			}
@@ -580,7 +577,7 @@ BarUiActCallback(BarUiActManageStation) {
 			PianoSong_t *song = BarUiSelectSong (&app->settings,
 					reqData.info.feedback, &app->input);
 			if (song != NULL) {
-				BarUiMsg (MSG_INFO, "Deleting feedback... ");
+				BarUiMsg (&app->settings, MSG_INFO, "Deleting feedback... ");
 				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_FEEDBACK, song);
 				BarUiActDefaultEventcmd ("stationdeletefeedback");
 			}

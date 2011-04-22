@@ -85,6 +85,12 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->eventCmd);
 	free (settings->loveIcon);
 	free (settings->banIcon);
+	free (settings->npSongFormat);
+	free (settings->npStationFormat);
+	for (size_t i = 0; i < MSG_COUNT; i++) {
+		free (settings->msgFormat[i].prefix);
+		free (settings->msgFormat[i].postfix);
+	}
 	memset (settings, 0, sizeof (*settings));
 }
 
@@ -95,6 +101,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 void BarSettingsRead (BarSettings_t *settings) {
 	char configfile[PATH_MAX], key[256], val[256];
 	FILE *configfd;
+	static const char *formatMsgPrefix = "format_msg_";
 
 	assert (sizeof (settings->keys) / sizeof (*settings->keys) ==
 			sizeof (dispatchActions) / sizeof (*dispatchActions));
@@ -110,8 +117,26 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->history = 5;
 	settings->volume = 0;
 	settings->sortOrder = BAR_SORT_NAME_AZ;
-	settings->loveIcon = strdup ("<3");
-	settings->banIcon = strdup ("</3");
+	settings->loveIcon = strdup (" <3");
+	settings->banIcon = strdup (" </3");
+	settings->npSongFormat = strdup ("\"%t\" by \"%a\" on \"%l\"%r%@%s");
+	settings->npStationFormat = strdup ("Station \"%n\" (%i)");
+
+	settings->msgFormat[MSG_NONE].prefix = NULL;
+	settings->msgFormat[MSG_NONE].postfix = NULL;
+	settings->msgFormat[MSG_INFO].prefix = strdup ("(i) ");
+	settings->msgFormat[MSG_INFO].postfix = NULL;
+	settings->msgFormat[MSG_PLAYING].prefix = strdup ("|>  ");
+	settings->msgFormat[MSG_PLAYING].postfix = NULL;
+	settings->msgFormat[MSG_TIME].prefix = strdup ("#   ");
+	settings->msgFormat[MSG_TIME].postfix = NULL;
+	settings->msgFormat[MSG_ERR].prefix = strdup ("/!\\ ");
+	settings->msgFormat[MSG_ERR].postfix = NULL;
+	settings->msgFormat[MSG_QUESTION].prefix = strdup ("[?] ");
+	settings->msgFormat[MSG_QUESTION].postfix = NULL;
+	settings->msgFormat[MSG_LIST].prefix = strdup ("\t");
+	settings->msgFormat[MSG_LIST].postfix = NULL;
+
 	for (size_t i = 0; i < BAR_KS_COUNT; i++) {
 		settings->keys[i] = dispatchActions[i].defaultKey;
 	}
@@ -188,6 +213,42 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->banIcon = strdup (val);
 		} else if (streq ("volume", key)) {
 			settings->volume = atoi (val);
+		} else if (streq ("format_nowplaying_song", key)) {
+			free (settings->npSongFormat);
+			settings->npSongFormat = strdup (val);
+		} else if (streq ("format_nowplaying_station", key)) {
+			free (settings->npStationFormat);
+			settings->npStationFormat = strdup (val);
+		} else if (strncmp (formatMsgPrefix, key,
+				strlen (formatMsgPrefix)) == 0) {
+			static const char *mapping[] = {"none", "info", "nowplaying",
+					"time", "err", "question", "list"};
+			const char *typeStart = key + strlen (formatMsgPrefix);
+			for (size_t i = 0; i < sizeof (mapping) / sizeof (*mapping); i++) {
+				if (streq (typeStart, mapping[i])) {
+					const char *formatPos = strstr (val, "%s");
+					
+					/* keep default if there is no format character */
+					if (formatPos != NULL) {
+						BarMsgFormatStr_t *format = &settings->msgFormat[i];
+
+						free (format->prefix);
+						free (format->postfix);
+
+						const size_t prefixLen = formatPos - val;
+						format->prefix = calloc (prefixLen + 1,
+								sizeof (*format->prefix));
+						memcpy (format->prefix, val, prefixLen);
+
+						const size_t postfixLen = strlen (val) -
+								(formatPos-val) - 2;
+						format->postfix = calloc (postfixLen + 1,
+								sizeof (*format->postfix));
+						memcpy (format->postfix, formatPos+2, postfixLen);
+					}
+					break;
+				}
+			}
 		}
 	}
 

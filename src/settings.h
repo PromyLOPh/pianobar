@@ -70,6 +70,13 @@ typedef enum {
 	BAR_SORT_COUNT = 6,
 } BarStationSorting_t;
 
+#include "ui_types.h"
+
+typedef struct {
+	char *prefix;
+	char *postfix;
+} BarMsgFormatStr_t;
+
 typedef struct {
 	unsigned int history;
 	int volume;
@@ -84,6 +91,9 @@ typedef struct {
 	char *eventCmd;
 	char *loveIcon;
 	char *banIcon;
+	char *npSongFormat;
+	char *npStationFormat;
+	BarMsgFormatStr_t msgFormat[MSG_COUNT];
 } BarSettings_t;
 
 void BarSettingsInit (BarSettings_t *);

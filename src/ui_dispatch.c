@@ -56,9 +56,9 @@ BarKeyShortcutId_t BarUiDispatch (BarApp_t *app, const char key, PianoStation_t 
 				return i;
 			} else if (verbose) {
 				if (dispatchActions[i].context & BAR_DC_SONG) {
-					BarUiMsg (MSG_ERR, "No song playing.\n");
+					BarUiMsg (&app->settings, MSG_ERR, "No song playing.\n");
 				} else if (dispatchActions[i].context & BAR_DC_STATION) {
-					BarUiMsg (MSG_ERR, "No station selected.\n");
+					BarUiMsg (&app->settings, MSG_ERR, "No station selected.\n");
 				} else {
 					assert (0);
 				}
