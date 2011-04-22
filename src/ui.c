@@ -62,7 +62,7 @@ static bool isnumeric (const char *s) {
 
 /*	find needle in haystack, ignoring case, and return first position
  */
-const char *strcasestr (const char *haystack, const char *needle) {
+const char *BarStrCaseStr (const char *haystack, const char *needle) {
 	const char *needlePos = needle;
 
 	assert (haystack != NULL);
@@ -364,7 +364,7 @@ PianoStation_t *BarUiSelectStation (PianoHandle_t *ph, const char *prompt,
 	do {
 		for (i = 0; i < stationCount; i++) {
 			const PianoStation_t *currStation = sortedStations[i];
-			if (strcasestr (currStation->name, buf) != NULL) {
+			if (BarStrCaseStr (currStation->name, buf) != NULL) {
 				BarUiMsg (MSG_LIST, "%2i) %c%c%c %s\n", i,
 						currStation->useQuickMix ? 'q' : ' ',
 						currStation->isQuickMix ? 'Q' : ' ',
@@ -443,7 +443,7 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist,
 		i = 0;
 		tmpArtist = startArtist;
 		while (tmpArtist != NULL) {
-			if (strcasestr (tmpArtist->name, buf) != NULL) {
+			if (BarStrCaseStr (tmpArtist->name, buf) != NULL) {
 				BarUiMsg (MSG_LIST, "%2u) %s\n", i, tmpArtist->name);
 			}
 			i++;
@@ -653,8 +653,8 @@ size_t BarUiListSongs (const BarSettings_t *settings,
 
 	while (song != NULL) {
 		if (filter == NULL ||
-				(filter != NULL && (strcasestr (song->artist, filter) != NULL ||
-				strcasestr (song->title, filter) != NULL))) {
+				(filter != NULL && (BarStrCaseStr (song->artist, filter) != NULL ||
+				BarStrCaseStr (song->title, filter) != NULL))) {
 			BarUiMsg (MSG_LIST, "%2lu) %s - %s %s%s\n", i, song->artist,
 					song->title,
 					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
