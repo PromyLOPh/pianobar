@@ -62,7 +62,7 @@ static bool isnumeric (const char *s) {
 
 /*	find needle in haystack, ignoring case, and return first position
  */
-const char *BarStrCaseStr (const char *haystack, const char *needle) {
+static const char *BarStrCaseStr (const char *haystack, const char *needle) {
 	const char *needlePos = needle;
 
 	assert (haystack != NULL);
@@ -301,7 +301,7 @@ static int BarStationCmpQuickmix10NameZA (const void *a, const void *b) {
  *	@param stations
  *	@return NULL-terminated array with sorted stations
  */
-PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
+static PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
 		size_t *retStationCount, BarStationSorting_t order) {
 	static const BarSortFunc_t orderMapping[] = {BarStationNameAZCmp,
 			BarStationNameZACmp,
