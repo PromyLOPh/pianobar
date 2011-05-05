@@ -473,14 +473,14 @@ PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist,
  *	@param allow seed suggestions if != NULL
  *	@return musicId or NULL on abort/error
  */
-char *BarUiSelectMusicId (BarApp_t *app, char *similarToId) {
+char *BarUiSelectMusicId (BarApp_t *app, char *similarToId, const char *msg) {
 	char *musicId = NULL;
 	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;
 	PianoArtist_t *tmpArtist;
 	PianoSong_t *tmpSong;
 
-	BarUiMsg (MSG_QUESTION, "Search for artist/title: ");
+	BarUiMsg (MSG_QUESTION, msg);
 	if (BarReadlineStr (lineBuf, sizeof (lineBuf), &app->input,
 			BAR_RL_DEFAULT) > 0) {
 		if (strcmp ("?", lineBuf) == 0 && similarToId != NULL) {

@@ -98,7 +98,8 @@ BarUiActCallback(BarUiActAddMusic) {
 
 	assert (selStation != NULL);
 
-	reqData.musicId = BarUiSelectMusicId (app, app->playlist->musicId);
+	reqData.musicId = BarUiSelectMusicId (app, app->playlist->musicId,
+			"Add artist or title to station: ");
 	if (reqData.musicId != NULL) {
 		if (!BarTransformIfShared (app, selStation)) {
 			return;
@@ -146,7 +147,8 @@ BarUiActCallback(BarUiActCreateStation) {
 	WaitressReturn_t wRet;
 	PianoRequestDataCreateStation_t reqData;
 
-	reqData.id = BarUiSelectMusicId (app, NULL);
+	reqData.id = BarUiSelectMusicId (app, NULL,
+			"Create station from artist or title: ");
 	if (reqData.id != NULL) {
 		reqData.type = "mi";
 		BarUiMsg (MSG_INFO, "Creating station... ");
