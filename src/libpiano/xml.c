@@ -373,8 +373,9 @@ static void PianoXmlParseQuickMixStationsCb (const char *key, const ezxml_t valu
 			}
 		}
 		ids[idsN-1] = NULL;
+
+		*retIds = ids;
 	}
-	*retIds = ids;
 }
 
 /*	parse stations returned by pandora
