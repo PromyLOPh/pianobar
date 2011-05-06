@@ -88,9 +88,9 @@ pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} libpiano.so.0
 else
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
 		${LIBWAITRESS_HDR} ${LIBEZXML_OBJ} ${LIBEZXML_HDR}
-	${CC} ${CFLAGS} ${LDFLAGS} -lao -lpthread -lm ${LIBFAAD_LDFLAGS} \
-			${LIBMAD_LDFLAGS} -o $@ ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} \
-			${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ}
+	${CC} ${CFLAGS} ${LDFLAGS} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} \
+			${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ} -lao -lpthread -lm \
+			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} -o $@
 endif
 
 # build shared and static libpiano
