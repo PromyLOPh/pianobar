@@ -41,3 +41,7 @@
 #love_icon = [+]
 #ban_icon = [-]
 #volume = 0
+
+# Format strings
+#format_nowplaying_song = [32m%t[0m by [34m%a[0m on %l[31m%r[0m%@%s
+#format_nowplaying_station = Station [35m%n[0m
