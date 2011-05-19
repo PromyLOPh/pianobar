@@ -596,7 +596,7 @@ BarUiActCallback(BarUiActSave) {
 	assert (selSong != NULL);
 	sprintf (buffer, "mkdir -p Music/");
 	system(buffer);
-	sprintf (buffer, "wget \"%s\" -o Music/%s.mp3",selSong->audioUrl,selSong->musicId);
+	sprintf (buffer, "wget \"%s\" -O Music/%s.mp3",selSong->audioUrl,selSong->musicId);
 	system(buffer);
 	strcpy (buffer, "Saved Song: Music/");
 	strcat (buffer, selSong->musicId);
