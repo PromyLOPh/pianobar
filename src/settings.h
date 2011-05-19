@@ -55,7 +55,7 @@ typedef enum {
 	BAR_KS_VOLUP = 23,
 	BAR_KS_MANAGESTATION = 24,
 	/* insert new shortcuts _before_ this element and increase its value */
-	BAR_KS_COUNT = 25,
+	BAR_KS_COUNT = 26,
 } BarKeyShortcutId_t;
 
 #define BAR_KS_DISABLED '\x00'
