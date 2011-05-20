@@ -94,6 +94,8 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_volup"},
 		{BAR_DC_STATION, BarUiActManageStation, "delete seeds/feedback", '=',
 				"act_managestation"},
+		{BAR_DC_SONG, BarUiActSave, "save song", 'l',
+				"act_save"},
 		};
 
 #include <piano.h>
