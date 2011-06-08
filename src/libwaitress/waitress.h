@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2009-2010
+Copyright (c) 2009-2011
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,11 +25,8 @@ THE SOFTWARE.
 #define _WAITRESS_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
-#define WAITRESS_HOST_SIZE 100
-/* max: 65,535 */
-#define WAITRESS_PORT_SIZE 6
-#define WAITRESS_PATH_SIZE 1000
 #define WAITRESS_RECV_BUFFER 10*1024
 
 typedef enum {WAITRESS_METHOD_GET = 0, WAITRESS_METHOD_POST} WaitressMethod_t;
@@ -37,16 +34,22 @@ typedef enum {WAITRESS_METHOD_GET = 0, WAITRESS_METHOD_POST} WaitressMethod_t;
 typedef enum {WAITRESS_CB_RET_ERR, WAITRESS_CB_RET_OK} WaitressCbReturn_t;
 
 typedef struct {
-	char host[WAITRESS_HOST_SIZE];
-	char port[WAITRESS_PORT_SIZE];
-	char path[WAITRESS_PATH_SIZE];
+	char *url; /* splitted url, unusable */
+	const char *user;
+	const char *password;
+	const char *host;
+	const char *port;
+	const char *path; /* without leading '/' */
+} WaitressUrl_t;
+
+typedef struct {
+	WaitressUrl_t url;
 	WaitressMethod_t method;
 	const char *extraHeaders;
 	const char *postData;
 	size_t contentLength;
 	size_t contentReceived;
-	char proxyHost[WAITRESS_HOST_SIZE];
-	char proxyPort[WAITRESS_PORT_SIZE];
+	WaitressUrl_t proxy;
 	/* extra data handed over to callback function */
 	void *data;
 	WaitressCbReturn_t (*callback) (void *, size_t, void *);
@@ -63,13 +66,9 @@ typedef enum {WAITRESS_RET_ERR = 0, WAITRESS_RET_OK, WAITRESS_RET_STATUS_UNKNOWN
 
 void WaitressInit (WaitressHandle_t *);
 void WaitressFree (WaitressHandle_t *);
-void WaitressSetProxy (WaitressHandle_t *, const char *, const char *);
+bool WaitressSetProxy (WaitressHandle_t *, const char *);
 char *WaitressUrlEncode (const char *);
-char WaitressSplitUrl (const char *, char *, size_t, char *, size_t, char *,
-		size_t);
-char WaitressSetUrl (WaitressHandle_t *, const char *);
-void WaitressSetHPP (WaitressHandle_t *, const char *, const char *,
-		const char *);
+bool WaitressSetUrl (WaitressHandle_t *, const char *);
 WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *, char **);
 WaitressReturn_t WaitressFetchCall (WaitressHandle_t *);
 const char *WaitressErrorToStr (WaitressReturn_t);

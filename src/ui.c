@@ -137,7 +137,7 @@ static WaitressReturn_t BarPianoHttpRequest (WaitressHandle_t *waith,
 	waith->extraHeaders = "Content-Type: text/xml\r\n";
 	waith->postData = req->postData;
 	waith->method = WAITRESS_METHOD_POST;
-	strncpy (waith->path, req->urlPath, sizeof (waith->path)-1);
+	waith->url.path = req->urlPath;
 
 	return WaitressFetchBuf (waith, &req->responseData);
 }

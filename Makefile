@@ -115,14 +115,21 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 			-I ${LIBEZXML_INCLUDE} -c -fPIC -o $@ $<
 
 clean:
-	${RM} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ} \
-			${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} ${LIBEZXML_RELOBJ} pianobar \
-			libpiano.so* libpiano.a
+	${RM} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBWAITRESS_OBJ}/test.o \
+			${LIBEZXML_OBJ} ${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} \
+			${LIBEZXML_RELOBJ} pianobar libpiano.so* libpiano.a waitress-test
 
 all: pianobar
 
 debug: pianobar
 debug: CFLAGS=-Wall -pedantic -ggdb
+
+waitress-test: CFLAGS+= -DTEST
+waitress-test: ${LIBWAITRESS_OBJ}
+	${CC} ${LDFLAGS} ${LIBWAITRESS_OBJ} -o waitress-test
+
+test: waitress-test
+	./waitress-test
 
 ifeq (${DYNLINK},1)
 install: pianobar install-libpiano

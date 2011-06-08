@@ -57,19 +57,13 @@ THE SOFTWARE.
  */
 static void BarMainLoadProxy (const BarSettings_t *settings,
 		WaitressHandle_t *waith) {
-	char tmpPath[2];
-
 	/* set up proxy (control proxy for non-us citizen or global proxy for poor
 	 * firewalled fellows) */
 	if (settings->controlProxy != NULL) {
 		/* control proxy overrides global proxy */
-		WaitressSplitUrl (settings->controlProxy, waith->proxyHost,
-				sizeof (waith->proxyHost), waith->proxyPort,
-				sizeof (waith->proxyPort), tmpPath, sizeof (tmpPath));
+		WaitressSetProxy (waith, settings->controlProxy);
 	} else if (settings->proxy != NULL && strlen (settings->proxy) > 0) {
-		WaitressSplitUrl (settings->proxy, waith->proxyHost,
-				sizeof (waith->proxyHost), waith->proxyPort,
-				sizeof (waith->proxyPort), tmpPath, sizeof (tmpPath));
+		WaitressSetProxy (waith, settings->proxy);
 	}
 }
 
@@ -200,13 +194,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 
 		/* set up global proxy, player is NULLed on songfinish */
 		if (app->settings.proxy != NULL) {
-			char tmpPath[2];
-			WaitressSplitUrl (app->settings.proxy,
-					app->player.waith.proxyHost,
-					sizeof (app->player.waith.proxyHost),
-					app->player.waith.proxyPort,
-					sizeof (app->player.waith.proxyPort), tmpPath,
-					sizeof (tmpPath));
+			WaitressSetProxy (&app->player.waith, app->settings.proxy);
 		}
 
 		app->player.gain = app->playlist->fileGain;
@@ -351,8 +339,8 @@ int main (int argc, char **argv) {
 	PianoInit (&app.ph);
 
 	WaitressInit (&app.waith);
-	strncpy (app.waith.host, PIANO_RPC_HOST, sizeof (app.waith.host)-1);
-	strncpy (app.waith.port, PIANO_RPC_PORT, sizeof (app.waith.port)-1);
+	app.waith.url.host = strdup (PIANO_RPC_HOST);
+	app.waith.url.port = strdup (PIANO_RPC_PORT);
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
