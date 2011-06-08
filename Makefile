@@ -6,9 +6,14 @@ LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
 DYNLINK:=0
-CFLAGS:=-O2 -DNDEBUG
-LDFLAGS:=
-CC:=c99
+
+# Respect environment variables set by user; does not work with :=
+ifeq (${CFLAGS},)
+	CFLAGS=-O2 -DNDEBUG
+endif
+ifeq (${CC},cc)
+	CC=c99
+endif
 
 PIANOBAR_DIR=src
 PIANOBAR_SRC=\
