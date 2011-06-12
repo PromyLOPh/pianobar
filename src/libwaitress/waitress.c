@@ -466,6 +466,27 @@ static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
 			CLOSE_RET (wRet); \
 		}
 
+/*	send basic http authorization
+ *	@param waitress handle
+ *	@param url containing user/password
+ *	@param header name prefix
+ */
+static bool WaitressFormatAuthorization (WaitressHandle_t *waith,
+		WaitressUrl_t *url, const char *prefix, char *writeBuf,
+		const size_t writeBufSize) {
+	if (url->user != NULL) {
+		char userPass[1024], *encodedUserPass;
+		snprintf (userPass, sizeof (userPass), "%s:%s", url->user,
+				(url->password != NULL) ? url->password : "");
+		encodedUserPass = WaitressBase64Encode (userPass);
+		snprintf (writeBuf, writeBufSize, "%sAuthorization: Basic %s\r\n",
+				prefix, encodedUserPass);
+		free (encodedUserPass);
+		return true;
+	}
+	return false;
+}
+
 /*	get default http port if none was given
  */
 static const char *WaitressDefaultPort (WaitressUrl_t *url) {
@@ -574,6 +595,16 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	if (waith->method == WAITRESS_METHOD_POST && waith->postData != NULL) {
 		snprintf (writeBuf, sizeof (writeBuf), "Content-Length: %zu\r\n",
 				strlen (waith->postData));
+		WRITE_RET (writeBuf, strlen (writeBuf));
+	}
+
+	/* write authorization headers */
+	if (WaitressFormatAuthorization (waith, &waith->url, "", writeBuf,
+			sizeof (writeBuf))) {
+		WRITE_RET (writeBuf, strlen (writeBuf));
+	}
+	if (WaitressFormatAuthorization (waith, &waith->proxy, "Proxy-",
+			writeBuf, sizeof (writeBuf))) {
 		WRITE_RET (writeBuf, strlen (writeBuf));
 	}
 	
