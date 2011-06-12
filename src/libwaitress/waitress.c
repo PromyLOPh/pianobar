@@ -90,6 +90,111 @@ char *WaitressUrlEncode (const char *in) {
 	return out;
 }
 
+/*	base64 encode data
+ *	@param encode this
+ *	@return malloc'ed string
+ */
+static char *WaitressBase64Encode (const char *in) {
+	assert (in != NULL);
+
+	size_t inLen = strlen (in);
+	char *out, *outPos;
+	const char *inPos;
+	static const char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"abcdefghijklmnopqrstuvwxyz0123456789+/";
+	const size_t alphabetLen = strlen (alphabet);
+
+	/* worst case is 1.333 */
+	out = malloc ((inLen * 2 + 1) * sizeof (*out));
+	if (out == NULL) {
+		return NULL;
+	}
+	outPos = out;
+	inPos = in;
+
+	while (inLen >= 3) {
+		uint8_t idx;
+
+		idx = ((*inPos) >> 2) & 0x3f;
+		assert (idx < alphabetLen);
+		*outPos = alphabet[idx];
+		++outPos;
+
+		idx = ((*inPos) & 0x3) << 4;
+		++inPos;
+		idx |= ((*inPos) >> 4) & 0xf;
+		assert (idx < alphabetLen);
+		*outPos = alphabet[idx];
+		++outPos;
+
+		idx = ((*inPos) & 0xf) << 2;
+		++inPos;
+		idx |= ((*inPos) >> 6) & 0x3;
+		assert (idx < alphabetLen);
+		*outPos = alphabet[idx];
+		++outPos;
+
+		idx = (*inPos) & 0x3f;
+		++inPos;
+		assert (idx < alphabetLen);
+		*outPos = alphabet[idx];
+		++outPos;
+
+		inLen -= 3;
+	}
+
+	switch (inLen) {
+		case 2: {
+			uint8_t idx;
+
+			idx = ((*inPos) >> 2) & 0x3f;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			idx = ((*inPos) & 0x3) << 4;
+			++inPos;
+			idx |= ((*inPos) >> 4) & 0xf;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			idx = ((*inPos) & 0xf) << 2;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			*outPos = '=';
+			++outPos;
+			break;
+		}
+
+		case 1: {
+			uint8_t idx;
+
+			idx = ((*inPos) >> 2) & 0x3f;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			idx = ((*inPos) & 0x3) << 4;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			*outPos = '=';
+			++outPos;
+
+			*outPos = '=';
+			++outPos;
+			break;
+		}
+	}
+	*outPos = '\0';
+
+	return out;
+}
+
 /*	Split http url into host, port and path
  *	@param url
  *	@param returned url struct
@@ -709,6 +814,18 @@ static void compareUrl (const char *url, const char *user,
 	}
 }
 
+/*	compare two strings
+ */
+void compareStr (const char *result, const char *expected) {
+	if (!streq (result, expected)) {
+		printf ("FAIL for %s, result was %s\n", expected, result);
+	} else {
+		printf ("OK for %s\n", expected);
+	}
+}
+
+/*	test entry point
+ */
 int main () {
 	/* WaitressSplitUrl tests */
 	compareUrl ("http://www.example.com/", NULL, NULL, "www.example.com", NULL,
@@ -736,6 +853,17 @@ int main () {
 	compareUrl ("http://", NULL, NULL, NULL, NULL, NULL);
 	compareUrl ("http:///", NULL, NULL, "", NULL, "");
 	compareUrl ("http://foo:bar@", "foo", "bar", "", NULL, NULL);
+
+	/* WaitressBase64Encode tests */
+	compareStr (WaitressBase64Encode ("M"), "TQ==");
+	compareStr (WaitressBase64Encode ("Ma"), "TWE=");
+	compareStr (WaitressBase64Encode ("Man"), "TWFu");
+	compareStr (WaitressBase64Encode ("The quick brown fox jumped over the lazy dog."),
+			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2cu");
+	compareStr (WaitressBase64Encode ("The quick brown fox jumped over the lazy dog"),
+			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2c=");
+	compareStr (WaitressBase64Encode ("The quick brown fox jumped over the lazy do"),
+			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkbw==");
 
 	return EXIT_SUCCESS;
 }
