@@ -162,7 +162,7 @@ or the key you defined in
 Icon for banned songs.
 
 .TP
-.B control_proxy = http://host:port/
+.B control_proxy = http://user:password@host:port/
 Non-american users need a proxy to use pandora.com. Only the xmlrpc interface
 will use this proxy. The music is streamed directly.
 
@@ -237,9 +237,9 @@ Icon for loved songs.
 Your pandora.com password. Plain-text.
 
 .TP
-.B proxy = http://host:port/
+.B proxy = http://user:password@host:port/
 Use a http proxy. Note that this setting overrides the http_proxy environment
-variable.
+variable. Only "Basic" http authentication is supported.
 
 .TP
 .B sort = {name_az, name_za, quickmix_01_name_az, quickmix_01_name_za, quickmix_10_name_az, quickmix_10_name_za}
