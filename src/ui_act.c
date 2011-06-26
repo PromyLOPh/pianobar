@@ -35,7 +35,7 @@ THE SOFTWARE.
 /*	standard eventcmd call
  */
 #define BarUiActDefaultEventcmd(name) BarUiStartEventCmd (&app->settings, \
-		name, app->curStation, app->playlist, &app->player, app->ph.stations, \
+		name, selStation, selSong, &app->player, app->ph.stations, \
 		pRet, wRet)
 
 /*	standard piano call
