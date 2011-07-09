@@ -39,7 +39,7 @@ THE SOFTWARE.
 #include "crypt.h"
 #include "config.h"
 
-#define PIANO_PROTOCOL_VERSION "30"
+#define PIANO_PROTOCOL_VERSION "31"
 #define PIANO_RPC_HOST "www.pandora.com"
 #define PIANO_RPC_PORT "80"
 #define PIANO_RPC_PATH "/radio/xmlrpc/v" PIANO_PROTOCOL_VERSION "?"
@@ -476,13 +476,17 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>station.createStation</methodName>"
 					"<params><param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* music id */
 					"<param><value><string>%s%s</string></value></param>"
+					/* empty */
+					"<param><value><string></string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, reqData->type, reqData->id);
 
 			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
-					"rid=%s&lid=%s&method=createStation&arg1=%s%s", ph->routeId,
+					"rid=%s&lid=%s&method=createStation&arg1=%s%s&arg2=", ph->routeId,
 					ph->user.listenerId, reqData->type, reqData->id);
 			break;
 		}
@@ -498,8 +502,11 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
 					"<methodCall><methodName>station.addSeed</methodName><params>"
 					"<param><value><int>%lu</int></value></param>"
+					/* auth token */
 					"<param><value><string>%s</string></value></param>"
+					/* station id */
 					"<param><value><string>%s</string></value></param>"
+					/* music id */
 					"<param><value><string>%s</string></value></param>"
 					"</params></methodCall>", (unsigned long) timestamp,
 					ph->user.authToken, reqData->station->id, reqData->musicId);
