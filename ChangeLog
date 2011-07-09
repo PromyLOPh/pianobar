@@ -1,3 +1,10 @@
+Release 2011.07.09
+
+- Protocol version bump (v31)
+- Fix quickmix
+- Customizeable format strings
+- Basic proxy authentication
+
 Release 2011.04.27
 
 - Protocol version bump (v30)
