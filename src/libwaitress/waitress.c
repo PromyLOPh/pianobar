@@ -21,8 +21,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 1 /* required by getaddrinfo() */
 #define _BSD_SOURCE /* snprintf() */
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
