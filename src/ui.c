@@ -23,8 +23,10 @@ THE SOFTWARE.
 
 /* everything that interacts with the user */
 
+#ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 1 /* fileno() */
 #define _BSD_SOURCE /* strdup() */
+#endif
 
 #include <stdio.h>
 #include <stdarg.h>

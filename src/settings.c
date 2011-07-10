@@ -23,8 +23,10 @@ THE SOFTWARE.
 
 /* application settings */
 
+#ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 1 /* PATH_MAX */
 #define _BSD_SOURCE /* strdup() */
+#endif
 
 #include <string.h>
 #include <stdlib.h>

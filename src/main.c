@@ -21,8 +21,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 1 /* fileno() */
 #define _BSD_SOURCE /* strdup() */
+#endif
 
 /* system includes */
 #include <stdlib.h>

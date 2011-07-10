@@ -9,7 +9,7 @@ DYNLINK:=0
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
-	CFLAGS=-O2 -DNDEBUG
+	CFLAGS=-O2 -DNDEBUG -I/usr/local/include -L/usr/local/lib
 endif
 ifeq (${CC},cc)
 	CC=c99
