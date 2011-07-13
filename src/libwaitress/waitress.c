@@ -24,6 +24,7 @@ THE SOFTWARE.
 #ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 1 /* required by getaddrinfo() */
 #define _BSD_SOURCE /* snprintf() */
+#define _DARWIN_C_SOURCE /* snprintf() on OS X */
 #endif
 
 #include <sys/types.h>

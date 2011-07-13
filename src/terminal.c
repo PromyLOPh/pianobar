@@ -24,6 +24,7 @@ THE SOFTWARE.
 #ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 1 /* fileno() */
 #define _BSD_SOURCE /* setlinebuf() */
+#define _DARWIN_C_SOURCE /* setlinebuf() on OS X */
 #endif
 
 #include <termios.h>
