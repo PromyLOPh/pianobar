@@ -563,26 +563,16 @@ PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml,
 	return ret;
 }
 
-/*	parse simple answers like this: <?xml version="1.0" encoding="UTF-8"?>
- *	<methodResponse><params><param><value>1</value></param></params>
- *	</methodResponse>
+/*	check for exception only
  *	@param xml string
- *	@return
+ *	@return _OK or error
  */
 PianoReturn_t PianoXmlParseSimple (char *xml) {
-	ezxml_t xmlDoc, dataNode;
+	ezxml_t xmlDoc;
 	PianoReturn_t ret;
 
 	if ((ret = PianoXmlInitDoc (xml, &xmlDoc)) != PIANO_RET_OK) {
 		return ret;
-	}
-
-	dataNode = ezxml_get (xmlDoc, "params", 0, "param", 0, "value", -1);
-
-	if (strcmp (ezxml_txt (dataNode), "1") == 0) {
-		ret = PIANO_RET_OK;
-	} else {
-		ret = PIANO_RET_ERR;
 	}
 
 	ezxml_free (xmlDoc);
