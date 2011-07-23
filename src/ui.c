@@ -147,10 +147,11 @@ static WaitressReturn_t BarPianoHttpRequest (WaitressHandle_t *waith,
 
 /*	piano wrapper: prepare/execute http request and pass result back to
  *	libpiano (updates data structures)
- *	@param piano handle
+ *	@param app handle
  *	@param request type
- *	@param waitress handle
- *	@param data pointer (used as request data)
+ *	@param request data
+ *	@param stores piano return code
+ *	@param stores waitress return code
  *	@return 1 on success, 0 otherwise
  */
 int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
@@ -327,10 +328,8 @@ static PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
 }
 
 /*	let user pick one station
- *	@param piano handle
+ *	@param app handle
  *	@param prompt string
- *	@param station list sort order
- *	@param input fds
  *	@return pointer to selected station or NULL
  */
 PianoStation_t *BarUiSelectStation (BarApp_t *app, const char *prompt) {
@@ -415,8 +414,8 @@ PianoSong_t *BarUiSelectSong (const BarSettings_t *settings,
 }
 
 /*	let user pick one artist
+ *	@param app handle
  *	@param artists (linked list)
- *	@param input fds
  *	@return pointer to selected artist or NULL on abort
  */
 PianoArtist_t *BarUiSelectArtist (BarApp_t *app, PianoArtist_t *startArtist) {
@@ -460,6 +459,7 @@ PianoArtist_t *BarUiSelectArtist (BarApp_t *app, PianoArtist_t *startArtist) {
 /*	search music: query, search request, return music id
  *	@param app handle
  *	@param allow seed suggestions if != NULL
+ *	@param prompt string
  *	@return musicId or NULL on abort/error
  */
 char *BarUiSelectMusicId (BarApp_t *app, char *similarToId, const char *msg) {
