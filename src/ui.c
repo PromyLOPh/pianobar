@@ -330,9 +330,11 @@ static PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
 /*	let user pick one station
  *	@param app handle
  *	@param prompt string
+ *	@param called if input was not a number
  *	@return pointer to selected station or NULL
  */
-PianoStation_t *BarUiSelectStation (BarApp_t *app, const char *prompt) {
+PianoStation_t *BarUiSelectStation (BarApp_t *app, const char *prompt,
+		BarUiSelectStationCallback_t callback) {
 	PianoStation_t **sortedStations = NULL, *retStation = NULL;
 	size_t stationCount, i;
 	char buf[100];
@@ -351,6 +353,7 @@ PianoStation_t *BarUiSelectStation (BarApp_t *app, const char *prompt) {
 	do {
 		for (i = 0; i < stationCount; i++) {
 			const PianoStation_t *currStation = sortedStations[i];
+			/* filter stations */
 			if (BarStrCaseStr (currStation->name, buf) != NULL) {
 				BarUiMsg (&app->settings, MSG_LIST, "%2i) %c%c%c %s\n", i,
 						currStation->useQuickMix ? 'q' : ' ',
@@ -372,6 +375,11 @@ PianoStation_t *BarUiSelectStation (BarApp_t *app, const char *prompt) {
 			if (selected < stationCount) {
 				retStation = sortedStations[selected];
 			}
+		}
+
+		/* hand over buffer to external function if it was not a station number */
+		if (retStation == NULL && callback != NULL) {
+			callback (app, buf);
 		}
 	} while (retStation == NULL);
 

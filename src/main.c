@@ -136,7 +136,7 @@ static void BarMainGetInitialStation (BarApp_t *app) {
 	}
 	/* no autostart? ask the user */
 	if (app->curStation == NULL) {
-		app->curStation = BarUiSelectStation (app, "Select station: ");
+		app->curStation = BarUiSelectStation (app, "Select station: ", NULL);
 	}
 	if (app->curStation != NULL) {
 		BarUiPrintStation (&app->settings, app->curStation);

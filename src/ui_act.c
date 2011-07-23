@@ -317,7 +317,7 @@ BarUiActCallback(BarUiActMoveSong) {
 
 	reqData.step = 0;
 
-	reqData.to = BarUiSelectStation (app, "Move song to station: ");
+	reqData.to = BarUiSelectStation (app, "Move song to station: ", NULL);
 	if (reqData.to != NULL) {
 		/* find original station (just is case we're playing a quickmix
 		 * station) */
@@ -379,7 +379,8 @@ BarUiActCallback(BarUiActRenameStation) {
 /*	play another station
  */
 BarUiActCallback(BarUiActSelectStation) {
-	PianoStation_t *newStation = BarUiSelectStation (app, "Select station: ");
+	PianoStation_t *newStation = BarUiSelectStation (app, "Select station: ",
+			NULL);
 	if (newStation != NULL) {
 		app->curStation = newStation;
 		BarUiPrintStation (&app->settings, app->curStation);
@@ -421,6 +422,42 @@ BarUiActCallback(BarUiActPrintUpcoming) {
 	}
 }
 
+/*	selectStation callback used by BarUiActSelectQuickMix; toggle, select
+ *	all/none
+ */
+static void BarUiActQuickmixCallback (BarApp_t *app, char *buf) {
+	PianoStation_t *curStation = app->ph.stations;
+
+	switch (*buf) {
+		case 't':
+			/* toggle */
+			while (curStation != NULL) {
+				curStation->useQuickMix = !curStation->useQuickMix;
+				curStation = curStation->next;
+			}
+			*buf = '\0';
+			break;
+
+		case 'a':
+			/* enable all */
+			while (curStation != NULL) {
+				curStation->useQuickMix = true;
+				curStation = curStation->next;
+			}
+			*buf = '\0';
+			break;
+
+		case 'n':
+			/* enable none */
+			while (curStation != NULL) {
+				curStation->useQuickMix = false;
+				curStation = curStation->next;
+			}
+			*buf = '\0';
+			break;
+	}
+}
+
 /*	if current station is a quickmix: select stations that are played in
  *	quickmix
  */
@@ -433,7 +470,8 @@ BarUiActCallback(BarUiActSelectQuickMix) {
 	if (selStation->isQuickMix) {
 		PianoStation_t *toggleStation;
 		while ((toggleStation = BarUiSelectStation (app,
-				"Toggle quickmix for station: ")) != NULL) {
+				"Toggle quickmix for station: ",
+				BarUiActQuickmixCallback)) != NULL) {
 			toggleStation->useQuickMix = !toggleStation->useQuickMix;
 		}
 		BarUiMsg (&app->settings, MSG_INFO, "Setting quickmix stations... ");
