@@ -145,6 +145,10 @@ Decrease volume.
 Increase volume.
 
 .TP
+.B at_icon =  @ 
+Replacement for %@ in station format string. It's " @ " by default.
+
+.TP
 .B audio_format = {aacplus,mp3,mp3-hifi}
 Select audio format. aacplus is default if both libraries (faad, mad) are
 available. mp3-hifi is available for Pandora One customers only.
@@ -189,7 +193,8 @@ Album name
 Rating icon (only love icon)
 
 .B %@
-@-sign if station is quickmix
+.B at_icon
+if station is quickmix, empty otherwise.
 
 .B %s
 Real station name if quickmix

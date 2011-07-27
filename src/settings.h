@@ -91,6 +91,7 @@ typedef struct {
 	char *eventCmd;
 	char *loveIcon;
 	char *banIcon;
+	char *atIcon;
 	char *npSongFormat;
 	char *npStationFormat;
 	BarMsgFormatStr_t msgFormat[MSG_COUNT];

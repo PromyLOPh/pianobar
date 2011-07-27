@@ -713,7 +713,7 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 	char outstr[512];
 	const char *vals[] = {song->title, song->artist, song->album,
 			(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
-			station != NULL ? " @ " : "",
+			station != NULL ? settings->atIcon : "",
 			station != NULL ? station->name : "",
 			song->detailUrl};
 
