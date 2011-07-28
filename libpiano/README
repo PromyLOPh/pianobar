@@ -1,5 +1,0 @@
-libpiano
-========
-
-libpiano handles all communication with pandora's xmlrpc api. It is part of the
-pianobar package.

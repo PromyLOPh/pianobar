@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2008-2010
-	Lars-Dominik Braun <PromyLOPh@lavabit.com>
+Copyright (c) 2008-2011
+	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,26 +30,27 @@ THE SOFTWARE.
 #include "settings.h"
 #include "player.h"
 #include "main.h"
+#include "ui_readline.h"
+#include "ui_types.h"
 
-typedef enum {MSG_NONE, MSG_INFO, MSG_PLAYING, MSG_TIME, MSG_ERR,
-		MSG_QUESTION, MSG_LIST} uiMsg_t;
+typedef void (*BarUiSelectStationCallback_t) (BarApp_t *app, char *buf);
 
-void BarUiMsg (uiMsg_t type, const char *format, ...);
-PianoReturn_t BarUiPrintPianoStatus (PianoReturn_t ret);
-PianoStation_t *BarUiSelectStation (PianoHandle_t *, const char *,
-		BarStationSorting_t, FILE *);
-PianoSong_t *BarUiSelectSong (const BarSettings_t *, PianoSong_t *, FILE *);
-PianoArtist_t *BarUiSelectArtist (PianoArtist_t *startArtist, FILE *curFd);
-char *BarUiSelectMusicId (BarApp_t *, FILE *, char *);
-void BarStationFromGenre (BarApp_t *, FILE *);
-void BarUiPrintStation (PianoStation_t *);
+void BarUiMsg (const BarSettings_t *, const BarUiMsg_t, const char *, ...);
+PianoStation_t *BarUiSelectStation (BarApp_t *, const char *, BarUiSelectStationCallback_t);
+PianoSong_t *BarUiSelectSong (const BarSettings_t *, PianoSong_t *,
+		BarReadlineFds_t *);
+PianoArtist_t *BarUiSelectArtist (BarApp_t *, PianoArtist_t *);
+char *BarUiSelectMusicId (BarApp_t *, char *, const char *);
+void BarStationFromGenre (BarApp_t *);
+void BarUiPrintStation (const BarSettings_t *, PianoStation_t *);
 void BarUiPrintSong (const BarSettings_t *, const PianoSong_t *, 
 		const PianoStation_t *);
-size_t BarUiListSongs (const BarSettings_t *, const PianoSong_t *);
+size_t BarUiListSongs (const BarSettings_t *, const PianoSong_t *, const char *);
 void BarUiStartEventCmd (const BarSettings_t *, const char *,
 		const PianoStation_t *, const PianoSong_t *, const struct audioPlayer *,
-		PianoReturn_t, WaitressReturn_t);
+		PianoStation_t *, PianoReturn_t, WaitressReturn_t);
 int BarUiPianoCall (BarApp_t * const, PianoRequestType_t,
 		void *, PianoReturn_t *, WaitressReturn_t *);
+void BarUiHistoryPrepend (BarApp_t *app, PianoSong_t *song);
 
 #endif /* _UI_H */

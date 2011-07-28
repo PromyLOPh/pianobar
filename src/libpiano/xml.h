@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2008-2010
-	Lars-Dominik Braun <PromyLOPh@lavabit.com>
+Copyright (c) 2008-2011
+	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@ PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph,
 PianoReturn_t PianoXmlParseTranformStation (const char *searchXml);
 PianoReturn_t PianoXmlParseNarrative (const char *xml, char **retNarrative);
 PianoReturn_t PianoXmlParseSeedSuggestions (char *, PianoSearchResult_t *);
+PianoReturn_t PianoXmlParseGetStationInfo (char *, PianoStationInfo_t *);
 
 char *PianoXmlEncodeString (const char *s);
 

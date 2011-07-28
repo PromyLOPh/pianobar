@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2008-2010
-	Lars-Dominik Braun <PromyLOPh@lavabit.com>
+	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,8 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 1 /* fileno() */
 #define _BSD_SOURCE /* setlinebuf() */
+#define _DARWIN_C_SOURCE /* setlinebuf() on OS X */
+#endif
 
 #include <termios.h>
 #include <stdio.h>

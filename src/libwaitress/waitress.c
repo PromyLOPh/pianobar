@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2009-2010
-	Lars-Dominik Braun <PromyLOPh@lavabit.com>
+Copyright (c) 2009-2011
+	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,8 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 1 /* required by getaddrinfo() */
 #define _BSD_SOURCE /* snprintf() */
+#define _DARWIN_C_SOURCE /* snprintf() on OS X */
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -35,6 +38,7 @@ THE SOFTWARE.
 #include <fcntl.h>
 #include <poll.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "config.h"
 #include "waitress.h"
@@ -44,12 +48,14 @@ typedef struct {
 	size_t pos;
 } WaitressFetchBufCbBuffer_t;
 
-inline void WaitressInit (WaitressHandle_t *waith) {
+void WaitressInit (WaitressHandle_t *waith) {
 	memset (waith, 0, sizeof (*waith));
 	waith->socktimeout = 30000;
 }
 
-inline void WaitressFree (WaitressHandle_t *waith) {
+void WaitressFree (WaitressHandle_t *waith) {
+	free (waith->url.url);
+	free (waith->proxy.url);
 	memset (waith, 0, sizeof (*waith));
 }
 
@@ -57,19 +63,8 @@ inline void WaitressFree (WaitressHandle_t *waith) {
  *	@param Waitress handle
  *	@return true|false
  */
-static inline char WaitressProxyEnabled (const WaitressHandle_t *waith) {
-	return *waith->proxyHost != '\0' && *waith->proxyPort != '\0';
-}
-
-/*	Set http proxy
- *	@param waitress handle
- *	@param host
- *	@param port
- */
-inline void WaitressSetProxy (WaitressHandle_t *waith, const char *host,
-		const char *port) {
-	strncpy (waith->proxyHost, host, sizeof (waith->proxyHost)-1);
-	strncpy (waith->proxyPort, port, sizeof (waith->proxyPort)-1);
+bool WaitressProxyEnabled (const WaitressHandle_t *waith) {
+	return waith->proxy.host != NULL;
 }
 
 /*	urlencode post-data
@@ -98,82 +93,250 @@ char *WaitressUrlEncode (const char *in) {
 	return out;
 }
 
+/*	base64 encode data
+ *	@param encode this
+ *	@return malloc'ed string
+ */
+static char *WaitressBase64Encode (const char *in) {
+	assert (in != NULL);
+
+	size_t inLen = strlen (in);
+	char *out, *outPos;
+	const char *inPos;
+	static const char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"abcdefghijklmnopqrstuvwxyz0123456789+/";
+	const size_t alphabetLen = strlen (alphabet);
+
+	/* worst case is 1.333 */
+	out = malloc ((inLen * 2 + 1) * sizeof (*out));
+	if (out == NULL) {
+		return NULL;
+	}
+	outPos = out;
+	inPos = in;
+
+	while (inLen >= 3) {
+		uint8_t idx;
+
+		idx = ((*inPos) >> 2) & 0x3f;
+		assert (idx < alphabetLen);
+		*outPos = alphabet[idx];
+		++outPos;
+
+		idx = ((*inPos) & 0x3) << 4;
+		++inPos;
+		idx |= ((*inPos) >> 4) & 0xf;
+		assert (idx < alphabetLen);
+		*outPos = alphabet[idx];
+		++outPos;
+
+		idx = ((*inPos) & 0xf) << 2;
+		++inPos;
+		idx |= ((*inPos) >> 6) & 0x3;
+		assert (idx < alphabetLen);
+		*outPos = alphabet[idx];
+		++outPos;
+
+		idx = (*inPos) & 0x3f;
+		++inPos;
+		assert (idx < alphabetLen);
+		*outPos = alphabet[idx];
+		++outPos;
+
+		inLen -= 3;
+	}
+
+	switch (inLen) {
+		case 2: {
+			uint8_t idx;
+
+			idx = ((*inPos) >> 2) & 0x3f;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			idx = ((*inPos) & 0x3) << 4;
+			++inPos;
+			idx |= ((*inPos) >> 4) & 0xf;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			idx = ((*inPos) & 0xf) << 2;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			*outPos = '=';
+			++outPos;
+			break;
+		}
+
+		case 1: {
+			uint8_t idx;
+
+			idx = ((*inPos) >> 2) & 0x3f;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			idx = ((*inPos) & 0x3) << 4;
+			assert (idx < alphabetLen);
+			*outPos = alphabet[idx];
+			++outPos;
+
+			*outPos = '=';
+			++outPos;
+
+			*outPos = '=';
+			++outPos;
+			break;
+		}
+	}
+	*outPos = '\0';
+
+	return out;
+}
+
 /*	Split http url into host, port and path
  *	@param url
- *	@param return buffer: host
- *	@param host buffer size
- *	@param return buffer: port, defaults to 80
- *	@param port buffer size
- *	@param return buffer: path
- *	@param path buffer size
- *	@param 1 = ok, 0 = not a http url; if your buffers are too small horrible
- *			things will happen... But 1 is returned anyway.
+ *	@param returned url struct
+ *	@return url is a http url? does not say anything about its validity!
  */
-char WaitressSplitUrl (const char *url, char *retHost, size_t retHostSize,
-		char *retPort, size_t retPortSize, char *retPath, size_t retPathSize) {
-	size_t urlSize = strlen (url);
-	const char *urlPos = url, *lastPos;
+static bool WaitressSplitUrl (const char *inurl, WaitressUrl_t *retUrl) {
+	assert (inurl != NULL);
+	assert (retUrl != NULL);
+
+	static const char *httpPrefix = "http://";
 	
-	if (urlSize > sizeof ("http://")-1 &&
-			memcmp (url, "http://", sizeof ("http://")-1) == 0) {
-		memset (retHost, 0, retHostSize);
-		memset (retPort, 0, retPortSize);
-		strncpy (retPort, "80", retPortSize-1);
-		memset (retPath, 0, retPathSize);
+	/* is http url? */
+	if (strncmp (httpPrefix, inurl, strlen (httpPrefix)) == 0) {
+		enum {FIND_USER, FIND_PASS, FIND_HOST, FIND_PORT, FIND_PATH, DONE}
+				state = FIND_USER, newState = FIND_USER;
+		char *url, *urlPos, *assignStart;
+		const char **assign = NULL;
 
-		urlPos += sizeof ("http://")-1;
-		lastPos = urlPos;
+		url = strdup (inurl);
+		retUrl->url = url;
 
-		/* find host */
-		while (*urlPos != '\0' && *urlPos != ':' && *urlPos != '/' &&
-				urlPos - lastPos < retHostSize-1) {
-			*retHost++ = *urlPos++;
+		urlPos = url + strlen (httpPrefix);
+		assignStart = urlPos;
+
+		if (*urlPos == '\0') {
+			state = DONE;
 		}
-		lastPos = urlPos;
 
-		/* port, if available */
-		if (*urlPos == ':') {
-			/* skip : */
-			++urlPos;
-			++lastPos;
-			while (*urlPos != '\0' && *urlPos != '/' &&
-					urlPos - lastPos < retPortSize-1) {
-				*retPort++ = *urlPos++;
+		while (state != DONE) {
+			const char c = *urlPos;
+
+			switch (state) {
+				case FIND_USER: {
+					if (c == ':') {
+						assign = &retUrl->user;
+						newState = FIND_PASS;
+					} else if (c == '@') {
+						assign = &retUrl->user;
+						newState = FIND_HOST;
+					} else if (c == '/') {
+						/* not a user */
+						assign = &retUrl->host;
+						newState = FIND_PATH;
+					} else if (c == '\0') {
+						assign = &retUrl->host;
+						newState = DONE;
+					}
+					break;
+				}
+
+				case FIND_PASS: {
+					if (c == '@') {
+						assign = &retUrl->password;
+						newState = FIND_HOST;
+					} else if (c == '/') {
+						/* not a password */
+						assign = &retUrl->port;
+						newState = FIND_PATH;
+					} else if (c == '\0') {
+						assign = &retUrl->port;
+						newState = DONE;
+					}
+					break;
+				}
+
+				case FIND_HOST: {
+					if (c == ':') {
+						assign = &retUrl->host;
+						newState = FIND_PORT;
+					} else if (c == '/') {
+						assign = &retUrl->host;
+						newState = FIND_PATH;
+					} else if (c == '\0') {
+						assign = &retUrl->host;
+						newState = DONE;
+					}
+					break;
+				}
+
+				case FIND_PORT: {
+					if (c == '/') {
+						assign = &retUrl->port;
+						newState = FIND_PATH;
+					} else if (c == '\0') {
+						assign = &retUrl->port;
+						newState = DONE;
+					}
+					break;
+				}
+
+				case FIND_PATH: {
+					if (c == '\0') {
+						assign = &retUrl->path;
+						newState = DONE;
+					}
+					break;
+				}
+
+				case DONE:
+					break;
+			} /* end switch */
+
+			if (assign != NULL) {
+				*assign = assignStart;
+				*urlPos = '\0';
+				assignStart = urlPos+1;
+
+				state = newState;
+				assign = NULL;
 			}
-		}
-		lastPos = urlPos;
 
-		/* path */
-		while (*urlPos != '\0' && *urlPos != '#' &&
-				urlPos - lastPos < retPathSize-1) {
-			*retPath++ = *urlPos++;
+			++urlPos;
+		} /* end while */
+
+		/* fixes for our state machine logic */
+		if (retUrl->user != NULL && retUrl->host == NULL && retUrl->port != NULL) {
+			retUrl->host = retUrl->user;
+			retUrl->user = NULL;
 		}
-	} else {
-		return 0;
-	}
-	return 1;
+		return true;
+	} /* end if strncmp */
+
+	return false;
 }
 
 /*	Parse url and set host, port, path
  *	@param Waitress handle
  *	@param url: protocol://host:port/path
  */
-inline char WaitressSetUrl (WaitressHandle_t *waith, const char *url) {
-	return WaitressSplitUrl (url, waith->host, sizeof (waith->host),
-		waith->port, sizeof (waith->port), waith->path, sizeof (waith->path));
+bool WaitressSetUrl (WaitressHandle_t *waith, const char *url) {
+	return WaitressSplitUrl (url, &waith->url);
 }
 
-/*	Set host, port, path
- *	@param Waitress handle
- *	@param host
- *	@param port (getaddrinfo () needs a string...)
- *	@param path, including leading /
+/*	Set http proxy
+ *	@param waitress handle
+ *  @param url, e.g. http://proxy:80/
  */
-inline void WaitressSetHPP (WaitressHandle_t *waith, const char *host,
-		const char *port, const char *path) {
-	strncpy (waith->host, host, sizeof (waith->host)-1);
-	strncpy (waith->port, port, sizeof (waith->port)-1);
-	strncpy (waith->path, path, sizeof (waith->path)-1);
+bool WaitressSetProxy (WaitressHandle_t *waith, const char *url) {
+	return WaitressSplitUrl (url, &waith->proxy);
 }
 
 /*	Callback for WaitressFetchBuf, appends received data to NULL-terminated buffer
@@ -306,6 +469,33 @@ static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
 			CLOSE_RET (wRet); \
 		}
 
+/*	send basic http authorization
+ *	@param waitress handle
+ *	@param url containing user/password
+ *	@param header name prefix
+ */
+static bool WaitressFormatAuthorization (WaitressHandle_t *waith,
+		WaitressUrl_t *url, const char *prefix, char *writeBuf,
+		const size_t writeBufSize) {
+	if (url->user != NULL) {
+		char userPass[1024], *encodedUserPass;
+		snprintf (userPass, sizeof (userPass), "%s:%s", url->user,
+				(url->password != NULL) ? url->password : "");
+		encodedUserPass = WaitressBase64Encode (userPass);
+		snprintf (writeBuf, writeBufSize, "%sAuthorization: Basic %s\r\n",
+				prefix, encodedUserPass);
+		free (encodedUserPass);
+		return true;
+	}
+	return false;
+}
+
+/*	get default http port if none was given
+ */
+static const char *WaitressDefaultPort (WaitressUrl_t *url) {
+	return url->port == NULL ? "80" : url->port;
+}
+
 /*	Receive data from host and call *callback ()
  *	@param waitress handle
  *	@return WaitressReturn_t
@@ -335,11 +525,13 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 
 	/* Use proxy? */
 	if (WaitressProxyEnabled (waith)) {
-		if (getaddrinfo (waith->proxyHost, waith->proxyPort, &hints, &res) != 0) {
+		if (getaddrinfo (waith->proxy.host,
+				WaitressDefaultPort (&waith->proxy), &hints, &res) != 0) {
 			return WAITRESS_RET_GETADDR_ERR;
 		}
 	} else {
-		if (getaddrinfo (waith->host, waith->port, &hints, &res) != 0) {
+		if (getaddrinfo (waith->url.host,
+				WaitressDefaultPort (&waith->url), &hints, &res) != 0) {
 			return WAITRESS_RET_GETADDR_ERR;
 		}
 	}
@@ -375,27 +567,47 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		return WAITRESS_RET_CONNECT_REFUSED;
 	}
 
+	const char *path = waith->url.path;
+	if (waith->url.path == NULL) {
+		/* avoid NULL pointer deref */
+		path = "";
+	} else if (waith->url.path[0] == '/') {
+		/* most servers don't like "//" */
+		++path;
+	}
+
 	/* send request */
 	if (WaitressProxyEnabled (waith)) {
 		snprintf (writeBuf, sizeof (writeBuf),
-			"%s http://%s:%s%s HTTP/1.0\r\n",
+			"%s http://%s:%s/%s HTTP/1.0\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
-			waith->host, waith->port, waith->path);
+			waith->url.host,
+			WaitressDefaultPort (&waith->url), path);
 	} else {
 		snprintf (writeBuf, sizeof (writeBuf),
-			"%s %s HTTP/1.0\r\n",
+			"%s /%s HTTP/1.0\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
-			waith->path);
+			path);
 	}
 	WRITE_RET (writeBuf, strlen (writeBuf));
 
 	snprintf (writeBuf, sizeof (writeBuf),
-			"Host: %s\r\nUser-Agent: " PACKAGE "\r\n", waith->host);
+			"Host: %s\r\nUser-Agent: " PACKAGE "\r\n", waith->url.host);
 	WRITE_RET (writeBuf, strlen (writeBuf));
 
 	if (waith->method == WAITRESS_METHOD_POST && waith->postData != NULL) {
 		snprintf (writeBuf, sizeof (writeBuf), "Content-Length: %zu\r\n",
 				strlen (waith->postData));
+		WRITE_RET (writeBuf, strlen (writeBuf));
+	}
+
+	/* write authorization headers */
+	if (WaitressFormatAuthorization (waith, &waith->url, "", writeBuf,
+			sizeof (writeBuf))) {
+		WRITE_RET (writeBuf, strlen (writeBuf));
+	}
+	if (WaitressFormatAuthorization (waith, &waith->proxy, "Proxy-",
+			writeBuf, sizeof (writeBuf))) {
 		WRITE_RET (writeBuf, strlen (writeBuf));
 	}
 	
@@ -570,4 +782,124 @@ const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 			break;
 	}
 }
+
+#ifdef TEST
+/* test cases for libwaitress */
+
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+#include "waitress.h"
+
+#define streq(x,y) (strcmp(x,y) == 0)
+
+/*	string equality test (memory location or content)
+ */
+static bool streqtest (const char *x, const char *y) {
+	return (x == y) || (x != NULL && y != NULL && streq (x, y));
+}
+
+/*	test WaitressSplitUrl
+ *	@param tested url
+ *	@param expected user
+ *	@param expected password
+ *	@param expected host
+ *	@param expected port
+ *	@param expected path
+ */
+static void compareUrl (const char *url, const char *user,
+		const char *password, const char *host, const char *port,
+		const char *path) {
+	WaitressUrl_t splitUrl;
+
+	memset (&splitUrl, 0, sizeof (splitUrl));
+
+	WaitressSplitUrl (url, &splitUrl);
+
+	bool userTest, passwordTest, hostTest, portTest, pathTest, overallTest;
+
+	userTest = streqtest (splitUrl.user, user);
+	passwordTest = streqtest (splitUrl.password, password);
+	hostTest = streqtest (splitUrl.host, host);
+	portTest = streqtest (splitUrl.port, port);
+	pathTest = streqtest (splitUrl.path, path);
+
+	overallTest = userTest && passwordTest && hostTest && portTest && pathTest;
+
+	if (!overallTest) {
+		printf ("FAILED test(s) for %s\n", url);
+		if (!userTest) {
+			printf ("user: %s vs %s\n", splitUrl.user, user);
+		}
+		if (!passwordTest) {
+			printf ("password: %s vs %s\n", splitUrl.password, password);
+		}
+		if (!hostTest) {
+			printf ("host: %s vs %s\n", splitUrl.host, host);
+		}
+		if (!portTest) {
+			printf ("port: %s vs %s\n", splitUrl.port, port);
+		}
+		if (!pathTest) {
+			printf ("path: %s vs %s\n", splitUrl.path, path);
+		}
+	} else {
+		printf ("OK for %s\n", url);
+	}
+}
+
+/*	compare two strings
+ */
+void compareStr (const char *result, const char *expected) {
+	if (!streq (result, expected)) {
+		printf ("FAIL for %s, result was %s\n", expected, result);
+	} else {
+		printf ("OK for %s\n", expected);
+	}
+}
+
+/*	test entry point
+ */
+int main () {
+	/* WaitressSplitUrl tests */
+	compareUrl ("http://www.example.com/", NULL, NULL, "www.example.com", NULL,
+			"");
+	compareUrl ("http://www.example.com", NULL, NULL, "www.example.com", NULL,
+			NULL);
+	compareUrl ("http://www.example.com:80/", NULL, NULL, "www.example.com",
+			"80", "");
+	compareUrl ("http://www.example.com:/", NULL, NULL, "www.example.com", "",
+			"");
+	compareUrl ("http://:80/", NULL, NULL, "", "80", "");
+	compareUrl ("http://www.example.com/foobar/barbaz", NULL, NULL,
+			"www.example.com", NULL, "foobar/barbaz");
+	compareUrl ("http://www.example.com:80/foobar/barbaz", NULL, NULL,
+			"www.example.com", "80", "foobar/barbaz");
+	compareUrl ("http://foo:bar@www.example.com:80/foobar/barbaz", "foo", "bar",
+			"www.example.com", "80", "foobar/barbaz");
+	compareUrl ("http://foo:@www.example.com:80/foobar/barbaz", "foo", "",
+			"www.example.com", "80", "foobar/barbaz");
+	compareUrl ("http://foo@www.example.com:80/foobar/barbaz", "foo", NULL,
+			"www.example.com", "80", "foobar/barbaz");
+	compareUrl ("http://:foo@www.example.com:80/foobar/barbaz", "", "foo",
+			"www.example.com", "80", "foobar/barbaz");
+	compareUrl ("http://:@:80", "", "", "", "80", NULL);
+	compareUrl ("http://", NULL, NULL, NULL, NULL, NULL);
+	compareUrl ("http:///", NULL, NULL, "", NULL, "");
+	compareUrl ("http://foo:bar@", "foo", "bar", "", NULL, NULL);
+
+	/* WaitressBase64Encode tests */
+	compareStr (WaitressBase64Encode ("M"), "TQ==");
+	compareStr (WaitressBase64Encode ("Ma"), "TWE=");
+	compareStr (WaitressBase64Encode ("Man"), "TWFu");
+	compareStr (WaitressBase64Encode ("The quick brown fox jumped over the lazy dog."),
+			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2cu");
+	compareStr (WaitressBase64Encode ("The quick brown fox jumped over the lazy dog"),
+			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2c=");
+	compareStr (WaitressBase64Encode ("The quick brown fox jumped over the lazy do"),
+			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkbw==");
+
+	return EXIT_SUCCESS;
+}
+#endif /* TEST */
 

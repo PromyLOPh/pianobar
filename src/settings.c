@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2008-2010
-	Lars-Dominik Braun <PromyLOPh@lavabit.com>
+Copyright (c) 2008-2011
+	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +23,21 @@ THE SOFTWARE.
 
 /* application settings */
 
+#ifndef __FreeBSD__
+#define _POSIX_C_SOURCE 1 /* PATH_MAX */
 #define _BSD_SOURCE /* strdup() */
+#define _DARWIN_C_SOURCE /* strdup() on OS X */
+#endif
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
+#include <assert.h>
 
 #include "settings.h"
 #include "config.h"
+#include "ui_dispatch.h"
 
 #define streq(a, b) (strcmp (a, b) == 0)
 
@@ -81,6 +88,13 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->eventCmd);
 	free (settings->loveIcon);
 	free (settings->banIcon);
+	free (settings->atIcon);
+	free (settings->npSongFormat);
+	free (settings->npStationFormat);
+	for (size_t i = 0; i < MSG_COUNT; i++) {
+		free (settings->msgFormat[i].prefix);
+		free (settings->msgFormat[i].postfix);
+	}
 	memset (settings, 0, sizeof (*settings));
 }
 
@@ -89,23 +103,12 @@ void BarSettingsDestroy (BarSettings_t *settings) {
  *	@return nothing yet
  */
 void BarSettingsRead (BarSettings_t *settings) {
-	/* FIXME: what is the max length of a path? */
-	char configfile[1024], key[256], val[256];
+	char configfile[PATH_MAX], key[256], val[256];
 	FILE *configfd;
-	/* _must_ have same order as in BarKeyShortcutId_t */
-	static const char defaultKeys[] = {'?', '+', '-', 'a', 'c', 'd', 'e', 'g',
-			'h', 'i', 'j', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'x', '$',
-			'b',
-			};
-	static const char *shortcutFileKeys[] = {
-			"act_help", "act_songlove", "act_songban", "act_stationaddmusic",
-			"act_stationcreate", "act_stationdelete", "act_songexplain",
-			"act_stationaddbygenre", "act_history", "act_songinfo",
-			"act_addshared", "act_songmove", "act_songnext", "act_songpause",
-			"act_quit", "act_stationrename", "act_stationchange",
-			"act_songtired", "act_upcoming", "act_stationselectquickmix",
-			"act_debug", "act_bookmark",
-			};
+	static const char *formatMsgPrefix = "format_msg_";
+
+	assert (sizeof (settings->keys) / sizeof (*settings->keys) ==
+			sizeof (dispatchActions) / sizeof (*dispatchActions));
 
 	/* apply defaults */
 	#ifdef ENABLE_FAAD
@@ -116,10 +119,32 @@ void BarSettingsRead (BarSettings_t *settings) {
 		#endif
 	#endif
 	settings->history = 5;
+	settings->volume = 0;
 	settings->sortOrder = BAR_SORT_NAME_AZ;
-	memcpy (settings->keys, defaultKeys, sizeof (defaultKeys));
-	settings->loveIcon = strdup ("<3");
-	settings->banIcon = strdup ("</3");
+	settings->loveIcon = strdup (" <3");
+	settings->banIcon = strdup (" </3");
+	settings->atIcon = strdup (" @ ");
+	settings->npSongFormat = strdup ("\"%t\" by \"%a\" on \"%l\"%r%@%s");
+	settings->npStationFormat = strdup ("Station \"%n\" (%i)");
+
+	settings->msgFormat[MSG_NONE].prefix = NULL;
+	settings->msgFormat[MSG_NONE].postfix = NULL;
+	settings->msgFormat[MSG_INFO].prefix = strdup ("(i) ");
+	settings->msgFormat[MSG_INFO].postfix = NULL;
+	settings->msgFormat[MSG_PLAYING].prefix = strdup ("|>  ");
+	settings->msgFormat[MSG_PLAYING].postfix = NULL;
+	settings->msgFormat[MSG_TIME].prefix = strdup ("#   ");
+	settings->msgFormat[MSG_TIME].postfix = NULL;
+	settings->msgFormat[MSG_ERR].prefix = strdup ("/!\\ ");
+	settings->msgFormat[MSG_ERR].postfix = NULL;
+	settings->msgFormat[MSG_QUESTION].prefix = strdup ("[?] ");
+	settings->msgFormat[MSG_QUESTION].postfix = NULL;
+	settings->msgFormat[MSG_LIST].prefix = strdup ("\t");
+	settings->msgFormat[MSG_LIST].postfix = NULL;
+
+	for (size_t i = 0; i < BAR_KS_COUNT; i++) {
+		settings->keys[i] = dispatchActions[i].defaultKey;
+	}
 
 	BarGetXdgConfigDir (PACKAGE "/config", configfile, sizeof (configfile));
 	if ((configfd = fopen (configfile, "r")) == NULL) {
@@ -147,8 +172,12 @@ void BarSettingsRead (BarSettings_t *settings) {
 			size_t i;
 			/* keyboard shortcuts */
 			for (i = 0; i < BAR_KS_COUNT; i++) {
-				if (streq (shortcutFileKeys[i], key)) {
-					settings->keys[i] = val[0];
+				if (streq (dispatchActions[i].configKey, key)) {
+					if (streq (val, "disabled")) {
+						settings->keys[i] = BAR_KS_DISABLED;
+					} else {
+						settings->keys[i] = val[0];
+					}
 					break;
 				}
 			}
@@ -187,6 +216,47 @@ void BarSettingsRead (BarSettings_t *settings) {
 		} else if (streq ("ban_icon", key)) {
 			free (settings->banIcon);
 			settings->banIcon = strdup (val);
+		} else if (streq ("at_icon", key)) {
+			free (settings->atIcon);
+			settings->atIcon = strdup (val);
+		} else if (streq ("volume", key)) {
+			settings->volume = atoi (val);
+		} else if (streq ("format_nowplaying_song", key)) {
+			free (settings->npSongFormat);
+			settings->npSongFormat = strdup (val);
+		} else if (streq ("format_nowplaying_station", key)) {
+			free (settings->npStationFormat);
+			settings->npStationFormat = strdup (val);
+		} else if (strncmp (formatMsgPrefix, key,
+				strlen (formatMsgPrefix)) == 0) {
+			static const char *mapping[] = {"none", "info", "nowplaying",
+					"time", "err", "question", "list"};
+			const char *typeStart = key + strlen (formatMsgPrefix);
+			for (size_t i = 0; i < sizeof (mapping) / sizeof (*mapping); i++) {
+				if (streq (typeStart, mapping[i])) {
+					const char *formatPos = strstr (val, "%s");
+					
+					/* keep default if there is no format character */
+					if (formatPos != NULL) {
+						BarMsgFormatStr_t *format = &settings->msgFormat[i];
+
+						free (format->prefix);
+						free (format->postfix);
+
+						const size_t prefixLen = formatPos - val;
+						format->prefix = calloc (prefixLen + 1,
+								sizeof (*format->prefix));
+						memcpy (format->prefix, val, prefixLen);
+
+						const size_t postfixLen = strlen (val) -
+								(formatPos-val) - 2;
+						format->postfix = calloc (postfixLen + 1,
+								sizeof (*format->postfix));
+						memcpy (format->postfix, formatPos+2, postfixLen);
+					}
+					break;
+				}
+			}
 		}
 	}
 

@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2008-2010
-	Lars-Dominik Braun <PromyLOPh@lavabit.com>
+Copyright (c) 2008-2011
+	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,7 @@ THE SOFTWARE.
 #include <piano.h>
 #include <waitress.h>
 
-/* keep in mind that you have to update several arrays in main.c/ui_act.c too,
- * if you're adding new shortcuts */
+/* update structure in ui_dispatch.h if you add shortcuts here */
 typedef enum {
 	BAR_KS_HELP = 0,
 	BAR_KS_LOVE = 1,
@@ -52,9 +51,14 @@ typedef enum {
 	BAR_KS_SELECTQUICKMIX = 19,
 	BAR_KS_DEBUG = 20,
 	BAR_KS_BOOKMARK = 21,
+	BAR_KS_VOLDOWN = 22,
+	BAR_KS_VOLUP = 23,
+	BAR_KS_MANAGESTATION = 24,
 	/* insert new shortcuts _before_ this element and increase its value */
-	BAR_KS_COUNT = 22,
+	BAR_KS_COUNT = 25,
 } BarKeyShortcutId_t;
+
+#define BAR_KS_DISABLED '\x00'
 
 typedef enum {
 	BAR_SORT_NAME_AZ = 0,
@@ -66,8 +70,16 @@ typedef enum {
 	BAR_SORT_COUNT = 6,
 } BarStationSorting_t;
 
+#include "ui_types.h"
+
+typedef struct {
+	char *prefix;
+	char *postfix;
+} BarMsgFormatStr_t;
+
 typedef struct {
 	unsigned int history;
+	int volume;
 	BarStationSorting_t sortOrder;
 	PianoAudioFormat_t audioFormat;
 	char *username;
@@ -79,6 +91,10 @@ typedef struct {
 	char *eventCmd;
 	char *loveIcon;
 	char *banIcon;
+	char *atIcon;
+	char *npSongFormat;
+	char *npStationFormat;
+	BarMsgFormatStr_t msgFormat[MSG_COUNT];
 } BarSettings_t;
 
 void BarSettingsInit (BarSettings_t *);

@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2008-2010
-	Lars-Dominik Braun <PromyLOPh@lavabit.com>
+Copyright (c) 2008-2011
+	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,8 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifndef __FreeBSD__
 #define _POSIX_C_SOURCE 1 /* fileno() */
 #define _BSD_SOURCE /* strdup() */
+#define _DARWIN_C_SOURCE /* strdup() on OS X */
+#endif
 
 /* system includes */
 #include <stdlib.h>
@@ -41,6 +44,7 @@ THE SOFTWARE.
 #include <pthread.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <limits.h>
 
 /* pandora.com library */
 #include <piano.h>
@@ -49,28 +53,20 @@ THE SOFTWARE.
 #include "terminal.h"
 #include "config.h"
 #include "ui.h"
-#include "ui_act.h"
+#include "ui_dispatch.h"
 #include "ui_readline.h"
-
-typedef void (*BarKeyShortcutFunc_t) (BarApp_t *app, FILE *curFd);
 
 /*	copy proxy settings to waitress handle
  */
 static void BarMainLoadProxy (const BarSettings_t *settings,
 		WaitressHandle_t *waith) {
-	char tmpPath[2];
-
 	/* set up proxy (control proxy for non-us citizen or global proxy for poor
 	 * firewalled fellows) */
 	if (settings->controlProxy != NULL) {
 		/* control proxy overrides global proxy */
-		WaitressSplitUrl (settings->controlProxy, waith->proxyHost,
-				sizeof (waith->proxyHost), waith->proxyPort,
-				sizeof (waith->proxyPort), tmpPath, sizeof (tmpPath));
+		WaitressSetProxy (waith, settings->controlProxy);
 	} else if (settings->proxy != NULL && strlen (settings->proxy) > 0) {
-		WaitressSplitUrl (settings->proxy, waith->proxyHost,
-				sizeof (waith->proxyHost), waith->proxyPort,
-				sizeof (waith->proxyPort), tmpPath, sizeof (tmpPath));
+		WaitressSetProxy (waith, settings->proxy);
 	}
 }
 
@@ -80,30 +76,34 @@ static bool BarMainLoginUser (BarApp_t *app) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
 	PianoRequestDataLogin_t reqData;
+	bool ret;
+
 	reqData.user = app->settings.username;
 	reqData.password = app->settings.password;
 	reqData.step = 0;
 
-	BarUiMsg (MSG_INFO, "Login... ");
-	if (!BarUiPianoCall (app, PIANO_REQUEST_LOGIN, &reqData, &pRet, &wRet)) {
-		return false;
-	}
-	return true;
+	BarUiMsg (&app->settings, MSG_INFO, "Login... ");
+	ret = BarUiPianoCall (app, PIANO_REQUEST_LOGIN, &reqData, &pRet, &wRet);
+	BarUiStartEventCmd (&app->settings, "userlogin", NULL, NULL, &app->player,
+			NULL, pRet, wRet);
+	return ret;
 }
 
 /*	ask for username/password if none were provided in settings
  */
-static void BarMainGetLoginCredentials (BarSettings_t *settings) {
+static void BarMainGetLoginCredentials (BarSettings_t *settings,
+		BarReadlineFds_t *input) {
 	if (settings->username == NULL) {
 		char nameBuf[100];
 		BarUiMsg (MSG_QUESTION, "Email: ");
-		BarReadlineStr (nameBuf, sizeof (nameBuf), 0, stdin);
+		BarReadlineStr (nameBuf, sizeof (nameBuf), input, BAR_RL_DEFAULT);
 		settings->username = strdup (nameBuf);
 	}
 	if (settings->password == NULL) {
 		char passBuf[100];
-		BarUiMsg (MSG_QUESTION, "Password: ");
-		BarReadlineStr (passBuf, sizeof (passBuf), 1, stdin);
+		BarUiMsg (settings, MSG_QUESTION, "Password: ");
+		BarReadlineStr (passBuf, sizeof (passBuf), input, BAR_RL_NOECHO);
+		write (STDIN_FILENO, "\n", 1);
 		settings->password = strdup (passBuf);
 	}
 }
@@ -113,13 +113,13 @@ static void BarMainGetLoginCredentials (BarSettings_t *settings) {
 static bool BarMainGetStations (BarApp_t *app) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
+	bool ret;
 
-	BarUiMsg (MSG_INFO, "Get stations... ");
-	if (!BarUiPianoCall (app, PIANO_REQUEST_GET_STATIONS, NULL, &pRet,
-			&wRet)) {
-		return false;
-	}
-	return true;
+	BarUiMsg (&app->settings, MSG_INFO, "Get stations... ");
+	ret = BarUiPianoCall (app, PIANO_REQUEST_GET_STATIONS, NULL, &pRet, &wRet);
+	BarUiStartEventCmd (&app->settings, "usergetstations", NULL, NULL, &app->player,
+			app->ph.stations, pRet, wRet);
+	return ret;
 }
 
 /*	get initial station from autostart setting or user input
@@ -130,95 +130,27 @@ static void BarMainGetInitialStation (BarApp_t *app) {
 		app->curStation = PianoFindStationById (app->ph.stations,
 				app->settings.autostartStation);
 		if (app->curStation == NULL) {
-			BarUiMsg (MSG_ERR, "Error: Autostart station not found.\n");
+			BarUiMsg (&app->settings, MSG_ERR,
+					"Error: Autostart station not found.\n");
 		}
 	}
 	/* no autostart? ask the user */
 	if (app->curStation == NULL) {
-		app->curStation = BarUiSelectStation (&(app->ph), "Select station: ",
-				app->settings.sortOrder, stdin);
+		app->curStation = BarUiSelectStation (app, "Select station: ", NULL);
 	}
 	if (app->curStation != NULL) {
-		BarUiPrintStation (app->curStation);
+		BarUiPrintStation (&app->settings, app->curStation);
 	}
 }
 
 /*	wait for user input
  */
 static void BarMainHandleUserInput (BarApp_t *app) {
-	struct timeval selectTimeout;
-	fd_set readSetCopy;
-	char buf = '\0';
-
-	/* select modifies its arguments => copy the set */
-	memcpy (&readSetCopy, &app->readSet, sizeof (app->readSet));
-	selectTimeout.tv_sec = 1;
-	selectTimeout.tv_usec = 0;
-
-	/* in the meantime: wait for user actions */
-	if (select (app->maxFd, &readSetCopy, NULL, NULL, &selectTimeout) > 0) {
-		FILE *curFd = NULL;
-
-		if (FD_ISSET(app->selectFds[0], &readSetCopy)) {
-			curFd = stdin;
-		} else if (app->selectFds[1] != -1 && FD_ISSET(app->selectFds[1],
-				&readSetCopy)) {
-			curFd = app->ctlFd;
-		}
-		buf = fgetc (curFd);
-
-		size_t i;
-		for (i = 0; i < BAR_KS_COUNT; i++) {
-			if (app->settings.keys[i] == buf) {
-				static const BarKeyShortcutFunc_t idToF[] = {BarUiActHelp,
-						BarUiActLoveSong, BarUiActBanSong,
-						BarUiActAddMusic, BarUiActCreateStation,
-						BarUiActDeleteStation, BarUiActExplain,
-						BarUiActStationFromGenre, BarUiActHistory,
-						BarUiActSongInfo, BarUiActAddSharedStation,
-						BarUiActMoveSong, BarUiActSkipSong, BarUiActPause,
-						BarUiActQuit, BarUiActRenameStation,
-						BarUiActSelectStation, BarUiActTempBanSong,
-						BarUiActPrintUpcoming, BarUiActSelectQuickMix,
-						BarUiActDebug, BarUiActBookmark};
-				idToF[i] (app, curFd);
-				break;
-			}
-		}
-	}
-}
-
-/*	append current song to history list and move to the next song
- */
-static void BarMainNextSong (BarApp_t *app) {
-	if (app->settings.history != 0) {
-		/* prepend song to history list */
-		PianoSong_t *tmpSong = app->songHistory;
-		app->songHistory = app->playlist;
-		/* select next song */
-		app->playlist = app->playlist->next;
-		app->songHistory->next = tmpSong;
-
-		/* limit history's length */
-		/* start with 1, so we're stopping at n-1 and have the
-		 * chance to set ->next = NULL */
-		unsigned int i = 1;
-		tmpSong = app->songHistory;
-		while (i < app->settings.history && tmpSong != NULL) {
-			tmpSong = tmpSong->next;
-			++i;
-		}
-		/* if too many songs in history... */
-		if (tmpSong != NULL) {
-			PianoSong_t *delSong = tmpSong->next;
-			tmpSong->next = NULL;
-			if (delSong != NULL) {
-				PianoDestroyPlaylist (delSong);
-			}
-		}
-	} else {
-		/* don't keep history */
-		app->playlist = app->playlist->next;
+	char buf[2];
+	if (BarReadline (buf, sizeof (buf), NULL, &app->input,
+			BAR_RL_FULLRETURN | BAR_RL_NOECHO, 1) > 0) {
+		BarUiDispatch (app, buf[0], app->curStation, app->playlist, true,
+				BAR_DC_GLOBAL);
 	}
 }
 
@@ -231,20 +163,20 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 	reqData.station = app->curStation;
 	reqData.format = app->settings.audioFormat;
 
-	BarUiMsg (MSG_INFO, "Receiving new playlist... ");
+	BarUiMsg (&app->settings, MSG_INFO, "Receiving new playlist... ");
 	if (!BarUiPianoCall (app, PIANO_REQUEST_GET_PLAYLIST,
 			&reqData, &pRet, &wRet)) {
 		app->curStation = NULL;
 	} else {
 		app->playlist = reqData.retPlaylist;
 		if (app->playlist == NULL) {
-			BarUiMsg (MSG_INFO, "No tracks left.\n");
+			BarUiMsg (&app->settings, MSG_INFO, "No tracks left.\n");
 			app->curStation = NULL;
 		}
 	}
 	BarUiStartEventCmd (&app->settings, "stationfetchplaylist",
-			app->curStation, app->playlist, &app->player, pRet,
-			wRet);
+			app->curStation, app->playlist, &app->player, app->ph.stations,
+			pRet, wRet);
 }
 
 /*	start new player thread
@@ -255,7 +187,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 			app->playlist->stationId) : NULL);
 
 	if (app->playlist->audioUrl == NULL) {
-		BarUiMsg (MSG_ERR, "Invalid song url.\n");
+		BarUiMsg (&app->settings, MSG_ERR, "Invalid song url.\n");
 	} else {
 		/* setup player */
 		memset (&app->player, 0, sizeof (app->player));
@@ -265,21 +197,17 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 
 		/* set up global proxy, player is NULLed on songfinish */
 		if (app->settings.proxy != NULL) {
-			char tmpPath[2];
-			WaitressSplitUrl (app->settings.proxy,
-					app->player.waith.proxyHost,
-					sizeof (app->player.waith.proxyHost),
-					app->player.waith.proxyPort,
-					sizeof (app->player.waith.proxyPort), tmpPath,
-					sizeof (tmpPath));
+			WaitressSetProxy (&app->player.waith, app->settings.proxy);
 		}
 
 		app->player.gain = app->playlist->fileGain;
+		app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
 		app->player.audioFormat = app->playlist->audioFormat;
+		app->player.settings = &app->settings;
 
 		/* throw event */
 		BarUiStartEventCmd (&app->settings, "songstart",
-				app->curStation, app->playlist, &app->player,
+				app->curStation, app->playlist, &app->player, app->ph.stations,
 				PIANO_RET_OK, WAITRESS_RET_OK);
 
 		/* prevent race condition, mode must _not_ be FREED if
@@ -297,7 +225,8 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 	void *threadRet;
 
 	BarUiStartEventCmd (&app->settings, "songfinish", app->curStation,
-			app->playlist, &app->player, PIANO_RET_OK, WAITRESS_RET_OK);
+			app->playlist, &app->player, app->ph.stations, PIANO_RET_OK,
+			WAITRESS_RET_OK);
 
 	/* FIXME: pthread_join blocks everything if network connection
 	 * is hung up e.g. */
@@ -324,7 +253,7 @@ static void BarMainPrintTime (BarApp_t *app) {
 		sign = POSITIVE;
 		songRemaining = -songRemaining;
 	}
-	BarUiMsg (MSG_TIME, "%c%02i:%02i/%02i:%02i\r",
+	BarUiMsg (&app->settings, MSG_TIME, "%c%02i:%02i/%02i:%02i\r",
 			(sign == POSITIVE ? '+' : '-'),
 			songRemaining / 60, songRemaining % 60,
 			app->player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
@@ -336,7 +265,7 @@ static void BarMainPrintTime (BarApp_t *app) {
 static void BarMainLoop (BarApp_t *app) {
 	pthread_t playerThread;
 
-	BarMainGetLoginCredentials (&app->settings);
+	BarMainGetLoginCredentials (&app->settings, &app->input);
 
 	BarMainLoadProxy (&app->settings, &app->waith);
 
@@ -367,7 +296,9 @@ static void BarMainLoop (BarApp_t *app) {
 			if (app->curStation != NULL) {
 				/* what's next? */
 				if (app->playlist != NULL) {
-					BarMainNextSong (app);
+					PianoSong_t *histsong = app->playlist;
+					app->playlist = app->playlist->next;
+					BarUiHistoryPrepend (app, histsong);
 				}
 				if (app->playlist == NULL) {
 					BarMainGetPlaylist (app);
@@ -395,8 +326,7 @@ static void BarMainLoop (BarApp_t *app) {
 
 int main (int argc, char **argv) {
 	static BarApp_t app;
-	/* FIXME: max path length? */
-	char ctlPath[1024];
+	char ctlPath[PATH_MAX];
 	/* terminal attributes _before_ we started messing around with ~ECHO */
 	struct termios termOrig;
 
@@ -412,39 +342,44 @@ int main (int argc, char **argv) {
 	PianoInit (&app.ph);
 
 	WaitressInit (&app.waith);
-	strncpy (app.waith.host, PIANO_RPC_HOST, sizeof (app.waith.host)-1);
-	strncpy (app.waith.port, PIANO_RPC_PORT, sizeof (app.waith.port)-1);
+	app.waith.url.host = strdup (PIANO_RPC_HOST);
+	app.waith.url.port = strdup (PIANO_RPC_PORT);
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
 
-	BarUiMsg (MSG_NONE, "Welcome to " PACKAGE " (" VERSION ")! "
-			"Press %c for a list of commands.\n",
-			app.settings.keys[BAR_KS_HELP]);
+	BarUiMsg (&app.settings, MSG_NONE,
+			"Welcome to " PACKAGE " (" VERSION ")! ");
+	if (app.settings.keys[BAR_KS_HELP] == BAR_KS_DISABLED) {
+		BarUiMsg (&app.settings, MSG_NONE, "\n");
+	} else {
+		BarUiMsg (&app.settings, MSG_NONE,
+				"Press %c for a list of commands.\n",
+				app.settings.keys[BAR_KS_HELP]);
+	}
 
 	/* init fds */
-	FD_ZERO(&app.readSet);
-	app.selectFds[0] = fileno (stdin);
-	FD_SET(app.selectFds[0], &app.readSet);
+	FD_ZERO(&app.input.set);
+	app.input.fds[0] = STDIN_FILENO;
+	FD_SET(app.input.fds[0], &app.input.set);
 
 	BarGetXdgConfigDir (PACKAGE "/ctl", ctlPath, sizeof (ctlPath));
-	/* FIXME: why is r_+_ required? */
-	app.ctlFd = fopen (ctlPath, "r+");
-	if (app.ctlFd != NULL) {
-		app.selectFds[1] = fileno (app.ctlFd);
-		FD_SET(app.selectFds[1], &app.readSet);
-		BarUiMsg (MSG_INFO, "Control fifo at %s opened\n", ctlPath);
-	} else {
-		app.selectFds[1] = -1;
+	/* open fifo read/write so it won't EOF if nobody writes to it */
+	assert (sizeof (app.input.fds) / sizeof (*app.input.fds) >= 2);
+	app.input.fds[1] = open (ctlPath, O_RDWR);
+	if (app.input.fds[1] != -1) {
+		FD_SET(app.input.fds[1], &app.input.set);
+		BarUiMsg (&app.settings, MSG_INFO, "Control fifo at %s opened\n",
+				ctlPath);
 	}
-	app.maxFd = app.selectFds[0] > app.selectFds[1] ? app.selectFds[0] :
-			app.selectFds[1];
-	++app.maxFd;
+	app.input.maxfd = app.input.fds[0] > app.input.fds[1] ? app.input.fds[0] :
+			app.input.fds[1];
+	++app.input.maxfd;
 
 	BarMainLoop (&app);
 
-	if (app.ctlFd != NULL) {
-		fclose (app.ctlFd);
+	if (app.input.fds[1] != -1) {
+		close (app.input.fds[1]);
 	}
 
 	PianoDestroy (&app.ph);

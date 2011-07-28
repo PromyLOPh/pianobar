@@ -22,7 +22,10 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef __FreeBSD__
 #define _BSD_SOURCE /* required by strdup() */
+#define _DARWIN_C_SOURCE /* required by strdup() on OS X */
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
