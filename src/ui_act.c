@@ -428,6 +428,11 @@ BarUiActCallback(BarUiActPrintUpcoming) {
 static void BarUiActQuickmixCallback (BarApp_t *app, char *buf) {
 	PianoStation_t *curStation = app->ph.stations;
 
+	/* do nothing if buf is empty/contains more than one character */
+	if (buf[0] == '\0' || buf[1] != '\0') {
+		return;
+	}
+
 	switch (*buf) {
 		case 't':
 			/* toggle */
