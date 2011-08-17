@@ -154,3 +154,5 @@ install-libpiano:
 	install -m644 libpiano.a ${DESTDIR}/${LIBDIR}/
 	install -d ${DESTDIR}/${INCDIR}/
 	install -m644 src/libpiano/piano.h ${DESTDIR}/${INCDIR}/
+
+.PHONY: install test debug all
