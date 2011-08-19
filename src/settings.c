@@ -153,10 +153,11 @@ void BarSettingsRead (BarSettings_t *settings) {
 
 	/* read config file */
 	while (1) {
-		int scanRet = fscanf (configfd, "%255s = %255[^\n]", key, val);
+		char lwhite, rwhite;
+		int scanRet = fscanf (configfd, "%255s%c=%c%255[^\n]", key, &lwhite, &rwhite, val);
 		if (scanRet == EOF) {
 			break;
-		} else if (scanRet != 2) {
+		} else if (scanRet != 4 || lwhite != ' ' || rwhite != ' ') {
 			/* invalid config line */
 			continue;
 		}
