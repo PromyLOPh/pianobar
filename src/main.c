@@ -56,6 +56,8 @@ THE SOFTWARE.
 #include "ui_dispatch.h"
 #include "ui_readline.h"
 
+#define streq(a, b) (strcmp (a , b) == 0)
+
 /*	copy proxy settings to waitress handle
  */
 static void BarMainLoadProxy (const BarSettings_t *settings,
@@ -363,7 +365,12 @@ int main (int argc, char **argv) {
 	app.input.fds[0] = STDIN_FILENO;
 	FD_SET(app.input.fds[0], &app.input.set);
 
-	BarGetXdgConfigDir (PACKAGE "/ctl", ctlPath, sizeof (ctlPath));
+	if (streq (app.settings.ctlPath, "")) {
+		BarGetXdgConfigDir (PACKAGE "/ctl", ctlPath, sizeof (ctlPath));
+	} else {
+		snprintf (ctlPath, sizeof (ctlPath), "%s", app.settings.ctlPath);
+	}
+
 	/* open fifo read/write so it won't EOF if nobody writes to it */
 	assert (sizeof (app.input.fds) / sizeof (*app.input.fds) >= 2);
 	app.input.fds[1] = open (ctlPath, O_RDWR);
