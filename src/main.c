@@ -70,25 +70,6 @@ static void BarMainLoadProxy (const BarSettings_t *settings,
 	}
 }
 
-/*	authenticate user
- */
-static bool BarMainLoginUser (BarApp_t *app) {
-	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
-	PianoRequestDataLogin_t reqData;
-	bool ret;
-
-	reqData.user = app->settings.username;
-	reqData.password = app->settings.password;
-	reqData.step = 0;
-
-	BarUiMsg (&app->settings, MSG_INFO, "Login... ");
-	ret = BarUiPianoCall (app, PIANO_REQUEST_LOGIN, &reqData, &pRet, &wRet);
-	BarUiStartEventCmd (&app->settings, "userlogin", NULL, NULL, &app->player,
-			NULL, pRet, wRet);
-	return ret;
-}
-
 /*	ask for username/password if none were provided in settings
  */
 static void BarMainGetLoginCredentials (BarSettings_t *settings,
@@ -106,6 +87,47 @@ static void BarMainGetLoginCredentials (BarSettings_t *settings,
 		write (STDIN_FILENO, "\n", 1);
 		settings->password = strdup (passBuf);
 	}
+}
+
+/*	authenticate user
+ */
+static bool BarMainLoginUser (BarApp_t *app) {
+	PianoReturn_t pRet;
+	WaitressReturn_t wRet;
+	PianoRequestDataLogin_t reqData;
+	bool ret;
+
+	/* give the user a few chances to enter credentials correctly */
+	char* origUsername = app->settings.username;
+	char* origPassword = app->settings.password;
+	int tries = 3;
+	while (1) {
+		BarMainGetLoginCredentials (&app->settings, &app->input);
+
+		reqData.user = app->settings.username;
+		reqData.password = app->settings.password;
+		reqData.step = 0;
+
+		BarUiMsg (&app->settings, MSG_INFO, "Login... ");
+		ret = BarUiPianoCall (app, PIANO_REQUEST_LOGIN, &reqData, &pRet, &wRet);
+
+		if (!ret) {
+			if (!--tries) {
+				break;
+			}
+
+			/* restore original credentials */
+			app->settings.username = origUsername;
+			app->settings.password = origPassword;
+			continue;
+		}
+
+		break;
+	}
+
+	BarUiStartEventCmd (&app->settings, "userlogin", NULL, NULL, &app->player,
+			NULL, pRet, wRet);
+	return ret;
 }
 
 /*	get station list
@@ -264,8 +286,6 @@ static void BarMainPrintTime (BarApp_t *app) {
  */
 static void BarMainLoop (BarApp_t *app) {
 	pthread_t playerThread;
-
-	BarMainGetLoginCredentials (&app->settings, &app->input);
 
 	BarMainLoadProxy (&app->settings, &app->waith);
 
