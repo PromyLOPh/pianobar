@@ -737,7 +737,7 @@ size_t BarUiListSongs (const BarSettings_t *settings,
 		if (filter == NULL ||
 				(filter != NULL && (BarStrCaseStr (song->artist, filter) != NULL ||
 				BarStrCaseStr (song->title, filter) != NULL))) {
-			BarUiMsg (settings, MSG_LIST, "%2lu) %s - %s %s%s\n", i, song->artist,
+			BarUiMsg (settings, MSG_LIST, "%2lu) %s - %s%s%s\n", i, song->artist,
 					song->title,
 					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
 					(song->rating == PIANO_RATE_BAN) ? settings->banIcon : "");
