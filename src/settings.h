@@ -91,6 +91,7 @@ typedef struct {
 	char *eventCmd;
 	char *loveIcon;
 	char *banIcon;
+	char *ctlPath;
 	char *atIcon;
 	char *npSongFormat;
 	char *npStationFormat;

@@ -88,6 +88,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->eventCmd);
 	free (settings->loveIcon);
 	free (settings->banIcon);
+	free (settings->ctlPath);
 	free (settings->atIcon);
 	free (settings->npSongFormat);
 	free (settings->npStationFormat);
@@ -124,6 +125,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->loveIcon = strdup (" <3");
 	settings->banIcon = strdup (" </3");
 	settings->atIcon = strdup (" @ ");
+	settings->ctlPath = strdup("");
 	settings->npSongFormat = strdup ("\"%t\" by \"%a\" on \"%l\"%r%@%s");
 	settings->npStationFormat = strdup ("Station \"%n\" (%i)");
 
@@ -220,6 +222,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 		} else if (streq ("at_icon", key)) {
 			free (settings->atIcon);
 			settings->atIcon = strdup (val);
+		} else if (streq ("ctl_path", key)) {
+			free (settings->ctlPath);
+			settings->ctlPath = strdup(val);
 		} else if (streq ("volume", key)) {
 			settings->volume = atoi (val);
 		} else if (streq ("format_nowplaying_song", key)) {
