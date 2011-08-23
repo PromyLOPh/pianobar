@@ -37,6 +37,7 @@
 #audio_format = mp3
 #autostart_station = 123456
 #event_command = /home/user/.config/pianobar/eventcmd
+#fifo = /tmp/pianobar
 #sort = quickmix_10_name_az
 #love_icon = [+]
 #ban_icon = [-]

@@ -94,6 +94,7 @@ typedef struct {
 	char *atIcon;
 	char *npSongFormat;
 	char *npStationFormat;
+	char *fifo;
 	BarMsgFormatStr_t msgFormat[MSG_COUNT];
 } BarSettings_t;
 

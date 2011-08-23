@@ -326,7 +326,6 @@ static void BarMainLoop (BarApp_t *app) {
 
 int main (int argc, char **argv) {
 	static BarApp_t app;
-	char ctlPath[PATH_MAX];
 	/* terminal attributes _before_ we started messing around with ~ECHO */
 	struct termios termOrig;
 
@@ -363,14 +362,13 @@ int main (int argc, char **argv) {
 	app.input.fds[0] = STDIN_FILENO;
 	FD_SET(app.input.fds[0], &app.input.set);
 
-	BarGetXdgConfigDir (PACKAGE "/ctl", ctlPath, sizeof (ctlPath));
 	/* open fifo read/write so it won't EOF if nobody writes to it */
 	assert (sizeof (app.input.fds) / sizeof (*app.input.fds) >= 2);
-	app.input.fds[1] = open (ctlPath, O_RDWR);
+	app.input.fds[1] = open (app.settings.fifo, O_RDWR);
 	if (app.input.fds[1] != -1) {
 		FD_SET(app.input.fds[1], &app.input.set);
 		BarUiMsg (&app.settings, MSG_INFO, "Control fifo at %s opened\n",
-				ctlPath);
+				app.settings.fifo);
 	}
 	app.input.maxfd = app.input.fds[0] > app.input.fds[1] ? app.input.fds[0] :
 			app.input.fds[1];

@@ -177,6 +177,12 @@ File that is executed when event occurs. See section
 .B EVENTCMD
 
 .TP
+.B fifo = /home/user/.config/pianobar/ctl
+Location of control fifo. Defaults to $XDG_CONFIG_HOME/pianobar/ctl (which is
+usually the value above). See section
+.B REMOTE CONTROL
+
+.TP
 .B format_nowplaying_song = \[dq]%t\[dq] by \[dq]%a\[dq] on \[dq]%l\[dq]%r%@%s
 Now playing song message format. Available format characters are:
 
@@ -267,8 +273,8 @@ can be controlled through a fifo. You have to create it yourself by executing
 
  mkfifo ~/.config/pianobar/ctl
 
-Adjust the path if you set up a $XDG_CONFIG_HOME. Afterwards you can write
-commands directly into the fifo. Example (next song):
+Adjust the path if you set up a $XDG_CONFIG_HOME or changed the fifo setting.
+Afterwards you can write commands directly into the fifo. Example (next song):
 
  echo -n 'n' > ~/.config/pianobar/ctl
 
