@@ -723,6 +723,20 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 	BarUiMsg (settings, MSG_PLAYING, outstr);
 }
 
+/*	Incremets two digit ASCII counter
+ */
+static void BarUiIncDigits (char digits[3]) {
+	++digits[1];
+	if (digits[1] == ':') {
+		digits[1] = '0';
+		digits[0] |= 0x30;
+		++digits[0];
+		if (digits[0] == ':') {
+			digits[0] = ' ';
+		}
+	}
+}
+
 /*	Print list of songs
  *	@param pianobar settings
  *	@param linked list of songs
@@ -732,18 +746,25 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 size_t BarUiListSongs (const BarSettings_t *settings,
 		const PianoSong_t *song, const char *filter) {
 	size_t i = 0;
+	char digits[3] = " 0";
 
 	while (song != NULL) {
 		if (filter == NULL ||
 				(filter != NULL && (BarStrCaseStr (song->artist, filter) != NULL ||
 				BarStrCaseStr (song->title, filter) != NULL))) {
-			BarUiMsg (settings, MSG_LIST, "%2lu) %s - %s %s%s\n", i, song->artist,
-					song->title,
-					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
-					(song->rating == PIANO_RATE_BAN) ? settings->banIcon : "");
+			char outstr[512];
+			const char *vals[] = {digits, song->artist, song->title,
+					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon :
+					((song->rating == PIANO_RATE_BAN) ? settings->banIcon : "")};
+
+			BarUiCustomFormat (outstr, sizeof (outstr), settings->listSongFormat,
+					"iatr", vals);
+			BarUiAppendNewline (outstr, sizeof (outstr));
+			BarUiMsg (settings, MSG_LIST, outstr);
 		}
-		song = song->next;
 		i++;
+		BarUiIncDigits (digits);
+		song = song->next;
 	}
 
 	return i;
