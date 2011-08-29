@@ -199,6 +199,24 @@ Song title
 Rating icon
 
 .TP
+.B format_msg_none = %s
+.TQ
+.B format_msg_info = (i) %s
+.TQ
+.B format_msg_nowplaying = |>  %s
+.TQ
+.B format_msg_time = #   %s
+.TQ
+.B format_msg_err = /!\\\\ %s
+.TQ
+.B format_msg_question = [?] %s
+.TQ
+.B format_msg_list = \\t%s
+Message format strings.
+.B %s
+is replaced with the actual message.
+
+.TP
 .B format_nowplaying_song = \[dq]%t\[dq] by \[dq]%a\[dq] on \[dq]%l\[dq]%r%@%s
 Now playing song message format. Available format characters are:
 
@@ -233,24 +251,6 @@ Station name
 
 .B %i
 Station id
-
-.TP
-.B format_msg_none = %s
-.TQ
-.B format_msg_info = (i) %s
-.TQ
-.B format_msg_nowplaying = |>  %s
-.TQ
-.B format_msg_time = #   %s
-.TQ
-.B format_msg_err = /!\\\\ %s
-.TQ
-.B format_msg_question = [?] %s
-.TQ
-.B format_msg_list = \\t%s
-Message format strings.
-.B %s
-is replaced with the actual message.
 
 .TP
 .B history = 5
