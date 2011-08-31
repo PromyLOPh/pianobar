@@ -43,7 +43,12 @@ API_KEY = "################################"
 API_SECRET = "################################"
 USERNAME = "########"
 PASSWORD = "########"
+
+# When is a scrobble a scrobble?
+# See http://www.last.fm/api/scrobbling#when-is-a-scrobble-a-scrobble
 THRESHOLD = 50 # the percentage of the song that must have been played to scrobble
+PLAYED_ENOUGH = 240 # or if it has played for this many seconds
+MIN_DURATION = 30 # minimum duration for a song to be "scrobblable"
 
 def main():
 
@@ -51,18 +56,26 @@ def main():
   lines = sys.stdin.readlines()
   fields = dict([line.strip().split("=", 1) for line in lines])
   
-  # fields: title, artist, album, songDuration, songPlayed, rating, stationName, pRet, pRetStr, wRet, wRetStr
+  # fields: title, artist, album, songDuration, songPlayed, rating, stationName, pRet, pRetStr, wRet, wRetStr, rating
   artist = fields["artist"]
   title = fields["title"]
   song_duration = int(fields["songDuration"])
   song_played = int(fields["songPlayed"])
+  rating = int(fields["rating"])
 
   # events: songstart, songfinish, ???
-  if event == "songfinish" and 100.0 * song_played / song_duration > THRESHOLD:
+  import pylast
+  if event == "songfinish" and song_duration > 1000*MIN_DURATION and (100.0 * song_played / song_duration > THRESHOLD or song_played > 1000*PLAYED_ENOUGH):
     song_started = int(time.time() - song_played / 1000.0)
-    import pylast
     network = pylast.LastFMNetwork(api_key = API_KEY, api_secret = API_SECRET, username = USERNAME, password_hash = pylast.md5(PASSWORD))
     network.scrobble(artist = artist, title = title, timestamp = song_started)
+  if event == "songfinish" and rating > 0:
+    network = pylast.LastFMNetwork(api_key = API_KEY, api_secret = API_SECRET, username = USERNAME, password_hash = pylast.md5(PASSWORD))
+    track = network.get_track(artist, title)
+    if rating == 1:
+      track.love()
+    elif rating == 2:
+      track.ban() 
 
 if __name__ == "__main__":
   main()
