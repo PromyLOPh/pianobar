@@ -124,6 +124,10 @@ clean:
 			${LIBEZXML_OBJ} ${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} \
 			${LIBEZXML_RELOBJ} pianobar libpiano.so* libpiano.a waitress-test
 
+# For those who don't set CC in their enviorment vars and want to use clang.
+clang: CC=clang
+clang: pianobar
+
 all: pianobar
 
 debug: pianobar

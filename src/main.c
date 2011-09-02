@@ -35,6 +35,7 @@ THE SOFTWARE.
 #include <sys/select.h>
 #include <time.h>
 #include <ctype.h>
+#include <getopt.h>			// For accessing command line options.
 /* open () */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -324,6 +325,58 @@ static void BarMainLoop (BarApp_t *app) {
 	}
 }
 
+/* Evaluate command line options and attempt to extract email and password. */
+int eval_options(int argc, char **argv, BarSettings_t *settings) {
+	int c;
+	int r = 1;
+	
+	while(1) {
+		static struct option long_options[] = {
+			{"email", 1, 0, 'e'},
+			{"password", 1, 0, 'p'},
+			{"version", 0, 0, 'v'},
+			{"help", 0, 0, 'h'},
+			{0, 0, 0, 0}
+		};
+		
+		int option_index = 0;
+		
+		c = getopt_long(argc, argv, "e:p:vh", long_options, &option_index);
+		
+		if (c == -1)
+			break;
+			
+		switch(c) {
+		case 'e':
+			settings->username = strdup(optarg);
+			break;
+			
+		case 'p':
+			settings->password = strdup(optarg);
+			break;
+			
+		case 'v':
+			printf("%s (%s)\n", PACKAGE, VERSION);
+			r = 0; // Don't continue executing the program.
+			break;
+			
+		case 'h':
+			printf("Usage: %s [options]\n", argv[0]);
+			printf("options:\n");
+			printf("  --email\t[ -e ] arg\tEmail address for authentication\n");
+			printf("  --password\t[ -p ] arg\tPassword for authentication\n");
+			printf("  --version\t[ -v ]\t\tShow version information\n");
+			r = 0; // Don't contnue executing the program.
+			break;
+		
+		default:
+			r = 0;
+		}
+	}
+	
+	return r;
+}
+
 int main (int argc, char **argv) {
 	static BarApp_t app;
 	/* terminal attributes _before_ we started messing around with ~ECHO */
@@ -346,45 +399,49 @@ int main (int argc, char **argv) {
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
+	
+	// TODO: eval_options should be wrapped around where the maintainer thinks its appropriate!
+	if (eval_options(argc, argv, &app.settings)) {
 
-	BarUiMsg (&app.settings, MSG_NONE,
-			"Welcome to " PACKAGE " (" VERSION ")! ");
-	if (app.settings.keys[BAR_KS_HELP] == BAR_KS_DISABLED) {
-		BarUiMsg (&app.settings, MSG_NONE, "\n");
-	} else {
 		BarUiMsg (&app.settings, MSG_NONE,
-				"Press %c for a list of commands.\n",
-				app.settings.keys[BAR_KS_HELP]);
+				"Welcome to " PACKAGE " (" VERSION ")! ");
+		if (app.settings.keys[BAR_KS_HELP] == BAR_KS_DISABLED) {
+			BarUiMsg (&app.settings, MSG_NONE, "\n");
+		} else {
+			BarUiMsg (&app.settings, MSG_NONE,
+					"Press %c for a list of commands.\n",
+					app.settings.keys[BAR_KS_HELP]);
+		}
+
+		/* init fds */
+		FD_ZERO(&app.input.set);
+		app.input.fds[0] = STDIN_FILENO;
+		FD_SET(app.input.fds[0], &app.input.set);
+
+		/* open fifo read/write so it won't EOF if nobody writes to it */
+		assert (sizeof (app.input.fds) / sizeof (*app.input.fds) >= 2);
+		app.input.fds[1] = open (app.settings.fifo, O_RDWR);
+		if (app.input.fds[1] != -1) {
+			FD_SET(app.input.fds[1], &app.input.set);
+			BarUiMsg (&app.settings, MSG_INFO, "Control fifo at %s opened\n",
+					app.settings.fifo);
+		}
+		app.input.maxfd = app.input.fds[0] > app.input.fds[1] ? app.input.fds[0] :
+				app.input.fds[1];
+		++app.input.maxfd;
+
+		BarMainLoop (&app);
+
+		if (app.input.fds[1] != -1) {
+			close (app.input.fds[1]);
+		}
+
+		PianoDestroy (&app.ph);
+		PianoDestroyPlaylist (app.songHistory);
+		PianoDestroyPlaylist (app.playlist);
+		ao_shutdown();
+		BarSettingsDestroy (&app.settings);
 	}
-
-	/* init fds */
-	FD_ZERO(&app.input.set);
-	app.input.fds[0] = STDIN_FILENO;
-	FD_SET(app.input.fds[0], &app.input.set);
-
-	/* open fifo read/write so it won't EOF if nobody writes to it */
-	assert (sizeof (app.input.fds) / sizeof (*app.input.fds) >= 2);
-	app.input.fds[1] = open (app.settings.fifo, O_RDWR);
-	if (app.input.fds[1] != -1) {
-		FD_SET(app.input.fds[1], &app.input.set);
-		BarUiMsg (&app.settings, MSG_INFO, "Control fifo at %s opened\n",
-				app.settings.fifo);
-	}
-	app.input.maxfd = app.input.fds[0] > app.input.fds[1] ? app.input.fds[0] :
-			app.input.fds[1];
-	++app.input.maxfd;
-
-	BarMainLoop (&app);
-
-	if (app.input.fds[1] != -1) {
-		close (app.input.fds[1]);
-	}
-
-	PianoDestroy (&app.ph);
-	PianoDestroyPlaylist (app.songHistory);
-	PianoDestroyPlaylist (app.playlist);
-	ao_shutdown();
-	BarSettingsDestroy (&app.settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */
 	BarTermRestore (&termOrig);
