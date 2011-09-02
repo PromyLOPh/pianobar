@@ -808,17 +808,19 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		BarUiMsg (settings, MSG_ERR, "Cannot fork eventcmd. (%s)\n", strerror (errno));
 	} else {
 		/* parent */
-		int status, printfret;
-		char pipeBuf[1024];
+		int status;
 		PianoStation_t *songStation = NULL;
+		FILE *pipeWriteFd;
 
 		close (pipeFd[0]);
+
+		pipeWriteFd = fdopen (pipeFd[1], "w");
 
 		if (curSong != NULL && stations != NULL && curStation->isQuickMix) {
 			songStation = PianoFindStationById (stations, curSong->stationId);
 		}
 
-		printfret = snprintf (pipeBuf, sizeof (pipeBuf),
+		fprintf (pipeWriteFd,
 				"artist=%s\n"
 				"title=%s\n"
 				"album=%s\n"
@@ -848,9 +850,6 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 				curSong == NULL ? PIANO_RATE_NONE : curSong->rating,
 				curSong == NULL ? "" : curSong->detailUrl
 				);
-		assert (printfret < sizeof (pipeBuf));
-
-		write (pipeFd[1], pipeBuf, strlen (pipeBuf));
 
 		if (stations != NULL) {
 			/* send station list */
@@ -860,23 +859,21 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 					settings->sortOrder);
 			assert (sortedStations != NULL);
 
-			snprintf (pipeBuf, sizeof (pipeBuf), "stationCount=%zd\n", stationCount);
-			write (pipeFd[1], pipeBuf, strlen (pipeBuf));
+			fprintf (pipeWriteFd, "stationCount=%zd\n", stationCount);
 
 			for (size_t i = 0; i < stationCount; i++) {
 				const PianoStation_t *currStation = sortedStations[i];
-				printfret = snprintf (pipeBuf, sizeof (pipeBuf), "station%zd=%s\n", i,
+				fprintf (pipeWriteFd, "station%zd=%s\n", i,
 						currStation->name);
-				assert (printfret < sizeof (pipeBuf));
-				write (pipeFd[1], pipeBuf, strlen (pipeBuf));
 			}
 			free (sortedStations);
 		} else {
-			const char *msg = "stationCount=0\n";
-			write (pipeFd[1], msg, strlen (msg));
+			const char * const msg = "stationCount=0\n";
+			fwrite (msg, sizeof (*msg), strlen (msg), pipeWriteFd);
 		}
 	
-		close (pipeFd[1]);
+		/* closes pipeFd[1] as well */
+		fclose (pipeWriteFd);
 		/* wait to get rid of the zombie */
 		waitpid (chld, &status, 0);
 	}
