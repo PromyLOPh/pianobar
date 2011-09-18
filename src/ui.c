@@ -744,6 +744,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 				"title=%s\n"
 				"album=%s\n"
 				"coverArt=%s\n"
+				"audioUrl=%s\n"
 				"stationName=%s\n"
 				"songStationName=%s\n"
 				"pRet=%i\n"
@@ -758,6 +759,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 				curSong == NULL ? "" : curSong->title,
 				curSong == NULL ? "" : curSong->album,
 				curSong == NULL ? "" : curSong->coverArt,
+				curSong == NULL ? "" : curSong->audioUrl,
 				curStation == NULL ? "" : curStation->name,
 				songStation == NULL ? "" : songStation->name,
 				pRet,
