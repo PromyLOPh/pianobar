@@ -458,19 +458,6 @@ static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
 	return WAITRESS_RET_OK;
 }
 
-/* FIXME: compiler macros are ugly... */
-#define FINISH(ret) wRet = ret; goto finish;
-#define WRITE_RET(buf, count) \
-		if ((wRet = WaitressPollWrite (sockfd, buf, count, \
-				&sockpoll, waith->socktimeout)) != WAITRESS_RET_OK) { \
-			FINISH (wRet); \
-		}
-#define READ_RET(buf, count, size) \
-		if ((wRet = WaitressPollRead (sockfd, buf, count, \
-				&sockpoll, waith->socktimeout, size)) != WAITRESS_RET_OK) { \
-			FINISH (wRet); \
-		}
-
 /*	send basic http authorization
  *	@param waitress handle
  *	@param url containing user/password
@@ -531,6 +518,19 @@ static int WaitressParseStatusline (const char * const line) {
  *	@return WaitressReturn_t
  */
 WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
+/* FIXME: compiler macros are ugly... */
+#define FINISH(ret) wRet = ret; goto finish;
+#define WRITE_RET(buf, count) \
+		if ((wRet = WaitressPollWrite (sockfd, buf, count, \
+				&sockpoll, waith->socktimeout)) != WAITRESS_RET_OK) { \
+			FINISH (wRet); \
+		}
+#define READ_RET(buf, count, size) \
+		if ((wRet = WaitressPollRead (sockfd, buf, count, \
+				&sockpoll, waith->socktimeout, size)) != WAITRESS_RET_OK) { \
+			FINISH (wRet); \
+		}
+
 	struct addrinfo hints, *res;
 	int sockfd;
 	char *buf = NULL;
@@ -757,11 +757,11 @@ finish:
 		return WAITRESS_RET_PARTIAL_FILE;
 	}
 	return wRet;
-}
 
-#undef CLOSE_RET
+#undef FINISH
 #undef WRITE_RET
 #undef READ_RET
+}
 
 const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 	switch (wRet) {
