@@ -515,6 +515,17 @@ static WaitressCbReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
 	return waith->callback (buf, size, waith->data);
 }
 
+/*	parse http status line and return status code
+ */
+static int WaitressParseStatusline (const char * const line) {
+	char status[4] = "000";
+
+	if (sscanf (line, "HTTP/1.%*1[0-9] %3[0-9] ", status) == 1) {
+		return atoi (status);
+	}
+	return -1;
+}
+
 /*	Receive data from host and call *callback ()
  *	@param waitress handle
  *	@return WaitressReturn_t
@@ -531,7 +542,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	/* header parser vars */
 	char *nextLine = NULL, *thisLine = NULL;
 	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
-	char statusCode[3];
 	unsigned int bufFilled = 0;
 
 	/* initialize */
@@ -666,20 +676,28 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 			switch (hdrParseMode) {
 				/* Status code */
 				case HDRM_HEAD:
-					if (sscanf (thisLine, "HTTP/1.%*1[0-9] %3[0-9] ",
-							statusCode) == 1) {
-						if (memcmp (statusCode, "200", 3) == 0 ||
-								memcmp (statusCode, "206", 3) == 0) {
-							/* everything's fine... */
-						} else if (memcmp (statusCode, "403", 3) == 0) {
-							CLOSE_RET (WAITRESS_RET_FORBIDDEN);
-						} else if (memcmp (statusCode, "404", 3) == 0) {
-							CLOSE_RET (WAITRESS_RET_NOTFOUND);
-						} else {
+					switch (WaitressParseStatusline (thisLine)) {
+						case 200:
+						case 206:
+							hdrParseMode = HDRM_LINES;
+							break;
+
+						case 403:
+							CLOSE_RET(WAITRESS_RET_FORBIDDEN);
+							break;
+
+						case 404:
+							CLOSE_RET(WAITRESS_RET_NOTFOUND);
+							break;
+
+						case -1:
+							/* ignore invalid line */
+							break;
+
+						default:
 							CLOSE_RET (WAITRESS_RET_STATUS_UNKNOWN);
-						}
-						hdrParseMode = HDRM_LINES;
-					} /* endif */
+							break;
+					}
 					break;
 
 				/* Everything else, except status code */
