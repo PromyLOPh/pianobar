@@ -507,6 +507,14 @@ static void WaitressHandleHeader (WaitressHandle_t *waith, const char * const ke
 	}
 }
 
+/*	identity encoding handler
+ */
+static WaitressCbReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
+		char *buf, size_t size) {
+	waith->contentReceived += size;
+	return waith->callback (buf, size, waith->data);
+}
+
 /*	Receive data from host and call *callback ()
  *	@param waitress handle
  *	@return WaitressReturn_t
@@ -705,8 +713,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 
 	/* push remaining bytes */
 	if (bufFilled > 0) {
-		waith->contentReceived += bufFilled;
-		if (waith->callback (thisLine, bufFilled, waith->data) ==
+		if (WaitressHandleIdentity (waith, thisLine, bufFilled) ==
 				WAITRESS_CB_RET_ERR) {
 			CLOSE_RET (WAITRESS_RET_CB_ABORT);
 		}
@@ -716,8 +723,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	do {
 		READ_RET (recvBuf, sizeof (recvBuf), &recvSize);
 		if (recvSize > 0) {
-			waith->contentReceived += recvSize;
-			if (waith->callback (recvBuf, recvSize, waith->data) ==
+			if (WaitressHandleIdentity (waith, recvBuf, recvSize) ==
 					WAITRESS_CB_RET_ERR) {
 				wRet = WAITRESS_RET_CB_ABORT;
 				break;
