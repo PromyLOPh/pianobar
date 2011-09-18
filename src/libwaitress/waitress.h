@@ -27,7 +27,7 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define WAITRESS_RECV_BUFFER 10*1024
+#define WAITRESS_BUFFER_SIZE 10*1024
 
 typedef enum {WAITRESS_METHOD_GET = 0, WAITRESS_METHOD_POST} WaitressMethod_t;
 

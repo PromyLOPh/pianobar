@@ -48,7 +48,7 @@ THE SOFTWARE.
 
 struct audioPlayer {
 	/* buffer; should be large enough */
-	unsigned char buffer[WAITRESS_RECV_BUFFER*2];
+	unsigned char buffer[WAITRESS_BUFFER_SIZE*2];
 	size_t bufferFilled;
 	size_t bufferRead;
 	size_t bytesReceived;

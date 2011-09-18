@@ -459,16 +459,16 @@ static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
 }
 
 /* FIXME: compiler macros are ugly... */
-#define CLOSE_RET(ret) close (sockfd); return ret;
+#define FINISH(ret) wRet = ret; goto finish;
 #define WRITE_RET(buf, count) \
 		if ((wRet = WaitressPollWrite (sockfd, buf, count, \
 				&sockpoll, waith->socktimeout)) != WAITRESS_RET_OK) { \
-			CLOSE_RET (wRet); \
+			FINISH (wRet); \
 		}
 #define READ_RET(buf, count, size) \
 		if ((wRet = WaitressPollRead (sockfd, buf, count, \
 				&sockpoll, waith->socktimeout, size)) != WAITRESS_RET_OK) { \
-			CLOSE_RET (wRet); \
+			FINISH (wRet); \
 		}
 
 /*	send basic http authorization
@@ -533,8 +533,7 @@ static int WaitressParseStatusline (const char * const line) {
 WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	struct addrinfo hints, *res;
 	int sockfd;
-	char recvBuf[WAITRESS_RECV_BUFFER];
-	char writeBuf[2*1024];
+	char *buf = NULL;
 	ssize_t recvSize = 0;
 	WaitressReturn_t wRet = WAITRESS_RET_OK;
 	struct pollfd sockpoll;
@@ -605,39 +604,40 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		++path;
 	}
 
+	buf = malloc (WAITRESS_BUFFER_SIZE * sizeof (*buf));
 	/* send request */
 	if (WaitressProxyEnabled (waith)) {
-		snprintf (writeBuf, sizeof (writeBuf),
+		snprintf (buf, WAITRESS_BUFFER_SIZE,
 			"%s http://%s:%s/%s HTTP/1.0\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
 			waith->url.host,
 			WaitressDefaultPort (&waith->url), path);
 	} else {
-		snprintf (writeBuf, sizeof (writeBuf),
+		snprintf (buf, WAITRESS_BUFFER_SIZE,
 			"%s /%s HTTP/1.0\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
 			path);
 	}
-	WRITE_RET (writeBuf, strlen (writeBuf));
+	WRITE_RET (buf, strlen (buf));
 
-	snprintf (writeBuf, sizeof (writeBuf),
+	snprintf (buf, WAITRESS_BUFFER_SIZE,
 			"Host: %s\r\nUser-Agent: " PACKAGE "\r\n", waith->url.host);
-	WRITE_RET (writeBuf, strlen (writeBuf));
+	WRITE_RET (buf, strlen (buf));
 
 	if (waith->method == WAITRESS_METHOD_POST && waith->postData != NULL) {
-		snprintf (writeBuf, sizeof (writeBuf), "Content-Length: %zu\r\n",
+		snprintf (buf, WAITRESS_BUFFER_SIZE, "Content-Length: %zu\r\n",
 				strlen (waith->postData));
-		WRITE_RET (writeBuf, strlen (writeBuf));
+		WRITE_RET (buf, strlen (buf));
 	}
 
 	/* write authorization headers */
-	if (WaitressFormatAuthorization (waith, &waith->url, "", writeBuf,
-			sizeof (writeBuf))) {
-		WRITE_RET (writeBuf, strlen (writeBuf));
+	if (WaitressFormatAuthorization (waith, &waith->url, "", buf,
+			WAITRESS_BUFFER_SIZE)) {
+		WRITE_RET (buf, strlen (buf));
 	}
 	if (WaitressFormatAuthorization (waith, &waith->proxy, "Proxy-",
-			writeBuf, sizeof (writeBuf))) {
-		WRITE_RET (writeBuf, strlen (writeBuf));
+			buf, WAITRESS_BUFFER_SIZE)) {
+		WRITE_RET (buf, strlen (buf));
 	}
 	
 	if (waith->extraHeaders != NULL) {
@@ -651,16 +651,16 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	}
 
 	/* receive answer */
-	nextLine = recvBuf;
+	nextLine = buf;
 	while (hdrParseMode != HDRM_FINISHED) {
-		READ_RET (recvBuf+bufFilled, sizeof (recvBuf)-1 - bufFilled, &recvSize);
+		READ_RET (buf+bufFilled, WAITRESS_BUFFER_SIZE-1 - bufFilled, &recvSize);
 		if (recvSize == 0) {
 			/* connection closed too early */
-			CLOSE_RET (WAITRESS_RET_CONNECTION_CLOSED);
+			FINISH (WAITRESS_RET_CONNECTION_CLOSED);
 		}
 		bufFilled += recvSize;
-		memset (recvBuf+bufFilled, 0, sizeof (recvBuf) - bufFilled);
-		thisLine = recvBuf;
+		memset (buf+bufFilled, 0, WAITRESS_BUFFER_SIZE - bufFilled);
+		thisLine = buf;
 
 		/* split */
 		while ((nextLine = strchr (thisLine, '\n')) != NULL &&
@@ -683,11 +683,11 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 							break;
 
 						case 403:
-							CLOSE_RET(WAITRESS_RET_FORBIDDEN);
+							FINISH(WAITRESS_RET_FORBIDDEN);
 							break;
 
 						case 404:
-							CLOSE_RET(WAITRESS_RET_NOTFOUND);
+							FINISH(WAITRESS_RET_NOTFOUND);
 							break;
 
 						case -1:
@@ -695,7 +695,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 							break;
 
 						default:
-							CLOSE_RET (WAITRESS_RET_STATUS_UNKNOWN);
+							FINISH (WAITRESS_RET_STATUS_UNKNOWN);
 							break;
 					}
 					break;
@@ -725,23 +725,23 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 			} /* end switch */
 			thisLine = nextLine;
 		} /* end while strchr */
-		memmove (recvBuf, thisLine, thisLine-recvBuf);
-		bufFilled -= (thisLine-recvBuf);
+		memmove (buf, thisLine, thisLine-buf);
+		bufFilled -= (thisLine-buf);
 	} /* end while hdrParseMode */
 
 	/* push remaining bytes */
 	if (bufFilled > 0) {
 		if (WaitressHandleIdentity (waith, thisLine, bufFilled) ==
 				WAITRESS_CB_RET_ERR) {
-			CLOSE_RET (WAITRESS_RET_CB_ABORT);
+			FINISH (WAITRESS_RET_CB_ABORT);
 		}
 	}
 
 	/* receive content */
 	do {
-		READ_RET (recvBuf, sizeof (recvBuf), &recvSize);
+		READ_RET (buf, WAITRESS_BUFFER_SIZE, &recvSize);
 		if (recvSize > 0) {
-			if (WaitressHandleIdentity (waith, recvBuf, recvSize) ==
+			if (WaitressHandleIdentity (waith, buf, recvSize) ==
 					WAITRESS_CB_RET_ERR) {
 				wRet = WAITRESS_RET_CB_ABORT;
 				break;
@@ -749,7 +749,9 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		}
 	} while (recvSize > 0);
 
+finish:
 	close (sockfd);
+	free (buf);
 
 	if (wRet == WAITRESS_RET_OK && waith->contentReceived < waith->contentLength) {
 		return WAITRESS_RET_PARTIAL_FILE;
