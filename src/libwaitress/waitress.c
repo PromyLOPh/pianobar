@@ -43,6 +43,8 @@ THE SOFTWARE.
 #include "config.h"
 #include "waitress.h"
 
+#define streq(a,b) (strcmp(a,b) == 0)
+
 typedef struct {
 	char *buf;
 	size_t pos;
@@ -496,6 +498,15 @@ static const char *WaitressDefaultPort (WaitressUrl_t *url) {
 	return url->port == NULL ? "80" : url->port;
 }
 
+/*	handle http header
+ */
+static void WaitressHandleHeader (WaitressHandle_t *waith, const char * const key,
+		const char * const value) {
+	if (streq (key, "Content-Length")) {
+		waith->contentLength = atol (value);
+	}
+}
+
 /*	Receive data from host and call *callback ()
  *	@param waitress handle
  *	@return WaitressReturn_t
@@ -512,7 +523,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	/* header parser vars */
 	char *nextLine = NULL, *thisLine = NULL;
 	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
-	char statusCode[3], val[256];
+	char statusCode[3];
 	unsigned int bufFilled = 0;
 
 	/* initialize */
@@ -669,9 +680,16 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 					if (*thisLine == '\0') {
 						hdrParseMode = HDRM_FINISHED;
 					} else {
-						memset (val, 0, sizeof (val));
-						if (sscanf (thisLine, "Content-Length: %255c", val) == 1) {
-							waith->contentLength = atol (val);
+						/* parse header: "key: value", ignore invalid lines */
+						char *key = thisLine, *val;
+
+						val = strchr (thisLine, ':');
+						if (val != NULL) {
+							*val++ = '\0';
+							while (*val != '\0' && isspace ((unsigned char) *val)) {
+								++val;
+							}
+							WaitressHandleHeader (waith, key, val);
 						}
 					}
 					break;
