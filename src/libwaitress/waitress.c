@@ -801,10 +801,6 @@ const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 			return "Callback aborted request.";
 			break;
 
-		case WAITRESS_RET_HDR_OVERFLOW:
-			return "HTTP header overflow.";
-			break;
-
 		case WAITRESS_RET_PARTIAL_FILE:
 			return "Partial file.";
 			break;
