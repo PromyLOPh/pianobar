@@ -731,7 +731,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 
 	/* push remaining bytes */
 	if (bufFilled > 0) {
-		if (WaitressHandleIdentity (waith, thisLine, bufFilled) ==
+		if (WaitressHandleIdentity (waith, buf, bufFilled) ==
 				WAITRESS_CB_RET_ERR) {
 			FINISH (WAITRESS_RET_CB_ABORT);
 		}
