@@ -667,7 +667,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 				hdrParseMode != HDRM_FINISHED) {
 			/* make lines parseable by string routines */
 			*nextLine = '\0';
-			if (*(nextLine-1) == '\r') {
+			if (nextLine-1 >= buf && *(nextLine-1) == '\r') {
 				*(nextLine-1) = '\0';
 			}
 			/* skip \0 */
@@ -725,7 +725,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 			} /* end switch */
 			thisLine = nextLine;
 		} /* end while strchr */
-		memmove (buf, thisLine, thisLine-buf);
+		memmove (buf, thisLine, bufFilled-(thisLine-buf));
 		bufFilled -= (thisLine-buf);
 	} /* end while hdrParseMode */
 
