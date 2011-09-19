@@ -513,6 +513,29 @@ static int WaitressParseStatusline (const char * const line) {
 	return -1;
 }
 
+/*	get line from string
+ *	@param string beginning/return value of last call
+ *	@return start of _next_ line or NULL if there is no next line
+ */
+static char *WaitressGetline (char * const str) {
+	char *eol;
+
+	eol = strchr (str, '\n');
+	if (eol == NULL) {
+		return NULL;
+	}
+
+	/* make lines parseable by string routines */
+	*eol = '\0';
+	if (eol-1 >= str && *(eol-1) == '\r') {
+		*(eol-1) = '\0';
+	}
+	/* skip \0 */
+	++eol;
+
+	return eol;
+}
+
 /*	Receive data from host and call *callback ()
  *	@param waitress handle
  *	@return WaitressReturn_t
@@ -663,16 +686,8 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		thisLine = buf;
 
 		/* split */
-		while ((nextLine = strchr (thisLine, '\n')) != NULL &&
+		while ((nextLine = WaitressGetline (thisLine)) != NULL &&
 				hdrParseMode != HDRM_FINISHED) {
-			/* make lines parseable by string routines */
-			*nextLine = '\0';
-			if (nextLine-1 >= buf && *(nextLine-1) == '\r') {
-				*(nextLine-1) = '\0';
-			}
-			/* skip \0 */
-			++nextLine;
-
 			switch (hdrParseMode) {
 				/* Status code */
 				case HDRM_HEAD:
