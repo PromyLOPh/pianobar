@@ -46,7 +46,7 @@ THE SOFTWARE.
 #define streq(a,b) (strcmp(a,b) == 0)
 
 typedef struct {
-	char *buf;
+	char *data;
 	size_t pos;
 } WaitressFetchBufCbBuffer_t;
 
@@ -351,24 +351,24 @@ static WaitressCbReturn_t WaitressFetchBufCb (void *recvData, size_t recvDataSiz
 	char *recvBytes = recvData;
 	WaitressFetchBufCbBuffer_t *buffer = extraData;
 
-	if (buffer->buf == NULL) {
-		if ((buffer->buf = malloc (sizeof (*buffer->buf) *
+	if (buffer->data == NULL) {
+		if ((buffer->data = malloc (sizeof (*buffer->data) *
 				(recvDataSize + 1))) == NULL) {
 			return WAITRESS_CB_RET_ERR;
 		}
 	} else {
 		char *newbuf;
-		if ((newbuf = realloc (buffer->buf,
-				sizeof (*buffer->buf) *
+		if ((newbuf = realloc (buffer->data,
+				sizeof (*buffer->data) *
 				(buffer->pos + recvDataSize + 1))) == NULL) {
-			free (buffer->buf);
+			free (buffer->data);
 			return WAITRESS_CB_RET_ERR;
 		}
-		buffer->buf = newbuf;
+		buffer->data = newbuf;
 	}
-	memcpy (buffer->buf + buffer->pos, recvBytes, recvDataSize);
+	memcpy (buffer->data + buffer->pos, recvBytes, recvDataSize);
 	buffer->pos += recvDataSize;
-	*(buffer->buf+buffer->pos) = '\0';
+	buffer->data[buffer->pos] = '\0';
 
 	return WAITRESS_CB_RET_OK;
 }
@@ -377,7 +377,7 @@ static WaitressCbReturn_t WaitressFetchBufCb (void *recvData, size_t recvDataSiz
  *	@param waitress handle
  *	@param result buffer, malloced (don't forget to free it yourself)
  */
-WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char **buf) {
+WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char **retBuffer) {
 	WaitressFetchBufCbBuffer_t buffer;
 	WaitressReturn_t wRet;
 
@@ -387,7 +387,7 @@ WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char **buf) {
 	waith->callback = WaitressFetchBufCb;
 
 	wRet = WaitressFetchCall (waith);
-	*buf = buffer.buf;
+	*retBuffer = buffer.data;
 	return wRet;
 }
 
