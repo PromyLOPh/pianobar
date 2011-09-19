@@ -341,7 +341,8 @@ bool WaitressSetProxy (WaitressHandle_t *waith, const char *url) {
 	return WaitressSplitUrl (url, &waith->proxy);
 }
 
-/*	Callback for WaitressFetchBuf, appends received data to NULL-terminated buffer
+/*	Callback for WaitressFetchBuf, appends received data to \0-terminated
+ *	buffer
  *	@param received data
  *	@param data size
  *	@param buffer structure
@@ -375,7 +376,8 @@ static WaitressCbReturn_t WaitressFetchBufCb (void *recvData, size_t recvDataSiz
 
 /*	Fetch string. Beware! This overwrites your waith->data pointer
  *	@param waitress handle
- *	@param result buffer, malloced (don't forget to free it yourself)
+ *	@param \0-terminated result buffer, malloced (don't forget to free it
+ *			yourself)
  */
 WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char **retBuffer) {
 	WaitressFetchBufCbBuffer_t buffer;
