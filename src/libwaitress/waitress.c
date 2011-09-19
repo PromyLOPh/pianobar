@@ -535,12 +535,18 @@ static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
 			size_t remaining = size-(content-buf);
 
 			if (remaining >= waith->request.chunkSize) {
-				WaitressHandleIdentity (waith, content, waith->request.chunkSize);
+				if (WaitressHandleIdentity (waith, content,
+						waith->request.chunkSize) == WAITRESS_HANDLER_ABORTED) {
+					return WAITRESS_HANDLER_ABORTED;
+				}
 				/* FIXME: skip trailing \r\n */
 				content += waith->request.chunkSize+2;
 				waith->request.chunkSize = 0;
 			} else {
-				WaitressHandleIdentity (waith, content, remaining);
+				if (WaitressHandleIdentity (waith, content, remaining) ==
+						WAITRESS_HANDLER_ABORTED) {
+					return WAITRESS_HANDLER_ABORTED;
+				}
 				waith->request.chunkSize -= remaining;
 				return WAITRESS_HANDLER_CONTINUE;
 			}
@@ -557,11 +563,12 @@ static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
 				content = nextContent;
 			}
 		} else {
-			return WAITRESS_HANDLER_CONTINUE;
+			return WAITRESS_HANDLER_ERR;
 		}
 	}
 
-	return WAITRESS_HANDLER_CONTINUE;
+	assert (0);
+	return WAITRESS_HANDLER_ERR;
 }
 
 /*	handle http header
