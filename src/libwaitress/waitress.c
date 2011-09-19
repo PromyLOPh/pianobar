@@ -859,11 +859,11 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		bufFilled -= (thisLine-buf);
 	} /* end while hdrParseMode */
 
-	/* push remaining bytes */
-	if (bufFilled > 0) {
+	recvSize = bufFilled;
+	do {
 		/* data must be \0-terminated for chunked handler */
-		buf[bufFilled] = '\0';
-		switch (waith->request.dataHandler (waith, buf, bufFilled)) {
+		buf[recvSize] = '\0';
+		switch (waith->request.dataHandler (waith, buf, recvSize)) {
 			case WAITRESS_HANDLER_DONE:
 				FINISH (WAITRESS_RET_OK);
 				break;
@@ -875,29 +875,12 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 			case WAITRESS_HANDLER_ABORTED:
 				FINISH (WAITRESS_RET_CB_ABORT);
 				break;
-		}
-	}
 
-	/* receive content */
-	do {
+			case WAITRESS_HANDLER_CONTINUE:
+				/* go on */
+				break;
+		}
 		READ_RET (buf, WAITRESS_BUFFER_SIZE-1, &recvSize);
-		buf[recvSize] = '\0';
-		if (recvSize > 0) {
-			/* FIXME: Copy&waste */
-			switch (waith->request.dataHandler (waith, buf, recvSize)) {
-				case WAITRESS_HANDLER_DONE:
-					FINISH (WAITRESS_RET_OK);
-					break;
-
-				case WAITRESS_HANDLER_ERR:
-					FINISH (WAITRESS_RET_DECODING_ERR);
-					break;
-
-				case WAITRESS_HANDLER_ABORTED:
-					FINISH (WAITRESS_RET_CB_ABORT);
-					break;
-			}
-		}
 	} while (recvSize > 0);
 
 finish:
