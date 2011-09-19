@@ -52,11 +52,15 @@ typedef struct {
 } WaitressFetchBufCbBuffer_t;
 
 void WaitressInit (WaitressHandle_t *waith) {
+	assert (waith != NULL);
+
 	memset (waith, 0, sizeof (*waith));
 	waith->socktimeout = 30000;
 }
 
 void WaitressFree (WaitressHandle_t *waith) {
+	assert (waith != NULL);
+
 	free (waith->url.url);
 	free (waith->proxy.url);
 	memset (waith, 0, sizeof (*waith));
@@ -67,6 +71,8 @@ void WaitressFree (WaitressHandle_t *waith) {
  *	@return true|false
  */
 bool WaitressProxyEnabled (const WaitressHandle_t *waith) {
+	assert (waith != NULL);
+
 	return waith->proxy.host != NULL;
 }
 
@@ -75,6 +81,8 @@ bool WaitressProxyEnabled (const WaitressHandle_t *waith) {
  *	@return malloc'ed encoded string, don't forget to free it
  */
 char *WaitressUrlEncode (const char *in) {
+	assert (in != NULL);
+
 	size_t inLen = strlen (in);
 	/* worst case: encode all characters */
 	char *out = calloc (inLen * 3 + 1, sizeof (*in));
@@ -384,6 +392,9 @@ WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char **retBuffer) {
 	WaitressFetchBufCbBuffer_t buffer;
 	WaitressReturn_t wRet;
 
+	assert (waith != NULL);
+	assert (retBuffer != NULL);
+
 	memset (&buffer, 0, sizeof (buffer));
 
 	waith->data = &buffer;
@@ -400,6 +411,9 @@ WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char **retBuffer) {
 static int WaitressPollLoop (struct pollfd *fds, nfds_t nfds, int timeout) {
 	int pollres = -1;
 	int pollerr = 0;
+
+	assert (fds != NULL);
+	assert (nfds > 0);
 
 	do {
 		pollres = poll (fds, nfds, timeout);
@@ -421,6 +435,11 @@ static int WaitressPollLoop (struct pollfd *fds, nfds_t nfds, int timeout) {
 static WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf, size_t count,
 		struct pollfd *sockpoll, int timeout) {
 	int pollres = -1;
+
+	assert (sockfd != -1);
+	assert (buf != NULL);
+	assert (count > 0);
+	assert (sockpoll != NULL);
 
 	sockpoll->events = POLLOUT;
 	pollres = WaitressPollLoop (sockpoll, 1, timeout);
@@ -448,6 +467,12 @@ static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
 		struct pollfd *sockpoll, int timeout, ssize_t *retSize) {
 	int pollres = -1;
 
+	assert (sockfd != -1);
+	assert (buf != NULL);
+	assert (count > 0);
+	assert (sockpoll != NULL);
+	assert (retSize != NULL);
+
 	sockpoll->events = POLLIN;
 	pollres = WaitressPollLoop (sockpoll, 1, timeout);
 	if (pollres == 0) {
@@ -469,11 +494,18 @@ static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
 static bool WaitressFormatAuthorization (WaitressHandle_t *waith,
 		WaitressUrl_t *url, const char *prefix, char *writeBuf,
 		const size_t writeBufSize) {
+	assert (waith != NULL);
+	assert (url != NULL);
+	assert (prefix != NULL);
+	assert (writeBuf != NULL);
+	assert (writeBufSize > 0);
+
 	if (url->user != NULL) {
 		char userPass[1024], *encodedUserPass;
 		snprintf (userPass, sizeof (userPass), "%s:%s", url->user,
 				(url->password != NULL) ? url->password : "");
 		encodedUserPass = WaitressBase64Encode (userPass);
+		assert (encodedUserPass != NULL);
 		snprintf (writeBuf, writeBufSize, "%sAuthorization: Basic %s\r\n",
 				prefix, encodedUserPass);
 		free (encodedUserPass);
@@ -485,6 +517,8 @@ static bool WaitressFormatAuthorization (WaitressHandle_t *waith,
 /*	get default http port if none was given
  */
 static const char *WaitressDefaultPort (const WaitressUrl_t * const url) {
+	assert (url != NULL);
+
 	return url->port == NULL ? "80" : url->port;
 }
 
@@ -494,6 +528,8 @@ static const char *WaitressDefaultPort (const WaitressUrl_t * const url) {
  */
 static char *WaitressGetline (char * const str) {
 	char *eol;
+
+	assert (str != NULL);
 
 	eol = strchr (str, '\n');
 	if (eol == NULL) {
@@ -508,6 +544,8 @@ static char *WaitressGetline (char * const str) {
 	/* skip \0 */
 	++eol;
 
+	assert (eol >= str);
+
 	return eol;
 }
 
@@ -515,6 +553,9 @@ static char *WaitressGetline (char * const str) {
  */
 static WaitressHandlerReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
 		char *buf, const size_t size) {
+	assert (waith != NULL);
+	assert (buf != NULL);
+
 	waith->request.contentReceived += size;
 	if (waith->callback (buf, size, waith->data) == WAITRESS_CB_RET_ERR) {
 		return WAITRESS_HANDLER_ABORTED;
@@ -530,6 +571,9 @@ static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
 		char *buf, const size_t size) {
 	char *content = buf, *nextContent;
 
+	assert (waith != NULL);
+	assert (buf != NULL);
+
 	while (1) {
 		if (waith->request.chunkSize > 0) {
 			const size_t remaining = size-(content-buf);
@@ -539,6 +583,7 @@ static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
 						waith->request.chunkSize) == WAITRESS_HANDLER_ABORTED) {
 					return WAITRESS_HANDLER_ABORTED;
 				}
+
 				content += waith->request.chunkSize;
 				if (content[0] == '\r' && content[1] == '\n') {
 					content += 2;
@@ -579,6 +624,10 @@ static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
  */
 static void WaitressHandleHeader (WaitressHandle_t *waith, const char * const key,
 		const char * const value) {
+	assert (waith != NULL);
+	assert (key != NULL);
+	assert (value != NULL);
+
 	if (strcaseeq (key, "Content-Length")) {
 		waith->request.contentLength = atol (value);
 	} else if (strcaseeq (key, "Transfer-Encoding")) {
@@ -592,6 +641,8 @@ static void WaitressHandleHeader (WaitressHandle_t *waith, const char * const ke
  */
 static int WaitressParseStatusline (const char * const line) {
 	char status[4] = "000";
+
+	assert (line != NULL);
 
 	if (sscanf (line, "HTTP/1.%*1[0-9] %3[0-9] ", status) == 1) {
 		return atoi (status);
