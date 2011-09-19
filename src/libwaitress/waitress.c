@@ -408,18 +408,16 @@ WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *waith, char **retBuffer) {
 /*	poll wrapper that retries after signal interrupts, required for socksify
  *	wrapper
  */
-static int WaitressPollLoop (struct pollfd *fds, nfds_t nfds, int timeout) {
+static int WaitressPollLoop (int fd, short events, int timeout) {
 	int pollres = -1;
-	int pollerr = 0;
+	struct pollfd sockpoll = {fd, events, 0};
 
-	assert (fds != NULL);
-	assert (nfds > 0);
+	assert (fd != -1);
 
 	do {
-		pollres = poll (fds, nfds, timeout);
-		pollerr = errno;
 		errno = 0;
-	} while (pollerr == EINTR || pollerr == EINPROGRESS || pollerr == EAGAIN);
+		pollres = poll (&sockpoll, 1, timeout);
+	} while (errno == EINTR || errno == EINPROGRESS || errno == EAGAIN);
 
 	return pollres;
 }
@@ -432,17 +430,15 @@ static int WaitressPollLoop (struct pollfd *fds, nfds_t nfds, int timeout) {
  *	@param timeout (microseconds)
  *	@return WAITRESS_RET_OK, WAITRESS_RET_TIMEOUT or WAITRESS_RET_ERR
  */
-static WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf, size_t count,
-		struct pollfd *sockpoll, int timeout) {
+static WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf,
+		size_t count, int timeout) {
 	int pollres = -1;
 
 	assert (sockfd != -1);
 	assert (buf != NULL);
 	assert (count > 0);
-	assert (sockpoll != NULL);
 
-	sockpoll->events = POLLOUT;
-	pollres = WaitressPollLoop (sockpoll, 1, timeout);
+	pollres = WaitressPollLoop (sockfd, POLLOUT, timeout);
 	if (pollres == 0) {
 		return WAITRESS_RET_TIMEOUT;
 	} else if (pollres == -1) {
@@ -464,17 +460,15 @@ static WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf, size_t c
  *	@return WAITRESS_RET_OK, WAITRESS_RET_TIMEOUT, WAITRESS_RET_ERR
  */
 static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
-		struct pollfd *sockpoll, int timeout, ssize_t *retSize) {
+		int timeout, ssize_t *retSize) {
 	int pollres = -1;
 
 	assert (sockfd != -1);
 	assert (buf != NULL);
 	assert (count > 0);
-	assert (sockpoll != NULL);
 	assert (retSize != NULL);
 
-	sockpoll->events = POLLIN;
-	pollres = WaitressPollLoop (sockpoll, 1, timeout);
+	pollres = WaitressPollLoop (sockfd, POLLIN, timeout);
 	if (pollres == 0) {
 		return WAITRESS_RET_TIMEOUT;
 	} else if (pollres == -1) {
@@ -650,39 +644,12 @@ static int WaitressParseStatusline (const char * const line) {
 	return -1;
 }
 
-/*	Receive data from host and call *callback ()
- *	@param waitress handle
- *	@return WaitressReturn_t
+/*	Connect to server
  */
-WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
-/* FIXME: compiler macros are ugly... */
-#define FINISH(ret) wRet = ret; goto finish;
-#define WRITE_RET(buf, count) \
-		if ((wRet = WaitressPollWrite (sockfd, buf, count, \
-				&sockpoll, waith->socktimeout)) != WAITRESS_RET_OK) { \
-			FINISH (wRet); \
-		}
-#define READ_RET(buf, count, size) \
-		if ((wRet = WaitressPollRead (sockfd, buf, count, \
-				&sockpoll, waith->socktimeout, size)) != WAITRESS_RET_OK) { \
-			FINISH (wRet); \
-		}
-
+static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 	struct addrinfo hints, *res;
-	int sockfd;
-	char *buf = NULL;
-	ssize_t recvSize = 0;
-	WaitressReturn_t wRet = WAITRESS_RET_OK;
-	struct pollfd sockpoll;
 	int pollres;
-	/* header parser vars */
-	char *nextLine = NULL, *thisLine = NULL;
-	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
-	unsigned int bufFilled = 0;
 
-	/* initialize */
-	memset (&waith->request, 0, sizeof (waith->request));
-	waith->request.dataHandler = WaitressHandleIdentity;
 	memset (&hints, 0, sizeof hints);
 
 	hints.ai_family = AF_UNSPEC;
@@ -701,24 +668,25 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		}
 	}
 
-	if ((sockfd = socket (res->ai_family, res->ai_socktype, res->ai_protocol)) == -1) {
+	if ((waith->request.sockfd = socket (res->ai_family, res->ai_socktype,
+			res->ai_protocol)) == -1) {
 		freeaddrinfo (res);
 		return WAITRESS_RET_SOCK_ERR;
 	}
-	sockpoll.fd = sockfd;
 
 	/* we need shorter timeouts for connect() */
-	fcntl (sockfd, F_SETFL, O_NONBLOCK);
+	fcntl (waith->request.sockfd, F_SETFL, O_NONBLOCK);
 
 	/* increase socket receive buffer */
 	const int sockopt = 256*1024;
-	setsockopt (sockfd, SOL_SOCKET, SO_RCVBUF, &sockopt, sizeof (sockopt));
+	setsockopt (waith->request.sockfd, SOL_SOCKET, SO_RCVBUF, &sockopt,
+			sizeof (sockopt));
 
 	/* non-blocking connect will return immediately */
-	connect (sockfd, res->ai_addr, res->ai_addrlen);
+	connect (waith->request.sockfd, res->ai_addr, res->ai_addrlen);
 
-	sockpoll.events = POLLOUT;
-	pollres = WaitressPollLoop (&sockpoll, 1, waith->socktimeout);
+	pollres = WaitressPollLoop (waith->request.sockfd, POLLOUT,
+			waith->socktimeout);
 	freeaddrinfo (res);
 	if (pollres == 0) {
 		return WAITRESS_RET_TIMEOUT;
@@ -727,9 +695,47 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	}
 	/* check connect () return value */
 	socklen_t pollresSize = sizeof (pollres);
-	getsockopt (sockfd, SOL_SOCKET, SO_ERROR, &pollres, &pollresSize);
+	getsockopt (waith->request.sockfd, SOL_SOCKET, SO_ERROR, &pollres,
+			&pollresSize);
 	if (pollres != 0) {
 		return WAITRESS_RET_CONNECT_REFUSED;
+	}
+
+	return WAITRESS_RET_OK;
+}
+
+/*	Receive data from host and call *callback ()
+ *	@param waitress handle
+ *	@return WaitressReturn_t
+ */
+WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
+/* FIXME: compiler macros are ugly... */
+#define FINISH(ret) wRet = ret; goto finish;
+#define WRITE_RET(buf, count) \
+		if ((wRet = WaitressPollWrite (waith->request.sockfd, buf, count, \
+				waith->socktimeout)) != WAITRESS_RET_OK) { \
+			FINISH (wRet); \
+		}
+#define READ_RET(buf, count, size) \
+		if ((wRet = WaitressPollRead (waith->request.sockfd, buf, count, \
+				waith->socktimeout, size)) != WAITRESS_RET_OK) { \
+			FINISH (wRet); \
+		}
+
+	char *buf = NULL;
+	ssize_t recvSize = 0;
+	WaitressReturn_t wRet = WAITRESS_RET_OK;
+	/* header parser vars */
+	char *nextLine = NULL, *thisLine = NULL;
+	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
+	unsigned int bufFilled = 0;
+
+	/* initialize */
+	memset (&waith->request, 0, sizeof (waith->request));
+	waith->request.dataHandler = WaitressHandleIdentity;
+
+	if ((wRet = WaitressConnect (waith)) != WAITRESS_RET_OK) {
+		return wRet;
 	}
 
 	const char *path = waith->url.path;
@@ -884,7 +890,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	} while (recvSize > 0);
 
 finish:
-	close (sockfd);
+	close (waith->request.sockfd);
 	free (buf);
 
 	if (wRet == WAITRESS_RET_OK &&
