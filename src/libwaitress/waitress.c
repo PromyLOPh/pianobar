@@ -484,7 +484,7 @@ static bool WaitressFormatAuthorization (WaitressHandle_t *waith,
 
 /*	get default http port if none was given
  */
-static const char *WaitressDefaultPort (WaitressUrl_t *url) {
+static const char *WaitressDefaultPort (const WaitressUrl_t * const url) {
 	return url->port == NULL ? "80" : url->port;
 }
 
@@ -514,7 +514,7 @@ static char *WaitressGetline (char * const str) {
 /*	identity encoding handler
  */
 static WaitressHandlerReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
-		char *buf, size_t size) {
+		char *buf, const size_t size) {
 	waith->request.contentReceived += size;
 	if (waith->callback (buf, size, waith->data) == WAITRESS_CB_RET_ERR) {
 		return WAITRESS_HANDLER_ABORTED;
@@ -527,12 +527,12 @@ static WaitressHandlerReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
  *	trailing \0.
  */
 static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
-		char *buf, size_t size) {
+		char *buf, const size_t size) {
 	char *content = buf, *nextContent;
 
 	while (1) {
 		if (waith->request.chunkSize > 0) {
-			size_t remaining = size-(content-buf);
+			const size_t remaining = size-(content-buf);
 
 			if (remaining >= waith->request.chunkSize) {
 				if (WaitressHandleIdentity (waith, content,
@@ -557,7 +557,7 @@ static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
 		}
 
 		if ((nextContent = WaitressGetline (content)) != NULL) {
-			long int chunkSize = strtol (content, NULL, 16);
+			const long int chunkSize = strtol (content, NULL, 16);
 			if (chunkSize == 0) {
 				return WAITRESS_HANDLER_DONE;
 			} else if (chunkSize < 0) {
