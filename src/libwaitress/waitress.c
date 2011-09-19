@@ -513,16 +513,20 @@ static char *WaitressGetline (char * const str) {
 
 /*	identity encoding handler
  */
-static WaitressCbReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
+static WaitressHandlerReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
 		char *buf, size_t size) {
 	waith->request.contentReceived += size;
-	return waith->callback (buf, size, waith->data);
+	if (waith->callback (buf, size, waith->data) == WAITRESS_CB_RET_ERR) {
+		return WAITRESS_HANDLER_ABORTED;
+	} else {
+		return WAITRESS_HANDLER_CONTINUE;
+	}
 }
 
 /*	chunked encoding handler. buf must be \0-terminated, size does not include
  *	trailing \0.
  */
-static WaitressCbReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
+static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
 		char *buf, size_t size) {
 	char *content = buf, *nextContent;
 
@@ -538,26 +542,26 @@ static WaitressCbReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
 			} else {
 				WaitressHandleIdentity (waith, content, remaining);
 				waith->request.chunkSize -= remaining;
-				return WAITRESS_CB_RET_OK;
+				return WAITRESS_HANDLER_CONTINUE;
 			}
 		}
 
 		if ((nextContent = WaitressGetline (content)) != NULL) {
 			long int chunkSize = strtol (content, NULL, 16);
 			if (chunkSize == 0) {
-				return WAITRESS_CB_RET_OK;
+				return WAITRESS_HANDLER_DONE;
 			} else if (chunkSize < 0) {
-				return WAITRESS_CB_RET_ERR;
+				return WAITRESS_HANDLER_ERR;
 			} else {
 				waith->request.chunkSize = chunkSize;
 				content = nextContent;
 			}
 		} else {
-			return WAITRESS_CB_RET_OK;
+			return WAITRESS_HANDLER_CONTINUE;
 		}
 	}
 
-	return WAITRESS_CB_RET_OK;
+	return WAITRESS_HANDLER_CONTINUE;
 }
 
 /*	handle http header
@@ -797,9 +801,18 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	if (bufFilled > 0) {
 		/* data must be \0-terminated for chunked handler */
 		buf[bufFilled] = '\0';
-		if (waith->request.dataHandler (waith, buf, bufFilled) ==
-				WAITRESS_CB_RET_ERR) {
-			FINISH (WAITRESS_RET_CB_ABORT);
+		switch (waith->request.dataHandler (waith, buf, bufFilled)) {
+			case WAITRESS_HANDLER_DONE:
+				FINISH (WAITRESS_RET_OK);
+				break;
+
+			case WAITRESS_HANDLER_ERR:
+				FINISH (WAITRESS_RET_DECODING_ERR);
+				break;
+
+			case WAITRESS_HANDLER_ABORTED:
+				FINISH (WAITRESS_RET_CB_ABORT);
+				break;
 		}
 	}
 
@@ -808,10 +821,19 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		READ_RET (buf, WAITRESS_BUFFER_SIZE-1, &recvSize);
 		buf[recvSize] = '\0';
 		if (recvSize > 0) {
-			if (waith->request.dataHandler (waith, buf, recvSize) ==
-					WAITRESS_CB_RET_ERR) {
-				wRet = WAITRESS_RET_CB_ABORT;
-				break;
+			/* FIXME: Copy&waste */
+			switch (waith->request.dataHandler (waith, buf, recvSize)) {
+				case WAITRESS_HANDLER_DONE:
+					FINISH (WAITRESS_RET_OK);
+					break;
+
+				case WAITRESS_HANDLER_ERR:
+					FINISH (WAITRESS_RET_DECODING_ERR);
+					break;
+
+				case WAITRESS_HANDLER_ABORTED:
+					FINISH (WAITRESS_RET_CB_ABORT);
+					break;
 			}
 		}
 	} while (recvSize > 0);
@@ -883,6 +905,10 @@ const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 
 		case WAITRESS_RET_CONNECTION_CLOSED:
 			return "Connection closed by remote host.";
+			break;
+
+		case WAITRESS_RET_DECODING_ERR:
+			return "Invalid encoded data.";
 			break;
 
 		default:

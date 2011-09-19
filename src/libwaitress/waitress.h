@@ -39,6 +39,13 @@ typedef enum {
 	WAITRESS_CB_RET_OK,
 } WaitressCbReturn_t;
 
+typedef enum {
+	WAITRESS_HANDLER_CONTINUE,
+	WAITRESS_HANDLER_DONE,
+	WAITRESS_HANDLER_ERR,
+	WAITRESS_HANDLER_ABORTED,
+} WaitressHandlerReturn_t;
+
 typedef struct {
 	char *url; /* splitted url, unusable */
 	const char *user;
@@ -64,7 +71,7 @@ typedef struct {
 	struct {
 		size_t contentLength, contentReceived, chunkSize;
 		/* first argument is WaitressHandle_t, but that's not defined here */
-		WaitressCbReturn_t (*dataHandler) (void *, char *, size_t);
+		WaitressHandlerReturn_t (*dataHandler) (void *, char *, size_t);
 	} request;
 } WaitressHandle_t;
 
@@ -82,6 +89,7 @@ typedef enum {
 	WAITRESS_RET_TIMEOUT,
 	WAITRESS_RET_READ_ERR,
 	WAITRESS_RET_CONNECTION_CLOSED,
+	WAITRESS_RET_DECODING_ERR,
 } WaitressReturn_t;
 
 void WaitressInit (WaitressHandle_t *);
