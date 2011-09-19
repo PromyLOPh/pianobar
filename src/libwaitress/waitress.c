@@ -539,8 +539,12 @@ static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
 						waith->request.chunkSize) == WAITRESS_HANDLER_ABORTED) {
 					return WAITRESS_HANDLER_ABORTED;
 				}
-				/* FIXME: skip trailing \r\n */
-				content += waith->request.chunkSize+2;
+				content += waith->request.chunkSize;
+				if (content[0] == '\r' && content[1] == '\n') {
+					content += 2;
+				} else {
+					return WAITRESS_HANDLER_ERR;
+				}
 				waith->request.chunkSize = 0;
 			} else {
 				if (WaitressHandleIdentity (waith, content, remaining) ==
