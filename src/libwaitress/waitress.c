@@ -682,7 +682,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 			FINISH (WAITRESS_RET_CONNECTION_CLOSED);
 		}
 		bufFilled += recvSize;
-		memset (buf+bufFilled, 0, WAITRESS_BUFFER_SIZE - bufFilled);
+		buf[bufFilled] = '\0';
 		thisLine = buf;
 
 		/* split */
