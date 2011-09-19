@@ -848,8 +848,6 @@ const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 #include <string.h>
 #include "waitress.h"
 
-#define streq(x,y) (strcmp(x,y) == 0)
-
 /*	string equality test (memory location or content)
  */
 static bool streqtest (const char *x, const char *y) {
