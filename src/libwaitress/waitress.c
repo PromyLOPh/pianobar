@@ -43,7 +43,7 @@ THE SOFTWARE.
 #include "config.h"
 #include "waitress.h"
 
-#define streq(a,b) (strcmp(a,b) == 0)
+#define strcaseeq(a,b) (strcasecmp(a,b) == 0)
 #define WAITRESS_HTTP_VERSION "1.1"
 
 typedef struct {
@@ -568,10 +568,10 @@ static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
  */
 static void WaitressHandleHeader (WaitressHandle_t *waith, const char * const key,
 		const char * const value) {
-	if (streq (key, "Content-Length")) {
+	if (strcaseeq (key, "Content-Length")) {
 		waith->request.contentLength = atol (value);
-	} else if (streq (key, "Transfer-Encoding")) {
-		if (streq (value, "chunked")) {
+	} else if (strcaseeq (key, "Transfer-Encoding")) {
+		if (strcaseeq (value, "chunked")) {
 			waith->request.dataHandler = WaitressHandleChunked;
 		}
 	}
@@ -924,6 +924,8 @@ const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 #include <stdbool.h>
 #include <string.h>
 #include "waitress.h"
+
+#define streq(a,b) (strcmp(a,b) == 0)
 
 /*	string equality test (memory location or content)
  */
