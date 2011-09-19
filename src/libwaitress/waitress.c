@@ -44,6 +44,7 @@ THE SOFTWARE.
 #include "waitress.h"
 
 #define streq(a,b) (strcmp(a,b) == 0)
+#define WAITRESS_HTTP_VERSION "1.1"
 
 typedef struct {
 	char *data;
@@ -678,13 +679,13 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	/* send request */
 	if (WaitressProxyEnabled (waith)) {
 		snprintf (buf, WAITRESS_BUFFER_SIZE,
-			"%s http://%s:%s/%s HTTP/1.0\r\n",
+			"%s http://%s:%s/%s HTTP/" WAITRESS_HTTP_VERSION "\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
 			waith->url.host,
 			WaitressDefaultPort (&waith->url), path);
 	} else {
 		snprintf (buf, WAITRESS_BUFFER_SIZE,
-			"%s /%s HTTP/1.0\r\n",
+			"%s /%s HTTP/" WAITRESS_HTTP_VERSION "\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
 			path);
 	}
