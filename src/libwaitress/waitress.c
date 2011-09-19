@@ -487,34 +487,6 @@ static const char *WaitressDefaultPort (WaitressUrl_t *url) {
 	return url->port == NULL ? "80" : url->port;
 }
 
-/*	handle http header
- */
-static void WaitressHandleHeader (WaitressHandle_t *waith, const char * const key,
-		const char * const value) {
-	if (streq (key, "Content-Length")) {
-		waith->contentLength = atol (value);
-	}
-}
-
-/*	identity encoding handler
- */
-static WaitressCbReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
-		char *buf, size_t size) {
-	waith->contentReceived += size;
-	return waith->callback (buf, size, waith->data);
-}
-
-/*	parse http status line and return status code
- */
-static int WaitressParseStatusline (const char * const line) {
-	char status[4] = "000";
-
-	if (sscanf (line, "HTTP/1.%*1[0-9] %3[0-9] ", status) == 1) {
-		return atoi (status);
-	}
-	return -1;
-}
-
 /*	get line from string
  *	@param string beginning/return value of last call
  *	@return start of _next_ line or NULL if there is no next line
@@ -536,6 +508,79 @@ static char *WaitressGetline (char * const str) {
 	++eol;
 
 	return eol;
+}
+
+/*	identity encoding handler
+ */
+static WaitressCbReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
+		char *buf, size_t size) {
+	waith->request.contentReceived += size;
+	return waith->callback (buf, size, waith->data);
+}
+
+/*	chunked encoding handler. buf must be \0-terminated, size does not include
+ *	trailing \0.
+ */
+static WaitressCbReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
+		char *buf, size_t size) {
+	char *content = buf, *nextContent;
+
+	while (1) {
+		if (waith->request.chunkSize > 0) {
+			size_t remaining = size-(content-buf);
+
+			if (remaining >= waith->request.chunkSize) {
+				WaitressHandleIdentity (waith, content, waith->request.chunkSize);
+				/* FIXME: skip trailing \r\n */
+				content += waith->request.chunkSize+2;
+				waith->request.chunkSize = 0;
+			} else {
+				WaitressHandleIdentity (waith, content, remaining);
+				waith->request.chunkSize -= remaining;
+				return WAITRESS_CB_RET_OK;
+			}
+		}
+
+		if ((nextContent = WaitressGetline (content)) != NULL) {
+			long int chunkSize = strtol (content, NULL, 16);
+			if (chunkSize == 0) {
+				return WAITRESS_CB_RET_OK;
+			} else if (chunkSize < 0) {
+				return WAITRESS_CB_RET_ERR;
+			} else {
+				waith->request.chunkSize = chunkSize;
+				content = nextContent;
+			}
+		} else {
+			return WAITRESS_CB_RET_OK;
+		}
+	}
+
+	return WAITRESS_CB_RET_OK;
+}
+
+/*	handle http header
+ */
+static void WaitressHandleHeader (WaitressHandle_t *waith, const char * const key,
+		const char * const value) {
+	if (streq (key, "Content-Length")) {
+		waith->request.contentLength = atol (value);
+	} else if (streq (key, "Transfer-Encoding")) {
+		if (streq (value, "chunked")) {
+			waith->request.dataHandler = WaitressHandleChunked;
+		}
+	}
+}
+
+/*	parse http status line and return status code
+ */
+static int WaitressParseStatusline (const char * const line) {
+	char status[4] = "000";
+
+	if (sscanf (line, "HTTP/1.%*1[0-9] %3[0-9] ", status) == 1) {
+		return atoi (status);
+	}
+	return -1;
 }
 
 /*	Receive data from host and call *callback ()
@@ -569,8 +614,8 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	unsigned int bufFilled = 0;
 
 	/* initialize */
-	waith->contentLength = 0;
-	waith->contentReceived = 0;
+	memset (&waith->request, 0, sizeof (waith->request));
+	waith->request.dataHandler = WaitressHandleIdentity;
 	memset (&hints, 0, sizeof hints);
 
 	hints.ai_family = AF_UNSPEC;
@@ -646,7 +691,8 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	WRITE_RET (buf, strlen (buf));
 
 	snprintf (buf, WAITRESS_BUFFER_SIZE,
-			"Host: %s\r\nUser-Agent: " PACKAGE "\r\n", waith->url.host);
+			"Host: %s\r\nUser-Agent: " PACKAGE "\r\nConnection: Close\r\n",
+			waith->url.host);
 	WRITE_RET (buf, strlen (buf));
 
 	if (waith->method == WAITRESS_METHOD_POST && waith->postData != NULL) {
@@ -688,8 +734,8 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		thisLine = buf;
 
 		/* split */
-		while ((nextLine = WaitressGetline (thisLine)) != NULL &&
-				hdrParseMode != HDRM_FINISHED) {
+		while (hdrParseMode != HDRM_FINISHED &&
+				(nextLine = WaitressGetline (thisLine)) != NULL) {
 			switch (hdrParseMode) {
 				/* Status code */
 				case HDRM_HEAD:
@@ -748,7 +794,9 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 
 	/* push remaining bytes */
 	if (bufFilled > 0) {
-		if (WaitressHandleIdentity (waith, buf, bufFilled) ==
+		/* data must be \0-terminated for chunked handler */
+		buf[bufFilled] = '\0';
+		if (waith->request.dataHandler (waith, buf, bufFilled) ==
 				WAITRESS_CB_RET_ERR) {
 			FINISH (WAITRESS_RET_CB_ABORT);
 		}
@@ -756,9 +804,10 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 
 	/* receive content */
 	do {
-		READ_RET (buf, WAITRESS_BUFFER_SIZE, &recvSize);
+		READ_RET (buf, WAITRESS_BUFFER_SIZE-1, &recvSize);
+		buf[recvSize] = '\0';
 		if (recvSize > 0) {
-			if (WaitressHandleIdentity (waith, buf, recvSize) ==
+			if (waith->request.dataHandler (waith, buf, recvSize) ==
 					WAITRESS_CB_RET_ERR) {
 				wRet = WAITRESS_RET_CB_ABORT;
 				break;
@@ -770,7 +819,8 @@ finish:
 	close (sockfd);
 	free (buf);
 
-	if (wRet == WAITRESS_RET_OK && waith->contentReceived < waith->contentLength) {
+	if (wRet == WAITRESS_RET_OK &&
+			waith->request.contentReceived < waith->request.contentLength) {
 		return WAITRESS_RET_PARTIAL_FILE;
 	}
 	return wRet;

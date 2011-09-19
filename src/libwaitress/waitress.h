@@ -48,18 +48,24 @@ typedef struct {
 	const char *path; /* without leading '/' */
 } WaitressUrl_t;
 
+/*	reusable handle
+ */
 typedef struct {
 	WaitressUrl_t url;
 	WaitressMethod_t method;
 	const char *extraHeaders;
 	const char *postData;
-	size_t contentLength;
-	size_t contentReceived;
 	WaitressUrl_t proxy;
 	/* extra data handed over to callback function */
 	void *data;
 	WaitressCbReturn_t (*callback) (void *, size_t, void *);
 	int socktimeout;
+	/* per-request data */
+	struct {
+		size_t contentLength, contentReceived, chunkSize;
+		/* first argument is WaitressHandle_t, but that's not defined here */
+		WaitressCbReturn_t (*dataHandler) (void *, char *, size_t);
+	} request;
 } WaitressHandle_t;
 
 typedef enum {

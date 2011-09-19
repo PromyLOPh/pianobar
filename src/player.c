@@ -371,7 +371,7 @@ static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size, void *stream) 
 			}
 
 			/* calc song length using the framerate of the first decoded frame */
-			player->songDuration = (unsigned long long int) player->waith.contentLength /
+			player->songDuration = (unsigned long long int) player->waith.request.contentLength /
 					((unsigned long long int) player->mp3Frame.header.bitrate /
 					(unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR / 8LL);
 
