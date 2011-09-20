@@ -778,47 +778,32 @@ static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
 #undef WRITE_RET
 }
 
-/*	Receive data from host and call *callback ()
- *	@param waitress handle
- *	@return WaitressReturn_t
+/*	read response header and data
  */
-WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
-/* FIXME: compiler macros are ugly... */
-#define FINISH(ret) wRet = ret; goto finish;
+static WaitressReturn_t WaitressReceiveResponse (WaitressHandle_t *waith) {
 #define READ_RET(buf, count, size) \
 		if ((wRet = WaitressPollRead (waith->request.sockfd, buf, count, \
 				waith->socktimeout, size)) != WAITRESS_RET_OK) { \
-			FINISH (wRet); \
+			return wRet; \
 		}
 
-	ssize_t recvSize = 0;
-	WaitressReturn_t wRet = WAITRESS_RET_OK;
-	/* header parser vars */
-	char *nextLine = NULL, *thisLine = NULL;
-	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
-	unsigned int bufFilled = 0;
-
-	/* initialize */
-	memset (&waith->request, 0, sizeof (waith->request));
-	waith->request.dataHandler = WaitressHandleIdentity;
-
-	if ((wRet = WaitressConnect (waith)) != WAITRESS_RET_OK) {
-		return wRet;
-	}
-
-	waith->request.buf = malloc (WAITRESS_BUFFER_SIZE * sizeof (*waith->request.buf));
-	if ((wRet = WaitressSendRequest (waith)) != WAITRESS_RET_OK) {
-		return wRet;
-	}
+	assert (waith != NULL);
+	assert (waith->request.buf != NULL);
 
 	char * const buf = waith->request.buf;
+	char *nextLine = NULL, *thisLine = NULL;
+	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
+	ssize_t recvSize = 0;
+	size_t bufFilled = 0;
+	WaitressReturn_t wRet = WAITRESS_RET_OK;
+
 	/* receive answer */
 	nextLine = buf;
 	while (hdrParseMode != HDRM_FINISHED) {
 		READ_RET (buf+bufFilled, WAITRESS_BUFFER_SIZE-1 - bufFilled, &recvSize);
 		if (recvSize == 0) {
 			/* connection closed too early */
-			FINISH (WAITRESS_RET_CONNECTION_CLOSED);
+			return WAITRESS_RET_CONNECTION_CLOSED;
 		}
 		bufFilled += recvSize;
 		buf[bufFilled] = '\0';
@@ -837,11 +822,11 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 							break;
 
 						case 403:
-							FINISH(WAITRESS_RET_FORBIDDEN);
+							return WAITRESS_RET_FORBIDDEN;
 							break;
 
 						case 404:
-							FINISH(WAITRESS_RET_NOTFOUND);
+							return WAITRESS_RET_NOTFOUND;
 							break;
 
 						case -1:
@@ -849,7 +834,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 							break;
 
 						default:
-							FINISH (WAITRESS_RET_STATUS_UNKNOWN);
+							return WAITRESS_RET_STATUS_UNKNOWN;
 							break;
 					}
 					break;
@@ -889,15 +874,15 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		buf[recvSize] = '\0';
 		switch (waith->request.dataHandler (waith, buf, recvSize)) {
 			case WAITRESS_HANDLER_DONE:
-				FINISH (WAITRESS_RET_OK);
+				return WAITRESS_RET_OK;
 				break;
 
 			case WAITRESS_HANDLER_ERR:
-				FINISH (WAITRESS_RET_DECODING_ERR);
+				return WAITRESS_RET_DECODING_ERR;
 				break;
 
 			case WAITRESS_HANDLER_ABORTED:
-				FINISH (WAITRESS_RET_CB_ABORT);
+				return WAITRESS_RET_CB_ABORT;
 				break;
 
 			case WAITRESS_HANDLER_CONTINUE:
@@ -907,18 +892,42 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		READ_RET (buf, WAITRESS_BUFFER_SIZE-1, &recvSize);
 	} while (recvSize > 0);
 
-finish:
+	return WAITRESS_RET_OK;
+
+#undef READ_RET
+}
+
+/*	Receive data from host and call *callback ()
+ *	@param waitress handle
+ *	@return WaitressReturn_t
+ */
+WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
+	WaitressReturn_t wRet = WAITRESS_RET_OK;
+
+	/* initialize */
+	memset (&waith->request, 0, sizeof (waith->request));
+	waith->request.dataHandler = WaitressHandleIdentity;
+
+	/* request */
+	if ((wRet = WaitressConnect (waith)) == WAITRESS_RET_OK) {
+		waith->request.buf = malloc (WAITRESS_BUFFER_SIZE *
+				sizeof (*waith->request.buf));
+
+		if ((wRet = WaitressSendRequest (waith)) == WAITRESS_RET_OK) {
+			wRet = WaitressReceiveResponse (waith);
+		}
+
+		free (waith->request.buf);
+	}
+
+	/* cleanup */
 	close (waith->request.sockfd);
-	free (buf);
 
 	if (wRet == WAITRESS_RET_OK &&
 			waith->request.contentReceived < waith->request.contentLength) {
 		return WAITRESS_RET_PARTIAL_FILE;
 	}
 	return wRet;
-
-#undef FINISH
-#undef READ_RET
 }
 
 const char *WaitressErrorToStr (WaitressReturn_t wRet) {
