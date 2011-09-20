@@ -704,41 +704,22 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 	return WAITRESS_RET_OK;
 }
 
-/*	Receive data from host and call *callback ()
- *	@param waitress handle
- *	@return WaitressReturn_t
+/*	Write http header/post data to socket
  */
-WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
-/* FIXME: compiler macros are ugly... */
-#define FINISH(ret) wRet = ret; goto finish;
+static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
 #define WRITE_RET(buf, count) \
 		if ((wRet = WaitressPollWrite (waith->request.sockfd, buf, count, \
 				waith->socktimeout)) != WAITRESS_RET_OK) { \
-			FINISH (wRet); \
-		}
-#define READ_RET(buf, count, size) \
-		if ((wRet = WaitressPollRead (waith->request.sockfd, buf, count, \
-				waith->socktimeout, size)) != WAITRESS_RET_OK) { \
-			FINISH (wRet); \
+			return wRet; \
 		}
 
-	char *buf = NULL;
-	ssize_t recvSize = 0;
-	WaitressReturn_t wRet = WAITRESS_RET_OK;
-	/* header parser vars */
-	char *nextLine = NULL, *thisLine = NULL;
-	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
-	unsigned int bufFilled = 0;
-
-	/* initialize */
-	memset (&waith->request, 0, sizeof (waith->request));
-	waith->request.dataHandler = WaitressHandleIdentity;
-
-	if ((wRet = WaitressConnect (waith)) != WAITRESS_RET_OK) {
-		return wRet;
-	}
+	assert (waith != NULL);
+	assert (waith->request.buf != NULL);
 
 	const char *path = waith->url.path;
+	char * const buf = waith->request.buf;
+	WaitressReturn_t wRet = WAITRESS_RET_OK;
+
 	if (waith->url.path == NULL) {
 		/* avoid NULL pointer deref */
 		path = "";
@@ -747,7 +728,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		++path;
 	}
 
-	buf = malloc (WAITRESS_BUFFER_SIZE * sizeof (*buf));
 	/* send request */
 	if (WaitressProxyEnabled (waith)) {
 		snprintf (buf, WAITRESS_BUFFER_SIZE,
@@ -794,6 +774,44 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		WRITE_RET (waith->postData, strlen (waith->postData));
 	}
 
+	return WAITRESS_RET_OK;
+#undef WRITE_RET
+}
+
+/*	Receive data from host and call *callback ()
+ *	@param waitress handle
+ *	@return WaitressReturn_t
+ */
+WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
+/* FIXME: compiler macros are ugly... */
+#define FINISH(ret) wRet = ret; goto finish;
+#define READ_RET(buf, count, size) \
+		if ((wRet = WaitressPollRead (waith->request.sockfd, buf, count, \
+				waith->socktimeout, size)) != WAITRESS_RET_OK) { \
+			FINISH (wRet); \
+		}
+
+	ssize_t recvSize = 0;
+	WaitressReturn_t wRet = WAITRESS_RET_OK;
+	/* header parser vars */
+	char *nextLine = NULL, *thisLine = NULL;
+	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
+	unsigned int bufFilled = 0;
+
+	/* initialize */
+	memset (&waith->request, 0, sizeof (waith->request));
+	waith->request.dataHandler = WaitressHandleIdentity;
+
+	if ((wRet = WaitressConnect (waith)) != WAITRESS_RET_OK) {
+		return wRet;
+	}
+
+	waith->request.buf = malloc (WAITRESS_BUFFER_SIZE * sizeof (*waith->request.buf));
+	if ((wRet = WaitressSendRequest (waith)) != WAITRESS_RET_OK) {
+		return wRet;
+	}
+
+	char * const buf = waith->request.buf;
 	/* receive answer */
 	nextLine = buf;
 	while (hdrParseMode != HDRM_FINISHED) {
@@ -900,7 +918,6 @@ finish:
 	return wRet;
 
 #undef FINISH
-#undef WRITE_RET
 #undef READ_RET
 }
 

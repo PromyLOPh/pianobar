@@ -71,6 +71,7 @@ typedef struct {
 	struct {
 		size_t contentLength, contentReceived, chunkSize;
 		int sockfd;
+		char *buf;
 		/* first argument is WaitressHandle_t, but that's not defined here */
 		WaitressHandlerReturn_t (*dataHandler) (void *, char *, const size_t);
 	} request;
