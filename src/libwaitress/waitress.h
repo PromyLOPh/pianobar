@@ -25,7 +25,11 @@ THE SOFTWARE.
 #define _WAITRESS_H
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdbool.h>
+#ifdef ENABLE_TLS
+#include <gnutls/gnutls.h>
+#endif
 
 #define WAITRESS_BUFFER_SIZE 10*1024
 
@@ -48,34 +52,13 @@ typedef enum {
 
 typedef struct {
 	char *url; /* splitted url, unusable */
+	bool tls;
 	const char *user;
 	const char *password;
 	const char *host;
 	const char *port;
 	const char *path; /* without leading '/' */
 } WaitressUrl_t;
-
-/*	reusable handle
- */
-typedef struct {
-	WaitressUrl_t url;
-	WaitressMethod_t method;
-	const char *extraHeaders;
-	const char *postData;
-	WaitressUrl_t proxy;
-	/* extra data handed over to callback function */
-	void *data;
-	WaitressCbReturn_t (*callback) (void *, size_t, void *);
-	int socktimeout;
-	/* per-request data */
-	struct {
-		size_t contentLength, contentReceived, chunkSize;
-		int sockfd;
-		char *buf;
-		/* first argument is WaitressHandle_t, but that's not defined here */
-		WaitressHandlerReturn_t (*dataHandler) (void *, char *, const size_t);
-	} request;
-} WaitressHandle_t;
 
 typedef enum {
 	WAITRESS_RET_ERR = 0,
@@ -92,7 +75,41 @@ typedef enum {
 	WAITRESS_RET_READ_ERR,
 	WAITRESS_RET_CONNECTION_CLOSED,
 	WAITRESS_RET_DECODING_ERR,
+	WAITRESS_RET_TLS_DISABLED,
+	WAITRESS_RET_TLS_WRITE_ERR,
+	WAITRESS_RET_TLS_READ_ERR,
+	WAITRESS_RET_TLS_HANDSHAKE_ERR,
 } WaitressReturn_t;
+
+/*	reusable handle
+ */
+typedef struct {
+	WaitressUrl_t url;
+	WaitressMethod_t method;
+	const char *extraHeaders;
+	const char *postData;
+	WaitressUrl_t proxy;
+	/* extra data handed over to callback function */
+	void *data;
+	WaitressCbReturn_t (*callback) (void *, size_t, void *);
+	int timeout;
+	/* per-request data */
+	struct {
+		size_t contentLength, contentReceived, chunkSize;
+		int sockfd;
+		char *buf;
+#ifdef ENABLE_TLS
+		gnutls_session_t tlsSession;
+		gnutls_certificate_credentials_t tlsCred;
+#endif
+		/* first argument is WaitressHandle_t, but that's not defined here */
+		WaitressHandlerReturn_t (*dataHandler) (void *, char *, const size_t);
+		ssize_t (*read) (void *, char *, const size_t, ssize_t *);
+		ssize_t (*write) (void *, const char *, const size_t);
+		/* temporary return value storage */
+		WaitressReturn_t readWriteRet;
+	} request;
+} WaitressHandle_t;
 
 void WaitressInit (WaitressHandle_t *);
 void WaitressFree (WaitressHandle_t *);

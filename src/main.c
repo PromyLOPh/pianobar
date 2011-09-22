@@ -338,11 +338,16 @@ int main (int argc, char **argv) {
 
 	/* init some things */
 	ao_initialize ();
+#ifdef ENABLE_TLS
+	gnutls_global_init ();
+#endif
 	PianoInit (&app.ph);
 
 	WaitressInit (&app.waith);
 	app.waith.url.host = strdup (PIANO_RPC_HOST);
-	app.waith.url.port = strdup (PIANO_RPC_PORT);
+#ifdef ENABLE_TLS
+	app.waith.url.tls = true;
+#endif
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
@@ -384,6 +389,9 @@ int main (int argc, char **argv) {
 	PianoDestroyPlaylist (app.songHistory);
 	PianoDestroyPlaylist (app.playlist);
 	ao_shutdown();
+#ifdef ENABLE_TLS
+	gnutls_global_deinit ();
+#endif
 	BarSettingsDestroy (&app.settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */

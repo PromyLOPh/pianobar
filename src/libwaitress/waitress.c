@@ -55,7 +55,7 @@ void WaitressInit (WaitressHandle_t *waith) {
 	assert (waith != NULL);
 
 	memset (waith, 0, sizeof (*waith));
-	waith->socktimeout = 30000;
+	waith->timeout = 30000;
 }
 
 void WaitressFree (WaitressHandle_t *waith) {
@@ -423,62 +423,105 @@ static int WaitressPollLoop (int fd, short events, int timeout) {
 }
 
 /*	write () wrapper with poll () timeout
- *	@param socket fd
+ *	@param waitress handle
  *	@param write buffer
  *	@param write count bytes
- *	@param reuse existing pollfd structure
- *	@param timeout (microseconds)
- *	@return WAITRESS_RET_OK, WAITRESS_RET_TIMEOUT or WAITRESS_RET_ERR
+ *	@return number of written bytes or -1 on error
  */
-static WaitressReturn_t WaitressPollWrite (int sockfd, const char *buf,
-		size_t count, int timeout) {
+static ssize_t WaitressPollWrite (WaitressHandle_t *waith,
+		const char *buf, size_t count) {
 	int pollres = -1;
+	ssize_t retSize;
 
-	assert (sockfd != -1);
+	assert (waith != NULL);
 	assert (buf != NULL);
-	assert (count > 0);
 
-	pollres = WaitressPollLoop (sockfd, POLLOUT, timeout);
+	/* FIXME: simplify logic */
+	pollres = WaitressPollLoop (waith->request.sockfd, POLLOUT,
+			waith->timeout);
 	if (pollres == 0) {
-		return WAITRESS_RET_TIMEOUT;
+		waith->request.readWriteRet = WAITRESS_RET_TIMEOUT;
+		return -1;
 	} else if (pollres == -1) {
-		return WAITRESS_RET_ERR;
+		waith->request.readWriteRet = WAITRESS_RET_ERR;
+		return -1;
 	}
-	if (write (sockfd, buf, count) == -1) {
-		return WAITRESS_RET_ERR;
+	if ((retSize = write (waith->request.sockfd, buf, count)) == -1) {
+		waith->request.readWriteRet = WAITRESS_RET_ERR;
+		return -1;
 	}
-	return WAITRESS_RET_OK;
+	waith->request.readWriteRet = WAITRESS_RET_OK;
+	return retSize;
 }
+
+static WaitressReturn_t WaitressOrdinaryWrite (WaitressHandle_t *waith,
+		const char *buf, const size_t size) {
+	WaitressPollWrite (waith, buf, size);
+	return waith->request.readWriteRet;
+}
+
+#ifdef ENABLE_TLS
+static WaitressReturn_t WaitressGnutlsWrite (WaitressHandle_t *waith,
+		const char *buf, const size_t size) {
+	if (gnutls_record_send (waith->request.tlsSession, buf, size) < 0) {
+		return WAITRESS_RET_TLS_WRITE_ERR;
+	}
+	return waith->request.readWriteRet;
+}
+#endif
 
 /*	read () wrapper with poll () timeout
- *	@param socket fd
+ *	@param waitress handle
  *	@param write to this buf, not NULL terminated
  *	@param buffer size
- *	@param reuse existing pollfd struct
- *	@param timeout (in microseconds)
- *	@param read () return value/written bytes
- *	@return WAITRESS_RET_OK, WAITRESS_RET_TIMEOUT, WAITRESS_RET_ERR
+ *	@return number of read bytes or -1 on error
  */
-static WaitressReturn_t WaitressPollRead (int sockfd, char *buf, size_t count,
-		int timeout, ssize_t *retSize) {
+static ssize_t WaitressPollRead (WaitressHandle_t *waith, char *buf,
+		size_t count) {
 	int pollres = -1;
+	ssize_t retSize;
 
-	assert (sockfd != -1);
+	assert (waith != NULL);
 	assert (buf != NULL);
-	assert (count > 0);
-	assert (retSize != NULL);
 
-	pollres = WaitressPollLoop (sockfd, POLLIN, timeout);
+	/* FIXME: simplify logic */
+	pollres = WaitressPollLoop (waith->request.sockfd, POLLIN, waith->timeout);
 	if (pollres == 0) {
-		return WAITRESS_RET_TIMEOUT;
+		waith->request.readWriteRet = WAITRESS_RET_TIMEOUT;
+		return -1;
 	} else if (pollres == -1) {
-		return WAITRESS_RET_ERR;
+		waith->request.readWriteRet = WAITRESS_RET_ERR;
+		return -1;
 	}
-	if ((*retSize = read (sockfd, buf, count)) == -1) {
-		return WAITRESS_RET_READ_ERR;
+	if ((retSize = read (waith->request.sockfd, buf, count)) == -1) {
+		waith->request.readWriteRet = WAITRESS_RET_READ_ERR;
+		return -1;
 	}
-	return WAITRESS_RET_OK;
+	waith->request.readWriteRet = WAITRESS_RET_OK;
+	return retSize;
 }
+
+static WaitressReturn_t WaitressOrdinaryRead (WaitressHandle_t *waith,
+		char *buf, const size_t size, size_t *retSize) {
+	const ssize_t ret = WaitressPollRead (waith, buf, size);
+	if (ret != -1) {
+		*retSize = ret;
+	}
+	return waith->request.readWriteRet;
+}
+
+#ifdef ENABLE_TLS
+static WaitressReturn_t WaitressGnutlsRead (WaitressHandle_t *waith,
+		char *buf, const size_t size, size_t *retSize) {
+	ssize_t ret = gnutls_record_recv (waith->request.tlsSession, buf, size);
+	if (ret < 0) {
+		return WAITRESS_RET_TLS_READ_ERR;
+	} else {
+		*retSize = ret;
+	}
+	return waith->request.readWriteRet;
+}
+#endif
 
 /*	send basic http authorization
  *	@param waitress handle
@@ -513,7 +556,7 @@ static bool WaitressFormatAuthorization (WaitressHandle_t *waith,
 static const char *WaitressDefaultPort (const WaitressUrl_t * const url) {
 	assert (url != NULL);
 
-	return url->port == NULL ? "80" : url->port;
+	return url->port == NULL ? (url->tls ? "443" : "80") : url->port;
 }
 
 /*	get line from string
@@ -686,7 +729,7 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 	connect (waith->request.sockfd, res->ai_addr, res->ai_addrlen);
 
 	pollres = WaitressPollLoop (waith->request.sockfd, POLLOUT,
-			waith->socktimeout);
+			waith->timeout);
 	freeaddrinfo (res);
 	if (pollres == 0) {
 		return WAITRESS_RET_TIMEOUT;
@@ -701,6 +744,14 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 		return WAITRESS_RET_CONNECT_REFUSED;
 	}
 
+#ifdef ENABLE_TLS
+	if (waith->url.tls) {
+		if (gnutls_handshake (waith->request.tlsSession) != GNUTLS_E_SUCCESS) {
+			return WAITRESS_RET_TLS_HANDSHAKE_ERR;
+		}
+	}
+#endif
+
 	return WAITRESS_RET_OK;
 }
 
@@ -708,8 +759,7 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
  */
 static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
 #define WRITE_RET(buf, count) \
-		if ((wRet = WaitressPollWrite (waith->request.sockfd, buf, count, \
-				waith->socktimeout)) != WAITRESS_RET_OK) { \
+		if ((wRet = waith->request.write (waith, buf, count)) != WAITRESS_RET_OK) { \
 			return wRet; \
 		}
 
@@ -782,8 +832,8 @@ static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
  */
 static WaitressReturn_t WaitressReceiveResponse (WaitressHandle_t *waith) {
 #define READ_RET(buf, count, size) \
-		if ((wRet = WaitressPollRead (waith->request.sockfd, buf, count, \
-				waith->socktimeout, size)) != WAITRESS_RET_OK) { \
+		if ((wRet = waith->request.read (waith, buf, count, size)) != \
+				WAITRESS_RET_OK) { \
 			return wRet; \
 		}
 
@@ -907,6 +957,42 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	/* initialize */
 	memset (&waith->request, 0, sizeof (waith->request));
 	waith->request.dataHandler = WaitressHandleIdentity;
+	waith->request.read = WaitressOrdinaryRead;
+	waith->request.write = WaitressOrdinaryWrite;
+
+#ifdef ENABLE_TLS
+	if (waith->url.tls) {
+		waith->request.read = WaitressGnutlsRead;
+		waith->request.write = WaitressGnutlsWrite;
+		/* FIXME: move creds to waitressinit */
+		gnutls_certificate_allocate_credentials (&waith->request.tlsCred);
+		gnutls_certificate_set_x509_trust_file (waith->request.tlsCred,
+				"/etc/ssl/certs/ca-certificates.crt", GNUTLS_X509_FMT_PEM);
+		gnutls_init (&waith->request.tlsSession, GNUTLS_CLIENT);
+		const char *err;
+		if (gnutls_priority_set_direct (waith->request.tlsSession,
+				"PERFORMANCE", &err) != GNUTLS_E_SUCCESS) {
+			return WAITRESS_RET_ERR;
+		}
+		if (gnutls_credentials_set (waith->request.tlsSession,
+				GNUTLS_CRD_CERTIFICATE,
+				waith->request.tlsCred) != GNUTLS_E_SUCCESS) {
+			return WAITRESS_RET_ERR;
+		}
+
+		/* set up custom read/write functions */
+		gnutls_transport_set_ptr (waith->request.tlsSession,
+				(gnutls_transport_ptr_t) waith);
+		gnutls_transport_set_pull_function (waith->request.tlsSession,
+				WaitressPollRead);
+		gnutls_transport_set_push_function (waith->request.tlsSession,
+				WaitressPollWrite);
+	}
+#else
+	if (waith->url.tls) {
+		return WAITRESS_RET_TLS_DISABLED;
+	}
+#endif
 
 	/* request */
 	if ((wRet = WaitressConnect (waith)) == WAITRESS_RET_OK) {
@@ -921,6 +1007,13 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	}
 
 	/* cleanup */
+#ifdef ENABLE_TLS
+	if (waith->url.tls) {
+		gnutls_bye (waith->request.tlsSession, GNUTLS_SHUT_RDWR);
+		gnutls_deinit (waith->request.tlsSession);
+		gnutls_certificate_free_credentials (waith->request.tlsCred);
+	}
+#endif
 	close (waith->request.sockfd);
 
 	if (wRet == WAITRESS_RET_OK &&
@@ -986,6 +1079,22 @@ const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 
 		case WAITRESS_RET_DECODING_ERR:
 			return "Invalid encoded data.";
+			break;
+
+		case WAITRESS_RET_TLS_DISABLED:
+			return "TLS has been disabled.";
+			break;
+
+		case WAITRESS_RET_TLS_WRITE_ERR:
+			return "TLS write failed.";
+			break;
+
+		case WAITRESS_RET_TLS_READ_ERR:
+			return "TLS read failed.";
+			break;
+
+		case WAITRESS_RET_TLS_HANDSHAKE_ERR:
+			return "TLS handshake failed.";
 			break;
 
 		default:
@@ -1109,6 +1218,21 @@ int main () {
 			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2c=");
 	compareStr (WaitressBase64Encode ("The quick brown fox jumped over the lazy do"),
 			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkbw==");
+
+#ifdef ENABLE_TLS
+	gnutls_global_init ();
+#endif
+	WaitressHandle_t waith;
+	char *buf;
+	WaitressInit (&waith);
+	WaitressSetUrl (&waith, "http://6xq.net:80/");
+	printf ("ret: %s\n", WaitressErrorToStr (WaitressFetchBuf (&waith, &buf)));
+	printf ("%s\n", buf);
+	free (buf);
+	WaitressFree (&waith);
+#ifdef ENABLE_TLS
+	gnutls_global_deinit ();
+#endif
 
 	return EXIT_SUCCESS;
 }
