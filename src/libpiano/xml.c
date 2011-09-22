@@ -216,8 +216,6 @@ static void PianoXmlParseUserinfoCb (const char *key, const ezxml_t value,
 		user->webAuthToken = strdup (valueStr);
 	} else if (strcmp ("authToken", key) == 0) {
 		user->authToken = strdup (valueStr);
-	} else if (strcmp ("listenerId", key) == 0) {
-		user->listenerId = strdup (valueStr);
 	}
 }
 

@@ -40,7 +40,7 @@ PianoStation_t *BarUiSelectStation (BarApp_t *, const char *, BarUiSelectStation
 PianoSong_t *BarUiSelectSong (const BarSettings_t *, PianoSong_t *,
 		BarReadlineFds_t *);
 PianoArtist_t *BarUiSelectArtist (BarApp_t *, PianoArtist_t *);
-char *BarUiSelectMusicId (BarApp_t *, char *, const char *);
+char *BarUiSelectMusicId (BarApp_t *, PianoStation_t *, PianoSong_t *, const char *);
 void BarStationFromGenre (BarApp_t *);
 void BarUiPrintStation (const BarSettings_t *, PianoStation_t *);
 void BarUiPrintSong (const BarSettings_t *, const PianoSong_t *, 

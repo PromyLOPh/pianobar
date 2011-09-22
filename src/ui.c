@@ -466,11 +466,13 @@ PianoArtist_t *BarUiSelectArtist (BarApp_t *app, PianoArtist_t *startArtist) {
 
 /*	search music: query, search request, return music id
  *	@param app handle
- *	@param allow seed suggestions if != NULL
+ *	@param seed suggestion station
+ *	@param seed suggestion musicid
  *	@param prompt string
  *	@return musicId or NULL on abort/error
  */
-char *BarUiSelectMusicId (BarApp_t *app, char *similarToId, const char *msg) {
+char *BarUiSelectMusicId (BarApp_t *app, PianoStation_t *station,
+		PianoSong_t *similarSong, const char *msg) {
 	char *musicId = NULL;
 	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;
@@ -480,12 +482,14 @@ char *BarUiSelectMusicId (BarApp_t *app, char *similarToId, const char *msg) {
 	BarUiMsg (&app->settings, MSG_QUESTION, msg);
 	if (BarReadlineStr (lineBuf, sizeof (lineBuf), &app->input,
 			BAR_RL_DEFAULT) > 0) {
-		if (strcmp ("?", lineBuf) == 0 && similarToId != NULL) {
+		if (strcmp ("?", lineBuf) == 0 && station != NULL &&
+				similarSong != NULL) {
 			PianoReturn_t pRet;
 			WaitressReturn_t wRet;
 			PianoRequestDataGetSeedSuggestions_t reqData;
 
-			reqData.musicId = similarToId;
+			reqData.station = station;
+			reqData.musicId = similarSong->musicId;
 			reqData.max = 20;
 
 			BarUiMsg (&app->settings, MSG_INFO, "Receiving suggestions... ");
