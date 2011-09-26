@@ -55,11 +55,19 @@ typedef struct {
 	size_t pos;
 } WaitressFetchBufCbBuffer_t;
 
-void WaitressInit (WaitressHandle_t *waith) {
+void WaitressInit (WaitressHandle_t *waith, const char *caPath) {
 	assert (waith != NULL);
 
 	memset (waith, 0, sizeof (*waith));
 	waith->timeout = 30000;
+#ifdef ENABLE_TLS
+	gnutls_certificate_allocate_credentials (&waith->tlsCred);
+	if (caPath == NULL) {
+		caPath = "/etc/ssl/certs/ca-certificates.crt";
+	}
+	gnutls_certificate_set_x509_trust_file (waith->tlsCred, caPath,
+			GNUTLS_X509_FMT_PEM);
+#endif
 }
 
 void WaitressFree (WaitressHandle_t *waith) {
@@ -67,6 +75,9 @@ void WaitressFree (WaitressHandle_t *waith) {
 
 	free (waith->url.url);
 	free (waith->proxy.url);
+#ifdef ENABLE_TLS
+	gnutls_certificate_free_credentials (waith->tlsCred);
+#endif
 	memset (waith, 0, sizeof (*waith));
 }
 
@@ -1020,10 +1031,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	if (waith->url.tls) {
 		waith->request.read = WaitressGnutlsRead;
 		waith->request.write = WaitressGnutlsWrite;
-		/* FIXME: move creds to waitressinit */
-		gnutls_certificate_allocate_credentials (&waith->request.tlsCred);
-		gnutls_certificate_set_x509_trust_file (waith->request.tlsCred,
-				"/etc/ssl/certs/ca-certificates.crt", GNUTLS_X509_FMT_PEM);
 		gnutls_init (&waith->request.tlsSession, GNUTLS_CLIENT);
 		const char *err;
 		if (gnutls_priority_set_direct (waith->request.tlsSession,
@@ -1032,7 +1039,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		}
 		if (gnutls_credentials_set (waith->request.tlsSession,
 				GNUTLS_CRD_CERTIFICATE,
-				waith->request.tlsCred) != GNUTLS_E_SUCCESS) {
+				waith->tlsCred) != GNUTLS_E_SUCCESS) {
 			return WAITRESS_RET_ERR;
 		}
 
@@ -1047,7 +1054,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		/* certificate verification function */
 		gnutls_session_set_ptr (waith->request.tlsSession,
 				(gnutls_transport_ptr_t) waith);
-		gnutls_certificate_set_verify_function (waith->request.tlsCred,
+		gnutls_certificate_set_verify_function (waith->tlsCred,
 				WaitressTlsVerify);
 	}
 #else
@@ -1073,7 +1080,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	if (waith->url.tls) {
 		gnutls_bye (waith->request.tlsSession, GNUTLS_SHUT_RDWR);
 		gnutls_deinit (waith->request.tlsSession);
-		gnutls_certificate_free_credentials (waith->request.tlsCred);
 	}
 #endif
 	close (waith->request.sockfd);

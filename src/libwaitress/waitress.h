@@ -93,6 +93,10 @@ typedef struct {
 	void *data;
 	WaitressCbReturn_t (*callback) (void *, size_t, void *);
 	int timeout;
+#ifdef ENABLE_TLS
+	gnutls_certificate_credentials_t tlsCred;
+#endif
+
 	/* per-request data */
 	struct {
 		size_t contentLength, contentReceived, chunkSize;
@@ -100,7 +104,6 @@ typedef struct {
 		char *buf;
 #ifdef ENABLE_TLS
 		gnutls_session_t tlsSession;
-		gnutls_certificate_credentials_t tlsCred;
 #endif
 		/* first argument is WaitressHandle_t, but that's not defined here */
 		WaitressHandlerReturn_t (*dataHandler) (void *, char *, const size_t);
@@ -111,7 +114,7 @@ typedef struct {
 	} request;
 } WaitressHandle_t;
 
-void WaitressInit (WaitressHandle_t *);
+void WaitressInit (WaitressHandle_t *, const char *);
 void WaitressFree (WaitressHandle_t *);
 bool WaitressSetProxy (WaitressHandle_t *, const char *);
 char *WaitressUrlEncode (const char *);

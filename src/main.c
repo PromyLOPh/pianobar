@@ -192,7 +192,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 		/* setup player */
 		memset (&app->player, 0, sizeof (app->player));
 
-		WaitressInit (&app->player.waith);
+		WaitressInit (&app->player.waith, NULL);
 		WaitressSetUrl (&app->player.waith, app->playlist->audioUrl);
 
 		/* set up global proxy, player is NULLed on songfinish */
@@ -343,7 +343,7 @@ int main (int argc, char **argv) {
 #endif
 	PianoInit (&app.ph);
 
-	WaitressInit (&app.waith);
+	WaitressInit (&app.waith, NULL);
 	app.waith.url.host = strdup (PIANO_RPC_HOST);
 #ifdef ENABLE_TLS
 	app.waith.url.tls = true;
