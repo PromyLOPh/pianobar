@@ -40,6 +40,10 @@ THE SOFTWARE.
 #include <errno.h>
 #include <assert.h>
 
+#ifdef ENABLE_TLS
+#include <gnutls/x509.h>
+#endif
+
 #include "config.h"
 #include "waitress.h"
 
@@ -687,6 +691,58 @@ static int WaitressParseStatusline (const char * const line) {
 	return -1;
 }
 
+#ifdef ENABLE_TLS
+/*	verify server certificate
+ */
+static int WaitressTlsVerify (gnutls_session_t session) {
+	unsigned int status, certListSize;
+	const gnutls_datum_t *certList;
+	gnutls_x509_crt_t cert;
+	const WaitressHandle_t *waith;
+
+	waith = gnutls_session_get_ptr (session);
+	assert (waith != NULL);
+
+	if (gnutls_certificate_verify_peers2 (session, &status) != GNUTLS_E_SUCCESS) {
+		return GNUTLS_E_CERTIFICATE_ERROR;
+	}
+
+	/* don't accept invalid certs */
+	if (status & (GNUTLS_CERT_INVALID | GNUTLS_CERT_SIGNER_NOT_FOUND |
+			GNUTLS_CERT_REVOKED | GNUTLS_CERT_EXPIRED |
+			GNUTLS_CERT_NOT_ACTIVATED)) {
+		return GNUTLS_E_CERTIFICATE_ERROR;
+	}
+
+	if (gnutls_certificate_type_get (session) != GNUTLS_CRT_X509) {
+		return GNUTLS_E_CERTIFICATE_ERROR;
+	}
+
+	/* check hostname */
+	if ((certList = gnutls_certificate_get_peers (session,
+			&certListSize)) == NULL) {
+		return GNUTLS_E_CERTIFICATE_ERROR;
+	}
+
+	if (gnutls_x509_crt_init (&cert) != GNUTLS_E_SUCCESS) {
+		return GNUTLS_E_CERTIFICATE_ERROR;
+	}
+
+	if (gnutls_x509_crt_import (cert, &certList[0],
+			GNUTLS_X509_FMT_DER) != GNUTLS_E_SUCCESS) {
+		return GNUTLS_E_CERTIFICATE_ERROR;
+	}
+
+	if (gnutls_x509_crt_check_hostname (cert, waith->url.host) == 0) {
+		return GNUTLS_E_CERTIFICATE_ERROR;
+	}
+
+	gnutls_x509_crt_deinit (cert);
+
+	return 0;
+}
+#endif
+
 /*	Connect to server
  */
 static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
@@ -987,6 +1043,12 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 				WaitressPollRead);
 		gnutls_transport_set_push_function (waith->request.tlsSession,
 				WaitressPollWrite);
+
+		/* certificate verification function */
+		gnutls_session_set_ptr (waith->request.tlsSession,
+				(gnutls_transport_ptr_t) waith);
+		gnutls_certificate_set_verify_function (waith->request.tlsCred,
+				WaitressTlsVerify);
 	}
 #else
 	if (waith->url.tls) {
