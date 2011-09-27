@@ -61,12 +61,12 @@ void WaitressInit (WaitressHandle_t *waith, const char *caPath) {
 	memset (waith, 0, sizeof (*waith));
 	waith->timeout = 30000;
 #ifdef ENABLE_TLS
-	gnutls_certificate_allocate_credentials (&waith->tlsCred);
-	if (caPath == NULL) {
-		caPath = "/etc/ssl/certs/ca-certificates.crt";
+	if (caPath != NULL) {
+		gnutls_certificate_allocate_credentials (&waith->tlsCred);
+		gnutls_certificate_set_x509_trust_file (waith->tlsCred, caPath,
+				GNUTLS_X509_FMT_PEM);
+		waith->tlsInitialized = true;
 	}
-	gnutls_certificate_set_x509_trust_file (waith->tlsCred, caPath,
-			GNUTLS_X509_FMT_PEM);
 #endif
 }
 
@@ -76,7 +76,9 @@ void WaitressFree (WaitressHandle_t *waith) {
 	free (waith->url.url);
 	free (waith->proxy.url);
 #ifdef ENABLE_TLS
-	gnutls_certificate_free_credentials (waith->tlsCred);
+	if (waith->tlsInitialized) {
+		gnutls_certificate_free_credentials (waith->tlsCred);
+	}
 #endif
 	memset (waith, 0, sizeof (*waith));
 }
@@ -1029,6 +1031,8 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 
 #ifdef ENABLE_TLS
 	if (waith->url.tls) {
+		assert (waith->tlsInitialized);
+
 		waith->request.read = WaitressGnutlsRead;
 		waith->request.write = WaitressGnutlsWrite;
 		gnutls_init (&waith->request.tlsSession, GNUTLS_CLIENT);

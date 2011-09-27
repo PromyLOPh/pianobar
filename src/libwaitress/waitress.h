@@ -95,6 +95,7 @@ typedef struct {
 	int timeout;
 #ifdef ENABLE_TLS
 	gnutls_certificate_credentials_t tlsCred;
+	bool tlsInitialized;
 #endif
 
 	/* per-request data */
