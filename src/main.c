@@ -388,6 +388,7 @@ int main (int argc, char **argv) {
 	PianoDestroy (&app.ph);
 	PianoDestroyPlaylist (app.songHistory);
 	PianoDestroyPlaylist (app.playlist);
+	WaitressFree (&app.waith);
 	ao_shutdown();
 #ifdef ENABLE_TLS
 	gnutls_global_deinit ();
