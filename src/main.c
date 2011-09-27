@@ -343,14 +343,18 @@ int main (int argc, char **argv) {
 #endif
 	PianoInit (&app.ph);
 
-	WaitressInit (&app.waith, NULL);
-	app.waith.url.host = strdup (PIANO_RPC_HOST);
-#ifdef ENABLE_TLS
-	app.waith.url.tls = true;
-#endif
-
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
+
+#ifdef ENABLE_TLS
+	WaitressInit (&app.waith, app.settings.tlsCaPath);
+#else
+	WaitressInit (&app.waith, NULL);
+#endif
+	app.waith.url.host = strdup (PIANO_RPC_HOST);
+#ifdef ENABLE_TLS
+	app.waith.url.tls = app.settings.tls;
+#endif
 
 	BarUiMsg (&app.settings, MSG_NONE,
 			"Welcome to " PACKAGE " (" VERSION ")! ");
