@@ -4,12 +4,12 @@ Install
 Dependencies
 ------------
 
-gmake
-libao				http://www.xiph.org/ao/
-libfaad2			http://www.audiocoding.com/downloads.html
-AND/OR libmad		http://www.underbit.com/products/mad/
-pthreads
-UTF-8 console/locale!
+- gmake
+- pthreads
+- libao
+- libfaad2 and/or libmad
+- gnutls (optional)
+- UTF-8 console/locale
 
 Building
 --------
@@ -17,13 +17,6 @@ Building
 If you have all of the dependencies listed above just type
 
 	gmake clean && gmake
-
-NOTE: The above won't work on Mac OS X (Snow Leopard) since c99 targets i386
-and cc (gcc4.2) targets x86_64. If you've built supporting libraries
-(libao, etc.) using gcc, you'll be unable to link. You can work around
-this issue by overriding CFLAGS[1]
-
-	make clean && make CFLAGS="-O2 -DNDEBUG -W64"
 
 You can run the client directly from the source directory now
  
@@ -33,19 +26,35 @@ Or install it by issuing
 	
 	gmake install
 
-In case you don't want to install libmad OR libfaad you probably want to
-disable one of them:
+Selecting features
+++++++++++++++++++
 
-	gmake clean && gmake DISABLE_FAAD=1
+It is possible to disable certain features when building pianobar by setting
+one of the variables listed below. In fact it is required if you don’t have the
+corresponding library installed. So if you don’t want AAC playback or don’t
+have libfaad installed for example, run
 
-or
+	gmake DISABLE_FAAD=1
 
-	gmake clean && gmake DISABLE_MAD=1
+instead of a plain `gmake`.
 
-libpiano can be built and installed by running
-	
-	gmake clean && gmake libpiano && gmake install-libpiano
+DISABLE_FAAD=1
+	Disables AAC playback.
+DISABLE_MAD=1
+	Disables MP3 playback.
+DISABLE_GNUTLS=1
+	Disables TLS support. Don’t do this if you intent to run pianobar on a
+	public/unsafe network.
 
+Mac OS X
+++++++++
+
+NOTE: The above won't work on Mac OS X (Snow Leopard) since c99 targets i386
+and cc (gcc4.2) targets x86_64. If you've built supporting libraries
+(libao, etc.) using gcc, you'll be unable to link. You can work around
+this issue by overriding CFLAGS[1]
+
+	make clean && make CFLAGS="-O2 -DNDEBUG -W64"
 
 [1] https://github.com/PromyLOPh/pianobar/issues/98
 
