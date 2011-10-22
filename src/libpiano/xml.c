@@ -831,6 +831,7 @@ struct PianoXmlParseSeedBag {
 	char *seedId;
 	PianoSong_t *song;
 	PianoArtist_t *artist;
+	PianoStation_t *station;
 };
 
 /*	parse seed struct
@@ -853,6 +854,14 @@ static void PianoXmlParseSeedCb (const char *key, const ezxml_t value,
 
 		PianoXmlStructParser (ezxml_child (value, "struct"),
 				PianoXmlParseSearchArtistCb, bag->artist);
+	} else if (strcmp ("nonGenomeStation", key) == 0) {
+		/* genre stations are "non genome" station seeds */
+		if ((bag->station = calloc (1, sizeof (*bag->station))) == NULL) {
+			return;
+		}
+
+		PianoXmlStructParser (ezxml_child (value, "struct"),
+				PianoXmlParseStationsCb, bag->station);
 	} else if (strcmp ("seedId", key) == 0) {
 		char *valueStr = PianoXmlGetNodeText (value);
 		bag->seedId = strdup (valueStr);
@@ -875,10 +884,15 @@ static void PianoXmlParseGetStationInfoCb (const char *key, const ezxml_t value,
 			PianoXmlStructParser (ezxml_child (seedNode, "struct"),
 					PianoXmlParseSeedCb, &bag);
 
-			/* FIXME: use if-clause */
-			assert (bag.seedId != NULL);
-			assert (bag.song != NULL || bag.artist != NULL);
+			assert (bag.song != NULL || bag.artist != NULL ||
+					bag.station != NULL);
 
+			if (bag.seedId == NULL) {
+				/* seeds without id are useless */
+				continue;
+			}
+
+			/* FIXME: copy&waste */
 			if (bag.song != NULL) {
 				bag.song->seedId = bag.seedId;
 
@@ -902,6 +916,18 @@ static void PianoXmlParseGetStationInfoCb (const char *key, const ezxml_t value,
 						curSong = curSong->next;
 					}
 					curSong->next = bag.artist;
+				}
+			} else if (bag.station != NULL) {
+				bag.station->seedId = bag.seedId;
+
+				if (info->stationSeeds == NULL) {
+					info->stationSeeds = bag.station;
+				} else {
+					PianoStation_t *curStation = info->stationSeeds;
+					while (curStation->next != NULL) {
+						curStation = curStation->next;
+					}
+					curStation->next = bag.station;
 				}
 			} else {
 				free (bag.seedId);

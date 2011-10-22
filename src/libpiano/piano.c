@@ -91,6 +91,7 @@ void PianoDestroySearchResult (PianoSearchResult_t *searchResult) {
 void PianoDestroyStation (PianoStation_t *station) {
 	free (station->name);
 	free (station->id);
+	free (station->seedId);
 	memset (station, 0, sizeof (station));
 }
 
@@ -141,6 +142,7 @@ void PianoDestroyStationInfo (PianoStationInfo_t *info) {
 	PianoDestroyPlaylist (info->feedback);
 	PianoDestroyPlaylist (info->songSeeds);
 	PianoDestroyArtists (info->artistSeeds);
+	PianoDestroyStations (info->stationSeeds);
 }
 
 /*	destroy genre linked list
@@ -769,12 +771,15 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			char *seedId = NULL;
 
 			assert (reqData != NULL);
-			assert (reqData->song != NULL || reqData->artist != NULL);
+			assert (reqData->song != NULL || reqData->artist != NULL ||
+					reqData->station != NULL);
 
 			if (reqData->song != NULL) {
 				seedId = reqData->song->seedId;
 			} else if (reqData->artist != NULL) {
 				seedId = reqData->artist->seedId;
+			} else if (reqData->station != NULL) {
+				seedId = reqData->station->seedId;
 			}
 
 			assert (seedId != NULL);

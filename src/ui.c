@@ -333,13 +333,13 @@ static PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
  *	@param called if input was not a number
  *	@return pointer to selected station or NULL
  */
-PianoStation_t *BarUiSelectStation (BarApp_t *app, const char *prompt,
-		BarUiSelectStationCallback_t callback) {
+PianoStation_t *BarUiSelectStation (BarApp_t *app, PianoStation_t *stations,
+		const char *prompt, BarUiSelectStationCallback_t callback) {
 	PianoStation_t **sortedStations = NULL, *retStation = NULL;
 	size_t stationCount, i;
 	char buf[100];
 
-	if (app->ph.stations == NULL) {
+	if (stations == NULL) {
 		BarUiMsg (&app->settings, MSG_ERR, "No station available.\n");
 		return NULL;
 	}
@@ -347,7 +347,7 @@ PianoStation_t *BarUiSelectStation (BarApp_t *app, const char *prompt,
 	memset (buf, 0, sizeof (buf));
 
 	/* sort and print stations */
-	sortedStations = BarSortedStations (app->ph.stations, &stationCount,
+	sortedStations = BarSortedStations (stations, &stationCount,
 			app->settings.sortOrder);
 
 	do {
