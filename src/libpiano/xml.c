@@ -840,7 +840,11 @@ static void PianoXmlParseSeedCb (const char *key, const ezxml_t value,
 		void *data) {
 	struct PianoXmlParseSeedBag *bag = data;
 
+	assert (bag != NULL);
+
 	if (strcmp ("song", key) == 0) {
+		assert (bag->song == NULL);
+
 		if ((bag->song = calloc (1, sizeof (*bag->song))) == NULL) {
 			return;
 		}
@@ -848,6 +852,8 @@ static void PianoXmlParseSeedCb (const char *key, const ezxml_t value,
 		PianoXmlStructParser (ezxml_child (value, "struct"),
 				PianoXmlParsePlaylistCb, bag->song);
 	} else if (strcmp ("artist", key) == 0) {
+		assert (bag->artist == NULL);
+
 		if ((bag->artist = calloc (1, sizeof (*bag->artist))) == NULL) {
 			return;
 		}
@@ -856,6 +862,8 @@ static void PianoXmlParseSeedCb (const char *key, const ezxml_t value,
 				PianoXmlParseSearchArtistCb, bag->artist);
 	} else if (strcmp ("nonGenomeStation", key) == 0) {
 		/* genre stations are "non genome" station seeds */
+		assert (bag->station == NULL);
+
 		if ((bag->station = calloc (1, sizeof (*bag->station))) == NULL) {
 			return;
 		}
