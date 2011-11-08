@@ -727,20 +727,6 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 	BarUiMsg (settings, MSG_PLAYING, outstr);
 }
 
-/*	Incremets two digit ASCII counter
- */
-static void BarUiIncDigits (char digits[3]) {
-	++digits[1];
-	if (digits[1] == ':') {
-		digits[1] = '0';
-		digits[0] |= 0x30;
-		++digits[0];
-		if (digits[0] == ':') {
-			digits[0] = ' ';
-		}
-	}
-}
-
 /*	Print list of songs
  *	@param pianobar settings
  *	@param linked list of songs
@@ -750,7 +736,7 @@ static void BarUiIncDigits (char digits[3]) {
 size_t BarUiListSongs (const BarSettings_t *settings,
 		const PianoSong_t *song, const char *filter) {
 	size_t i = 0;
-	char digits[3] = " 0";
+	char digits[4];
 
 	while (song != NULL) {
 		if (filter == NULL ||
@@ -761,13 +747,13 @@ size_t BarUiListSongs (const BarSettings_t *settings,
 					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon :
 					((song->rating == PIANO_RATE_BAN) ? settings->banIcon : "")};
 
+			snprintf (digits, sizeof (digits) / sizeof (*digits), "%2zu", i);
 			BarUiCustomFormat (outstr, sizeof (outstr), settings->listSongFormat,
 					"iatr", vals);
 			BarUiAppendNewline (outstr, sizeof (outstr));
 			BarUiMsg (settings, MSG_LIST, outstr);
 		}
 		i++;
-		BarUiIncDigits (digits);
 		song = song->next;
 	}
 
