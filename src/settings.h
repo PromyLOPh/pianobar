@@ -96,10 +96,7 @@ typedef struct {
 	char *npStationFormat;
 	char *listSongFormat;
 	char *fifo;
-#ifdef ENABLE_TLS
-	bool tls;
 	char *tlsCaPath;
-#endif
 	BarMsgFormatStr_t msgFormat[MSG_COUNT];
 } BarSettings_t;
 

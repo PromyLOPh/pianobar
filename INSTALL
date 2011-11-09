@@ -7,8 +7,8 @@ Dependencies
 - gmake
 - pthreads
 - libao
+- gnutls
 - libfaad2 and/or libmad
-- gnutls (optional)
 - UTF-8 console/locale
 
 Building
@@ -42,9 +42,6 @@ DISABLE_FAAD=1
 	Disables AAC playback.
 DISABLE_MAD=1
 	Disables MP3 playback.
-DISABLE_GNUTLS=1
-	Disables TLS support. Don’t do this if you intent to run pianobar on a
-	public/unsafe network.
 
 Mac OS X
 ++++++++

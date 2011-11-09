@@ -338,23 +338,15 @@ int main (int argc, char **argv) {
 
 	/* init some things */
 	ao_initialize ();
-#ifdef ENABLE_TLS
 	gnutls_global_init ();
-#endif
 	PianoInit (&app.ph);
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
 
-#ifdef ENABLE_TLS
 	WaitressInit (&app.waith, app.settings.tlsCaPath);
-#else
-	WaitressInit (&app.waith, NULL);
-#endif
 	app.waith.url.host = strdup (PIANO_RPC_HOST);
-#ifdef ENABLE_TLS
-	app.waith.url.tls = app.settings.tls;
-#endif
+	app.waith.url.tls = true;
 
 	BarUiMsg (&app.settings, MSG_NONE,
 			"Welcome to " PACKAGE " (" VERSION ")! ");
@@ -394,9 +386,7 @@ int main (int argc, char **argv) {
 	PianoDestroyPlaylist (app.playlist);
 	WaitressFree (&app.waith);
 	ao_shutdown();
-#ifdef ENABLE_TLS
 	gnutls_global_deinit ();
-#endif
 	BarSettingsDestroy (&app.settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */

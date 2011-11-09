@@ -40,9 +40,7 @@ THE SOFTWARE.
 #include <errno.h>
 #include <assert.h>
 
-#ifdef ENABLE_TLS
 #include <gnutls/x509.h>
-#endif
 
 #include "config.h"
 #include "waitress.h"
@@ -60,14 +58,12 @@ void WaitressInit (WaitressHandle_t *waith, const char *caPath) {
 
 	memset (waith, 0, sizeof (*waith));
 	waith->timeout = 30000;
-#ifdef ENABLE_TLS
 	if (caPath != NULL) {
 		gnutls_certificate_allocate_credentials (&waith->tlsCred);
 		gnutls_certificate_set_x509_trust_file (waith->tlsCred, caPath,
 				GNUTLS_X509_FMT_PEM);
 		waith->tlsInitialized = true;
 	}
-#endif
 }
 
 void WaitressFree (WaitressHandle_t *waith) {
@@ -75,11 +71,9 @@ void WaitressFree (WaitressHandle_t *waith) {
 
 	free (waith->url.url);
 	free (waith->proxy.url);
-#ifdef ENABLE_TLS
 	if (waith->tlsInitialized) {
 		gnutls_certificate_free_credentials (waith->tlsCred);
 	}
-#endif
 	memset (waith, 0, sizeof (*waith));
 }
 
@@ -477,7 +471,6 @@ static WaitressReturn_t WaitressOrdinaryWrite (WaitressHandle_t *waith,
 	return waith->request.readWriteRet;
 }
 
-#ifdef ENABLE_TLS
 static WaitressReturn_t WaitressGnutlsWrite (WaitressHandle_t *waith,
 		const char *buf, const size_t size) {
 	if (gnutls_record_send (waith->request.tlsSession, buf, size) < 0) {
@@ -485,7 +478,6 @@ static WaitressReturn_t WaitressGnutlsWrite (WaitressHandle_t *waith,
 	}
 	return waith->request.readWriteRet;
 }
-#endif
 
 /*	read () wrapper with poll () timeout
  *	@param waitress handle
@@ -527,7 +519,6 @@ static WaitressReturn_t WaitressOrdinaryRead (WaitressHandle_t *waith,
 	return waith->request.readWriteRet;
 }
 
-#ifdef ENABLE_TLS
 static WaitressReturn_t WaitressGnutlsRead (WaitressHandle_t *waith,
 		char *buf, const size_t size, size_t *retSize) {
 	ssize_t ret = gnutls_record_recv (waith->request.tlsSession, buf, size);
@@ -538,7 +529,6 @@ static WaitressReturn_t WaitressGnutlsRead (WaitressHandle_t *waith,
 	}
 	return waith->request.readWriteRet;
 }
-#endif
 
 /*	send basic http authorization
  *	@param waitress handle
@@ -704,7 +694,6 @@ static int WaitressParseStatusline (const char * const line) {
 	return -1;
 }
 
-#ifdef ENABLE_TLS
 /*	verify server certificate
  */
 static int WaitressTlsVerify (gnutls_session_t session) {
@@ -754,7 +743,6 @@ static int WaitressTlsVerify (gnutls_session_t session) {
 
 	return 0;
 }
-#endif
 
 /*	Connect to server
  */
@@ -813,7 +801,6 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 		return WAITRESS_RET_CONNECT_REFUSED;
 	}
 
-#ifdef ENABLE_TLS
 	if (waith->url.tls) {
 		/* set up proxy tunnel */
 		if (WaitressProxyEnabled (waith)) {
@@ -834,7 +821,6 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 			return WAITRESS_RET_TLS_HANDSHAKE_ERR;
 		}
 	}
-#endif
 
 	return WAITRESS_RET_OK;
 }
@@ -1044,7 +1030,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	waith->request.read = WaitressOrdinaryRead;
 	waith->request.write = WaitressOrdinaryWrite;
 
-#ifdef ENABLE_TLS
 	if (waith->url.tls) {
 		assert (waith->tlsInitialized);
 
@@ -1076,11 +1061,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		gnutls_certificate_set_verify_function (waith->tlsCred,
 				WaitressTlsVerify);
 	}
-#else
-	if (waith->url.tls) {
-		return WAITRESS_RET_TLS_DISABLED;
-	}
-#endif
 
 	/* request */
 	if ((wRet = WaitressConnect (waith)) == WAITRESS_RET_OK) {
@@ -1095,12 +1075,10 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	}
 
 	/* cleanup */
-#ifdef ENABLE_TLS
 	if (waith->url.tls) {
 		gnutls_bye (waith->request.tlsSession, GNUTLS_SHUT_RDWR);
 		gnutls_deinit (waith->request.tlsSession);
 	}
-#endif
 	close (waith->request.sockfd);
 
 	if (wRet == WAITRESS_RET_OK &&
@@ -1306,9 +1284,7 @@ int main () {
 	compareStr (WaitressBase64Encode ("The quick brown fox jumped over the lazy do"),
 			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkbw==");
 
-#ifdef ENABLE_TLS
 	gnutls_global_init ();
-#endif
 	WaitressHandle_t waith;
 	char *buf;
 	WaitressInit (&waith);
@@ -1317,9 +1293,7 @@ int main () {
 	printf ("%s\n", buf);
 	free (buf);
 	WaitressFree (&waith);
-#ifdef ENABLE_TLS
 	gnutls_global_deinit ();
-#endif
 
 	return EXIT_SUCCESS;
 }
