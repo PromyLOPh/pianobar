@@ -216,6 +216,8 @@ static void PianoXmlParseUserinfoCb (const char *key, const ezxml_t value,
 		user->webAuthToken = strdup (valueStr);
 	} else if (strcmp ("authToken", key) == 0) {
 		user->authToken = strdup (valueStr);
+	} else if (strcmp ("listenerId", key) == 0) {
+		user->listenerId = strdup (valueStr);
 	}
 }
 
@@ -301,14 +303,12 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		}
 	} else if (strcmp ("artistMusicId", key) == 0) {
 		song->artistMusicId = strdup (valueStr);
- 	} else if (strcmp ("testStrategy", key) == 0) {
-		song->testStrategy = atoi (valueStr);
-	} else if (strcmp ("songType", key) == 0) {
-		song->songType = atoi (valueStr);
 	} else if (strcmp ("feedbackId", key) == 0) {
 		song->feedbackId = strdup (valueStr);
 	} else if (strcmp ("songDetailURL", key) == 0) {
 		song->detailUrl = strdup (valueStr);
+	} else if (strcmp ("trackToken", key) == 0) {
+		song->trackToken = strdup (valueStr);
 	}
 }
 

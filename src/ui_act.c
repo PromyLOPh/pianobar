@@ -257,10 +257,9 @@ BarUiActCallback(BarUiActDebug) {
 			"fileGain:\t%f\n"
 			"musicId:\t%s\n"
 			"rating:\t%i\n"
-			"songType:\t%i\n"
 			"stationId:\t%s\n"
-			"testStrategy:\t%i\n"
 			"title:\t%s\n"
+			"trackToken:\t%s\n"
 			"userSeed:\t%s\n",
 			selSong->album,
 			selSong->artist,
@@ -271,10 +270,9 @@ BarUiActCallback(BarUiActDebug) {
 			selSong->fileGain,
 			selSong->musicId,
 			selSong->rating,
-			selSong->songType,
 			selSong->stationId,
-			selSong->testStrategy,
 			selSong->title,
+			selSong->trackToken,
 			selSong->userSeed);
 }
 
