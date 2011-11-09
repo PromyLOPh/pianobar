@@ -815,6 +815,21 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 
 #ifdef ENABLE_TLS
 	if (waith->url.tls) {
+		/* set up proxy tunnel */
+		if (WaitressProxyEnabled (waith)) {
+			char buf[256];
+			size_t size;
+			snprintf (buf, sizeof (buf), "CONNECT %s:%s HTTP/1.1\r\n\r\n",
+						waith->url.host, WaitressDefaultPort (&waith->url));
+			WaitressOrdinaryWrite (waith, buf, strlen (buf));
+
+			WaitressOrdinaryRead (waith, buf, sizeof (buf)-1, &size);
+			buf[size] = 0;
+			if (WaitressParseStatusline (buf) != 200) {
+				return WAITRESS_RET_CONNECT_REFUSED;
+			}
+		}
+
 		if (gnutls_handshake (waith->request.tlsSession) != GNUTLS_E_SUCCESS) {
 			return WAITRESS_RET_TLS_HANDSHAKE_ERR;
 		}
