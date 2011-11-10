@@ -810,8 +810,9 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 		if (WaitressProxyEnabled (waith)) {
 			char buf[256];
 			size_t size;
-			snprintf (buf, sizeof (buf), "CONNECT %s:%s HTTP/1.1\r\n\r\n",
-						waith->url.host, WaitressDefaultPort (&waith->url));
+			snprintf (buf, sizeof (buf), "CONNECT %s:%s HTTP/"
+					WAITRESS_HTTP_VERSION "\r\n\r\n",
+					waith->url.host, WaitressDefaultPort (&waith->url));
 			WaitressOrdinaryWrite (waith, buf, strlen (buf));
 
 			WaitressOrdinaryRead (waith, buf, sizeof (buf)-1, &size);
