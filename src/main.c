@@ -328,6 +328,7 @@ int main (int argc, char **argv) {
 	static BarApp_t app;
 	/* terminal attributes _before_ we started messing around with ~ECHO */
 	struct termios termOrig;
+	WaitressReturn_t wRet;
 
 	memset (&app, 0, sizeof (app));
 
@@ -344,10 +345,6 @@ int main (int argc, char **argv) {
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
 
-	WaitressInit (&app.waith, app.settings.tlsCaPath);
-	app.waith.url.host = strdup (PIANO_RPC_HOST);
-	app.waith.url.tls = true;
-
 	BarUiMsg (&app.settings, MSG_NONE,
 			"Welcome to " PACKAGE " (" VERSION ")! ");
 	if (app.settings.keys[BAR_KS_HELP] == BAR_KS_DISABLED) {
@@ -357,6 +354,20 @@ int main (int argc, char **argv) {
 				"Press %c for a list of commands.\n",
 				app.settings.keys[BAR_KS_HELP]);
 	}
+
+	if ((wRet = WaitressInit (&app.waith, app.settings.tlsCaPath)) != WAITRESS_RET_OK) {
+		if (wRet == WAITRESS_RET_TLS_TRUSTFILE_ERR) {
+			BarUiMsg (&app.settings, MSG_ERR, "Can't load root certificates. "
+					"Please check the tls_ca_path setting in your config file.\n");
+		} else {
+			BarUiMsg (&app.settings, MSG_ERR, "Can't initialize HTTP library: "
+					"%s\n", WaitressErrorToStr (wRet));
+		}
+		goto die;
+	}
+
+	app.waith.url.host = strdup (PIANO_RPC_HOST);
+	app.waith.url.tls = true;
 
 	/* init fds */
 	FD_ZERO(&app.input.set);
@@ -377,6 +388,7 @@ int main (int argc, char **argv) {
 
 	BarMainLoop (&app);
 
+die:
 	if (app.input.fds[1] != -1) {
 		close (app.input.fds[1]);
 	}

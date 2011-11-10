@@ -53,17 +53,21 @@ typedef struct {
 	size_t pos;
 } WaitressFetchBufCbBuffer_t;
 
-void WaitressInit (WaitressHandle_t *waith, const char *caPath) {
+WaitressReturn_t WaitressInit (WaitressHandle_t *waith, const char *caPath) {
 	assert (waith != NULL);
 
 	memset (waith, 0, sizeof (*waith));
 	waith->timeout = 30000;
 	if (caPath != NULL) {
 		gnutls_certificate_allocate_credentials (&waith->tlsCred);
-		gnutls_certificate_set_x509_trust_file (waith->tlsCred, caPath,
-				GNUTLS_X509_FMT_PEM);
+		if (gnutls_certificate_set_x509_trust_file (waith->tlsCred, caPath,
+				GNUTLS_X509_FMT_PEM) <= 0) {
+			return WAITRESS_RET_TLS_TRUSTFILE_ERR;
+		}
 		waith->tlsInitialized = true;
 	}
+
+	return WAITRESS_RET_OK;
 }
 
 void WaitressFree (WaitressHandle_t *waith) {
@@ -1160,6 +1164,10 @@ const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 
 		case WAITRESS_RET_TLS_HANDSHAKE_ERR:
 			return "TLS handshake failed.";
+			break;
+
+		case WAITRESS_RET_TLS_TRUSTFILE_ERR:
+			return "Loading root certificates failed.";
 			break;
 
 		default:

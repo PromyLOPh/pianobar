@@ -77,6 +77,7 @@ typedef enum {
 	WAITRESS_RET_TLS_WRITE_ERR,
 	WAITRESS_RET_TLS_READ_ERR,
 	WAITRESS_RET_TLS_HANDSHAKE_ERR,
+	WAITRESS_RET_TLS_TRUSTFILE_ERR,
 } WaitressReturn_t;
 
 /*	reusable handle
@@ -109,7 +110,7 @@ typedef struct {
 	} request;
 } WaitressHandle_t;
 
-void WaitressInit (WaitressHandle_t *, const char *);
+WaitressReturn_t WaitressInit (WaitressHandle_t *, const char *);
 void WaitressFree (WaitressHandle_t *);
 bool WaitressSetProxy (WaitressHandle_t *, const char *);
 char *WaitressUrlEncode (const char *);
