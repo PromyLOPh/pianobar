@@ -1150,10 +1150,6 @@ const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 			return "Invalid encoded data.";
 			break;
 
-		case WAITRESS_RET_TLS_DISABLED:
-			return "TLS has been disabled.";
-			break;
-
 		case WAITRESS_RET_TLS_WRITE_ERR:
 			return "TLS write failed.";
 			break;
