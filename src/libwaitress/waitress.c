@@ -854,7 +854,7 @@ static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
 	}
 
 	/* send request */
-	if (WaitressProxyEnabled (waith)) {
+	if (WaitressProxyEnabled (waith) && !waith->url.tls) {
 		snprintf (buf, WAITRESS_BUFFER_SIZE,
 			"%s http://%s:%s/%s HTTP/" WAITRESS_HTTP_VERSION "\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
