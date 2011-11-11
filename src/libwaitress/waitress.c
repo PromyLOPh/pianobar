@@ -53,21 +53,11 @@ typedef struct {
 	size_t pos;
 } WaitressFetchBufCbBuffer_t;
 
-WaitressReturn_t WaitressInit (WaitressHandle_t *waith, const char *caPath) {
+void WaitressInit (WaitressHandle_t *waith) {
 	assert (waith != NULL);
 
 	memset (waith, 0, sizeof (*waith));
 	waith->timeout = 30000;
-	if (caPath != NULL) {
-		gnutls_certificate_allocate_credentials (&waith->tlsCred);
-		if (gnutls_certificate_set_x509_trust_file (waith->tlsCred, caPath,
-				GNUTLS_X509_FMT_PEM) <= 0) {
-			return WAITRESS_RET_TLS_TRUSTFILE_ERR;
-		}
-		waith->tlsInitialized = true;
-	}
-
-	return WAITRESS_RET_OK;
 }
 
 void WaitressFree (WaitressHandle_t *waith) {
@@ -75,9 +65,6 @@ void WaitressFree (WaitressHandle_t *waith) {
 
 	free (waith->url.url);
 	free (waith->proxy.url);
-	if (waith->tlsInitialized) {
-		gnutls_certificate_free_credentials (waith->tlsCred);
-	}
 	memset (waith, 0, sizeof (*waith));
 }
 
@@ -709,22 +696,10 @@ static int WaitressTlsVerify (gnutls_session_t session) {
 	waith = gnutls_session_get_ptr (session);
 	assert (waith != NULL);
 
-	if (gnutls_certificate_verify_peers2 (session, &status) != GNUTLS_E_SUCCESS) {
-		return GNUTLS_E_CERTIFICATE_ERROR;
-	}
-
-	/* don't accept invalid certs */
-	if (status & (GNUTLS_CERT_INVALID | GNUTLS_CERT_SIGNER_NOT_FOUND |
-			GNUTLS_CERT_REVOKED | GNUTLS_CERT_EXPIRED |
-			GNUTLS_CERT_NOT_ACTIVATED)) {
-		return GNUTLS_E_CERTIFICATE_ERROR;
-	}
-
 	if (gnutls_certificate_type_get (session) != GNUTLS_CRT_X509) {
 		return GNUTLS_E_CERTIFICATE_ERROR;
 	}
 
-	/* check hostname */
 	if ((certList = gnutls_certificate_get_peers (session,
 			&certListSize)) == NULL) {
 		return GNUTLS_E_CERTIFICATE_ERROR;
@@ -739,7 +714,14 @@ static int WaitressTlsVerify (gnutls_session_t session) {
 		return GNUTLS_E_CERTIFICATE_ERROR;
 	}
 
-	if (gnutls_x509_crt_check_hostname (cert, waith->url.host) == 0) {
+	char fingerprint[20];
+	size_t fingerprintSize = sizeof (fingerprint);
+	if (gnutls_x509_crt_get_fingerprint (cert, GNUTLS_DIG_SHA1, fingerprint,
+			&fingerprintSize) != 0) {
+		return GNUTLS_E_CERTIFICATE_ERROR;
+	}
+
+	if (memcmp (fingerprint, waith->tlsFingerprint, sizeof (fingerprint)) != 0) {
 		return GNUTLS_E_CERTIFICATE_ERROR;
 	}
 
@@ -1036,8 +1018,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	waith->request.write = WaitressOrdinaryWrite;
 
 	if (waith->url.tls) {
-		assert (waith->tlsInitialized);
-
 		waith->request.read = WaitressGnutlsRead;
 		waith->request.write = WaitressGnutlsWrite;
 		gnutls_init (&waith->request.tlsSession, GNUTLS_CLIENT);
@@ -1046,6 +1026,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 				"PERFORMANCE", &err) != GNUTLS_E_SUCCESS) {
 			return WAITRESS_RET_ERR;
 		}
+		gnutls_certificate_allocate_credentials (&waith->tlsCred);
 		if (gnutls_credentials_set (waith->request.tlsSession,
 				GNUTLS_CRD_CERTIFICATE,
 				waith->tlsCred) != GNUTLS_E_SUCCESS) {
@@ -1083,6 +1064,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	if (waith->url.tls) {
 		gnutls_bye (waith->request.tlsSession, GNUTLS_SHUT_RDWR);
 		gnutls_deinit (waith->request.tlsSession);
+		gnutls_certificate_free_credentials (waith->tlsCred);
 	}
 	close (waith->request.sockfd);
 

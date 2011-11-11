@@ -96,7 +96,7 @@ typedef struct {
 	char *npStationFormat;
 	char *listSongFormat;
 	char *fifo;
-	char *tlsCaPath;
+	char tlsFingerprint[20];
 	BarMsgFormatStr_t msgFormat[MSG_COUNT];
 } BarSettings_t;
 
