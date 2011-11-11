@@ -687,14 +687,11 @@ static int WaitressParseStatusline (const char * const line) {
 
 /*	verify server certificate
  */
-static int WaitressTlsVerify (gnutls_session_t session) {
-	unsigned int status, certListSize;
+static int WaitressTlsVerify (const WaitressHandle_t *waith) {
+	gnutls_session_t session = waith->request.tlsSession;
+	unsigned int certListSize;
 	const gnutls_datum_t *certList;
 	gnutls_x509_crt_t cert;
-	const WaitressHandle_t *waith;
-
-	waith = gnutls_session_get_ptr (session);
-	assert (waith != NULL);
 
 	if (gnutls_certificate_type_get (session) != GNUTLS_CRT_X509) {
 		return GNUTLS_E_CERTIFICATE_ERROR;
@@ -805,6 +802,10 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 		}
 
 		if (gnutls_handshake (waith->request.tlsSession) != GNUTLS_E_SUCCESS) {
+			return WAITRESS_RET_TLS_HANDSHAKE_ERR;
+		}
+
+		if (WaitressTlsVerify (waith) != 0) {
 			return WAITRESS_RET_TLS_HANDSHAKE_ERR;
 		}
 	}
@@ -1020,12 +1021,10 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	if (waith->url.tls) {
 		waith->request.read = WaitressGnutlsRead;
 		waith->request.write = WaitressGnutlsWrite;
+
 		gnutls_init (&waith->request.tlsSession, GNUTLS_CLIENT);
-		const char *err;
-		if (gnutls_priority_set_direct (waith->request.tlsSession,
-				"PERFORMANCE", &err) != GNUTLS_E_SUCCESS) {
-			return WAITRESS_RET_ERR;
-		}
+		gnutls_set_default_priority (waith->request.tlsSession);
+
 		gnutls_certificate_allocate_credentials (&waith->tlsCred);
 		if (gnutls_credentials_set (waith->request.tlsSession,
 				GNUTLS_CRD_CERTIFICATE,
@@ -1040,12 +1039,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 				WaitressPollRead);
 		gnutls_transport_set_push_function (waith->request.tlsSession,
 				WaitressPollWrite);
-
-		/* certificate verification function */
-		gnutls_session_set_ptr (waith->request.tlsSession,
-				(gnutls_transport_ptr_t) waith);
-		gnutls_certificate_set_verify_function (waith->tlsCred,
-				WaitressTlsVerify);
 	}
 
 	/* request */

@@ -7,7 +7,7 @@ Dependencies
 - gmake
 - pthreads
 - libao
-- gnutls >= 2.10.0
+- gnutls
 - libfaad2 and/or libmad
 - UTF-8 console/locale
 
