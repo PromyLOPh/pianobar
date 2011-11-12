@@ -790,9 +790,17 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 			char buf[256];
 			size_t size;
 			snprintf (buf, sizeof (buf), "CONNECT %s:%s HTTP/"
-					WAITRESS_HTTP_VERSION "\r\n\r\n",
+					WAITRESS_HTTP_VERSION "\r\n",
 					waith->url.host, WaitressDefaultPort (&waith->url));
 			WaitressOrdinaryWrite (waith, buf, strlen (buf));
+
+			/* write authorization headers */
+			if (WaitressFormatAuthorization (waith, &waith->proxy, "Proxy-",
+					buf, WAITRESS_BUFFER_SIZE)) {
+				WaitressOrdinaryWrite (waith, buf, strlen (buf));
+			}
+
+			WaitressOrdinaryWrite (waith, "\r\n", 2);
 
 			WaitressOrdinaryRead (waith, buf, sizeof (buf)-1, &size);
 			buf[size] = 0;
@@ -867,7 +875,9 @@ static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
 			WAITRESS_BUFFER_SIZE)) {
 		WRITE_RET (buf, strlen (buf));
 	}
-	if (WaitressFormatAuthorization (waith, &waith->proxy, "Proxy-",
+	/* don't leak proxy credentials to destination server if tls is used */
+	if (!waith->url.tls &&
+			WaitressFormatAuthorization (waith, &waith->proxy, "Proxy-",
 			buf, WAITRESS_BUFFER_SIZE)) {
 		WRITE_RET (buf, strlen (buf));
 	}
