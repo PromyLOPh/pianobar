@@ -101,10 +101,10 @@ typedef struct {
 		int sockfd;
 		char *buf;
 		gnutls_session_t tlsSession;
-		/* first argument is WaitressHandle_t, but that's not defined here */
+		/* first argument is WaitressHandle_t, but that's not defined yet */
 		WaitressHandlerReturn_t (*dataHandler) (void *, char *, const size_t);
-		ssize_t (*read) (void *, char *, const size_t, ssize_t *);
-		ssize_t (*write) (void *, const char *, const size_t);
+		WaitressReturn_t (*read) (void *, char *, const size_t, ssize_t *);
+		WaitressReturn_t (*write) (void *, const char *, const size_t);
 		/* temporary return value storage */
 		WaitressReturn_t readWriteRet;
 	} request;

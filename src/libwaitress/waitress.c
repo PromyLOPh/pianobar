@@ -430,10 +430,10 @@ static int WaitressPollLoop (int fd, short events, int timeout) {
  *	@param write count bytes
  *	@return number of written bytes or -1 on error
  */
-static ssize_t WaitressPollWrite (WaitressHandle_t *waith,
-		const char *buf, size_t count) {
+static ssize_t WaitressPollWrite (void *data, const void *buf, size_t count) {
 	int pollres = -1;
 	ssize_t retSize;
+	WaitressHandle_t *waith = data;
 
 	assert (waith != NULL);
 	assert (buf != NULL);
@@ -456,14 +456,18 @@ static ssize_t WaitressPollWrite (WaitressHandle_t *waith,
 	return retSize;
 }
 
-static WaitressReturn_t WaitressOrdinaryWrite (WaitressHandle_t *waith,
-		const char *buf, const size_t size) {
+static WaitressReturn_t WaitressOrdinaryWrite (void *data, const char *buf,
+		const size_t size) {
+	WaitressHandle_t *waith = data;
+
 	WaitressPollWrite (waith, buf, size);
 	return waith->request.readWriteRet;
 }
 
-static WaitressReturn_t WaitressGnutlsWrite (WaitressHandle_t *waith,
-		const char *buf, const size_t size) {
+static WaitressReturn_t WaitressGnutlsWrite (void *data, const char *buf,
+		const size_t size) {
+	WaitressHandle_t *waith = data;
+
 	if (gnutls_record_send (waith->request.tlsSession, buf, size) < 0) {
 		return WAITRESS_RET_TLS_WRITE_ERR;
 	}
@@ -476,10 +480,10 @@ static WaitressReturn_t WaitressGnutlsWrite (WaitressHandle_t *waith,
  *	@param buffer size
  *	@return number of read bytes or -1 on error
  */
-static ssize_t WaitressPollRead (WaitressHandle_t *waith, char *buf,
-		size_t count) {
+static ssize_t WaitressPollRead (void *data, void *buf, size_t count) {
 	int pollres = -1;
 	ssize_t retSize;
+	WaitressHandle_t *waith = data;
 
 	assert (waith != NULL);
 	assert (buf != NULL);
@@ -501,8 +505,10 @@ static ssize_t WaitressPollRead (WaitressHandle_t *waith, char *buf,
 	return retSize;
 }
 
-static WaitressReturn_t WaitressOrdinaryRead (WaitressHandle_t *waith,
-		char *buf, const size_t size, size_t *retSize) {
+static WaitressReturn_t WaitressOrdinaryRead (void *data, char *buf,
+		const size_t size, ssize_t *retSize) {
+	WaitressHandle_t *waith = data;
+
 	const ssize_t ret = WaitressPollRead (waith, buf, size);
 	if (ret != -1) {
 		*retSize = ret;
@@ -510,8 +516,10 @@ static WaitressReturn_t WaitressOrdinaryRead (WaitressHandle_t *waith,
 	return waith->request.readWriteRet;
 }
 
-static WaitressReturn_t WaitressGnutlsRead (WaitressHandle_t *waith,
-		char *buf, const size_t size, size_t *retSize) {
+static WaitressReturn_t WaitressGnutlsRead (void *data, char *buf,
+		const size_t size, ssize_t *retSize) {
+	WaitressHandle_t *waith = data;
+
 	ssize_t ret = gnutls_record_recv (waith->request.tlsSession, buf, size);
 	if (ret < 0) {
 		return WAITRESS_RET_TLS_READ_ERR;
@@ -586,10 +594,12 @@ static char *WaitressGetline (char * const str) {
 
 /*	identity encoding handler
  */
-static WaitressHandlerReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
-		char *buf, const size_t size) {
-	assert (waith != NULL);
+static WaitressHandlerReturn_t WaitressHandleIdentity (void *data, char *buf,
+		const size_t size) {
+	assert (data != NULL);
 	assert (buf != NULL);
+
+	WaitressHandle_t *waith = data;
 
 	waith->request.contentReceived += size;
 	if (waith->callback (buf, size, waith->data) == WAITRESS_CB_RET_ERR) {
@@ -602,8 +612,12 @@ static WaitressHandlerReturn_t WaitressHandleIdentity (WaitressHandle_t *waith,
 /*	chunked encoding handler. buf must be \0-terminated, size does not include
  *	trailing \0.
  */
-static WaitressHandlerReturn_t WaitressHandleChunked (WaitressHandle_t *waith,
-		char *buf, const size_t size) {
+static WaitressHandlerReturn_t WaitressHandleChunked (void *data, char *buf,
+		const size_t size) {
+	assert (data != NULL);
+	assert (buf != NULL);
+
+	WaitressHandle_t *waith = data;
 	char *content = buf, *nextContent;
 
 	assert (waith != NULL);
@@ -788,7 +802,7 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 		/* set up proxy tunnel */
 		if (WaitressProxyEnabled (waith)) {
 			char buf[256];
-			size_t size;
+			ssize_t size;
 			snprintf (buf, sizeof (buf), "CONNECT %s:%s HTTP/"
 					WAITRESS_HTTP_VERSION "\r\n",
 					waith->url.host, WaitressDefaultPort (&waith->url));
