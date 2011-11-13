@@ -55,6 +55,17 @@ typedef struct {
 
 static WaitressReturn_t WaitressReceiveHeaders (WaitressHandle_t *, size_t *);
 
+#define READ_RET(buf, count, size) \
+		if ((wRet = waith->request.read (waith, buf, count, size)) != \
+				WAITRESS_RET_OK) { \
+			return wRet; \
+		}
+
+#define WRITE_RET(buf, count) \
+		if ((wRet = waith->request.write (waith, buf, count)) != WAITRESS_RET_OK) { \
+			return wRet; \
+		}
+
 void WaitressInit (WaitressHandle_t *waith) {
 	assert (waith != NULL);
 
@@ -846,11 +857,6 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 /*	Write http header/post data to socket
  */
 static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
-#define WRITE_RET(buf, count) \
-		if ((wRet = waith->request.write (waith, buf, count)) != WAITRESS_RET_OK) { \
-			return wRet; \
-		}
-
 	assert (waith != NULL);
 	assert (waith->request.buf != NULL);
 
@@ -915,14 +921,8 @@ static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
 	}
 
 	return WAITRESS_RET_OK;
-#undef WRITE_RET
 }
 
-#define READ_RET(buf, count, size) \
-		if ((wRet = waith->request.read (waith, buf, count, size)) != \
-				WAITRESS_RET_OK) { \
-			return wRet; \
-		}
 /*	receive response headers
  *	@param Waitress handle
  *	@param return unhandled bytes count in buf
@@ -1049,8 +1049,6 @@ static WaitressReturn_t WaitressReceiveResponse (WaitressHandle_t *waith) {
 	} while (recvSize > 0);
 
 	return WAITRESS_RET_OK;
-
-#undef READ_RET
 }
 
 /*	Receive data from host and call *callback ()
