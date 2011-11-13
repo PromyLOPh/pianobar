@@ -822,15 +822,15 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 			snprintf (buf, sizeof (buf), "CONNECT %s:%s HTTP/"
 					WAITRESS_HTTP_VERSION "\r\n",
 					waith->url.host, WaitressDefaultPort (&waith->url));
-			waith->request.write (waith, buf, strlen (buf));
+			WRITE_RET (buf, strlen (buf));
 
 			/* write authorization headers */
 			if (WaitressFormatAuthorization (waith, &waith->proxy, "Proxy-",
 					buf, WAITRESS_BUFFER_SIZE)) {
-				waith->request.write (waith, buf, strlen (buf));
+				WRITE_RET (buf, strlen (buf));
 			}
 
-			waith->request.write (waith, "\r\n", 2);
+			WRITE_RET ("\r\n", 2);
 
 			if ((wRet = WaitressReceiveHeaders (waith, &size)) !=
 					WAITRESS_RET_OK) {
