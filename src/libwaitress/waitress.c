@@ -53,6 +53,8 @@ typedef struct {
 	size_t pos;
 } WaitressFetchBufCbBuffer_t;
 
+static WaitressReturn_t WaitressReceiveHeaders (WaitressHandle_t *, size_t *);
+
 void WaitressInit (WaitressHandle_t *waith) {
 	assert (waith != NULL);
 
@@ -803,6 +805,8 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 		if (WaitressProxyEnabled (waith)) {
 			char buf[256];
 			ssize_t size;
+			WaitressReturn_t wRet;
+
 			snprintf (buf, sizeof (buf), "CONNECT %s:%s HTTP/"
 					WAITRESS_HTTP_VERSION "\r\n",
 					waith->url.host, WaitressDefaultPort (&waith->url));
@@ -816,10 +820,9 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 
 			waith->request.write (waith, "\r\n", 2);
 
-			waith->request.read (waith, buf, sizeof (buf)-1, &size);
-			buf[size] = 0;
-			if (WaitressParseStatusline (buf) != 200) {
-				return WAITRESS_RET_CONNECT_REFUSED;
+			if ((wRet = WaitressReceiveHeaders (waith, &size)) !=
+					WAITRESS_RET_OK) {
+				return wRet;
 			}
 		}
 
@@ -914,23 +917,22 @@ static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
 #undef WRITE_RET
 }
 
-/*	read response header and data
- */
-static WaitressReturn_t WaitressReceiveResponse (WaitressHandle_t *waith) {
 #define READ_RET(buf, count, size) \
 		if ((wRet = waith->request.read (waith, buf, count, size)) != \
 				WAITRESS_RET_OK) { \
 			return wRet; \
 		}
-
-	assert (waith != NULL);
-	assert (waith->request.buf != NULL);
-
+/*	receive response headers
+ *	@param Waitress handle
+ *	@param return unhandled bytes count in buf
+ */
+static WaitressReturn_t WaitressReceiveHeaders (WaitressHandle_t *waith,
+		size_t *retRemaining) {
 	char * const buf = waith->request.buf;
+	size_t bufFilled = 0;
+	ssize_t recvSize = 0;
 	char *nextLine = NULL, *thisLine = NULL;
 	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
-	ssize_t recvSize = 0;
-	size_t bufFilled = 0;
 	WaitressReturn_t wRet = WAITRESS_RET_OK;
 
 	/* receive answer */
@@ -1004,7 +1006,25 @@ static WaitressReturn_t WaitressReceiveResponse (WaitressHandle_t *waith) {
 		bufFilled -= (thisLine-buf);
 	} /* end while hdrParseMode */
 
-	recvSize = bufFilled;
+	*retRemaining = bufFilled;
+
+	return wRet;
+}
+
+/*	read response header and data
+ */
+static WaitressReturn_t WaitressReceiveResponse (WaitressHandle_t *waith) {
+	assert (waith != NULL);
+	assert (waith->request.buf != NULL);
+
+	char * const buf = waith->request.buf;
+	ssize_t recvSize = 0;
+	WaitressReturn_t wRet = WAITRESS_RET_OK;
+
+	if ((wRet = WaitressReceiveHeaders (waith, &recvSize)) != WAITRESS_RET_OK) {
+		return wRet;
+	}
+
 	do {
 		/* data must be \0-terminated for chunked handler */
 		buf[recvSize] = '\0';
@@ -1066,16 +1086,15 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 				WaitressPollWrite);
 	}
 
+	/* buffer is required for connect already */
+	waith->request.buf = malloc (WAITRESS_BUFFER_SIZE *
+			sizeof (*waith->request.buf));
+
 	/* request */
 	if ((wRet = WaitressConnect (waith)) == WAITRESS_RET_OK) {
-		waith->request.buf = malloc (WAITRESS_BUFFER_SIZE *
-				sizeof (*waith->request.buf));
-
 		if ((wRet = WaitressSendRequest (waith)) == WAITRESS_RET_OK) {
 			wRet = WaitressReceiveResponse (waith);
 		}
-
-		free (waith->request.buf);
 	}
 
 	/* cleanup */
@@ -1085,6 +1104,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		gnutls_certificate_free_credentials (waith->tlsCred);
 	}
 	close (waith->request.sockfd);
+	free (waith->request.buf);
 
 	if (wRet == WAITRESS_RET_OK &&
 			waith->request.contentReceived < waith->request.contentLength) {
