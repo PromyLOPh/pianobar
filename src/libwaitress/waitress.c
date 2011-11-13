@@ -508,18 +508,19 @@ static ssize_t WaitressPollRead (void *data, void *buf, size_t count) {
 }
 
 static WaitressReturn_t WaitressOrdinaryRead (void *data, char *buf,
-		const size_t size, ssize_t *retSize) {
+		const size_t size, size_t *retSize) {
 	WaitressHandle_t *waith = data;
 
 	const ssize_t ret = WaitressPollRead (waith, buf, size);
 	if (ret != -1) {
-		*retSize = ret;
+		assert (ret >= 0);
+		*retSize = (size_t) ret;
 	}
 	return waith->request.readWriteRet;
 }
 
 static WaitressReturn_t WaitressGnutlsRead (void *data, char *buf,
-		const size_t size, ssize_t *retSize) {
+		const size_t size, size_t *retSize) {
 	WaitressHandle_t *waith = data;
 
 	ssize_t ret = gnutls_record_recv (waith->request.tlsSession, buf, size);
@@ -804,7 +805,7 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 		/* set up proxy tunnel */
 		if (WaitressProxyEnabled (waith)) {
 			char buf[256];
-			ssize_t size;
+			size_t size;
 			WaitressReturn_t wRet;
 
 			snprintf (buf, sizeof (buf), "CONNECT %s:%s HTTP/"
@@ -929,8 +930,7 @@ static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
 static WaitressReturn_t WaitressReceiveHeaders (WaitressHandle_t *waith,
 		size_t *retRemaining) {
 	char * const buf = waith->request.buf;
-	size_t bufFilled = 0;
-	ssize_t recvSize = 0;
+	size_t bufFilled = 0, recvSize = 0;
 	char *nextLine = NULL, *thisLine = NULL;
 	enum {HDRM_HEAD, HDRM_LINES, HDRM_FINISHED} hdrParseMode = HDRM_HEAD;
 	WaitressReturn_t wRet = WAITRESS_RET_OK;
@@ -1018,7 +1018,7 @@ static WaitressReturn_t WaitressReceiveResponse (WaitressHandle_t *waith) {
 	assert (waith->request.buf != NULL);
 
 	char * const buf = waith->request.buf;
-	ssize_t recvSize = 0;
+	size_t recvSize = 0;
 	WaitressReturn_t wRet = WAITRESS_RET_OK;
 
 	if ((wRet = WaitressReceiveHeaders (waith, &recvSize)) != WAITRESS_RET_OK) {
