@@ -806,17 +806,17 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 			snprintf (buf, sizeof (buf), "CONNECT %s:%s HTTP/"
 					WAITRESS_HTTP_VERSION "\r\n",
 					waith->url.host, WaitressDefaultPort (&waith->url));
-			WaitressOrdinaryWrite (waith, buf, strlen (buf));
+			waith->request.write (waith, buf, strlen (buf));
 
 			/* write authorization headers */
 			if (WaitressFormatAuthorization (waith, &waith->proxy, "Proxy-",
 					buf, WAITRESS_BUFFER_SIZE)) {
-				WaitressOrdinaryWrite (waith, buf, strlen (buf));
+				waith->request.write (waith, buf, strlen (buf));
 			}
 
-			WaitressOrdinaryWrite (waith, "\r\n", 2);
+			waith->request.write (waith, "\r\n", 2);
 
-			WaitressOrdinaryRead (waith, buf, sizeof (buf)-1, &size);
+			waith->request.read (waith, buf, sizeof (buf)-1, &size);
 			buf[size] = 0;
 			if (WaitressParseStatusline (buf) != 200) {
 				return WAITRESS_RET_CONNECT_REFUSED;
@@ -830,6 +830,10 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 		if (WaitressTlsVerify (waith) != 0) {
 			return WAITRESS_RET_TLS_HANDSHAKE_ERR;
 		}
+
+		/* now we can talk encrypted */
+		waith->request.read = WaitressGnutlsRead;
+		waith->request.write = WaitressGnutlsWrite;
 	}
 
 	return WAITRESS_RET_OK;
@@ -1043,9 +1047,6 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	waith->request.write = WaitressOrdinaryWrite;
 
 	if (waith->url.tls) {
-		waith->request.read = WaitressGnutlsRead;
-		waith->request.write = WaitressGnutlsWrite;
-
 		gnutls_init (&waith->request.tlsSession, GNUTLS_CLIENT);
 		gnutls_set_default_priority (waith->request.tlsSession);
 
