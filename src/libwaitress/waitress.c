@@ -1307,17 +1307,6 @@ int main () {
 	compareStr (WaitressBase64Encode ("The quick brown fox jumped over the lazy do"),
 			"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkbw==");
 
-	gnutls_global_init ();
-	WaitressHandle_t waith;
-	char *buf;
-	WaitressInit (&waith);
-	WaitressSetUrl (&waith, "http://6xq.net:80/");
-	printf ("ret: %s\n", WaitressErrorToStr (WaitressFetchBuf (&waith, &buf)));
-	printf ("%s\n", buf);
-	free (buf);
-	WaitressFree (&waith);
-	gnutls_global_deinit ();
-
 	return EXIT_SUCCESS;
 }
 #endif /* TEST */
