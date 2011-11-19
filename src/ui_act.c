@@ -577,7 +577,8 @@ BarUiActCallback(BarUiActManageStation) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
 	PianoRequestDataGetStationInfo_t reqData;
-	char selectBuf[2];
+	char selectBuf[2], allowedActions[6], *allowedPos = allowedActions;
+	char question[64];
 
 	memset (&reqData, 0, sizeof (reqData));
 	reqData.station = selStation;
@@ -586,9 +587,50 @@ BarUiActCallback(BarUiActManageStation) {
 	BarUiActDefaultPianoCall (PIANO_REQUEST_GET_STATION_INFO, &reqData);
 	BarUiActDefaultEventcmd ("stationfetchinfo");
 
-	BarUiMsg (&app->settings, MSG_QUESTION, "Delete [a]rtist/[s]ong/s[t]ation "
-			"seeds or [f]eedback? ");
-	if (BarReadline (selectBuf, sizeof (selectBuf), "astf", &app->input,
+	/* enable submenus depending on data availability */
+	strcpy (question, "Delete ");
+	if (reqData.info.artistSeeds != NULL) {
+		strcat (question, "[a]rtist");
+		*allowedPos++ = 'a';
+	}
+	if (reqData.info.songSeeds != NULL) {
+		if (allowedPos != allowedActions) {
+			strcat (question, "/");
+		}
+		strcat (question, "[s]ong");
+		*allowedPos++ = 's';
+	}
+	if (reqData.info.stationSeeds != NULL) {
+		if (allowedPos != allowedActions) {
+			strcat (question, "/");
+		}
+		strcat (question, "s[t]ation");
+		*allowedPos++ = 't';
+	}
+	if (allowedPos != allowedActions) {
+		strcat (question, " seeds");
+	}
+	if (reqData.info.feedback != NULL) {
+		if (allowedPos != allowedActions) {
+			strcat (question, " or ");
+		}
+		strcat (question, "[f]eedback");
+		*allowedPos++ = 'f';
+	}
+	*allowedPos = '\0';
+	strcat (question, "? ");
+
+	assert (strlen (question) < sizeof (question) / sizeof (*question));
+
+	/* nothing to see? */
+	if (allowedPos == allowedActions) {
+		BarUiMsg (&app->settings, MSG_ERR, "No seeds or feedback available yet.\n");
+		PianoDestroyStationInfo (&reqData.info);
+		return;
+	}
+
+	BarUiMsg (&app->settings, MSG_QUESTION, question);
+	if (BarReadline (selectBuf, sizeof (selectBuf), allowedActions, &app->input,
 					BAR_RL_FULLRETURN, -1)) {
 		if (selectBuf[0] == 'a') {
 			PianoArtist_t *artist = BarUiSelectArtist (app,
