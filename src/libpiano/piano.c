@@ -268,8 +268,16 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 							"<?xml version=\"1.0\"?><methodCall>"
 							"<methodName>listener.authenticateListener</methodName>"
 							"<params><param><value><int>%lu</int></value></param>"
+							/* user */
 							"<param><value><string>%s</string></value></param>"
+							/* password */
 							"<param><value><string>%s</string></value></param>"
+							/* vendor */
+							"<param><value><string>html5tuner</string></value></param>"
+							"<param><value><string/></value></param>"
+							"<param><value><string/></value></param>"
+							"<param><value><string>HTML5</string></value></param>"
+							"<param><value><boolean>1</boolean></value></param>"
 							"</params></methodCall>", (unsigned long) timestamp,
 							logindata->user, xmlencodedPassword);
 					snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
