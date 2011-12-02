@@ -29,27 +29,17 @@ THE SOFTWARE.
 
 #include "ui_readline.h"
 
-static inline void BarReadlineMoveLeft (char *buf, size_t *bufPos,
-		size_t *bufLen) {
-	char *tmpBuf = &buf[*bufPos-1];
-	while (tmpBuf < &buf[*bufLen]) {
-		*tmpBuf = *(tmpBuf+1);
-		++tmpBuf;
-	}
-	--(*bufPos);
-	--(*bufLen);
-}
+/*	return size of previous UTF-8 character
+ */
+static size_t BarReadlinePrevUtf8 (char *ptr) {
+	size_t i = 0;
 
-static inline char BarReadlineIsAscii (char b) {
-	return !(b & (1 << 7));
-}
+	do {
+		++i;
+		--ptr;
+	} while ((*ptr & (1 << 7)) && !(*ptr & (1 << 6)));
 
-static inline char BarReadlineIsUtf8Start (char b) {
-	return (b & (1 << 7)) && (b & (1 << 6));
-}
-
-static inline char BarReadlineIsUtf8Content (char b) {
-	return (b & (1 << 7)) && !(b & (1 << 6));
+	return i;
 }
 
 /*	readline replacement
@@ -112,12 +102,6 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 		switch (chr) {
 			/* EOT */
 			case 4:
-				if (echo) {
-					fputs ("\n", stdout);
-				}
-				return bufLen;
-				break;
-
 			/* return */
 			case 10:
 				if (echo) {
@@ -139,19 +123,15 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 			case 8: /* ASCII BS */
 			case 127: /* ASCII DEL */
 				if (bufPos > 0) {
-					if (BarReadlineIsAscii (buf[bufPos-1])) {
-						BarReadlineMoveLeft (buf, &bufPos, &bufLen);
-					} else {
-						/* delete utf-8 multibyte chars */
-						/* char content */
-						while (BarReadlineIsUtf8Content (buf[bufPos-1])) {
-							BarReadlineMoveLeft (buf, &bufPos, &bufLen);
-						}
-						/* char length */
-						if (BarReadlineIsUtf8Start (buf[bufPos-1])) {
-							BarReadlineMoveLeft (buf, &bufPos, &bufLen);
-						}
-					}
+					size_t moveSize = BarReadlinePrevUtf8 (&buf[bufPos]);
+					assert ((signed int) bufPos - (signed int) moveSize >= 0);
+					memmove (&buf[bufPos-moveSize], &buf[bufPos], moveSize);
+
+					bufPos -= moveSize;
+					bufLen -= moveSize;
+
+					buf[bufLen] = '\0';
+
 					/* move caret back and delete last character */
 					if (echo) {
 						fputs ("\033[D\033[K", stdout);
