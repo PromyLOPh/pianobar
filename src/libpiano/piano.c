@@ -92,7 +92,7 @@ void PianoDestroyStation (PianoStation_t *station) {
 	free (station->name);
 	free (station->id);
 	free (station->seedId);
-	memset (station, 0, sizeof (station));
+	memset (station, 0, sizeof (*station));
 }
 
 /*	free complete station list
