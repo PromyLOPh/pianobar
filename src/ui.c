@@ -594,6 +594,9 @@ void BarStationFromGenre (BarApp_t *app) {
 		curCat = curCat->next;
 		i--;
 	}
+	if (curCat == NULL) {
+		return;
+	}
 	
 	/* print all available stations */
 	curGenre = curCat->genres;
@@ -611,6 +614,9 @@ void BarStationFromGenre (BarApp_t *app) {
 	while (curGenre != NULL && i > 0) {
 		curGenre = curGenre->next;
 		i--;
+	}
+	if (curGenre == NULL) {
+		return;
 	}
 	/* create station */
 	BarUiMsg (&app->settings, MSG_INFO, "Adding shared station \"%s\"... ", curGenre->name);
