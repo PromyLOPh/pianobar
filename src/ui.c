@@ -584,16 +584,19 @@ void BarStationFromGenre (BarApp_t *app) {
 		i++;
 		curCat = curCat->next;
 	}
-	/* select category or exit */
-	BarUiMsg (&app->settings, MSG_QUESTION, "Select category: ");
-	if (BarReadlineInt (&i, &app->input) == 0) {
-		return;
-	}
-	curCat = app->ph.genreStations;
-	while (curCat != NULL && i > 0) {
-		curCat = curCat->next;
-		i--;
-	}
+
+	do {
+		/* select category or exit */
+		BarUiMsg (&app->settings, MSG_QUESTION, "Select category: ");
+		if (BarReadlineInt (&i, &app->input) == 0) {
+			return;
+		}
+		curCat = app->ph.genreStations;
+		while (curCat != NULL && i > 0) {
+			curCat = curCat->next;
+			i--;
+		}
+	} while (curCat == NULL);
 	
 	/* print all available stations */
 	curGenre = curCat->genres;
@@ -603,15 +606,19 @@ void BarStationFromGenre (BarApp_t *app) {
 		i++;
 		curGenre = curGenre->next;
 	}
-	BarUiMsg (&app->settings, MSG_QUESTION, "Select genre: ");
-	if (BarReadlineInt (&i, &app->input) == 0) {
-		return;
-	}
-	curGenre = curCat->genres;
-	while (curGenre != NULL && i > 0) {
-		curGenre = curGenre->next;
-		i--;
-	}
+
+	do {
+		BarUiMsg (&app->settings, MSG_QUESTION, "Select genre: ");
+		if (BarReadlineInt (&i, &app->input) == 0) {
+			return;
+		}
+		curGenre = curCat->genres;
+		while (curGenre != NULL && i > 0) {
+			curGenre = curGenre->next;
+			i--;
+		}
+	} while (curGenre == NULL);
+
 	/* create station */
 	BarUiMsg (&app->settings, MSG_INFO, "Adding shared station \"%s\"... ", curGenre->name);
 	reqData.id = curGenre->musicId;
