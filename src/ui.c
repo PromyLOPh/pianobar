@@ -566,9 +566,6 @@ void BarStationFromGenre (BarApp_t *app) {
 
 	/* receive genre stations list if not yet available */
 	if (app->ph.genreStations == NULL) {
-		PianoReturn_t pRet;
-		WaitressReturn_t wRet;
-
 		BarUiMsg (&app->settings, MSG_INFO, "Receiving genre stations... ");
 		if (!BarUiPianoCall (app, PIANO_REQUEST_GET_GENRE_STATIONS, NULL,
 				&pRet, &wRet)) {

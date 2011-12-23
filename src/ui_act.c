@@ -636,39 +636,39 @@ BarUiActCallback(BarUiActManageStation) {
 			PianoArtist_t *artist = BarUiSelectArtist (app,
 					reqData.info.artistSeeds);
 			if (artist != NULL) {
-				PianoRequestDataDeleteSeed_t reqData;
+				PianoRequestDataDeleteSeed_t subReqData;
 
-				memset (&reqData, 0, sizeof (reqData));
-				reqData.artist = artist;
+				memset (&subReqData, 0, sizeof (subReqData));
+				subReqData.artist = artist;
 
 				BarUiMsg (&app->settings, MSG_INFO, "Deleting artist seed... ");
-				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &reqData);
+				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &subReqData);
 				BarUiActDefaultEventcmd ("stationdeleteartistseed");
 			}
 		} else if (selectBuf[0] == 's') {
 			PianoSong_t *song = BarUiSelectSong (&app->settings,
 					reqData.info.songSeeds, &app->input);
 			if (song != NULL) {
-				PianoRequestDataDeleteSeed_t reqData;
+				PianoRequestDataDeleteSeed_t subReqData;
 
-				memset (&reqData, 0, sizeof (reqData));
-				reqData.song = song;
+				memset (&subReqData, 0, sizeof (subReqData));
+				subReqData.song = song;
 
 				BarUiMsg (&app->settings, MSG_INFO, "Deleting song seed... ");
-				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &reqData);
+				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &subReqData);
 				BarUiActDefaultEventcmd ("stationdeletesongseed");
 			}
 		} else if (selectBuf[0] == 't') {
 			PianoStation_t *station = BarUiSelectStation (app,
 					reqData.info.stationSeeds, "Delete seed station: ", NULL);
 			if (station != NULL) {
-				PianoRequestDataDeleteSeed_t reqData;
+				PianoRequestDataDeleteSeed_t subReqData;
 
-				memset (&reqData, 0, sizeof (reqData));
-				reqData.station = station;
+				memset (&subReqData, 0, sizeof (subReqData));
+				subReqData.station = station;
 
 				BarUiMsg (&app->settings, MSG_INFO, "Deleting station seed... ");
-				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &reqData);
+				BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_SEED, &subReqData);
 				BarUiActDefaultEventcmd ("stationdeletestationseed");
 			}
 		} else if (selectBuf[0] == 'f') {
