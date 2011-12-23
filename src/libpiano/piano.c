@@ -62,7 +62,7 @@ void PianoInit (PianoHandle_t *ph) {
 
 /*	destroy artist linked list
  */
-void PianoDestroyArtists (PianoArtist_t *artists) {
+static void PianoDestroyArtists (PianoArtist_t *artists) {
 	PianoArtist_t *curArtist, *lastArtist;
 
 	curArtist = artists;
@@ -98,7 +98,7 @@ void PianoDestroyStation (PianoStation_t *station) {
 /*	free complete station list
  *	@param piano handle
  */
-void PianoDestroyStations (PianoStation_t *stations) {
+static void PianoDestroyStations (PianoStation_t *stations) {
 	PianoStation_t *curStation, *lastStation;
 
 	curStation = stations;
@@ -148,7 +148,7 @@ void PianoDestroyStationInfo (PianoStationInfo_t *info) {
 
 /*	destroy genre linked list
  */
-void PianoDestroyGenres (PianoGenre_t *genres) {
+static void PianoDestroyGenres (PianoGenre_t *genres) {
 	PianoGenre_t *curGenre, *lastGenre;
 
 	curGenre = genres;
@@ -163,7 +163,7 @@ void PianoDestroyGenres (PianoGenre_t *genres) {
 
 /*	destroy user information
  */
-void PianoDestroyUserInfo (PianoUserInfo_t *user) {
+static void PianoDestroyUserInfo (PianoUserInfo_t *user) {
 	free (user->webAuthToken);
 	free (user->authToken);
 	free (user->listenerId);

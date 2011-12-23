@@ -26,21 +26,21 @@ THE SOFTWARE.
 
 #include "piano.h"
 
-PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, const char *xml);
-PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, const char *xml);
-PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, const char *xml,
+PianoReturn_t PianoXmlParseUserinfo (PianoHandle_t *ph, char *xml);
+PianoReturn_t PianoXmlParseStations (PianoHandle_t *ph, char *xml);
+PianoReturn_t PianoXmlParsePlaylist (PianoHandle_t *ph, char *xml,
 		PianoSong_t **);
-PianoReturn_t PianoXmlParseSearch (const char *searchXml,
+PianoReturn_t PianoXmlParseSearch (char *searchXml,
 		PianoSearchResult_t *searchResult);
-PianoReturn_t PianoXmlParseSimple (const char *xml);
+PianoReturn_t PianoXmlParseSimple (char *xml);
 PianoReturn_t PianoXmlParseCreateStation (PianoHandle_t *ph,
-		const char *xml);
-PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, const char *xml,
+		char *xml);
+PianoReturn_t PianoXmlParseAddSeed (PianoHandle_t *ph, char *xml,
 		PianoStation_t *station);
 PianoReturn_t PianoXmlParseGenreExplorer (PianoHandle_t *ph,
-		const char *xmlContent);
-PianoReturn_t PianoXmlParseTranformStation (const char *searchXml);
-PianoReturn_t PianoXmlParseNarrative (const char *xml, char **retNarrative);
+		char *xmlContent);
+PianoReturn_t PianoXmlParseTranformStation (char *searchXml);
+PianoReturn_t PianoXmlParseNarrative (char *xml, char **retNarrative);
 PianoReturn_t PianoXmlParseSeedSuggestions (char *, PianoSearchResult_t *);
 PianoReturn_t PianoXmlParseGetStationInfo (char *, PianoStationInfo_t *);
 

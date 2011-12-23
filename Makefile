@@ -130,7 +130,7 @@ clean:
 all: pianobar
 
 debug: pianobar
-debug: CFLAGS=-Wall -pedantic -ggdb
+debug: CFLAGS=-Wall -pedantic -ggdb -Wmissing-declarations
 
 waitress-test: CFLAGS+= -DTEST
 waitress-test: ${LIBWAITRESS_OBJ}

@@ -85,7 +85,7 @@ void WaitressFree (WaitressHandle_t *waith) {
  *	@param Waitress handle
  *	@return true|false
  */
-bool WaitressProxyEnabled (const WaitressHandle_t *waith) {
+static bool WaitressProxyEnabled (const WaitressHandle_t *waith) {
 	assert (waith != NULL);
 
 	return waith->proxy.host != NULL;

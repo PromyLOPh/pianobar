@@ -633,7 +633,7 @@ void BarStationFromGenre (BarApp_t *app) {
  *	@param format characters
  *	@param replacement for each given format character
  */
-void BarUiCustomFormat (char *dest, size_t destSize, const char *format,
+static void BarUiCustomFormat (char *dest, size_t destSize, const char *format,
 		const char *formatChars, const char **formatVals) {
 	bool haveFormatChar = false;
 

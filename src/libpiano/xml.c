@@ -32,6 +32,7 @@ THE SOFTWARE.
 #include <ezxml.h>
 #include <assert.h>
 
+#include "xml.h"
 #include "piano.h"
 #include "crypt.h"
 #include "config.h"
