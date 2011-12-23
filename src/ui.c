@@ -235,16 +235,16 @@ int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
 /*	Station sorting functions */
 
 static inline int BarStationQuickmix01Cmp (const void *a, const void *b) {
-	const PianoStation_t *stationA = *((PianoStation_t **) a),
-			*stationB = *((PianoStation_t **) b);
+	const PianoStation_t *stationA = *((PianoStation_t * const *) a),
+			*stationB = *((PianoStation_t * const *) b);
 	return stationA->isQuickMix - stationB->isQuickMix;
 }
 
 /*	sort by station name from a to z, case insensitive
  */
 static inline int BarStationNameAZCmp (const void *a, const void *b) {
-	const PianoStation_t *stationA = *((PianoStation_t **) a),
-			*stationB = *((PianoStation_t **) b);
+	const PianoStation_t *stationA = *((PianoStation_t * const *) a),
+			*stationB = *((PianoStation_t * const *) b);
 	return strcasecmp (stationA->name, stationB->name);
 }
 

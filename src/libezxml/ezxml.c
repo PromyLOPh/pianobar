@@ -108,7 +108,7 @@ static ezxml_t ezxml_insert(ezxml_t xml, ezxml_t dest, size_t off)
 
 // Adds a child tag. off is the offset of the child tag relative to the start
 // of the parent tag's character content. Returns the child tag.
-static ezxml_t ezxml_add_child(ezxml_t xml, const char *name, size_t off)
+static ezxml_t ezxml_add_child(ezxml_t xml, char *name, size_t off)
 {
     ezxml_t child;
 
@@ -131,7 +131,7 @@ ezxml_t ezxml_child(ezxml_t xml, const char *name)
 }
 
 // returns a new empty ezxml structure with the given root tag name
-static ezxml_t ezxml_new(const char *name)
+static ezxml_t ezxml_new(char *name)
 {
     static char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
                            "apos;", "&#39;", "amp;", "&#38;", NULL };

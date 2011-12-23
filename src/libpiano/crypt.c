@@ -48,7 +48,7 @@ THE SOFTWARE.
 #define INITIAL_SHIFT 28
 #define SHIFT_DEC 4
 char *PianoDecryptString (const char * const s) {
-	const unsigned char *strInput = (unsigned char *) s;
+	const unsigned char *strInput = (const unsigned char *) s;
 	/* hex-decode => strlen/2 + null-byte */
 	uint32_t *iDecrypt;
 	char *strDecrypted;
@@ -56,7 +56,7 @@ char *PianoDecryptString (const char * const s) {
 	/* blowfish blocks, 32-bit */
 	uint32_t f, l, r, lrExchange;
 
-	if ((iDecrypt = calloc (strlen ((char *) strInput)/2/sizeof (*iDecrypt)+1,
+	if ((iDecrypt = calloc (strlen ((const char *) strInput)/2/sizeof (*iDecrypt)+1,
 			sizeof (*iDecrypt))) == NULL) {
 		return NULL;
 	}
@@ -122,8 +122,8 @@ char *PianoDecryptString (const char * const s) {
  *	@return encrypted, hex-encoded string
  */
 char *PianoEncryptString (const char *s) {
-	const unsigned char *strInput = (unsigned char *) s;
-	const size_t strInputN = strlen ((char *) strInput);
+	const unsigned char *strInput = (const unsigned char *) s;
+	const size_t strInputN = strlen ((const char *) strInput);
 	/* num of 64-bit blocks, rounded to next block */
 	size_t blockN = strInputN / 8 + 1;
 	uint32_t *blockInput, *blockPtr;
