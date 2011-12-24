@@ -86,7 +86,6 @@ typedef struct {
 	char *password;
 	char *controlProxy; /* non-american listeners need this */
 	char *proxy;
-	char keys[BAR_KS_COUNT];
 	char *autostartStation;
 	char *eventCmd;
 	char *loveIcon;
@@ -97,6 +96,7 @@ typedef struct {
 	char *listSongFormat;
 	char *fifo;
 	char tlsFingerprint[20];
+	char keys[BAR_KS_COUNT];
 	BarMsgFormatStr_t msgFormat[MSG_COUNT];
 } BarSettings_t;
 

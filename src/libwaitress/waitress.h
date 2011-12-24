@@ -83,30 +83,37 @@ typedef enum {
 /*	reusable handle
  */
 typedef struct {
-	WaitressUrl_t url;
+	int timeout;
 	WaitressMethod_t method;
+
 	const char *extraHeaders;
 	const char *postData;
-	WaitressUrl_t proxy;
 	/* extra data handed over to callback function */
 	void *data;
 	WaitressCbReturn_t (*callback) (void *, size_t, void *);
-	int timeout;
 	const char *tlsFingerprint;
+
+	WaitressUrl_t url;
+	WaitressUrl_t proxy;
+
 	gnutls_certificate_credentials_t tlsCred;
 
 	/* per-request data */
 	struct {
-		size_t contentLength, contentReceived, chunkSize;
 		int sockfd;
+
+		/* temporary return value storage */
+		WaitressReturn_t readWriteRet;
+
+		size_t contentLength, contentReceived, chunkSize;
+
 		char *buf;
-		gnutls_session_t tlsSession;
 		/* first argument is WaitressHandle_t, but that's not defined yet */
 		WaitressHandlerReturn_t (*dataHandler) (void *, char *, const size_t);
 		WaitressReturn_t (*read) (void *, char *, const size_t, size_t *);
 		WaitressReturn_t (*write) (void *, const char *, const size_t);
-		/* temporary return value storage */
-		WaitressReturn_t readWriteRet;
+
+		gnutls_session_t tlsSession;
 	} request;
 } WaitressHandle_t;
 

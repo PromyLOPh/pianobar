@@ -47,11 +47,9 @@ THE SOFTWARE.
 #define BAR_PLAYER_MS_TO_S_FACTOR 1000
 
 struct audioPlayer {
-	/* buffer; should be large enough */
-	unsigned char buffer[WAITRESS_BUFFER_SIZE*2];
-	size_t bufferFilled;
-	size_t bufferRead;
-	size_t bytesReceived;
+	char doQuit;
+	unsigned char channels;
+	unsigned char aoError;
 
 	enum {
 		PLAYER_FREED = 0, /* thread is not running */
@@ -64,20 +62,28 @@ struct audioPlayer {
 		PLAYER_RECV_DATA, /* playing track */
 		PLAYER_FINISHED_PLAYBACK
 	} mode;
-
 	PianoAudioFormat_t audioFormat;
+
+	unsigned int scale;
+	float gain;
 
 	/* duration and already played time; measured in milliseconds */
 	unsigned long int songDuration;
 	unsigned long int songPlayed;
 
+	unsigned long samplerate;
+
+	size_t bufferFilled;
+	size_t bufferRead;
+	size_t bytesReceived;
+
 	/* aac */
 	#ifdef ENABLE_FAAD
-	NeAACDecHandle aacHandle;
 	/* stsz atom: sample sizes */
-	unsigned int *sampleSize;
 	size_t sampleSizeN;
 	size_t sampleSizeCurr;
+	unsigned int *sampleSize;
+	NeAACDecHandle aacHandle;
 	#endif
 
 	/* mp3 */
@@ -87,22 +93,14 @@ struct audioPlayer {
 	struct mad_synth mp3Synth;
 	#endif
 
-	unsigned long samplerate;
-	unsigned char channels;
-
-	float gain;
-	unsigned int scale;
-
 	/* audio out */
 	ao_device *audioOutDevice;
-	unsigned char aoError;
-
-	WaitressHandle_t waith;
-
-	char doQuit;
-	pthread_mutex_t pauseMutex;
-
 	const BarSettings_t *settings;
+
+	pthread_mutex_t pauseMutex;
+	WaitressHandle_t waith;
+	/* buffer; should be large enough */
+	unsigned char buffer[WAITRESS_BUFFER_SIZE*2];
 };
 
 enum {PLAYER_RET_OK = 0, PLAYER_RET_ERR = 1};
