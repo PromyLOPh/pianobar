@@ -41,9 +41,9 @@ typedef void (*BarKeyShortcutFunc_t) (BarApp_t *, PianoStation_t *,
 typedef struct {
 	BarUiDispatchContext_t context;
 	BarKeyShortcutFunc_t function;
-	char *helpText;
+	const char * const helpText;
 	char defaultKey;
-	char *configKey;
+	const char * const configKey;
 } BarUiDispatchAction_t;
 
 #include "ui_act.h"

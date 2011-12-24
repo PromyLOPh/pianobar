@@ -691,9 +691,10 @@ PianoReturn_t PianoXmlParseSeedSuggestions (char *xml,
  *	@return encoded string or NULL
  */
 char *PianoXmlEncodeString (const char *s) {
-	char *replacements[] = {"&&amp;", "'&apos;", "\"&quot;", "<&lt;",
-			">&gt;", NULL};
-	char **r, *sOut, *sOutCurr, found;
+	static const char *replacements[] = {"&&amp;", "'&apos;", "\"&quot;",
+			"<&lt;", ">&gt;", NULL};
+	const char **r;
+	char *sOut, *sOutCurr, found;
 
 	if ((sOut = calloc (strlen (s) * 5 + 1, sizeof (*sOut))) == NULL) {
 		return NULL;
