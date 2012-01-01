@@ -535,10 +535,11 @@ static WaitressReturn_t WaitressGnutlsRead (void *data, char *buf,
 	WaitressHandle_t *waith = data;
 
 	ssize_t ret = gnutls_record_recv (waith->request.tlsSession, buf, size);
-	if (ret < 0) {
+	if (ret < 0 && ret != -110) {
 		return WAITRESS_RET_TLS_READ_ERR;
 	} else {
-		*retSize = ret;
+		if(ret == -110)*retSize = 0;
+		else *retSize = ret;
 	}
 	return waith->request.readWriteRet;
 }
