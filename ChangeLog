@@ -1,3 +1,9 @@
+Release 2012.01.10
+
+- Use TLS for login only
+- waitress: HTTP/1.1 compliant CONNECT
+- Minor fixes/code cleanup
+
 Release 2011.12.11
 
 - waitress: Replaced ca-bundle with fingerprint check
