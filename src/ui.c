@@ -141,6 +141,7 @@ static WaitressReturn_t BarPianoHttpRequest (WaitressHandle_t *waith,
 	waith->postData = req->postData;
 	waith->method = WAITRESS_METHOD_POST;
 	waith->url.path = req->urlPath;
+	waith->url.tls = req->secure;
 
 	return WaitressFetchBuf (waith, &req->responseData);
 }

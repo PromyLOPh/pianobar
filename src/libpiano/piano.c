@@ -236,6 +236,8 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 	assert (req != NULL);
 
 	req->type = type;
+	/* no tls by default */
+	req->secure = false;
 
 	switch (req->type) {
 		case PIANO_REQUEST_LOGIN: {
@@ -256,6 +258,8 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 
 				case 1: {
 					char *xmlencodedPassword = NULL;
+
+					req->secure = true;
 
 					/* username == email address does not contain &,<,>," */
 					if ((xmlencodedPassword =
