@@ -356,7 +356,6 @@ int main (int argc, char **argv) {
 
 	WaitressInit (&app.waith);
 	app.waith.url.host = strdup (PIANO_RPC_HOST);
-	app.waith.url.tls = true;
 	app.waith.tlsFingerprint = app.settings.tlsFingerprint;
 
 	/* init fds */
