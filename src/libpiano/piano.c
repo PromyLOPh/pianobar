@@ -236,8 +236,7 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 	assert (req != NULL);
 
 	req->type = type;
-	/* no tls by default */
-	req->secure = false;
+	req->secure = true;
 
 	switch (req->type) {
 		case PIANO_REQUEST_LOGIN: {
@@ -310,6 +309,9 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			break;
 
 		case PIANO_REQUEST_GET_PLAYLIST: {
+			/* disable tls for fetching playlists */
+			req->secure = false;
+
 			/* get playlist for specified station */
 			PianoRequestDataGetPlaylist_t *reqData = req->data;
 
