@@ -900,24 +900,23 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 
 					/* abusing parseNarrative; has same xml structure */
 					ret = PianoXmlParseNarrative (req->responseData, &cryptedTimestamp);
-					if (cryptedTimestamp != NULL) {
+					if (ret == PIANO_RET_OK && cryptedTimestamp != NULL) {
 						unsigned long timestamp = 0;
-						time_t realTimestamp = time (NULL);
-						char *decryptedTimestamp = NULL, *decryptedPos = NULL;
-						unsigned char i = 4;
+						const time_t realTimestamp = time (NULL);
+						char *decryptedTimestamp = NULL;
+						size_t decryptedSize;
 
-						if ((decryptedTimestamp = PianoDecryptString (cryptedTimestamp)) != NULL) {
-							decryptedPos = decryptedTimestamp;
-							/* skip four bytes garbage? at beginning */
-							while (i-- > 0 && *decryptedPos++ != '\0');
-							timestamp = strtoul (decryptedPos, NULL, 0);
+						ret = PIANO_RET_ERR;
+						if ((decryptedTimestamp = PianoDecryptString (cryptedTimestamp,
+								&decryptedSize)) != NULL && decryptedSize > 4) {
+							/* skip four bytes garbage(?) at beginning */
+							timestamp = strtoul (decryptedTimestamp+4, NULL, 0);
 							ph->timeOffset = realTimestamp - timestamp;
-
-							free (decryptedTimestamp);
+							ret = PIANO_RET_CONTINUE_REQUEST;
 						}
-						free (cryptedTimestamp);
+						free (decryptedTimestamp);
 					}
-					ret = PIANO_RET_CONTINUE_REQUEST;
+					free (cryptedTimestamp);
 					++reqData->step;
 					break;
 				}

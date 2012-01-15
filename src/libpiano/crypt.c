@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2011
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -43,20 +43,23 @@ THE SOFTWARE.
 /*	decrypt hex-encoded, blowfish-crypted string: decode 2 hex-encoded blocks,
  *	decrypt, byteswap
  *	@param hex string
+ *	@param decrypted string length (without trailing NUL)
  *	@return decrypted string or NULL
  */
 #define INITIAL_SHIFT 28
 #define SHIFT_DEC 4
-char *PianoDecryptString (const char * const s) {
+char *PianoDecryptString (const char * const s, size_t * const retSize) {
 	const unsigned char *strInput = (const unsigned char *) s;
 	/* hex-decode => strlen/2 + null-byte */
 	uint32_t *iDecrypt;
+	size_t decryptedSize;
 	char *strDecrypted;
 	unsigned char shift = INITIAL_SHIFT, intsDecoded = 0, j;
 	/* blowfish blocks, 32-bit */
 	uint32_t f, l, r, lrExchange;
 
-	if ((iDecrypt = calloc (strlen ((const char *) strInput)/2/sizeof (*iDecrypt)+1,
+	decryptedSize = strlen ((const char *) strInput)/2;
+	if ((iDecrypt = calloc (decryptedSize/sizeof (*iDecrypt)+1,
 			sizeof (*iDecrypt))) == NULL) {
 		return NULL;
 	}
@@ -110,6 +113,10 @@ char *PianoDecryptString (const char * const s) {
 			intsDecoded = 0;
 		}
 		++strInput;
+	}
+
+	if (retSize != NULL) {
+		*retSize = decryptedSize;
 	}
 
 	return strDecrypted;
