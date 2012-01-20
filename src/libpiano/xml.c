@@ -96,6 +96,8 @@ static void PianoXmlIsFaultCb (const char *key, const ezxml_t value,
 						*ret = PIANO_RET_REMOVING_TOO_MANY_SEEDS;
 					} else if (strcmp ("EXCESSIVE_ACTIVITY", matchStart) == 0) {
 						*ret = PIANO_RET_EXCESSIVE_ACTIVITY;
+					} else if (strcmp ("DAILY_SKIP_LIMIT_REACHED", matchStart) == 0) {
+						*ret = PIANO_RET_DAILY_SKIP_LIMIT_REACHED;
 					} else {
 						*ret = PIANO_RET_ERR;
 						printf (PACKAGE ": Unknown error %s in %s\n",

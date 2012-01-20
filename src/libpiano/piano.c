@@ -1233,6 +1233,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Excessive activity.";
 			break;
 
+		case PIANO_RET_DAILY_SKIP_LIMIT_REACHED:
+			return "Daily skip limit reached.";
+			break;
+
 		default:
 			return "No error message available.";
 			break;
