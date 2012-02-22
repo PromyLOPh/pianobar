@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2011
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -57,7 +57,7 @@ THE SOFTWARE.
  *	@param apply this gain
  *	@return this * yourvalue = newgain value
  */
-unsigned int BarPlayerCalcScale (float applyGain) {
+unsigned int BarPlayerCalcScale (const float applyGain) {
 	return pow (10.0, applyGain / 20.0) * RG_SCALE_FACTOR;
 }
 
@@ -66,8 +66,8 @@ unsigned int BarPlayerCalcScale (float applyGain) {
  *	@param replaygain scale (calculated by computeReplayGainScale)
  *	@return scaled value
  */
-static inline signed short int applyReplayGain (signed short int value,
-		unsigned int scale) {
+static inline signed short int applyReplayGain (const signed short int value,
+		const unsigned int scale) {
 	int tmpReplayBuf = value * scale;
 	/* avoid clipping */
 	if (tmpReplayBuf > SHRT_MAX*RG_SCALE_FACTOR) {
@@ -85,10 +85,10 @@ static inline signed short int applyReplayGain (signed short int value,
  *	@param data size
  *	@return 1 on success, 0 when buffer overflow occured
  */
-static inline int BarPlayerBufferFill (struct audioPlayer *player, char *data,
-		size_t dataSize) {
+static inline int BarPlayerBufferFill (struct audioPlayer *player,
+		const char *data, const size_t dataSize) {
 	/* fill buffer */
-	if (player->bufferFilled + dataSize > sizeof (player->buffer)) {
+	if (player->bufferFilled + dataSize > BAR_PLAYER_BUFSIZE) {
 		BarUiMsg (player->settings, MSG_ERR, "Buffer overflow!\n");
 		return 0;
 	}
@@ -119,8 +119,9 @@ static inline void BarPlayerBufferMove (struct audioPlayer *player) {
  *	@param extra data (player data)
  *	@return received bytes or less on error
  */
-static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size, void *stream) {
-	char *data = ptr;
+static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size,
+		void *stream) {
+	const char *data = ptr;
 	struct audioPlayer *player = stream;
 
 	QUIT_PAUSE_CHECK;
@@ -235,10 +236,10 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size, void *stream) 
 				if (player->sampleSizeN == 0) {
 					/* mp4 uses big endian, convert */
 					player->sampleSizeN =
-							bigToHostEndian32 (*((int *) (player->buffer +
+							bigToHostEndian32 (*((uint32_t *) (player->buffer +
 							player->bufferRead)));
-					player->sampleSize = calloc (player->sampleSizeN,
-							sizeof (player->sampleSizeN));
+					player->sampleSize = malloc (player->sampleSizeN *
+							sizeof (*player->sampleSize));
 					player->bufferRead += 4;
 					player->sampleSizeCurr = 0;
 					/* set up song duration (assuming one frame always contains
@@ -253,7 +254,7 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size, void *stream) 
 					break;
 				} else {
 					player->sampleSize[player->sampleSizeCurr] =
-							bigToHostEndian32 (*((int *) (player->buffer +
+							bigToHostEndian32 (*((uint32_t *) (player->buffer +
 							player->bufferRead)));
 					player->sampleSizeCurr++;
 					player->bufferRead += 4;
@@ -293,7 +294,7 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size, void *stream) 
  *	@param mad fixed
  *	@return short int
  */
-static inline signed short int BarPlayerMadToShort (mad_fixed_t fixed) {
+static inline signed short int BarPlayerMadToShort (const mad_fixed_t fixed) {
 	/* Clipping */
 	if (fixed >= MAD_F_ONE) {
 		return SHRT_MAX;
@@ -305,8 +306,11 @@ static inline signed short int BarPlayerMadToShort (mad_fixed_t fixed) {
 	return (signed short int) (fixed >> (MAD_F_FRACBITS - 15));
 }
 
-static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size, void *stream) {
-	char *data = ptr;
+/*	mp3 playback callback
+ */
+static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size,
+		void *stream) {
+	const char *data = ptr;
 	struct audioPlayer *player = stream;
 	size_t i;
 
@@ -318,7 +322,7 @@ static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size, void *stream) 
 
 	/* some "prebuffering" */
 	if (player->mode < PLAYER_RECV_DATA &&
-			player->bufferFilled < sizeof (player->buffer) / 2) {
+			player->bufferFilled < BAR_PLAYER_BUFSIZE / 2) {
 		return WAITRESS_CB_RET_OK;
 	}
 
@@ -404,12 +408,12 @@ static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size, void *stream) 
 #endif /* ENABLE_MAD */
 
 /*	player thread; for every song a new thread is started
- *	@param aacPlayer structure
- *	@return NULL NULL NULL ...
+ *	@param audioPlayer structure
+ *	@return PLAYER_RET_*
  */
 void *BarPlayerThread (void *data) {
 	struct audioPlayer *player = data;
-	char extraHeaders[25];
+	char extraHeaders[32];
 	void *ret = PLAYER_RET_OK;
 	#ifdef ENABLE_FAAD
 	NeAACDecConfigurationPtr conf;
@@ -421,6 +425,7 @@ void *BarPlayerThread (void *data) {
 	player->waith.data = (void *) player;
 	/* extraHeaders will be initialized later */
 	player->waith.extraHeaders = extraHeaders;
+	player->buffer = malloc (BAR_PLAYER_BUFSIZE);
 
 	switch (player->audioFormat) {
 		#ifdef ENABLE_FAAD
@@ -448,6 +453,7 @@ void *BarPlayerThread (void *data) {
 		#endif /* ENABLE_MAD */
 
 		default:
+			/* FIXME: leaks memory */
 			BarUiMsg (player->settings, MSG_ERR, "Unsupported audio format!\n");
 			return PLAYER_RET_OK;
 			break;
@@ -468,6 +474,7 @@ void *BarPlayerThread (void *data) {
 		#ifdef ENABLE_FAAD
 		case PIANO_AF_AACPLUS:
 			NeAACDecClose(player->aacHandle);
+			free (player->sampleSize);
 			break;
 		#endif /* ENABLE_FAAD */
 
@@ -484,17 +491,15 @@ void *BarPlayerThread (void *data) {
 			/* this should never happen: thread is aborted above */
 			break;
 	}
+
 	if (player->aoError) {
 		ret = (void *) PLAYER_RET_ERR;
 	}
+
 	ao_close(player->audioOutDevice);
 	WaitressFree (&player->waith);
-	#ifdef ENABLE_FAAD
-	if (player->sampleSize != NULL) {
-		free (player->sampleSize);
-	}
-	#endif /* ENABLE_FAAD */
 	pthread_mutex_destroy (&player->pauseMutex);
+	free (player->buffer);
 
 	player->mode = PLAYER_FINISHED_PLAYBACK;
 
