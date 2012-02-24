@@ -709,7 +709,7 @@ inline void BarUiPrintStation (const BarSettings_t *settings,
 	BarUiCustomFormat (outstr, sizeof (outstr), settings->npStationFormat,
 			"ni", vals);
 	BarUiAppendNewline (outstr, sizeof (outstr));
-	BarUiMsg (settings, MSG_PLAYING, outstr);
+	BarUiMsg (settings, MSG_PLAYING, "%s", outstr);
 }
 
 /*	Print song infos (artist, title, album, loved)
@@ -729,7 +729,7 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 	BarUiCustomFormat (outstr, sizeof (outstr), settings->npSongFormat,
 			"talr@su", vals);
 	BarUiAppendNewline (outstr, sizeof (outstr));
-	BarUiMsg (settings, MSG_PLAYING, outstr);
+	BarUiMsg (settings, MSG_PLAYING, "%s", outstr);
 }
 
 /*	Print list of songs
@@ -756,7 +756,7 @@ size_t BarUiListSongs (const BarSettings_t *settings,
 			BarUiCustomFormat (outstr, sizeof (outstr), settings->listSongFormat,
 					"iatr", vals);
 			BarUiAppendNewline (outstr, sizeof (outstr));
-			BarUiMsg (settings, MSG_LIST, outstr);
+			BarUiMsg (settings, MSG_LIST, "%s", outstr);
 		}
 		i++;
 		song = song->next;
