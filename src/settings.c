@@ -120,6 +120,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 		settings->audioFormat = PIANO_AF_MP3;
 		#endif
 	#endif
+	settings->autoselect = true;
 	settings->history = 5;
 	settings->volume = 0;
 	settings->sortOrder = BAR_SORT_NAME_AZ;
@@ -242,6 +243,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 		} else if (streq ("fifo", key)) {
 			free (settings->fifo);
 			settings->fifo = strdup (val);
+		} else if (streq ("autoselect", key)) {
+			settings->autoselect = atoi (val);
 		} else if (streq ("tls_fingerprint", key)) {
 			/* expects 40 byte hex-encoded sha1 */
 			if (strlen (val) == 40) {
