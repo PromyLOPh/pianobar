@@ -1063,6 +1063,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 
 	/* initialize */
 	memset (&waith->request, 0, sizeof (waith->request));
+	waith->request.sockfd = -1;
 	waith->request.dataHandler = WaitressHandleIdentity;
 	waith->request.read = WaitressOrdinaryRead;
 	waith->request.write = WaitressOrdinaryWrite;
@@ -1104,7 +1105,9 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		gnutls_deinit (waith->request.tlsSession);
 		gnutls_certificate_free_credentials (waith->tlsCred);
 	}
-	close (waith->request.sockfd);
+	if (waith->request.sockfd != -1) {
+		close (waith->request.sockfd);
+	}
 	free (waith->request.buf);
 
 	if (wRet == WAITRESS_RET_OK &&
