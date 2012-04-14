@@ -121,6 +121,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 		#endif
 	#endif
 	settings->autoselect = true;
+	settings->forceTls = false;
 	settings->history = 5;
 	settings->volume = 0;
 	settings->sortOrder = BAR_SORT_NAME_AZ;
@@ -245,6 +246,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->fifo = strdup (val);
 		} else if (streq ("autoselect", key)) {
 			settings->autoselect = atoi (val);
+		} else if (streq ("force_tls", key)) {
+			settings->forceTls = atoi (val);
 		} else if (streq ("tls_fingerprint", key)) {
 			/* expects 40 byte hex-encoded sha1 */
 			if (strlen (val) == 40) {
