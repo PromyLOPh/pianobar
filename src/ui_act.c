@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2011
+Copyright (c) 2008-2012
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -50,6 +50,8 @@ static inline void BarUiDoSkipSong (struct audioPlayer *player) {
 	assert (player != NULL);
 
 	player->doQuit = 1;
+	/* unlocking an unlocked mutex is forbidden by some implementations */
+	pthread_mutex_trylock (&player->pauseMutex);
 	pthread_mutex_unlock (&player->pauseMutex);
 }
 
