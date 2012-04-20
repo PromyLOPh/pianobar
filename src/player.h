@@ -47,11 +47,11 @@ THE SOFTWARE.
 
 #define BAR_PLAYER_MS_TO_S_FACTOR 1000
 #define BAR_PLAYER_BUFSIZE (WAITRESS_BUFFER_SIZE*2)
+#define BAR_PLAYER_SIGSTOP SIGRTMIN
+#define BAR_PLAYER_SIGCONT SIGRTMIN+1
 
 struct audioPlayer {
-	char doQuit;
 	unsigned char channels;
-	unsigned char aoError;
 
 	enum {
 		PLAYER_FREED = 0, /* thread is not running */
@@ -64,6 +64,10 @@ struct audioPlayer {
 		PLAYER_RECV_DATA, /* playing track */
 		PLAYER_FINISHED_PLAYBACK
 	} mode;
+	enum {
+		PLAYER_RET_OK = 0,
+		PLAYER_RET_ERR = 1,
+	} ret;
 	PianoAudioFormat_t audioFormat;
 
 	unsigned int scale;
@@ -101,11 +105,10 @@ struct audioPlayer {
 
 	unsigned char *buffer;
 
-	pthread_mutex_t pauseMutex;
+	bool paused;
+	pthread_t thread;
 	WaitressHandle_t waith;
 };
-
-enum {PLAYER_RET_OK = 0, PLAYER_RET_ERR = 1};
 
 void *BarPlayerThread (void *data);
 unsigned int BarPlayerCalcScale (float);

@@ -183,7 +183,7 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 
 /*	start new player thread
  */
-static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
+static void BarMainStartPlayback (BarApp_t *app) {
 	BarUiPrintSong (&app->settings, app->playlist, app->curStation->isQuickMix ?
 			PianoFindStationById (app->ph.stations,
 			app->playlist->stationId) : NULL);
@@ -216,26 +216,24 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 		 * thread has been started */
 		app->player.mode = PLAYER_STARTING;
 		/* start player */
-		pthread_create (playerThread, NULL, BarPlayerThread,
+		pthread_create (&app->player.thread, NULL, BarPlayerThread,
 				&app->player);
 	}
 }
 
 /*	player is done, clean up
  */
-static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
-	void *threadRet;
-
+static void BarMainPlayerCleanup (BarApp_t *app) {
 	BarUiStartEventCmd (&app->settings, "songfinish", app->curStation,
 			app->playlist, &app->player, app->ph.stations, PIANO_RET_OK,
 			WAITRESS_RET_OK);
 
 	/* FIXME: pthread_join blocks everything if network connection
 	 * is hung up e.g. */
-	pthread_join (*playerThread, &threadRet);
+	pthread_join (app->player.thread, NULL);
 
 	/* don't continue playback if thread reports error */
-	if (threadRet != (void *) PLAYER_RET_OK) {
+	if (app->player.ret != PLAYER_RET_OK) {
 		app->curStation = NULL;
 	}
 
@@ -265,8 +263,6 @@ static void BarMainPrintTime (BarApp_t *app) {
 /*	main loop
  */
 static void BarMainLoop (BarApp_t *app) {
-	pthread_t playerThread;
-
 	BarMainGetLoginCredentials (&app->settings, &app->input);
 
 	BarMainLoadProxy (&app->settings, &app->waith);
@@ -288,7 +284,7 @@ static void BarMainLoop (BarApp_t *app) {
 	while (!app->doQuit) {
 		/* song finished playing, clean up things/scrobble song */
 		if (app->player.mode == PLAYER_FINISHED_PLAYBACK) {
-			BarMainPlayerCleanup (app, &playerThread);
+			BarMainPlayerCleanup (app);
 		}
 
 		/* check whether player finished playing and start playing new
@@ -305,7 +301,7 @@ static void BarMainLoop (BarApp_t *app) {
 			}
 			/* song ready to play */
 			if (app->playlist != NULL) {
-				BarMainStartPlayback (app, &playerThread);
+				BarMainStartPlayback (app);
 			}
 		}
 
@@ -319,7 +315,7 @@ static void BarMainLoop (BarApp_t *app) {
 	}
 
 	if (app->player.mode != PLAYER_FREED) {
-		pthread_join (playerThread, NULL);
+		BarMainPlayerCleanup (app);
 	}
 }
 
