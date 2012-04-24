@@ -1,3 +1,15 @@
+Release 2012.04.24
+
+- Fix format string crash
+- Fix sync response parser
+- Fix possible stdin close on error
+- Fix undefined behavior (mutex unlock)
+- Use TLS for every request with new setting force_tls
+- New error codes EXCESSIVE_ACTIVITY and DAILY_SKIP_LIMIT_REACHED
+- Autoselect last remaining item of filtered list, disable with autoselect = 0
+- Warn if control fifo is not a fifo
+- Code cleanup
+
 Release 2012.01.10
 
 - Use TLS for login only
