@@ -39,12 +39,10 @@ PIANOBAR_OBJ=${PIANOBAR_SRC:.c=.o}
 LIBPIANO_DIR=src/libpiano
 LIBPIANO_SRC=\
 		${LIBPIANO_DIR}/crypt.c \
-		${LIBPIANO_DIR}/piano.c \
-		${LIBPIANO_DIR}/xml.c
+		${LIBPIANO_DIR}/piano.c
 LIBPIANO_HDR=\
 		${LIBPIANO_DIR}/config.h \
 		${LIBPIANO_DIR}/crypt_key_output.h \
-		${LIBPIANO_DIR}/xml.h \
 		${LIBPIANO_DIR}/crypt.h \
 		${LIBPIANO_DIR}/piano.h \
 		${LIBPIANO_DIR}/crypt_key_input.h \
@@ -61,13 +59,6 @@ LIBWAITRESS_HDR=\
 LIBWAITRESS_OBJ=${LIBWAITRESS_SRC:.c=.o}
 LIBWAITRESS_RELOBJ=${LIBWAITRESS_SRC:.c=.lo}
 LIBWAITRESS_INCLUDE=${LIBWAITRESS_DIR}
-
-LIBEZXML_DIR=src/libezxml
-LIBEZXML_SRC=${LIBEZXML_DIR}/ezxml.c
-LIBEZXML_HDR=${LIBEZXML_DIR}/ezxml.h
-LIBEZXML_OBJ=${LIBEZXML_SRC:.c=.o}
-LIBEZXML_RELOBJ=${LIBEZXML_SRC:.c=.lo}
-LIBEZXML_INCLUDE=${LIBEZXML_DIR}
 
 ifeq (${DISABLE_FAAD}, 1)
 	LIBFAAD_CFLAGS=
@@ -88,51 +79,59 @@ endif
 LIBGNUTLS_CFLAGS=
 LIBGNUTLS_LDFLAGS=-lgnutls
 
+LIBGCRYPT_CFLAGS=
+LIBGCRYPT_LDFLAGS=-lgcrypt
+
+LIBJSONC_CFLAGS=$(shell pkg-config --cflags json)
+LIBJSONC_LDFLAGS=$(shell pkg-config --libs json)
+
 # build pianobar
 ifeq (${DYNLINK},1)
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} libpiano.so.0
 	@echo "  LINK  $@"
 	@${CC} -o $@ ${PIANOBAR_OBJ} ${LDFLAGS} -lao -lpthread -lm -L. -lpiano \
-			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS}
+			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
+			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS}
 else
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
-		${LIBWAITRESS_HDR} ${LIBEZXML_OBJ} ${LIBEZXML_HDR}
+		${LIBWAITRESS_HDR}
 	@echo "  LINK  $@"
 	@${CC} ${CFLAGS} ${LDFLAGS} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} \
-			${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ} -lao -lpthread -lm \
-			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS} -o $@
+			${LIBWAITRESS_OBJ} -lao -lpthread -lm \
+			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
+			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS} -o $@
 endif
 
 # build shared and static libpiano
 libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
-		${LIBWAITRESS_HDR} ${LIBEZXML_RELOBJ} ${LIBEZXML_HDR} \
-		${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ}
+		${LIBWAITRESS_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
 	@echo "  LINK  $@"
-	@${CC} -shared -Wl,-soname,libpiano.so.0 ${CFLAGS} ${LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
+	@${CC} -shared -Wl,-soname,libpiano.so.0 ${CFLAGS} ${LDFLAGS} \
+			${LIBGNUTLS_LDFLAGS} ${LIBGCRYPT_LDFLAGS} \
 			-o libpiano.so.0.0.0 ${LIBPIANO_RELOBJ} \
-			${LIBWAITRESS_RELOBJ} ${LIBEZXML_RELOBJ}
+			${LIBWAITRESS_RELOBJ}
 	@ln -s libpiano.so.0.0.0 libpiano.so.0
 	@ln -s libpiano.so.0 libpiano.so
 	@echo "    AR  libpiano.a"
-	@${AR} rcs libpiano.a ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ}
+	@${AR} rcs libpiano.a ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
 
 %.o: %.c
 	@echo "    CC  $<"
 	@${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
-			-I ${LIBEZXML_INCLUDE} ${LIBFAAD_CFLAGS} \
-			${LIBMAD_CFLAGS} ${LIBGNUTLS_CFLAGS} -c -o $@ $<
+			${LIBFAAD_CFLAGS} ${LIBMAD_CFLAGS} ${LIBGNUTLS_CFLAGS} \
+			${LIBJSONC_CFLAGS} -c -o $@ $<
 
 # create position independent code (for shared libraries)
 %.lo: %.c
 	@echo "    CC  $< (PIC)"
 	@${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
-			-I ${LIBEZXML_INCLUDE} -c -fPIC -o $@ $<
+			-c -fPIC -o $@ $<
 
 clean:
 	@echo " CLEAN"
 	@${RM} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBWAITRESS_OBJ}/test.o \
-			${LIBEZXML_OBJ} ${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} \
-			${LIBEZXML_RELOBJ} pianobar libpiano.so* libpiano.a waitress-test
+			${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} pianobar libpiano.so* \
+			libpiano.a waitress-test
 
 all: pianobar
 

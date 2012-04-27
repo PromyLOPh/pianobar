@@ -261,8 +261,7 @@ BarUiActCallback(BarUiActDebug) {
 			"rating:\t%i\n"
 			"stationId:\t%s\n"
 			"title:\t%s\n"
-			"trackToken:\t%s\n"
-			"userSeed:\t%s\n",
+			"trackToken:\t%s\n",
 			selSong->album,
 			selSong->artist,
 			selSong->audioFormat,
@@ -274,8 +273,7 @@ BarUiActCallback(BarUiActDebug) {
 			selSong->rating,
 			selSong->stationId,
 			selSong->title,
-			selSong->trackToken,
-			selSong->userSeed);
+			selSong->trackToken);
 }
 
 /*	rate current song
