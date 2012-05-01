@@ -125,6 +125,7 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 %.lo: %.c
 	@echo "    CC  $< (PIC)"
 	@${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
+			${LIBJSONC_CFLAGS} \
 			-c -fPIC -o $@ $<
 
 clean:
