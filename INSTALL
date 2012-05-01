@@ -8,6 +8,8 @@ Dependencies
 - pthreads
 - libao
 - gnutls
+- gcrypt
+- json-c
 - libfaad2 and/or libmad
 - UTF-8 console/locale
 
