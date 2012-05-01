@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2012
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,11 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _MAIN_H
-#define _MAIN_H
+#ifndef _PIANO_PRIVATE_H
+#define _PIANO_PRIVATE_H
 
 #include "piano.h"
 
 void PianoDestroyStation (PianoStation_t *station);
+void PianoDestroyUserInfo (PianoUserInfo_t *user);
 
-#endif /* _MAIN_H */
+#endif /* _PIANO_PRIVATE_H */

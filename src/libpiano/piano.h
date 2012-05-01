@@ -36,6 +36,7 @@ THE SOFTWARE.
  */
 
 #define PIANO_RPC_HOST "tuner.pandora.com"
+#define PIANO_RPC_PATH "/services/json/?"
 
 typedef struct PianoUserInfo {
 	char *listenerId;

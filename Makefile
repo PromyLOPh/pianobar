@@ -39,7 +39,9 @@ PIANOBAR_OBJ=${PIANOBAR_SRC:.c=.o}
 LIBPIANO_DIR=src/libpiano
 LIBPIANO_SRC=\
 		${LIBPIANO_DIR}/crypt.c \
-		${LIBPIANO_DIR}/piano.c
+		${LIBPIANO_DIR}/piano.c \
+		${LIBPIANO_DIR}/request.c \
+		${LIBPIANO_DIR}/response.c
 LIBPIANO_HDR=\
 		${LIBPIANO_DIR}/config.h \
 		${LIBPIANO_DIR}/crypt_key_output.h \
