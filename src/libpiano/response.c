@@ -103,8 +103,9 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					size_t decryptedSize;
 
 					ret = PIANO_RET_ERR;
-					if ((decryptedTimestamp = PianoDecryptString (cryptedTimestamp,
-							&decryptedSize)) != NULL && decryptedSize > 4) {
+					if ((decryptedTimestamp = PianoDecryptString (ph->partner.in,
+							cryptedTimestamp, &decryptedSize)) != NULL &&
+							decryptedSize > 4) {
 						/* skip four bytes garbage(?) at beginning */
 						timestamp = strtoul (decryptedTimestamp+4, NULL, 0);
 						ph->timeOffset = realTimestamp - timestamp;
@@ -112,9 +113,9 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					}
 					free (decryptedTimestamp);
 					/* get auth token */
-					ph->partnerAuthToken = PianoJsonStrdup (result,
+					ph->partner.authToken = PianoJsonStrdup (result,
 							"partnerAuthToken");
-					ph->partnerId = json_object_get_int (
+					ph->partner.id = json_object_get_int (
 							json_object_object_get (result, "partnerId"));
 					++reqData->step;
 					break;

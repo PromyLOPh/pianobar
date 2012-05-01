@@ -25,6 +25,7 @@ THE SOFTWARE.
 #define _PIANO_H
 
 #include <stdbool.h>
+#include <gcrypt.h>
 
 /* this is our public API; don't expect this api to be stable as long as
  * pandora does not provide a stable api
@@ -106,14 +107,19 @@ typedef struct PianoGenreCategory {
 	struct PianoGenreCategory *next;
 } PianoGenreCategory_t;
 
+typedef struct PianoPartner {
+	gcry_cipher_hd_t in, out;
+	char *authToken, *device, *user, *password;
+	unsigned int id;
+} PianoPartner_t;
+
 typedef struct PianoHandle {
 	PianoUserInfo_t user;
 	/* linked lists */
 	PianoStation_t *stations;
 	PianoGenreCategory_t *genreStations;
+	PianoPartner_t partner;
 	int timeOffset;
-	char *partnerAuthToken;
-	unsigned int partnerId;
 } PianoHandle_t;
 
 typedef struct PianoSearchResult {
@@ -291,7 +297,9 @@ typedef enum {
 
 } PianoReturn_t;
 
-void PianoInit (PianoHandle_t *);
+void PianoInit (PianoHandle_t *, const char *,
+		const char *, const char *, const char *,
+		const char *);
 void PianoDestroy (PianoHandle_t *);
 void PianoDestroyPlaylist (PianoSong_t *);
 void PianoDestroySearchResult (PianoSearchResult_t *);

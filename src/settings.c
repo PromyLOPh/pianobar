@@ -93,6 +93,11 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->npStationFormat);
 	free (settings->listSongFormat);
 	free (settings->fifo);
+	free (settings->partnerUser);
+	free (settings->partnerPassword);
+	free (settings->device);
+	free (settings->inkey);
+	free (settings->outkey);
 	for (size_t i = 0; i < MSG_COUNT; i++) {
 		free (settings->msgFormat[i].prefix);
 		free (settings->msgFormat[i].postfix);
@@ -131,6 +136,11 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->npSongFormat = strdup ("\"%t\" by \"%a\" on \"%l\"%r%@%s");
 	settings->npStationFormat = strdup ("Station \"%n\" (%i)");
 	settings->listSongFormat = strdup ("%i) %a - %t%r");
+	settings->partnerUser = strdup ("android");
+	settings->partnerPassword = strdup ("AC7IBG09A3DTSYM4R41UJWL07VLN8JI7");
+	settings->device = strdup ("android-generic");
+	settings->inkey = strdup ("R=U!LH$O2B#");
+	settings->outkey = strdup ("6#26FRL$ZWD");
 	settings->fifo = malloc (PATH_MAX * sizeof (*settings->fifo));
 	BarGetXdgConfigDir (PACKAGE "/ctl", settings->fifo, PATH_MAX);
 	memcpy (settings->tlsFingerprint, "\xA2\xA0\xBE\x8A\x37\x92\x39\xAE"
@@ -179,6 +189,24 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->username = strdup (val);
 		} else if (streq ("password", key)) {
 			settings->password = strdup (val);
+		} else if (streq ("partner_user", key)) {
+			free (settings->partnerUser);
+			settings->partnerUser = strdup (val);
+		} else if (streq ("partner_password", key)) {
+			free (settings->partnerPassword);
+			settings->partnerPassword = strdup (val);
+		} else if (streq ("device", key)) {
+			free (settings->device);
+			settings->device = strdup (val);
+		} else if (streq ("encrypt_password", key)) {
+			free (settings->outkey);
+			settings->outkey = strdup (val);
+		} else if (streq ("decrypt_password", key)) {
+			free (settings->inkey);
+			settings->inkey = strdup (val);
+		} else if (memcmp ("act_", key, 4) == 0) {
+		} else if (memcmp ("act_", key, 4) == 0) {
+		} else if (memcmp ("act_", key, 4) == 0) {
 		} else if (memcmp ("act_", key, 4) == 0) {
 			size_t i;
 			/* keyboard shortcuts */

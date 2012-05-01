@@ -40,8 +40,23 @@ THE SOFTWARE.
  *	@param piano handle
  *	@return nothing
  */
-void PianoInit (PianoHandle_t *ph) {
+void PianoInit (PianoHandle_t *ph, const char *partnerUser,
+		const char *partnerPassword, const char *device, const char *inkey,
+		const char *outkey) {
 	memset (ph, 0, sizeof (*ph));
+	ph->partner.user = strdup (partnerUser);
+	ph->partner.password = strdup (partnerPassword);
+	ph->partner.device = strdup (device);
+
+	gcry_cipher_open (&ph->partner.in, GCRY_CIPHER_BLOWFISH,
+			GCRY_CIPHER_MODE_ECB, 0);
+	gcry_cipher_setkey (ph->partner.in, (const unsigned char *) inkey,
+			strlen (inkey));
+
+	gcry_cipher_open (&ph->partner.out, GCRY_CIPHER_BLOWFISH,
+			GCRY_CIPHER_MODE_ECB, 0);
+	gcry_cipher_setkey (ph->partner.out, (const unsigned char *) outkey,
+			strlen (outkey));
 }
 
 /*	destroy artist linked list
@@ -150,6 +165,18 @@ void PianoDestroyUserInfo (PianoUserInfo_t *user) {
 	free (user->listenerId);
 }
 
+/*	destroy partner
+ */
+static void PianoDestroyPartner (PianoPartner_t *partner) {
+	free (partner->user);
+	free (partner->password);
+	free (partner->device);
+	free (partner->authToken);
+	gcry_cipher_close (partner->in);
+	gcry_cipher_close (partner->out);
+	memset (partner, 0, sizeof (*partner));
+}
+
 /*	frees the whole piano handle structure
  *	@param piano handle
  *	@return nothing
@@ -157,6 +184,7 @@ void PianoDestroyUserInfo (PianoUserInfo_t *user) {
 void PianoDestroy (PianoHandle_t *ph) {
 	PianoDestroyUserInfo (&ph->user);
 	PianoDestroyStations (ph->stations);
+	PianoDestroyPartner (&ph->partner);
 	/* destroy genre stations */
 	PianoGenreCategory_t *curGenreCat = ph->genreStations, *lastGenreCat;
 	while (curGenreCat != NULL) {
@@ -166,7 +194,6 @@ void PianoDestroy (PianoHandle_t *ph) {
 		curGenreCat = curGenreCat->next;
 		free (lastGenreCat);
 	}
-	free (ph->partnerAuthToken);
 	memset (ph, 0, sizeof (*ph));
 }
 

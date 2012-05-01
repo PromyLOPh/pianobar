@@ -32,11 +32,13 @@ THE SOFTWARE.
 
 /*	decrypt hex-encoded, blowfish-crypted string: decode 2 hex-encoded blocks,
  *	decrypt, byteswap
+ *	@param gcrypt handle
  *	@param hex string
  *	@param decrypted string length (without trailing NUL)
  *	@return decrypted string or NULL
  */
-char *PianoDecryptString (const char * const input, size_t * const retSize) {
+char *PianoDecryptString (gcry_cipher_hd_t h, const char * const input,
+		size_t * const retSize) {
 	size_t inputLen = strlen (input);
 	gcry_error_t gret;
 	unsigned char *output;
@@ -53,26 +55,22 @@ char *PianoDecryptString (const char * const input, size_t * const retSize) {
 		output[i] = strtol (hex, NULL, 16);
 	}
 
-	gcry_cipher_hd_t h;
-	gcry_cipher_open (&h, GCRY_CIPHER_BLOWFISH, GCRY_CIPHER_MODE_ECB, 0);
-	gcry_cipher_setkey (h, (unsigned char *) "R=U!LH$O2B#", 11);
 	gret = gcry_cipher_decrypt (h, output, outputLen, NULL, 0);
 	if (gret) {
-		fprintf (stderr, "Failure: %s/%s\n", gcry_strsource (gret), gcry_strerror (gret));
 		return NULL;
 	}
 
-	gcry_cipher_close (h);
 	*retSize = outputLen;
 
 	return (char *) output;
 }
 
 /*	blowfish-encrypt/hex-encode string
+ *	@param gcrypt handle
  *	@param encrypt this
  *	@return encrypted, hex-encoded string
  */
-char *PianoEncryptString (const char *s) {
+char *PianoEncryptString (gcry_cipher_hd_t h, const char *s) {
 	unsigned char *paddedInput, *hexOutput;
 	size_t inputLen = strlen (s);
 	/* blowfish expects two 32 bit blocks */
@@ -82,12 +80,8 @@ char *PianoEncryptString (const char *s) {
 	paddedInput = calloc (paddedInputLen+1, sizeof (*paddedInput));
 	memcpy (paddedInput, s, inputLen);
 
-	gcry_cipher_hd_t h;
-	gcry_cipher_open (&h, GCRY_CIPHER_BLOWFISH, GCRY_CIPHER_MODE_ECB, 0);
-	gcry_cipher_setkey (h, (unsigned char *) "6#26FRL$ZWD", 11);
 	gret = gcry_cipher_encrypt (h, paddedInput, paddedInputLen, NULL, 0);
 	if (gret) {
-		fprintf (stderr, "Failure: %s/%s\n", gcry_strsource (gret), gcry_strerror (gret));
 		return NULL;
 	}
 
@@ -96,7 +90,6 @@ char *PianoEncryptString (const char *s) {
 		snprintf ((char * restrict) &hexOutput[i*2], 3, "%02x", paddedInput[i]);
 	}
 
-	gcry_cipher_close (h);
 	free (paddedInput);
 
 	return (char *) hexOutput;

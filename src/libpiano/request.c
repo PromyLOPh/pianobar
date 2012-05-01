@@ -70,11 +70,11 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					req->secure = true;
 
 					json_object_object_add (j, "username",
-							json_object_new_string ("android"));
+							json_object_new_string (ph->partner.user));
 					json_object_object_add (j, "password",
-							json_object_new_string ("AC7IBG09A3DTSYM4R41UJWL07VLN8JI7"));
+							json_object_new_string (ph->partner.password));
 					json_object_object_add (j, "deviceModel",
-							json_object_new_string ("android-generic"));
+							json_object_new_string (ph->partner.device));
 					json_object_object_add (j, "version",
 							json_object_new_string ("5"));
 					json_object_object_add (j, "includeUrls",
@@ -95,16 +95,16 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 					json_object_object_add (j, "password",
 							json_object_new_string (logindata->password));
 					json_object_object_add (j, "partnerAuthToken",
-							json_object_new_string (ph->partnerAuthToken));
+							json_object_new_string (ph->partner.authToken));
 					json_object_object_add (j, "syncTime",
 							json_object_new_int (timestamp));
 
-					urlencAuthToken = WaitressUrlEncode (ph->partnerAuthToken);
+					urlencAuthToken = WaitressUrlEncode (ph->partner.authToken);
 					assert (urlencAuthToken != NULL);
 					snprintf (req->urlPath, sizeof (req->urlPath),
 							PIANO_RPC_PATH "method=auth.userLogin&"
 							"auth_token=%s&partner_id=%i", urlencAuthToken,
-							ph->partnerId);
+							ph->partner.id);
 					free (urlencAuthToken);
 
 					break;
@@ -483,7 +483,7 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 
 		snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
 				"method=%s&auth_token=%s&partner_id=%i&user_id=%s", method,
-				urlencAuthToken, ph->partnerId, ph->user.listenerId);
+				urlencAuthToken, ph->partner.id, ph->user.listenerId);
 
 		free (urlencAuthToken);
 
@@ -496,7 +496,8 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 	/* json to string */
 	jsonSendBuf = json_object_to_json_string (j);
 	if (encrypted) {
-		if ((req->postData = PianoEncryptString (jsonSendBuf)) == NULL) {
+		if ((req->postData = PianoEncryptString (ph->partner.out,
+				jsonSendBuf)) == NULL) {
 			return PIANO_RET_OUT_OF_MEMORY;
 		}
 	} else {

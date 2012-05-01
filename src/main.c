@@ -341,10 +341,12 @@ int main (int argc, char **argv) {
 	/* init some things */
 	ao_initialize ();
 	gnutls_global_init ();
-	PianoInit (&app.ph);
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
+
+	PianoInit (&app.ph, app.settings.partnerUser, app.settings.partnerPassword,
+			app.settings.device, app.settings.inkey, app.settings.outkey);
 
 	BarUiMsg (&app.settings, MSG_NONE,
 			"Welcome to " PACKAGE " (" VERSION ")! ");

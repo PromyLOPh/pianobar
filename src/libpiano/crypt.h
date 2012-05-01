@@ -24,7 +24,10 @@ THE SOFTWARE.
 #ifndef _CRYPH_H
 #define _CRYPT_H
 
-char *PianoDecryptString (const char * const, size_t * const);
-char *PianoEncryptString (const char *strInput);
+#include <gcrypt.h>
+
+char *PianoDecryptString (gcry_cipher_hd_t, const char * const,
+		size_t * const);
+char *PianoEncryptString (gcry_cipher_hd_t, const char *);
 
 #endif /* _CRYPT_H */
