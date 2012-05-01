@@ -12,7 +12,7 @@ ifeq (${CFLAGS},)
 	CFLAGS=-O2 -DNDEBUG
 endif
 ifeq (${CC},cc)
-	CC=c99
+	CFLAGS+=-std=c99
 endif
 
 PIANOBAR_DIR=src
