@@ -13,6 +13,10 @@ Dependencies
 - libfaad2 and/or libmad
 - UTF-8 console/locale
 
+###Debian
+sudo apt-get install cmake automake make gcc g++ libjson0-dev libfaad2 python-gnutls libgnutls-dev gnutls-bin libevent-pthreads-2.0-5 libmad0-dev libao-common libao-dev
+
+
 Building
 --------
 
