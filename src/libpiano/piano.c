@@ -206,31 +206,6 @@ void PianoDestroyRequest (PianoRequest_t *req) {
 	memset (req, 0, sizeof (*req));
 }
 
-/*	convert audio format id to string that can be used in xml requests
- *	@param format id
- *	@return constant string
- */
-static const char *PianoAudioFormatToString (PianoAudioFormat_t format) {
-	switch (format) {
-		case PIANO_AF_AACPLUS:
-			return "aacplus";
-			break;
-
-		case PIANO_AF_MP3:
-			return "mp3";
-			break;
-
-		case PIANO_AF_MP3_HI:
-			return "mp3-hifi";
-			break;
-
-		default:
-			return NULL;
-			break;
-	}
-}
-
-
 /*	get station from list by id
  *	@param search here
  *	@param search for this
