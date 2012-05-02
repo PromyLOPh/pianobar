@@ -524,20 +524,6 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			break;
 		}
 
-		case PIANO_REQUEST_GET_SEED_SUGGESTIONS: {
-#if 0
-			/* find similar artists */
-			PianoRequestDataGetSeedSuggestions_t *reqData = req->data;
-
-			assert (req->responseData != NULL);
-			assert (reqData != NULL);
-
-			ret = PianoXmlParseSeedSuggestions (req->responseData,
-					&reqData->searchResult);
-#endif
-			break;
-		}
-
 		case PIANO_REQUEST_GET_STATION_INFO: {
 			/* get station information (seeds and feedback) */
 			PianoRequestDataGetStationInfo_t *reqData = req->data;

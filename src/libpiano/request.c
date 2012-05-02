@@ -325,36 +325,6 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			break;
 		}
 
-		case PIANO_REQUEST_GET_SEED_SUGGESTIONS: {
-#if 0
-			/* find similar artists */
-			PianoRequestDataGetSeedSuggestions_t *reqData = req->data;
-
-			assert (reqData != NULL);
-			assert (reqData->musicId != NULL);
-			assert (reqData->max != 0);
-
-			snprintf (xmlSendBuf, sizeof (xmlSendBuf), "<?xml version=\"1.0\"?>"
-					"<methodCall><methodName>music.getSeedSuggestions</methodName>"
-					"<params><param><value><int>%lu</int></value></param>"
-					/* auth token */
-					"<param><value><string>%s</string></value></param>"
-					/* station id */
-					"<param><value><string>%s</string></value></param>"
-					/* seed music id */
-					"<param><value><string>%s</string></value></param>"
-					/* max */
-					"<param><value><int>%u</int></value></param>"
-					"</params></methodCall>", (unsigned long) timestamp,
-					ph->user.authToken, reqData->station->id, reqData->musicId,
-					reqData->max);
-			snprintf (req->urlPath, sizeof (req->urlPath), PIANO_RPC_PATH
-					"rid=%s&lid=%s&method=getSeedSuggestions&arg1=%s&arg2=%u",
-					ph->routeId, ph->user.listenerId, reqData->musicId, reqData->max);
-#endif
-			break;
-		}
-
 		case PIANO_REQUEST_BOOKMARK_SONG: {
 			/* bookmark song */
 			PianoSong_t *song = req->data;

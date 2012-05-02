@@ -485,7 +485,7 @@ PianoArtist_t *BarUiSelectArtist (BarApp_t *app, PianoArtist_t *startArtist) {
  *	@return musicId or NULL on abort/error
  */
 char *BarUiSelectMusicId (BarApp_t *app, PianoStation_t *station,
-		PianoSong_t *similarSong, const char *msg) {
+		const char *msg) {
 	char *musicId = NULL;
 	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;
@@ -495,36 +495,19 @@ char *BarUiSelectMusicId (BarApp_t *app, PianoStation_t *station,
 	BarUiMsg (&app->settings, MSG_QUESTION, msg);
 	if (BarReadlineStr (lineBuf, sizeof (lineBuf), &app->input,
 			BAR_RL_DEFAULT) > 0) {
-		if (strcmp ("?", lineBuf) == 0 && station != NULL &&
-				similarSong != NULL) {
-			PianoReturn_t pRet;
-			WaitressReturn_t wRet;
-			PianoRequestDataGetSeedSuggestions_t reqData;
+		PianoReturn_t pRet;
+		WaitressReturn_t wRet;
+		PianoRequestDataSearch_t reqData;
 
-			reqData.station = station;
-			reqData.musicId = similarSong->musicId;
-			reqData.max = 20;
+		reqData.searchStr = lineBuf;
 
-			BarUiMsg (&app->settings, MSG_INFO, "Receiving suggestions... ");
-			if (!BarUiPianoCall (app, PIANO_REQUEST_GET_SEED_SUGGESTIONS,
-					&reqData, &pRet, &wRet)) {
-				return NULL;
-			}
-			memcpy (&searchResult, &reqData.searchResult, sizeof (searchResult));
-		} else {
-			PianoReturn_t pRet;
-			WaitressReturn_t wRet;
-			PianoRequestDataSearch_t reqData;
-
-			reqData.searchStr = lineBuf;
-
-			BarUiMsg (&app->settings, MSG_INFO, "Searching... ");
-			if (!BarUiPianoCall (app, PIANO_REQUEST_SEARCH, &reqData, &pRet,
-					&wRet)) {
-				return NULL;
-			}
-			memcpy (&searchResult, &reqData.searchResult, sizeof (searchResult));
+		BarUiMsg (&app->settings, MSG_INFO, "Searching... ");
+		if (!BarUiPianoCall (app, PIANO_REQUEST_SEARCH, &reqData, &pRet,
+				&wRet)) {
+			return NULL;
 		}
+		memcpy (&searchResult, &reqData.searchResult, sizeof (searchResult));
+
 		BarUiMsg (&app->settings, MSG_NONE, "\r");
 		if (searchResult.songs != NULL &&
 				searchResult.artists != NULL) {
