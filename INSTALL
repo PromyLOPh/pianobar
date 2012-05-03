@@ -14,7 +14,7 @@ Dependencies
 - UTF-8 console/locale
 
 ###Debian
-sudo apt-get install make gcc g++ libjson0-dev libfaad2 libgnutls-dev gnutls-bin libmad0-dev libao-common libao-dev libfaad-dev
+sudo apt-get install make gcc libjson0-dev libfaad2 libgnutls-dev gnutls-bin libmad0-dev libao-common libao-dev libfaad-dev
 
 
 Building
