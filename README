@@ -14,3 +14,19 @@ pianobar is a console client for the personalized web radio pandora
 The sourcecode can be downloaded at http://github.com/PromyLOPh/pianobar/ or
 http://6xq.net/projects/pianobar/
 
+Build pianobar from source on Debian Squeeze
+============================================
+
+1- Clone the master repository on your local box:
+
+git clone git://github.com/cristianrasch/pianobar.git
+
+2- Change to the newly created pianobar directory
+
+3- Install the required build libraries:
+
+# apt-get install libevent-pthreads-2.0-5 libao-dev gnutls-dev libmad0-dev libfaad-dev libjson0-dev
+
+4- [Optional] Install the binary in your system
+
+# make install
