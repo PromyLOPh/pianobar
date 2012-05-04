@@ -134,15 +134,14 @@ void BarUiMsg (const BarSettings_t *settings, const BarUiMsg_t type,
 /*	fetch http resource (post request)
  *	@param waitress handle
  *	@param piano request (initialized by PianoRequest())
- *	@param ignore libpiano TLS hint and use it always
  */
 static WaitressReturn_t BarPianoHttpRequest (WaitressHandle_t *waith,
-		PianoRequest_t *req, bool forceTls) {
+		PianoRequest_t *req) {
 	waith->extraHeaders = "Content-Type: text/plain\r\n";
 	waith->postData = req->postData;
 	waith->method = WAITRESS_METHOD_POST;
 	waith->url.path = req->urlPath;
-	waith->url.tls = req->secure || forceTls;
+	waith->url.tls = req->secure;
 
 	return WaitressFetchBuf (waith, &req->responseData);
 }
@@ -173,7 +172,7 @@ int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
 			return 0;
 		}
 
-		*wRet = BarPianoHttpRequest (&app->waith, &req, app->settings.forceTls);
+		*wRet = BarPianoHttpRequest (&app->waith, &req);
 		if (*wRet != WAITRESS_RET_OK) {
 			BarUiMsg (&app->settings, MSG_NONE, "Network error: %s\n", WaitressErrorToStr (*wRet));
 			if (req.responseData != NULL) {

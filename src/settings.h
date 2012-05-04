@@ -81,7 +81,6 @@ typedef struct {
 
 typedef struct {
 	bool autoselect;
-	bool forceTls;
 	unsigned int history;
 	int volume;
 	BarStationSorting_t sortOrder;
