@@ -39,6 +39,7 @@ THE SOFTWARE.
 #include <poll.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdint.h>
 
 #include <gnutls/x509.h>
 
