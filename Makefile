@@ -5,7 +5,7 @@ BINDIR:=${PREFIX}/bin
 LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
-DYNLINK:=0
+DYNLINK:=1
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
@@ -107,7 +107,7 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 		${LIBWAITRESS_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
 	@echo "  LINK  $@"
 	@${CC} -shared -Wl,-soname,libpiano.so.0 ${CFLAGS} ${LDFLAGS} \
-			${LIBGNUTLS_LDFLAGS} ${LIBGCRYPT_LDFLAGS} \
+			${LIBGNUTLS_LDFLAGS} ${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS} \
 			-o libpiano.so.0.0.0 ${LIBPIANO_RELOBJ} \
 			${LIBWAITRESS_RELOBJ}
 	@ln -s libpiano.so.0.0.0 libpiano.so.0
