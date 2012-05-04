@@ -222,6 +222,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 		} else if (streq ("audio_format", key)) {
 			if (streq (val, "aacplus")) {
 				settings->audioFormat = PIANO_AF_AACPLUS;
+			} else if (streq (val, "aacplus-lofi")) {
+				settings->audioFormat = PIANO_AF_AACPLUS_LO;
 			} else if (streq (val, "mp3")) {
 				settings->audioFormat = PIANO_AF_MP3;
 			} else if (streq (val, "mp3-hifi")) {

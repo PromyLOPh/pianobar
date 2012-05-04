@@ -65,7 +65,8 @@ typedef enum {
 	PIANO_AF_UNKNOWN = 0,
 	PIANO_AF_AACPLUS = 1,
 	PIANO_AF_MP3 = 2,
-	PIANO_AF_MP3_HI = 3
+	PIANO_AF_MP3_HI = 3,
+	PIANO_AF_AACPLUS_LO = 4,
 } PianoAudioFormat_t;
 
 typedef struct PianoSong {
