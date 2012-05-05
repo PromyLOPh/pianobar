@@ -293,22 +293,19 @@ static void BarMainLoop (BarApp_t *app) {
 
 		/* check whether player finished playing and start playing new
 		 * song */
-		if (app->player.mode >= PLAYER_FINISHED_PLAYBACK ||
-				app->player.mode == PLAYER_FREED) {
-			if (app->curStation != NULL) {
-				/* what's next? */
-				if (app->playlist != NULL) {
-					PianoSong_t *histsong = app->playlist;
-					app->playlist = app->playlist->next;
-					BarUiHistoryPrepend (app, histsong);
-				}
-				if (app->playlist == NULL) {
-					BarMainGetPlaylist (app);
-				}
-				/* song ready to play */
-				if (app->playlist != NULL) {
-					BarMainStartPlayback (app, &playerThread);
-				}
+		if (app->player.mode == PLAYER_FREED && app->curStation != NULL) {
+			/* what's next? */
+			if (app->playlist != NULL) {
+				PianoSong_t *histsong = app->playlist;
+				app->playlist = app->playlist->next;
+				BarUiHistoryPrepend (app, histsong);
+			}
+			if (app->playlist == NULL) {
+				BarMainGetPlaylist (app);
+			}
+			/* song ready to play */
+			if (app->playlist != NULL) {
+				BarMainStartPlayback (app, &playerThread);
 			}
 		}
 
