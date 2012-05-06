@@ -49,6 +49,30 @@ static void PianoJsonParseStation (json_object *j, PianoStation_t *s) {
 			"isQuickMix"));
 }
 
+/*	concat strings
+ *	@param destination
+ *	@param source string
+ *	@param destination size
+ */
+static void PianoStrpcat (char * restrict dest, const char * restrict src,
+		size_t len) {
+	/* skip to end of string */
+	while (*dest != '\0' && len > 1) {
+		++dest;
+		--len;
+	}
+
+	/* append until source exhaused or destination full */
+	while (*src != '\0' && len > 1) {
+		*dest = *src;
+		++dest;
+		++src;
+		--len;
+	}
+
+	*dest = '\0';
+}
+
 /*	parse xml response and update data structures/return new data structure
  *	@param piano handle
  *	@param initialized request (expects responseData to be a NUL-terminated
@@ -490,8 +514,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 		case PIANO_REQUEST_EXPLAIN: {
 			/* explain why song was selected */
 			PianoRequestDataExplain_t *reqData = req->data;
-			const size_t strSize = 1024;
-			size_t pos = 0;
+			const size_t strSize = 768;
 
 			assert (reqData != NULL);
 
@@ -502,24 +525,19 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 						sizeof (*reqData->retExplain));
 				strncpy (reqData->retExplain, "We're playing this track "
 						"because it features ", strSize);
-				pos = strlen (reqData->retExplain);
 				for (size_t i=0; i < json_object_array_length (explanations); i++) {
 					json_object *e = json_object_array_get_idx (explanations,
 							i);
 					const char *s = json_object_get_string (
 							json_object_object_get (e, "focusTraitName"));
 
-					strncpy (&reqData->retExplain[pos], s, strSize-pos-1);
-					pos += strlen (s);
+					PianoStrpcat (reqData->retExplain, s, strSize);
 					if (i < json_object_array_length (explanations)-2) {
-						strncpy (&reqData->retExplain[pos], ", ", strSize-pos-1);
-						pos += 2;
+						PianoStrpcat (reqData->retExplain, ", ", strSize);
 					} else if (i == json_object_array_length (explanations)-2) {
-						strncpy (&reqData->retExplain[pos], " and ", strSize-pos-1);
-						pos += 5;
+						PianoStrpcat (reqData->retExplain, " and ", strSize);
 					} else {
-						strncpy (&reqData->retExplain[pos], ".", strSize-pos-1);
-						pos += 1;
+						PianoStrpcat (reqData->retExplain, ".", strSize);
 					}
 				}
 			}
