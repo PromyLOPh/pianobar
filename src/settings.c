@@ -93,6 +93,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->npStationFormat);
 	free (settings->listSongFormat);
 	free (settings->fifo);
+	free (settings->rpcHost);
 	free (settings->partnerUser);
 	free (settings->partnerPassword);
 	free (settings->device);
@@ -188,6 +189,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->username = strdup (val);
 		} else if (streq ("password", key)) {
 			settings->password = strdup (val);
+		} else if (streq ("rpc_host", key)) {
+			free (settings->rpcHost);
+			settings->rpcHost = strdup (val);
 		} else if (streq ("partner_user", key)) {
 			free (settings->partnerUser);
 			settings->partnerUser = strdup (val);

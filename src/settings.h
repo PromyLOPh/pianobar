@@ -98,7 +98,7 @@ typedef struct {
 	char *npStationFormat;
 	char *listSongFormat;
 	char *fifo;
-	char *partnerUser, *partnerPassword, *device, *inkey, *outkey;
+	char *rpcHost, *partnerUser, *partnerPassword, *device, *inkey, *outkey;
 	char tlsFingerprint[20];
 	char keys[BAR_KS_COUNT];
 	BarMsgFormatStr_t msgFormat[MSG_COUNT];
