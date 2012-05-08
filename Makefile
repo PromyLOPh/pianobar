@@ -5,7 +5,7 @@ BINDIR:=${PREFIX}/bin
 LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
-DYNLINK:=1
+DYNLINK:=0
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
