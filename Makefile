@@ -73,11 +73,12 @@ ifeq (${DISABLE_MAD}, 1)
 	LIBMAD_LDFLAGS=
 else
 	LIBMAD_CFLAGS=-DENABLE_MAD
-	LIBMAD_LDFLAGS=-lmad
+	LIBMAD_CFLAGS+=$(shell pkg-config --cflags mad)
+	LIBMAD_LDFLAGS=$(shell pkg-config --libs mad)
 endif
 
-LIBGNUTLS_CFLAGS=
-LIBGNUTLS_LDFLAGS=-lgnutls
+LIBGNUTLS_CFLAGS=$(shell pkg-config --cflags gnutls)
+LIBGNUTLS_LDFLAGS=$(shell pkg-config --libs gnutls)
 
 LIBGCRYPT_CFLAGS=
 LIBGCRYPT_LDFLAGS=-lgcrypt
