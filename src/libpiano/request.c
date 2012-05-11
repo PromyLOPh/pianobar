@@ -175,8 +175,11 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			
 			assert (reqData != NULL);
 			assert (reqData->trackToken != NULL);
+			assert (reqData->stationId != NULL);
 			assert (reqData->rating != PIANO_RATE_NONE);
 
+			json_object_object_add (j, "stationToken",
+					json_object_new_string (reqData->stationId));
 			json_object_object_add (j, "trackToken",
 					json_object_new_string (reqData->trackToken));
 			json_object_object_add (j, "isPositive",
