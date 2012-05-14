@@ -31,7 +31,7 @@
   # Your config folder
   fold="$HOME/.config/pianobar"   
   # The pianobar executable
-  pianobar="$HOME/pianobar/pianobar" 
+  pianobar="pianobar" 
   # A blank icon to show when no albumart is found. I prefer to use
   # the actual pandora icon for this, which you can easily find and
   # download yourself.
