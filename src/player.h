@@ -45,6 +45,12 @@ THE SOFTWARE.
 
 #include "settings.h"
 
+#ifndef SIGRTMIN
+#ifdef SIGUSR1
+#define SIGRTMIN SIGUSR1
+#endif /* SIGUSR1 */
+#endif /* SIGRTMIN */
+
 #define BAR_PLAYER_MS_TO_S_FACTOR 1000
 #define BAR_PLAYER_BUFSIZE (WAITRESS_BUFFER_SIZE*2)
 #define BAR_PLAYER_SIGSTOP SIGRTMIN
