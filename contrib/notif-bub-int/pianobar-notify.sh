@@ -97,9 +97,8 @@ case "$1" in
 	   cd "$fold/albumart" 
 
 	   if [[ ! -e  "$icon" ]]; then 
-		  echo "No icon yet" >> test
+
 		  if [[  -n "$coverArt" ]]; then
-			 echo "Getting cover art from $coverArt" >> test
 	    		 wget -q -O "$icon" "$coverArt" 
 			 echo "$fold/albumart/$icon" > $an
 		  else
@@ -109,7 +108,6 @@ case "$1" in
 		  echo "$fold/albumart/$icon" > $an
 	   fi
 
-	   echo "Running $notify -t 7000 -i \"`cat $an`\" \"`cat $np`\" \"`cat $ds`\"" >> test;
 	   $notify -t 7000 -i "`cat $an`" "`cat $np`" "`cat $ds`"
 	   echo "" > "$logf"
 
