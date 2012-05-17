@@ -107,9 +107,9 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 		${LIBWAITRESS_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
 	@echo "  LINK  $@"
 	@${CC} -shared -Wl,-soname,libpiano.so.0 ${CFLAGS} ${LDFLAGS} \
-			${LIBGNUTLS_LDFLAGS} ${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS} \
 			-o libpiano.so.0.0.0 ${LIBPIANO_RELOBJ} \
-			${LIBWAITRESS_RELOBJ}
+			${LIBWAITRESS_RELOBJ} ${LIBGNUTLS_LDFLAGS} ${LIBGCRYPT_LDFLAGS} \
+			${LIBJSONC_LDFLAGS}
 	@ln -s libpiano.so.0.0.0 libpiano.so.0
 	@ln -s libpiano.so.0 libpiano.so
 	@echo "    AR  libpiano.a"
