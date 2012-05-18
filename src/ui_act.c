@@ -360,6 +360,15 @@ BarUiActCallback(BarUiActPause) {
 	}
 }
 
+/*	pauseregardless
+ */
+BarUiActCallback(BarUiActPauseRegardless) {
+	if (!app->player.paused) {
+		pthread_kill (app->player.thread, BAR_PLAYER_SIGSTOP);
+		app->player.paused = true;
+	}
+}
+
 /*	rename current station
  */
 BarUiActCallback(BarUiActRenameStation) {

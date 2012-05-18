@@ -75,6 +75,8 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_songnext"},
 		{'p', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, "pause/continue",
 				"act_songpause"},
+		{'P', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPauseRegardless, "pause regardless",
+				"act_songpauseregardless"},
 		{'q', BAR_DC_GLOBAL, BarUiActQuit, "quit", "act_quit"},
 		{'r', BAR_DC_STATION, BarUiActRenameStation, "rename station",
 				"act_stationrename"},
