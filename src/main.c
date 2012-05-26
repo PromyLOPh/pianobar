@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2011
+Copyright (c) 2008-2012
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -206,6 +206,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 		app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
 		app->player.audioFormat = app->playlist->audioFormat;
 		app->player.settings = &app->settings;
+		pthread_mutex_init (&app->player.pauseMutex, NULL);
 
 		/* throw event */
 		BarUiStartEventCmd (&app->settings, "songstart",
@@ -233,6 +234,7 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 	/* FIXME: pthread_join blocks everything if network connection
 	 * is hung up e.g. */
 	pthread_join (*playerThread, &threadRet);
+	pthread_mutex_destroy (&app->player.pauseMutex);
 
 	/* don't continue playback if thread reports error */
 	if (threadRet != (void *) PLAYER_RET_OK) {
