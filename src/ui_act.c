@@ -54,10 +54,6 @@ static inline void BarUiDoSkipSong (struct audioPlayer *player) {
 	assert (player != NULL);
 
 	if (player->mode != PLAYER_FINISHED_PLAYBACK && player->mode != PLAYER_FREED) {
-		/* unpause to make sure thread is able to reach cancellation point */
-		if (player->paused) {
-			pthread_kill (player->thread, BAR_PLAYER_SIGCONT);
-		}
 		pthread_cancel (player->thread);
 	}
 }

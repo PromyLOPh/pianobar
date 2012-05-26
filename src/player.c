@@ -156,15 +156,9 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size,
 			for (i = 0; i < frameInfo.samples; i++) {
 				aacDecoded[i] = applyReplayGain (aacDecoded[i], player->scale);
 			}
-
-			int oldstate;
-			pthread_setcancelstate (PTHREAD_CANCEL_DISABLE, &oldstate);
 			/* ao_play needs bytes: 1 sample = 16 bits = 2 bytes */
 			ao_play (player->audioOutDevice, (char *) aacDecoded,
 					frameInfo.samples * 2);
-			pthread_setcancelstate (PTHREAD_CANCEL_ENABLE, &oldstate);
-			pthread_testcancel();
-
 			/* add played frame length to played time, explained below */
 			player->songPlayed += (unsigned long long int) frameInfo.samples *
 					(unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR /
@@ -391,13 +385,9 @@ static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size,
 			 * be visible to user (ugly, but mp3 decoding != aac decoding) */
 			player->mode = PLAYER_RECV_DATA;
 		}
-		int oldstate;
-		pthread_setcancelstate (PTHREAD_CANCEL_DISABLE, &oldstate);
 		/* samples * length * channels */
 		ao_play (player->audioOutDevice, (char *) madDecoded,
 				player->mp3Synth.pcm.length * 2 * 2);
-		pthread_setcancelstate (PTHREAD_CANCEL_ENABLE, &oldstate);
-		pthread_testcancel();
 
 		/* avoid division by 0 */
 		if (player->mode == PLAYER_RECV_DATA) {
