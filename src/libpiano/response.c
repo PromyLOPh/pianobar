@@ -100,6 +100,17 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			ret = PIANO_RET_INVALID_RESPONSE;
 		} else {
 			ret = json_object_get_int (code)+PIANO_RET_OFFSET;
+
+			if (ret == PIANO_RET_P_INVALID_PARTNER_LOGIN &&
+					req->type == PIANO_REQUEST_LOGIN) {
+				PianoRequestDataLogin_t *reqData = req->data;
+				if (reqData->step == 1) {
+					/* return value is ambiguous, as both, partnerLogin and
+					 * userLogin return INVALID_PARTNER_LOGIN. Fix that to provide
+					 * better error messages. */
+					ret = PIANO_RET_INVALID_LOGIN;
+				}
+			}
 		}
 
 		json_object_put (j);

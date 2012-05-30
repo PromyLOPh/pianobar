@@ -250,6 +250,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Out of memory.";
 			break;
 
+		case PIANO_RET_INVALID_LOGIN:
+			return "Wrong email address or password.";
+			break;
+
 		/* pandora error messages */
 		case PIANO_RET_P_INTERNAL:
 			return "Internal error.";

@@ -23,14 +23,10 @@ THE SOFTWARE.
 
 /* functions responding to user's keystrokes */
 
-#ifndef __FreeBSD__
-#define _POSIX_C_SOURCE 200112L /* pthread_kill() */
-#endif
-
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <assert.h>
-#include <signal.h>
 
 #include "ui.h"
 #include "ui_readline.h"
@@ -53,13 +49,10 @@ THE SOFTWARE.
 static inline void BarUiDoSkipSong (struct audioPlayer *player) {
 	assert (player != NULL);
 
-	if (player->mode != PLAYER_FINISHED_PLAYBACK && player->mode != PLAYER_FREED) {
-		/* unpause to make sure thread is able to reach cancellation point */
-		if (player->paused) {
-			pthread_kill (player->thread, BAR_PLAYER_SIGCONT);
-		}
-		pthread_cancel (player->thread);
-	}
+	player->doQuit = 1;
+	/* unlocking an unlocked mutex is forbidden by some implementations */
+	pthread_mutex_trylock (&player->pauseMutex);
+	pthread_mutex_unlock (&player->pauseMutex);
 }
 
 /*	transform station if necessary to allow changes like rename, rate, ...
@@ -351,12 +344,9 @@ BarUiActCallback(BarUiActMoveSong) {
 /*	pause
  */
 BarUiActCallback(BarUiActPause) {
-	if (app->player.paused) {
-		pthread_kill (app->player.thread, BAR_PLAYER_SIGCONT);
-		app->player.paused = false;
-	} else {
-		pthread_kill (app->player.thread, BAR_PLAYER_SIGSTOP);
-		app->player.paused = true;
+	/* already locked => unlock/unpause */
+	if (pthread_mutex_trylock (&app->player.pauseMutex) == EBUSY) {
+		pthread_mutex_unlock (&app->player.pauseMutex);
 	}
 }
 
@@ -508,9 +498,8 @@ BarUiActCallback(BarUiActSelectQuickMix) {
 /*	quit
  */
 BarUiActCallback(BarUiActQuit) {
-	/* cancels player thread */
-	BarUiDoSkipSong (&app->player);
 	app->doQuit = 1;
+	BarUiDoSkipSong (&app->player);
 }
 
 /*	song history
