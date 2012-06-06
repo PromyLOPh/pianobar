@@ -84,7 +84,7 @@ typedef struct {
 	unsigned int history;
 	int volume;
 	BarStationSorting_t sortOrder;
-	PianoAudioFormat_t audioFormat;
+	PianoAudioQuality_t audioQuality;
 	char *username;
 	char *password;
 	char *controlProxy; /* non-american listeners need this */

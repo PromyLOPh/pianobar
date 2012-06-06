@@ -36,34 +36,6 @@ THE SOFTWARE.
 #include "piano.h"
 #include "crypt.h"
 
-/*	convert audio format id to string
- *	@param format id
- *	@return constant string
- */
-static const char *PianoAudioFormatToString (PianoAudioFormat_t format) {
-	switch (format) {
-		case PIANO_AF_AACPLUS_LO:
-			return "HTTP_32_AACPLUS";
-			break;
-
-		case PIANO_AF_AACPLUS:
-			return "HTTP_64_AACPLUS";
-			break;
-
-		case PIANO_AF_MP3:
-			return "HTTP_128_MP3";
-			break;
-
-		case PIANO_AF_MP3_HI:
-			return "HTTP_192_MP3";
-			break;
-
-		default:
-			return NULL;
-			break;
-	}
-}
-
 /*	prepare piano request (initializes request type, urlpath and postData)
  *	@param piano handle
  *	@param request structure
@@ -156,14 +128,11 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			assert (reqData != NULL);
 			assert (reqData->station != NULL);
 			assert (reqData->station->id != NULL);
-			assert (reqData->format != PIANO_AF_UNKNOWN);
 
 			req->secure = true;
 
 			json_object_object_add (j, "stationToken",
 					json_object_new_string (reqData->station->id));
-			json_object_object_add (j, "additionalAudioUrl",
-					json_object_new_string (PianoAudioFormatToString (reqData->format)));
 
 			method = "station.getPlaylist";
 			break;
