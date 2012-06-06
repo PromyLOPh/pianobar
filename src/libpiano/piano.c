@@ -287,6 +287,11 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Invalid partner login.";
 			break;
 
+		case PIANO_RET_P_LICENSING_RESTRICTIONS:
+			return "Pandora is not available in your country. "
+					"Set up a control proxy (see manpage).";
+			break;
+
 		default:
 			return "No error message available.";
 			break;
