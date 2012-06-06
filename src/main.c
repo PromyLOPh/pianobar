@@ -163,7 +163,7 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 	WaitressReturn_t wRet;
 	PianoRequestDataGetPlaylist_t reqData;
 	reqData.station = app->curStation;
-	reqData.format = app->settings.audioFormat;
+	reqData.quality = app->settings.audioQuality;
 
 	BarUiMsg (&app->settings, MSG_INFO, "Receiving new playlist... ");
 	if (!BarUiPianoCall (app, PIANO_REQUEST_GET_PLAYLIST,

@@ -228,6 +228,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 
 			assert (req->responseData != NULL);
 			assert (reqData != NULL);
+			assert (reqData->quality != PIANO_AQ_UNKNOWN);
 
 			json_object *items = json_object_object_get (result, "items");
 			assert (items != NULL);
@@ -245,7 +246,37 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					continue;
 				}
 
-				song->audioUrl = PianoJsonStrdup (s, "additionalAudioUrl");
+				/* get audio url based on selected quality */
+				static const char *qualityMap[] = {"", "lowQuality", "mediumQuality",
+						"highQuality"};
+				assert (reqData->quality < sizeof (qualityMap)/sizeof (*qualityMap));
+				static const char *formatMap[] = {"", "aacplus", "mp3"};
+				json_object *map = json_object_object_get (s, "audioUrlMap");
+				assert (map != NULL);
+
+				if (map != NULL) {
+					map = json_object_object_get (map, qualityMap[reqData->quality]);
+
+					if (map != NULL) {
+						const char *encoding = json_object_get_string (
+								json_object_object_get (map, "encoding"));
+						assert (encoding != NULL);
+						for (size_t k = 0; k < sizeof (formatMap)/sizeof (*formatMap); k++) {
+							if (strcmp (formatMap[k], encoding) == 0) {
+								song->audioFormat = k;
+								break;
+							}
+						}
+						song->audioUrl = PianoJsonStrdup (map, "audioUrl");
+					} else {
+						/* requested quality is not available */
+						ret = PIANO_RET_QUALITY_UNAVAILABLE;
+						free (song);
+						PianoDestroyPlaylist (playlist);
+						goto cleanup;
+					}
+				}
+
 				song->artist = PianoJsonStrdup (s, "artistName");
 				song->album = PianoJsonStrdup (s, "albumName");
 				song->title = PianoJsonStrdup (s, "songName");
@@ -255,7 +286,6 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				song->detailUrl = PianoJsonStrdup (s, "songDetailUrl");
 				song->fileGain = json_object_get_double (
 						json_object_object_get (s, "trackGain"));
-				song->audioFormat = reqData->format;
 				switch (json_object_get_int (json_object_object_get (s,
 						"songRating"))) {
 					case 1:
@@ -665,6 +695,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 		}
 	}
 
+cleanup:
 	json_object_put (j);
 
 	return ret;

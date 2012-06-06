@@ -121,13 +121,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 			sizeof (dispatchActions) / sizeof (*dispatchActions));
 
 	/* apply defaults */
-	#ifdef ENABLE_FAAD
-	settings->audioFormat = PIANO_AF_AACPLUS;
-	#else
-		#ifdef ENABLE_MAD
-		settings->audioFormat = PIANO_AF_MP3;
-		#endif
-	#endif
+	settings->audioQuality = PIANO_AQ_HIGH;
 	settings->autoselect = true;
 	settings->history = 5;
 	settings->volume = 0;
@@ -226,15 +220,13 @@ void BarSettingsRead (BarSettings_t *settings) {
 					break;
 				}
 			}
-		} else if (streq ("audio_format", key)) {
-			if (streq (val, "aacplus")) {
-				settings->audioFormat = PIANO_AF_AACPLUS;
-			} else if (streq (val, "aacplus-lofi")) {
-				settings->audioFormat = PIANO_AF_AACPLUS_LO;
-			} else if (streq (val, "mp3")) {
-				settings->audioFormat = PIANO_AF_MP3;
-			} else if (streq (val, "mp3-hifi")) {
-				settings->audioFormat = PIANO_AF_MP3_HI;
+		} else if (streq ("audio_quality", key)) {
+			if (streq (val, "low")) {
+				settings->audioQuality = PIANO_AQ_LOW;
+			} else if (streq (val, "medium")) {
+				settings->audioQuality = PIANO_AQ_MEDIUM;
+			} else if (streq (val, "high")) {
+				settings->audioQuality = PIANO_AQ_HIGH;
 			}
 		} else if (streq ("autostart_station", key)) {
 			settings->autostartStation = strdup (val);

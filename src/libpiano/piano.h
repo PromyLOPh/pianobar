@@ -65,9 +65,14 @@ typedef enum {
 	PIANO_AF_UNKNOWN = 0,
 	PIANO_AF_AACPLUS = 1,
 	PIANO_AF_MP3 = 2,
-	PIANO_AF_MP3_HI = 3,
-	PIANO_AF_AACPLUS_LO = 4,
 } PianoAudioFormat_t;
+
+typedef enum {
+	PIANO_AQ_UNKNOWN = 0,
+	PIANO_AQ_LOW = 1,
+	PIANO_AQ_MEDIUM = 2,
+	PIANO_AQ_HIGH = 3,
+} PianoAudioQuality_t;
 
 typedef struct PianoSong {
 	char *artist;
@@ -178,7 +183,7 @@ typedef struct {
 
 typedef struct {
 	PianoStation_t *station;
-	PianoAudioFormat_t format;
+	PianoAudioQuality_t quality;
 	PianoSong_t *retPlaylist;
 } PianoRequestDataGetPlaylist_t;
 
@@ -245,6 +250,7 @@ typedef enum {
 	PIANO_RET_CONTINUE_REQUEST = 3,
 	PIANO_RET_OUT_OF_MEMORY = 4,
 	PIANO_RET_INVALID_LOGIN = 5,
+	PIANO_RET_QUALITY_UNAVAILABLE = 6,
 
 	/* pandora error codes */
 	PIANO_RET_P_INTERNAL = PIANO_RET_OFFSET+0,
