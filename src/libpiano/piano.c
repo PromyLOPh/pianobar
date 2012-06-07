@@ -292,6 +292,14 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 					"Set up a control proxy (see manpage).";
 			break;
 
+		case PIANO_RET_P_PARTNER_NOT_AUTHORIZED:
+			return "Invalid partner credentials.";
+			break;
+
+		case PIANO_RET_P_LISTENER_NOT_AUTHORIZED:
+			return "Listener not authorized.";
+			break;
+
 		default:
 			return "No error message available.";
 			break;
