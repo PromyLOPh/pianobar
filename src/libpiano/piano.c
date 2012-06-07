@@ -254,6 +254,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Wrong email address or password.";
 			break;
 
+		case PIANO_RET_QUALITY_UNAVAILABLE:
+			return "Selected audio quality is not available.";
+			break;
+
 		/* pandora error messages */
 		case PIANO_RET_P_INTERNAL:
 			return "Internal error.";

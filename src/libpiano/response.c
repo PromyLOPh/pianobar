@@ -256,7 +256,6 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 
 				if (map != NULL) {
 					map = json_object_object_get (map, qualityMap[reqData->quality]);
-					assert (map != NULL);
 
 					if (map != NULL) {
 						const char *encoding = json_object_get_string (
@@ -269,6 +268,12 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 							}
 						}
 						song->audioUrl = PianoJsonStrdup (map, "audioUrl");
+					} else {
+						/* requested quality is not available */
+						ret = PIANO_RET_QUALITY_UNAVAILABLE;
+						free (song);
+						PianoDestroyPlaylist (playlist);
+						goto cleanup;
 					}
 				}
 
@@ -690,6 +695,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 		}
 	}
 
+cleanup:
 	json_object_put (j);
 
 	return ret;
