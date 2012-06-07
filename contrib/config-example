@@ -33,8 +33,7 @@
 #act_volup = )
 
 # Misc
-# mp3, mp3-hifi or aacplus
-#audio_format = mp3
+#audio_quality = low
 #autostart_station = 123456
 #event_command = /home/user/.config/pianobar/eventcmd
 #fifo = /tmp/pianobar
@@ -47,3 +46,14 @@
 #format_nowplaying_song = [32m%t[0m by [34m%a[0m on %l[31m%r[0m%@%s
 #format_nowplaying_station = Station [35m%n[0m
 #format_list_song = %i) %a - %t%r
+
+# high-quality audio (192k mp3, for Pandora One subscribers only!)
+#audio_quality = high
+#rpc_host = internal-tuner.pandora.com
+#partner_user = pandora one
+#partner_password = TVCKIBGS9AO9TSYLNNFUML0743LH82D
+#device = D01
+#encrypt_password = 2%3WCL*JU$MP]4
+#decrypt_password = U#IO$RZPAB%VX2
+#tls_fingerprint = 394067EECB420E3911985C2CC02C12AE89BB09B2
+
