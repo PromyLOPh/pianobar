@@ -205,9 +205,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 			free (settings->inkey);
 			settings->inkey = strdup (val);
 		} else if (memcmp ("act_", key, 4) == 0) {
-		} else if (memcmp ("act_", key, 4) == 0) {
-		} else if (memcmp ("act_", key, 4) == 0) {
-		} else if (memcmp ("act_", key, 4) == 0) {
 			size_t i;
 			/* keyboard shortcuts */
 			for (i = 0; i < BAR_KS_COUNT; i++) {
