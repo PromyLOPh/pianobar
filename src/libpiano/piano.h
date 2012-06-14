@@ -216,11 +216,6 @@ typedef struct {
 } PianoRequestDataSearch_t;
 
 typedef struct {
-	char *type;
-	char *id;
-} PianoRequestDataCreateStation_t;
-
-typedef struct {
 	PianoStation_t *station;
 	char *musicId;
 } PianoRequestDataAddSeed_t;

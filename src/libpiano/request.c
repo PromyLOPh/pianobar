@@ -203,15 +203,13 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 		}
 
 		case PIANO_REQUEST_CREATE_STATION: {
-			/* create new station from specified musicid (type=mi, get one by
-			 * performing a search) or shared station id (type=sh) */
-			PianoRequestDataCreateStation_t *reqData = req->data;
+			/* create new station from specified musicToken or station number */
+			char *token = req->data;
 
-			assert (reqData != NULL);
-			assert (reqData->id != NULL);
+			assert (token != NULL);
 
 			json_object_object_add (j, "musicToken",
-					json_object_new_string (reqData->id));
+					json_object_new_string (token));
 
 			method = "station.createStation";
 			break;

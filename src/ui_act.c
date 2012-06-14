@@ -147,15 +147,14 @@ BarUiActCallback(BarUiActBanSong) {
 BarUiActCallback(BarUiActCreateStation) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
-	PianoRequestDataCreateStation_t reqData;
+	char *id = NULL;
 
-	reqData.id = BarUiSelectMusicId (app, NULL,
+	id = BarUiSelectMusicId (app, NULL,
 			"Create station from artist or title: ");
-	if (reqData.id != NULL) {
-		reqData.type = "mi";
+	if (id != NULL) {
 		BarUiMsg (&app->settings, MSG_INFO, "Creating station... ");
-		BarUiActDefaultPianoCall (PIANO_REQUEST_CREATE_STATION, &reqData);
-		free (reqData.id);
+		BarUiActDefaultPianoCall (PIANO_REQUEST_CREATE_STATION, id);
+		free (id);
 		BarUiActDefaultEventcmd ("stationcreate");
 	}
 }
@@ -165,16 +164,13 @@ BarUiActCallback(BarUiActCreateStation) {
 BarUiActCallback(BarUiActAddSharedStation) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
-	PianoRequestDataCreateStation_t reqData;
 	char stationId[50];
 
 	BarUiMsg (&app->settings, MSG_QUESTION, "Station id: ");
 	if (BarReadline (stationId, sizeof (stationId), "0123456789", &app->input,
 			BAR_RL_DEFAULT, -1) > 0) {
-		reqData.id = stationId;
-		reqData.type = "sh";
 		BarUiMsg (&app->settings, MSG_INFO, "Adding shared station... ");
-		BarUiActDefaultPianoCall (PIANO_REQUEST_CREATE_STATION, &reqData);
+		BarUiActDefaultPianoCall (PIANO_REQUEST_CREATE_STATION, stationId);
 		BarUiActDefaultEventcmd ("stationaddshared");
 	}
 }
