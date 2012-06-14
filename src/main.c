@@ -45,6 +45,7 @@ THE SOFTWARE.
 #include <assert.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <signal.h>
 
 /* pandora.com library */
 #include <piano.h>
@@ -336,6 +337,9 @@ int main (int argc, char **argv) {
 	BarTermSave (&termOrig);
 	BarTermSetEcho (0);
 	BarTermSetBuffer (0);
+
+	/* signals */
+	signal (SIGPIPE, SIG_IGN);
 
 	/* init some things */
 	ao_initialize ();
