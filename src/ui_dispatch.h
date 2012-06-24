@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010-2011
+Copyright (c) 2010-2012
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -93,6 +93,8 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_volup"},
 		{'=', BAR_DC_STATION, BarUiActManageStation, "delete seeds/feedback",
 				"act_managestation"},
+		{' ', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, NULL,
+				"act_songpause2"},
 		};
 
 #include <piano.h>
