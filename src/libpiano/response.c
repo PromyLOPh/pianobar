@@ -334,21 +334,6 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			break;
 		}
 
-		case PIANO_REQUEST_MOVE_SONG: {
-			/* move song to different station */
-			PianoRequestDataMoveSong_t *reqData = req->data;
-
-			assert (req->responseData != NULL);
-			assert (reqData != NULL);
-			assert (reqData->step < 2);
-
-			if (reqData->step == 0) {
-				ret = PIANO_RET_CONTINUE_REQUEST;
-				++reqData->step;
-			}
-			break;
-		}
-
 		case PIANO_REQUEST_DELETE_STATION: {
 			/* delete station from server and station list */
 			PianoStation_t *station = req->data;

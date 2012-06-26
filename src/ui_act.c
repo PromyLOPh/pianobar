@@ -300,43 +300,6 @@ BarUiActCallback(BarUiActSkipSong) {
 	BarUiDoSkipSong (&app->player);
 }
 
-/*	move song to different station
- */
-BarUiActCallback(BarUiActMoveSong) {
-	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
-	PianoRequestDataMoveSong_t reqData;
-
-	assert (selSong != NULL);
-
-	reqData.step = 0;
-
-	reqData.to = BarUiSelectStation (app, app->ph.stations,
-			"Move song to station: ", NULL, false);
-	if (reqData.to != NULL) {
-		/* find original station (just is case we're playing a quickmix
-		 * station) */
-		reqData.from = PianoFindStationById (app->ph.stations,
-				selSong->stationId);
-		if (reqData.from == NULL) {
-			BarUiMsg (&app->settings, MSG_ERR, "Station not found\n");
-			return;
-		}
-
-		if (!BarTransformIfShared (app, reqData.from) ||
-				!BarTransformIfShared (app, reqData.to)) {
-			return;
-		}
-		BarUiMsg (&app->settings, MSG_INFO, "Moving song to \"%s\"... ", reqData.to->name);
-		reqData.song = selSong;
-		if (BarUiActDefaultPianoCall (PIANO_REQUEST_MOVE_SONG, &reqData) &&
-				selSong == app->playlist) {
-			BarUiDoSkipSong (&app->player);
-		}
-		BarUiActDefaultEventcmd ("songmove");
-	}
-}
-
 /*	pause
  */
 BarUiActCallback(BarUiActPause) {
