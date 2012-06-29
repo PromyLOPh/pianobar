@@ -58,3 +58,19 @@ this issue by overriding CFLAGS[1]
 
 [1] https://github.com/PromyLOPh/pianobar/issues/98
 
+Ubuntu 12.04
+++++++++++++
+
+To install on Ubuntu > 12.04
+
+	sudo apt-get install \
+			libao-dev \
+			libmad0-dev \
+			libfaac-dev \
+			libfaad-dev \
+			libgnutls-dev \
+			libjson0-dev
+	make
+	sudo make install
+
+You can then fire it with `pianobar`
