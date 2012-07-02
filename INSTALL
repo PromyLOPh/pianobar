@@ -66,7 +66,6 @@ To install on Ubuntu > 12.04
 	sudo apt-get install \
 			libao-dev \
 			libmad0-dev \
-			libfaac-dev \
 			libfaad-dev \
 			libgnutls-dev \
 			libjson0-dev
