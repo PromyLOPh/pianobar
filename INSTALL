@@ -61,16 +61,15 @@ this issue by overriding CFLAGS[1]
 Ubuntu 12.04
 ++++++++++++
 
-To install on Ubuntu > 12.04
+To install on Ubuntu >= 12.04
 
 	sudo apt-get install \
 			libao-dev \
 			libmad0-dev \
-			libfaac-dev \
 			libfaad-dev \
 			libgnutls-dev \
 			libjson0-dev
 	make
 	sudo make install
 
-You can then fire it with `pianobar`
+You can then fire it up with `pianobar`
