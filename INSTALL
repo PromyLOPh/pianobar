@@ -63,13 +63,14 @@ Ubuntu 12.04
 
 To install on Ubuntu >= 12.04
 
-	sudo apt-get install \
-			libao-dev \
-			libmad0-dev \
-			libfaad-dev \
-			libgnutls-dev \
-			libjson0-dev
-	make
-	sudo make install
+    sudo apt-get install \
+      libao-dev \
+      libmad0-dev \
+      libfaad-dev \
+      libgnutls-dev \
+      libjson0-dev \
+      libgcrypt11-dev
+    make
+    sudo make install
 
 You can then fire it up with `pianobar`
