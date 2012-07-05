@@ -343,6 +343,9 @@ int main (int argc, char **argv) {
 
 	/* init some things */
 	ao_initialize ();
+	gcry_check_version (NULL);
+	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 	gnutls_global_init ();
 
 	BarSettingsInit (&app.settings);
