@@ -68,7 +68,8 @@ To install on Ubuntu >= 12.04
 			libmad0-dev \
 			libfaad-dev \
 			libgnutls-dev \
-			libjson0-dev
+			libjson0-dev \
+			libgcrypt11-dev
 	make
 	sudo make install
 
