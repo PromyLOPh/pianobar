@@ -37,6 +37,7 @@ BarUiActCallback(BarUiActHelp);
 BarUiActCallback(BarUiActAddMusic);
 BarUiActCallback(BarUiActBanSong);
 BarUiActCallback(BarUiActCreateStation);
+BarUiActCallback(BarUiActCreateStationFromSong);
 BarUiActCallback(BarUiActAddSharedStation);
 BarUiActCallback(BarUiActDeleteStation);
 BarUiActCallback(BarUiActExplain);

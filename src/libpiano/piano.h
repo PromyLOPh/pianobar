@@ -208,6 +208,15 @@ typedef struct {
 } PianoRequestDataSearch_t;
 
 typedef struct {
+	char *token;
+	enum {
+		PIANO_MUSICTYPE_INVALID = 0,
+		PIANO_MUSICTYPE_SONG,
+		PIANO_MUSICTYPE_ARTIST,
+	} type;
+} PianoRequestDataCreateStation_t;
+
+typedef struct {
 	PianoStation_t *station;
 	char *musicId;
 } PianoRequestDataAddSeed_t;

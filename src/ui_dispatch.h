@@ -95,6 +95,8 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_managestation"},
 		{' ', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, NULL,
 				"act_songpause2"},
+		{'v', BAR_DC_SONG, BarUiActCreateStationFromSong,
+				"create new station from song or artist", "act_stationcreatefromsong"},
 		};
 
 #include <piano.h>
