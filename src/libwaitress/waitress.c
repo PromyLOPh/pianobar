@@ -1098,11 +1098,13 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 		if ((wRet = WaitressSendRequest (waith)) == WAITRESS_RET_OK) {
 			wRet = WaitressReceiveResponse (waith);
 		}
+		if (waith->url.tls) {
+			gnutls_bye (waith->request.tlsSession, GNUTLS_SHUT_RDWR);
+		}
 	}
 
 	/* cleanup */
 	if (waith->url.tls) {
-		gnutls_bye (waith->request.tlsSession, GNUTLS_SHUT_RDWR);
 		gnutls_deinit (waith->request.tlsSession);
 		gnutls_certificate_free_credentials (waith->tlsCred);
 	}

@@ -115,6 +115,21 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 	@echo "    AR  libpiano.a"
 	@${AR} rcs libpiano.a ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
 
+
+# build dependency files
+%.d: %.c
+	@set -e; rm -f $@; \
+			$(CC) -M ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
+			${LIBFAAD_CFLAGS} ${LIBMAD_CFLAGS} ${LIBGNUTLS_CFLAGS} \
+			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS} $< > $@.$$$$; \
+			sed '1 s,^.*\.o[ :]*,$*.o $@ : ,g' < $@.$$$$ > $@; \
+			rm -f $@.$$$$
+
+-include $(PIANOBAR_SRC:.c=.d)
+-include $(LIBPIANO_SRC:.c=.d)
+-include $(LIBWAITRESS_SRC:.c=.d)
+
+# build standard object files
 %.o: %.c
 	@echo "    CC  $<"
 	@${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
@@ -132,7 +147,8 @@ clean:
 	@echo " CLEAN"
 	@${RM} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBWAITRESS_OBJ}/test.o \
 			${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} pianobar libpiano.so* \
-			libpiano.a waitress-test
+			libpiano.a waitress-test $(PIANOBAR_SRC:.c=.d) $(LIBPIANO_SRC:.c=.d) \
+			$(LIBWAITRESS_SRC:.c=.d)
 
 all: pianobar
 

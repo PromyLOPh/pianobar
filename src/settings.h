@@ -42,22 +42,23 @@ typedef enum {
 	BAR_KS_HISTORY = 8,
 	BAR_KS_INFO = 9,
 	BAR_KS_ADDSHARED = 10,
-	BAR_KS_MOVESONG = 11,
-	BAR_KS_SKIP = 12,
-	BAR_KS_PLAYPAUSE = 13,
-	BAR_KS_QUIT = 14,
-	BAR_KS_RENAMESTATION = 15,
-	BAR_KS_SELECTSTATION = 16,
-	BAR_KS_TIRED = 17,
-	BAR_KS_UPCOMING = 18,
-	BAR_KS_SELECTQUICKMIX = 19,
-	BAR_KS_DEBUG = 20,
-	BAR_KS_BOOKMARK = 21,
-	BAR_KS_VOLDOWN = 22,
-	BAR_KS_VOLUP = 23,
-	BAR_KS_MANAGESTATION = 24,
+	BAR_KS_SKIP = 11,
+	BAR_KS_PLAYPAUSE = 12,
+	BAR_KS_QUIT = 13,
+	BAR_KS_RENAMESTATION = 14,
+	BAR_KS_SELECTSTATION = 15,
+	BAR_KS_TIRED = 16,
+	BAR_KS_UPCOMING = 17,
+	BAR_KS_SELECTQUICKMIX = 18,
+	BAR_KS_DEBUG = 19,
+	BAR_KS_BOOKMARK = 20,
+	BAR_KS_VOLDOWN = 21,
+	BAR_KS_VOLUP = 22,
+	BAR_KS_MANAGESTATION = 23,
+	BAR_KS_PLAYPAUSE2 = 24,
+	BAR_KS_CREATESTATIONFROMSONG = 25,
 	/* insert new shortcuts _before_ this element and increase its value */
-	BAR_KS_COUNT = 25,
+	BAR_KS_COUNT = 26,
 } BarKeyShortcutId_t;
 
 #define BAR_KS_DISABLED '\x00'
@@ -84,7 +85,7 @@ typedef struct {
 	unsigned int history;
 	int volume;
 	BarStationSorting_t sortOrder;
-	PianoAudioFormat_t audioFormat;
+	PianoAudioQuality_t audioQuality;
 	char *username;
 	char *password;
 	char *controlProxy; /* non-american listeners need this */

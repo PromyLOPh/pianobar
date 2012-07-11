@@ -36,34 +36,6 @@ THE SOFTWARE.
 #include "piano.h"
 #include "crypt.h"
 
-/*	convert audio format id to string
- *	@param format id
- *	@return constant string
- */
-static const char *PianoAudioFormatToString (PianoAudioFormat_t format) {
-	switch (format) {
-		case PIANO_AF_AACPLUS_LO:
-			return "HTTP_32_AACPLUS";
-			break;
-
-		case PIANO_AF_AACPLUS:
-			return "HTTP_64_AACPLUS";
-			break;
-
-		case PIANO_AF_MP3:
-			return "HTTP_128_MP3";
-			break;
-
-		case PIANO_AF_MP3_HI:
-			return "HTTP_192_MP3";
-			break;
-
-		default:
-			return NULL;
-			break;
-	}
-}
-
 /*	prepare piano request (initializes request type, urlpath and postData)
  *	@param piano handle
  *	@param request structure
@@ -156,14 +128,11 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			assert (reqData != NULL);
 			assert (reqData->station != NULL);
 			assert (reqData->station->id != NULL);
-			assert (reqData->format != PIANO_AF_UNKNOWN);
 
 			req->secure = true;
 
 			json_object_object_add (j, "stationToken",
 					json_object_new_string (reqData->station->id));
-			json_object_object_add (j, "additionalAudioUrl",
-					json_object_new_string (PianoAudioFormatToString (reqData->format)));
 
 			method = "station.getPlaylist";
 			break;
@@ -234,15 +203,34 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 		}
 
 		case PIANO_REQUEST_CREATE_STATION: {
-			/* create new station from specified musicid (type=mi, get one by
-			 * performing a search) or shared station id (type=sh) */
+			/* create new station from specified musicToken or station number */
 			PianoRequestDataCreateStation_t *reqData = req->data;
 
 			assert (reqData != NULL);
-			assert (reqData->id != NULL);
+			assert (reqData->token != NULL);
 
-			json_object_object_add (j, "musicToken",
-					json_object_new_string (reqData->id));
+			if (reqData->type == PIANO_MUSICTYPE_INVALID) {
+				json_object_object_add (j, "musicToken",
+						json_object_new_string (reqData->token));
+			} else {
+				json_object_object_add (j, "trackToken",
+						json_object_new_string (reqData->token));
+				switch (reqData->type) {
+					case PIANO_MUSICTYPE_SONG:
+						json_object_object_add (j, "musicType",
+								json_object_new_string ("song"));
+						break;
+
+					case PIANO_MUSICTYPE_ARTIST:
+						json_object_object_add (j, "musicType",
+								json_object_new_string ("artist"));
+						break;
+
+					default:
+						assert (0);
+						break;
+				}
+			}
 
 			method = "station.createStation";
 			break;
@@ -431,42 +419,6 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			ret = PianoRequest (ph, req, PIANO_REQUEST_ADD_FEEDBACK);
 			/* and reset request type/data */
 			req->type = PIANO_REQUEST_RATE_SONG;
-			req->data = reqData;
-
-			goto cleanup;
-			break;
-		}
-
-		case PIANO_REQUEST_MOVE_SONG: {
-			/* move song to a different station, needs two requests */
-			PianoRequestDataMoveSong_t *reqData = req->data;
-			PianoRequestDataAddFeedback_t transformedReqData;
-
-			assert (reqData != NULL);
-			assert (reqData->song != NULL);
-			assert (reqData->from != NULL);
-			assert (reqData->to != NULL);
-			assert (reqData->step < 2);
-
-			transformedReqData.trackToken = reqData->song->trackToken;
-			req->data = &transformedReqData;
-
-			switch (reqData->step) {
-				case 0:
-					transformedReqData.stationId = reqData->from->id;
-					transformedReqData.rating = PIANO_RATE_BAN;
-					break;
-
-				case 1:
-					transformedReqData.stationId = reqData->to->id;
-					transformedReqData.rating = PIANO_RATE_LOVE;
-					break;
-			}
-
-			/* create request data (url, post data) */
-			ret = PianoRequest (ph, req, PIANO_REQUEST_ADD_FEEDBACK);
-			/* and reset request type/data */
-			req->type = PIANO_REQUEST_MOVE_SONG;
 			req->data = reqData;
 
 			goto cleanup;

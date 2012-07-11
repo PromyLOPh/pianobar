@@ -45,6 +45,7 @@ THE SOFTWARE.
 #include <assert.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <signal.h>
 
 /* pandora.com library */
 #include <piano.h>
@@ -163,7 +164,7 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 	WaitressReturn_t wRet;
 	PianoRequestDataGetPlaylist_t reqData;
 	reqData.station = app->curStation;
-	reqData.format = app->settings.audioFormat;
+	reqData.quality = app->settings.audioQuality;
 
 	BarUiMsg (&app->settings, MSG_INFO, "Receiving new playlist... ");
 	if (!BarUiPianoCall (app, PIANO_REQUEST_GET_PLAYLIST,
@@ -337,8 +338,14 @@ int main (int argc, char **argv) {
 	BarTermSetEcho (0);
 	BarTermSetBuffer (0);
 
+	/* signals */
+	signal (SIGPIPE, SIG_IGN);
+
 	/* init some things */
 	ao_initialize ();
+	gcry_check_version (NULL);
+	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 	gnutls_global_init ();
 
 	BarSettingsInit (&app.settings);

@@ -10,7 +10,8 @@ Dependencies
 - gnutls
 - gcrypt
 - json-c
-- libfaad2 and/or libmad
+- libfaad2
+- libmad (optional, Pandora One users only)
 - UTF-8 console/locale
 
 Building
@@ -57,3 +58,19 @@ this issue by overriding CFLAGS[1]
 
 [1] https://github.com/PromyLOPh/pianobar/issues/98
 
+Ubuntu 12.04
+++++++++++++
+
+To install on Ubuntu >= 12.04
+
+	sudo apt-get install \
+			libao-dev \
+			libmad0-dev \
+			libfaad-dev \
+			libgnutls-dev \
+			libjson0-dev \
+			libgcrypt11-dev
+	make
+	sudo make install
+
+You can then fire it up with `pianobar`

@@ -65,9 +65,14 @@ typedef enum {
 	PIANO_AF_UNKNOWN = 0,
 	PIANO_AF_AACPLUS = 1,
 	PIANO_AF_MP3 = 2,
-	PIANO_AF_MP3_HI = 3,
-	PIANO_AF_AACPLUS_LO = 4,
 } PianoAudioFormat_t;
+
+typedef enum {
+	PIANO_AQ_UNKNOWN = 0,
+	PIANO_AQ_LOW = 1,
+	PIANO_AQ_MEDIUM = 2,
+	PIANO_AQ_HIGH = 3,
+} PianoAudioQuality_t;
 
 typedef struct PianoSong {
 	char *artist;
@@ -142,7 +147,6 @@ typedef enum {
 	PIANO_REQUEST_GET_PLAYLIST = 3,
 	PIANO_REQUEST_RATE_SONG = 4,
 	PIANO_REQUEST_ADD_FEEDBACK = 5,
-	PIANO_REQUEST_MOVE_SONG = 6,
 	PIANO_REQUEST_RENAME_STATION = 7,
 	PIANO_REQUEST_DELETE_STATION = 8,
 	PIANO_REQUEST_SEARCH = 9,
@@ -178,7 +182,7 @@ typedef struct {
 
 typedef struct {
 	PianoStation_t *station;
-	PianoAudioFormat_t format;
+	PianoAudioQuality_t quality;
 	PianoSong_t *retPlaylist;
 } PianoRequestDataGetPlaylist_t;
 
@@ -194,13 +198,6 @@ typedef struct {
 } PianoRequestDataAddFeedback_t;
 
 typedef struct {
-	PianoSong_t *song;
-	PianoStation_t *from;
-	PianoStation_t *to;
-	unsigned short step;
-} PianoRequestDataMoveSong_t;
-
-typedef struct {
 	PianoStation_t *station;
 	char *newName;
 } PianoRequestDataRenameStation_t;
@@ -211,8 +208,12 @@ typedef struct {
 } PianoRequestDataSearch_t;
 
 typedef struct {
-	char *type;
-	char *id;
+	char *token;
+	enum {
+		PIANO_MUSICTYPE_INVALID = 0,
+		PIANO_MUSICTYPE_SONG,
+		PIANO_MUSICTYPE_ARTIST,
+	} type;
 } PianoRequestDataCreateStation_t;
 
 typedef struct {
@@ -245,6 +246,7 @@ typedef enum {
 	PIANO_RET_CONTINUE_REQUEST = 3,
 	PIANO_RET_OUT_OF_MEMORY = 4,
 	PIANO_RET_INVALID_LOGIN = 5,
+	PIANO_RET_QUALITY_UNAVAILABLE = 6,
 
 	/* pandora error codes */
 	PIANO_RET_P_INTERNAL = PIANO_RET_OFFSET+0,
@@ -286,7 +288,7 @@ typedef enum {
 	PIANO_RET_P_URL_PARAM_MISSING_USER_ID = PIANO_RET_OFFSET+5,
 	PIANO_RET_P_USERNAME_ALREADY_EXISTS = PIANO_RET_OFFSET+1013,
 	PIANO_RET_P_USER_ALREADY_USED_TRIAL = PIANO_RET_OFFSET+1037,
-	PIANO_RET_P_USER_NOT_ACTIVE = PIANO_RET_OFFSET+1003,
+	PIANO_RET_P_LISTENER_NOT_AUTHORIZED = PIANO_RET_OFFSET+1003,
 	PIANO_RET_P_USER_NOT_AUTHORIZED = PIANO_RET_OFFSET+1004,
 	PIANO_RET_P_ZIP_CODE_INVALID = PIANO_RET_OFFSET+1024,
 

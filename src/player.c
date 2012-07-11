@@ -428,7 +428,6 @@ void *BarPlayerThread (void *data) {
 
 	switch (player->audioFormat) {
 		#ifdef ENABLE_FAAD
-		case PIANO_AF_AACPLUS_LO:
 		case PIANO_AF_AACPLUS:
 			player->aacHandle = NeAACDecOpen();
 			/* set aac conf */
@@ -443,7 +442,6 @@ void *BarPlayerThread (void *data) {
 
 		#ifdef ENABLE_MAD
 		case PIANO_AF_MP3:
-		case PIANO_AF_MP3_HI:
 			mad_stream_init (&player->mp3Stream);
 			mad_frame_init (&player->mp3Frame);
 			mad_synth_init (&player->mp3Synth);
@@ -472,7 +470,6 @@ void *BarPlayerThread (void *data) {
 
 	switch (player->audioFormat) {
 		#ifdef ENABLE_FAAD
-		case PIANO_AF_AACPLUS_LO:
 		case PIANO_AF_AACPLUS:
 			NeAACDecClose(player->aacHandle);
 			free (player->sampleSize);
@@ -481,7 +478,6 @@ void *BarPlayerThread (void *data) {
 
 		#ifdef ENABLE_MAD
 		case PIANO_AF_MP3:
-		case PIANO_AF_MP3_HI:
 			mad_synth_finish (&player->mp3Synth);
 			mad_frame_finish (&player->mp3Frame);
 			mad_stream_finish (&player->mp3Stream);

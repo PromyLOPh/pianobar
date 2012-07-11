@@ -556,7 +556,6 @@ void BarStationFromGenre (BarApp_t *app) {
 	WaitressReturn_t wRet;
 	PianoGenreCategory_t *curCat;
 	PianoGenre_t *curGenre;
-	PianoRequestDataCreateStation_t reqData;
 	int i;
 
 	/* receive genre stations list if not yet available */
@@ -612,9 +611,10 @@ void BarStationFromGenre (BarApp_t *app) {
 	} while (curGenre == NULL);
 
 	/* create station */
+	PianoRequestDataCreateStation_t reqData;
+	reqData.token = curGenre->musicId;
+	reqData.type = PIANO_MUSICTYPE_INVALID;
 	BarUiMsg (&app->settings, MSG_INFO, "Adding shared station \"%s\"... ", curGenre->name);
-	reqData.id = curGenre->musicId;
-	reqData.type = "mi";
 	BarUiPianoCall (app, PIANO_REQUEST_CREATE_STATION, &reqData, &pRet, &wRet);
 }
 
