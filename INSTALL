@@ -10,7 +10,7 @@ Dependencies
 - gnutls
 - gcrypt
 - json-c
-- libfaad2
+- libfaad2 (compiled with --without-drm)
 - libmad (optional, Pandora One users only)
 - UTF-8 console/locale
 
