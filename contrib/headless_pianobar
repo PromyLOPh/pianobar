@@ -1,0 +1,160 @@
+#!/bin/bash
+#
+# headless_pianobar
+#
+# Copyright (c) 2012 Daniel Thau
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+# of the Software, and to permit persons to whom the Software is furnished to do
+# so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+### Description/instructions:
+#
+# This script to allow pianobar to run headlessly as well as re-connect to
+# pianobar's UI.
+#
+# When this script is launched, if pianobar isn't running, it will launch
+# pianobar (in the background) and then immediately connect to pianobar's UI to
+# allow the user to do things such as log in.  If pianobar is running, this
+# script will simply connect to pianobar's UI.
+#
+# If you close this script with ctrl-c or by closing the terminal, pianobar
+# should continue running in the background.
+#
+# To close pianobar, press the key mapped to close pianobar ('q' by default).
+# This script should detect that pianobar died and close as well.
+#
+### Known issues/limitations:
+#
+# When the user is at a text input field - such as login or naming a station -
+# mappings to quit pianobar ('q' by default) will not quit pianobar.  Moreover,
+# techniques such as ctrl-c or closing the terminal will not quit pianobar
+# either, as they only quit this script and leave pianobar running headlessly.
+# To quit pianobar from this situation, one must either complete the text entry
+# and get pianobar to a state where it will accept the quit mapping, or one
+# must kill pianobar from outside of this script through commands such as
+# `kill`.
+#
+# This script was initially intended to be bourne-shell compatible and
+# portable, however one major limitation was found: the bourne shell does not
+# seem to have a good way to read a single character at a time such as can be
+# done with bash's "-n" flag.  Thus this script is dependent on less portable
+# techniques and currently requires bash.
+
+
+# This script regularly checks whether or not pianobar is running in the
+# background in order to detect when it closes.  This variable sets how long of
+# a delay there will be between checks (in seconds).
+CHECK_PERIOD="1"
+
+# This variable will set how many lines of pianobar's output to print when
+# re-connecting to pianobar.
+OUTPUT_LINES="30"
+
+# Ensure the ctrl fifo exists.
+if [ ! -p $HOME/.config/pianobar/ctl ]
+then
+	echo "pianobar ctl fifo not present at $HOME/.config/pianobar/ctl"
+	echo -n "Create? (y/N) "
+	read YN
+	if [ "$YN" = "y" ] || [ "$YN" = "yes" ] || [ "$YN" = "Y" ] || [ "$YN" = "YES" ]
+	then
+		mkdir -p $HOME/.config/pianobar/
+		mkfifo  $HOME/.config/pianobar/ctl
+		if [ ! -p $HOME/.config/pianobar/ctl ]
+		then
+			echo "Failed to create fifo, aborting"
+			exit 1
+		fi
+	else
+		exit 1
+	fi
+fi
+
+# Launch pianobar if it is not already running.
+if ! ps -u $(id -u) -o comm | grep -q "^pianobar$"
+then
+	echo "pianobar not running, launching pianobar"
+	nohup pianobar &>$HOME/.config/pianobar/out &disown
+	sleep 1
+fi
+
+# Sanity check: ensure pianobar's output can be read.
+if [ ! -f $HOME/.config/pianobar/out ]
+then
+	echo "pianobar does not seem to be outputting to $HOME/.config/pianobar/out, try killing it and starting $0 again"
+	exit 2
+fi
+
+# Function to cleanly quit.  Ensures that the two backgrounded processes (the
+# output, tail, and the check, running()) both exit along with the parent (this
+# script itself)
+quit(){
+	# tail and running() might both die when the parent dies as there was no
+	# nohup, but double-check just to make sure.  Don't want to leave a mess
+	# behind.
+	if [ ! -z $TAILPID ]
+	then
+		kill $TAILPID 2>/dev/null
+	fi
+	if [ ! -z $RUNNINGPID ]
+	then
+		kill $RUNNINGPID 2>/dev/null
+	fi
+	trap - HUP INT TERM
+	kill $$
+	exit 0
+}
+
+# Check on a regular basis that pianobar is still running.
+# If pianobar stops running, stop this script as well.
+running(){
+	while ps -u $(id -u) -o comm | grep -q "^pianobar$"
+	do
+		sleep $CHECK_PERIOD
+	done
+	echo "pianobar died, quitting"
+	quit
+}
+
+# Ensure quit() is called to clean up when exiting
+trap quit HUP INT TERM
+
+# Print pianobar's output.
+tail -n$OUTPUT_LINES -f $HOME/.config/pianobar/out &
+TAILPID=$!
+
+# Run running() in the background to detect when pianobar closes.
+running &
+RUNNINGPID=$!
+
+# Get input from user, character by character, and feed it to pianobar's ctl
+# fifo.  Note that no newline character is given with `read`.  Rather, one
+# simply gets an empty variable back.  Detect this situation and pass a newline
+# along to pianobar.  Otherwise, send the character read from input to
+# pianobar.
+IFS=""
+while /bin/true
+do
+	read -n1 -s INPUT
+	if [ "$INPUT" == "" ]
+	then
+		echo "" > $HOME/.config/pianobar/ctl
+	else
+		echo -n $INPUT > $HOME/.config/pianobar/ctl
+	fi
+done
