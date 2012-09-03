@@ -69,8 +69,8 @@ OUTPUT_LINES="30"
 if [ ! -p $HOME/.config/pianobar/ctl ]
 then
 	echo "pianobar ctl fifo not present at $HOME/.config/pianobar/ctl"
-	echo "Create? (y/N)"
-	gead YN
+	echo -n "Create? (y/N) "
+	read YN
 	if [ "$YN" = "y" ] || [ "$YN" = "yes" ] || [ "$YN" = "Y" ] || [ "$YN" = "YES" ]
 	then
 		mkdir -p $HOME/.config/pianobar/
@@ -147,6 +147,7 @@ RUNNINGPID=$!
 # simply gets an empty variable back.  Detect this situation and pass a newline
 # along to pianobar.  Otherwise, send the character read from input to
 # pianobar.
+IFS=""
 while /bin/true
 do
 	read -n1 -s INPUT
