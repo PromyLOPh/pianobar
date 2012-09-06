@@ -344,6 +344,12 @@ BarUiActCallback(BarUiActPause) {
 	}
 }
 
+/*	pauseregardless
+ */
+BarUiActCallback(BarUiActPauseRegardless) {
+	pthread_mutex_trylock (&app->player.pauseMutex);
+}
+
 /*	rename current station
  */
 BarUiActCallback(BarUiActRenameStation) {
