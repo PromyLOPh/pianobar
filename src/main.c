@@ -319,6 +319,12 @@ static void BarMainLoop (BarApp_t *app) {
 				app->player.mode < PLAYER_FINISHED_PLAYBACK) {
 			BarMainPrintTime (app);
 		}
+		
+		/* song is about to start, pause it */
+		if (app->settings.startPaused==true) {
+			pthread_mutex_trylock (&app->player.pauseMutex);
+			app->settings.startPaused=false;
+		}
 	}
 
 	if (app->player.mode != PLAYER_FREED) {

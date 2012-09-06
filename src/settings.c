@@ -122,6 +122,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 
 	/* apply defaults */
 	settings->audioQuality = PIANO_AQ_HIGH;
+	settings->startPaused = false;
 	settings->autoselect = true;
 	settings->history = 5;
 	settings->volume = 0;
@@ -269,6 +270,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 		} else if (streq ("fifo", key)) {
 			free (settings->fifo);
 			settings->fifo = strdup (val);
+		} else if (streq ("startPaused", key)) {
+			settings->startPaused = atoi (val);
 		} else if (streq ("autoselect", key)) {
 			settings->autoselect = atoi (val);
 		} else if (streq ("tls_fingerprint", key)) {
