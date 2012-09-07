@@ -1,3 +1,12 @@
+Release 2012.09.07
+
+- Defunct move song (keybinding 'm') feature removed
+- Added feature: Create station from song (keybinding 'v')
+- '<space>' (setting act_songpause2) toggles pause too
+- Makefile: Auto-dependency generation
+- Correctly initialize libgcrypt
+- headless_pianobar wrapper added
+
 Release 2012.06.24
 
 - Removed setting audio_format, added audio_quality. libfaad (aac) is now required,
