@@ -105,9 +105,12 @@ typedef struct {
 	BarMsgFormatStr_t msgFormat[MSG_COUNT];
 } BarSettings_t;
 
+#include <piano.h>
+
 void BarSettingsInit (BarSettings_t *);
 void BarSettingsDestroy (BarSettings_t *);
 void BarSettingsRead (BarSettings_t *);
+void BarSettingsWrite (PianoStation_t *, BarSettings_t *);
 void BarGetXdgConfigDir (const char *, char *, size_t);
 
 #endif /* _SETTINGS_H */

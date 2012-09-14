@@ -402,6 +402,9 @@ int main (int argc, char **argv) {
 		close (app.input.fds[1]);
 	}
 
+	/* write statefile */
+	BarSettingsWrite (app.curStation, &app.settings);
+
 	PianoDestroy (&app.ph);
 	PianoDestroyPlaylist (app.songHistory);
 	PianoDestroyPlaylist (app.playlist);
