@@ -301,6 +301,7 @@ static void BarMainLoop (BarApp_t *app) {
 			if (app->playlist != NULL) {
 				PianoSong_t *histsong = app->playlist;
 				app->playlist = app->playlist->next;
+				histsong->next = NULL;
 				BarUiHistoryPrepend (app, histsong);
 			}
 			if (app->playlist == NULL) {
