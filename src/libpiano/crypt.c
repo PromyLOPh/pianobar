@@ -57,6 +57,7 @@ char *PianoDecryptString (gcry_cipher_hd_t h, const char * const input,
 
 	gret = gcry_cipher_decrypt (h, output, outputLen, NULL, 0);
 	if (gret) {
+		free (output);
 		return NULL;
 	}
 
@@ -82,6 +83,7 @@ char *PianoEncryptString (gcry_cipher_hd_t h, const char *s) {
 
 	gret = gcry_cipher_encrypt (h, paddedInput, paddedInputLen, NULL, 0);
 	if (gret) {
+		free (paddedInput);
 		return NULL;
 	}
 
