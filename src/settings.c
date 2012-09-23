@@ -316,6 +316,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 				}
 			}
 		}
+
+		fclose (configfd);
+
 	}
 
 	/* check environment variable if proxy is not set explicitly */
@@ -325,8 +328,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->proxy = strdup (tmpProxy);
 		}
 	}
-
-	fclose (configfd);
 }
 
 /*	write statefile
