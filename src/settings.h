@@ -87,7 +87,7 @@ typedef struct {
 	BarStationSorting_t sortOrder;
 	PianoAudioQuality_t audioQuality;
 	char *username;
-	char *password;
+	char *password, *passwordCmd;
 	char *controlProxy; /* non-american listeners need this */
 	char *proxy;
 	char *autostartStation;

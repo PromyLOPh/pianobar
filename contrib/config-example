@@ -5,6 +5,8 @@
 # User
 #user = your@user.name
 #password = password
+# or
+#password_command = gpg --decrypt ~/password
 
 # Proxy (for those who are not living in the USA)
 #control_proxy = http://127.0.0.1:9090/

@@ -297,6 +297,12 @@ Icon for loved songs.
 Your pandora.com password. Plain-text.
 
 .TP
+.B password_command = gpg --decrypt ~/password
+Use output of command as password. This setting is overridden by specifying a
+password with
+.B password.
+
+.TP
 .B proxy = http://user:password@host:port/
 Use a http proxy. Note that this setting overrides the http_proxy environment
 variable. Only "Basic" http authentication is supported.
