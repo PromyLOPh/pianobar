@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include <math.h>
 #include <stdint.h>
 #include <limits.h>
+#include <assert.h>
 #include <arpa/inet.h>
 
 #include "player.h"
@@ -135,17 +136,31 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size,
 		NeAACDecFrameInfo frameInfo;
 		size_t i;
 
-		while ((player->bufferFilled - player->bufferRead) >
-				player->sampleSize[player->sampleSizeCurr]) {
+		while (player->sampleSizeCurr < player->sampleSizeN &&
+				(player->bufferFilled - player->bufferRead) >=
+			player->sampleSize[player->sampleSizeCurr]) {
+			/* going through this loop can take up to a few seconds =>
+			 * allow earlier thread abort */
+			QUIT_PAUSE_CHECK;
+
 			/* decode frame */
 			aacDecoded = NeAACDecDecode(player->aacHandle, &frameInfo,
-					player->buffer + player->bufferRead,
+					&player->buffer[player->bufferRead],
 					player->sampleSize[player->sampleSizeCurr]);
+			player->bufferRead += player->sampleSize[player->sampleSizeCurr];
+			++player->sampleSizeCurr;
+
 			if (frameInfo.error != 0) {
+				/* skip this frame, songPlayed will be slightly off if this
+				 * happens */
 				BarUiMsg (player->settings, MSG_ERR, "Decoding error: %s\n",
 						NeAACDecGetErrorMessage (frameInfo.error));
-				break;
+				continue;
 			}
+			/* assuming data in stsz atom is correct */
+			assert (frameInfo.bytesconsumed ==
+					player->sampleSize[player->sampleSizeCurr-1]);
+
 			for (i = 0; i < frameInfo.samples; i++) {
 				aacDecoded[i] = applyReplayGain (aacDecoded[i], player->scale);
 			}
@@ -157,11 +172,10 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size,
 					(unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR /
 					(unsigned long long int) player->samplerate /
 					(unsigned long long int) player->channels;
-			player->bufferRead += frameInfo.bytesconsumed;
-			player->sampleSizeCurr++;
-			/* going through this loop can take up to a few seconds =>
-			 * allow earlier thread abort */
-			QUIT_PAUSE_CHECK;
+		}
+		if (player->sampleSizeCurr >= player->sampleSizeN) {
+			/* no more frames, drop data */
+			player->bufferRead = player->bufferFilled;
 		}
 	} else {
 		if (player->mode == PLAYER_INITIALIZED) {
