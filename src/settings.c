@@ -97,6 +97,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->listSongFormat);
 	free (settings->fifo);
 	free (settings->rpcHost);
+	free (settings->rpcTlsPort);
 	free (settings->partnerUser);
 	free (settings->partnerPassword);
 	free (settings->device);
@@ -132,6 +133,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->npStationFormat = strdup ("Station \"%n\" (%i)");
 	settings->listSongFormat = strdup ("%i) %a - %t%r");
 	settings->rpcHost = strdup (PIANO_RPC_HOST);
+	settings->rpcTlsPort = NULL;
 	settings->partnerUser = strdup ("android");
 	settings->partnerPassword = strdup ("AC7IBG09A3DTSYM4R41UJWL07VLN8JI7");
 	settings->device = strdup ("android-generic");
@@ -195,6 +197,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 			} else if (streq ("rpc_host", key)) {
 				free (settings->rpcHost);
 				settings->rpcHost = strdup (val);
+			} else if (streq ("rpc_tls_port", key)) {
+				free (settings->rpcTlsPort);
+				settings->rpcTlsPort = strdup (val);
 			} else if (streq ("partner_user", key)) {
 				free (settings->partnerUser);
 				settings->partnerUser = strdup (val);
