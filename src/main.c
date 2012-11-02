@@ -430,6 +430,7 @@ int main (int argc, char **argv) {
 
 	WaitressInit (&app.waith);
 	app.waith.url.host = app.settings.rpcHost;
+	app.waith.url.tlsPort = app.settings.rpcTlsPort;
 	app.waith.tlsFingerprint = app.settings.tlsFingerprint;
 
 	/* init fds */
