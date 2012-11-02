@@ -55,6 +55,7 @@ typedef struct {
 	const char *password;
 	const char *host;
 	const char *port;
+	const char *tlsPort;
 	const char *path; /* without leading '/' */
 } WaitressUrl_t;
 
