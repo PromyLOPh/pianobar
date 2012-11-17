@@ -249,12 +249,15 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size,
 				/* how many frames do we have? */
 				if (player->sampleSizeN == 0) {
 					/* mp4 uses big endian, convert */
+					memcpy (&player->sampleSizeN, player->buffer +
+							player->bufferRead, sizeof (uint32_t));
 					player->sampleSizeN =
-							bigToHostEndian32 (*((uint32_t *) (player->buffer +
-							player->bufferRead)));
+							bigToHostEndian32 (player->sampleSizeN);
+
 					player->sampleSize = malloc (player->sampleSizeN *
 							sizeof (*player->sampleSize));
-					player->bufferRead += 4;
+					assert (player->sampleSize != NULL);
+					player->bufferRead += sizeof (uint32_t);
 					player->sampleSizeCurr = 0;
 					/* set up song duration (assuming one frame always contains
 					 * the same number of samples)
@@ -267,11 +270,15 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size,
 							(unsigned long long int) player->channels;
 					break;
 				} else {
+					memcpy (&player->sampleSize[player->sampleSizeCurr],
+							player->buffer + player->bufferRead,
+							sizeof (uint32_t));
 					player->sampleSize[player->sampleSizeCurr] =
-							bigToHostEndian32 (*((uint32_t *) (player->buffer +
-							player->bufferRead)));
+							bigToHostEndian32 (
+							player->sampleSize[player->sampleSizeCurr]);
+
 					player->sampleSizeCurr++;
-					player->bufferRead += 4;
+					player->bufferRead += sizeof (uint32_t);
 				}
 				/* all sizes read, nearly ready for data mode */
 				if (player->sampleSizeCurr >= player->sampleSizeN) {
