@@ -107,6 +107,7 @@ typedef struct {
 		WaitressReturn_t readWriteRet;
 
 		size_t contentLength, contentReceived, chunkSize;
+		enum {CHUNKSIZE = 0, DATA = 1} chunkedState;
 
 		char *buf;
 		/* first argument is WaitressHandle_t, but that's not defined yet */

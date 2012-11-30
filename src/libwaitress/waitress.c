@@ -628,64 +628,69 @@ static WaitressHandlerReturn_t WaitressHandleIdentity (void *data, char *buf,
 	}
 }
 
-/*	chunked encoding handler. buf must be \0-terminated, size does not include
- *	trailing \0.
+/*	chunked encoding handler
  */
 static WaitressHandlerReturn_t WaitressHandleChunked (void *data, char *buf,
 		const size_t size) {
 	assert (data != NULL);
 	assert (buf != NULL);
 
-	WaitressHandle_t *waith = data;
-	char *content = buf, *nextContent;
+	WaitressHandle_t * const waith = data;
+	size_t pos = 0;
 
-	assert (waith != NULL);
-	assert (buf != NULL);
-
-	while (1) {
-		if (waith->request.chunkSize > 0) {
-			const size_t remaining = size-(content-buf);
-
-			if (remaining >= waith->request.chunkSize) {
-				if (WaitressHandleIdentity (waith, content,
-						waith->request.chunkSize) == WAITRESS_HANDLER_ABORTED) {
-					return WAITRESS_HANDLER_ABORTED;
-				}
-
-				content += waith->request.chunkSize;
-				if (content[0] == '\r' && content[1] == '\n') {
-					content += 2;
+	while (pos < size) {
+		switch (waith->request.chunkedState) {
+			case CHUNKSIZE:
+				/* Poor man’s hex to integer. This avoids another buffer that
+				 * fills until the terminating \r\n is received. */
+				if (buf[pos] >= '0' && buf[pos] <= '9') {
+					waith->request.chunkSize <<= 4;
+					waith->request.chunkSize |= buf[pos] & 0xf;
+				} else if (buf[pos] >= 'a' && buf[pos] <= 'f') {
+					waith->request.chunkSize <<= 4;
+					waith->request.chunkSize |= (buf[pos]+9) & 0xf;
+				} else if (buf[pos] == '\r') {
+					/* ignore */
+				} else if (buf[pos] == '\n') {
+					waith->request.chunkedState = DATA;
+					/* last chunk has size 0 */
+					if (waith->request.chunkSize == 0) {
+						return WAITRESS_HANDLER_DONE;
+					}
 				} else {
+					/* everything else is a protocol violation */
 					return WAITRESS_HANDLER_ERR;
 				}
-				waith->request.chunkSize = 0;
-			} else {
-				if (WaitressHandleIdentity (waith, content, remaining) ==
-						WAITRESS_HANDLER_ABORTED) {
-					return WAITRESS_HANDLER_ABORTED;
-				}
-				waith->request.chunkSize -= remaining;
-				return WAITRESS_HANDLER_CONTINUE;
-			}
-		}
+				++pos;
+				break;
 
-		if ((nextContent = WaitressGetline (content)) != NULL) {
-			const long int chunkSize = strtol (content, NULL, 16);
-			if (chunkSize == 0) {
-				return WAITRESS_HANDLER_DONE;
-			} else if (chunkSize < 0) {
-				return WAITRESS_HANDLER_ERR;
-			} else {
-				waith->request.chunkSize = chunkSize;
-				content = nextContent;
-			}
-		} else {
-			return WAITRESS_HANDLER_ERR;
+			case DATA:
+				if (waith->request.chunkSize > 0) {
+					assert (size >= pos);
+					size_t payloadSize = size - pos;
+
+					if (payloadSize > waith->request.chunkSize) {
+						payloadSize = waith->request.chunkSize;
+					}
+					if (WaitressHandleIdentity (waith, &buf[pos],
+							payloadSize) == WAITRESS_HANDLER_ABORTED) {
+						return WAITRESS_HANDLER_ABORTED;
+					}
+					pos += payloadSize;
+					assert (waith->request.chunkSize >= payloadSize);
+					waith->request.chunkSize -= payloadSize;
+				} else {
+					/* next chunk size starts in the next line */
+					if (buf[pos] == '\n') {
+						waith->request.chunkedState = CHUNKSIZE;
+					}
+					++pos;
+				}
+				break;
 		}
 	}
 
-	assert (0);
-	return WAITRESS_HANDLER_ERR;
+	return WAITRESS_HANDLER_CONTINUE;
 }
 
 /*	handle http header
