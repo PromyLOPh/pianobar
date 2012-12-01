@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2009-2011
+Copyright (c) 2009-2012
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -74,11 +74,10 @@ typedef enum {
 	WAITRESS_RET_READ_ERR,
 	WAITRESS_RET_CONNECTION_CLOSED,
 	WAITRESS_RET_DECODING_ERR,
-	WAITRESS_RET_TLS_DISABLED,
 	WAITRESS_RET_TLS_WRITE_ERR,
 	WAITRESS_RET_TLS_READ_ERR,
 	WAITRESS_RET_TLS_HANDSHAKE_ERR,
-	WAITRESS_RET_TLS_TRUSTFILE_ERR,
+	WAITRESS_RET_TLS_FINGERPRINT_MISMATCH,
 } WaitressReturn_t;
 
 /*	reusable handle
