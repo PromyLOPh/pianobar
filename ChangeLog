@@ -1,3 +1,12 @@
+Release 2012.12.01
+
+- Save last station and volume to statefile
+- Password can be read from external command (setting password_command)
+- Secure RPC port can be changed now (setting rpc_tls_port)
+- Gracefully recover from AAC decoding errors
+- New default fingerprint for tuner.pandora.com
+- Bugfixes: HTTP chunked decoder, style, memory leaks
+
 Release 2012.09.07
 
 - Defunct move song (keybinding 'm') feature removed
