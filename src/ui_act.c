@@ -338,10 +338,16 @@ BarUiActCallback(BarUiActSkipSong) {
 /*	pause
  */
 BarUiActCallback(BarUiActPause) {
+	PianoReturn_t pRet;
+	WaitressReturn_t wRet;
+
 	/* already locked => unlock/unpause */
 	if (pthread_mutex_trylock (&app->player.pauseMutex) == EBUSY) {
 		pthread_mutex_unlock (&app->player.pauseMutex);
-	}
+	    BarUiActDefaultEventcmd ("playresume");
+	} else {
+	    BarUiActDefaultEventcmd ("playpause");
+    }
 }
 
 /*	rename current station
