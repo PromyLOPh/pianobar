@@ -680,3 +680,7 @@ BarUiActCallback(BarUiActManageStation) {
 	PianoDestroyStationInfo (&reqData.info);
 }
 
+BarUiActCallback(BarUiActClear) {
+	BarUiClear();
+	BarUiActSongInfo(app, selStation, selSong, context);
+}
