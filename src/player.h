@@ -49,7 +49,8 @@ THE SOFTWARE.
 #define BAR_PLAYER_BUFSIZE (WAITRESS_BUFFER_SIZE*2)
 
 struct audioPlayer {
-	char doQuit;
+	char doQuit; /* protected by pauseMutex */
+        char doPause; /* protected by pauseMutex */
 	unsigned char channels;
 	unsigned char aoError;
 
@@ -102,6 +103,7 @@ struct audioPlayer {
 	unsigned char *buffer;
 
 	pthread_mutex_t pauseMutex;
+	pthread_cond_t pauseCond;
 	WaitressHandle_t waith;
 };
 

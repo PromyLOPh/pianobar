@@ -41,12 +41,32 @@ THE SOFTWARE.
 /* wait while locked, but don't slow down main thread by keeping
  * locks too long */
 #define QUIT_PAUSE_CHECK \
-	pthread_mutex_lock (&player->pauseMutex); \
-	pthread_mutex_unlock (&player->pauseMutex); \
-	if (player->doQuit) { \
+	if (checkPauseQuit(player)) { \
 		/* err => abort playback */ \
 		return WAITRESS_CB_RET_ERR; \
 	}
+
+/*	wait until the pause flag is cleared
+ *	@param player structure
+ *	@return true if the player should quit
+ */
+static bool checkPauseQuit (struct audioPlayer *player) {
+	bool quit = false;
+	pthread_mutex_lock (&player->pauseMutex);
+	while (true) {
+		if (player->doQuit) {
+			quit = true;
+			break;
+		}
+		if (!player->doPause) {
+			break;
+		}
+		pthread_cond_wait(&player->pauseCond,
+				  &player->pauseMutex);
+	}
+	pthread_mutex_unlock (&player->pauseMutex);
+	return quit;
+}
 
 /* pandora uses float values with 2 digits precision. Scale them by 100 to get
  * a "nice" integer */
