@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2011
+Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -45,7 +45,9 @@ BarUiActCallback(BarUiActStationFromGenre);
 BarUiActCallback(BarUiActSongInfo);
 BarUiActCallback(BarUiActLoveSong);
 BarUiActCallback(BarUiActSkipSong);
+BarUiActCallback(BarUiActPlay);
 BarUiActCallback(BarUiActPause);
+BarUiActCallback(BarUiActTogglePause);
 BarUiActCallback(BarUiActRenameStation);
 BarUiActCallback(BarUiActSelectStation);
 BarUiActCallback(BarUiActTempBanSong);
