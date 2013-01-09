@@ -2,24 +2,16 @@
 #
 # Update pianobar in one simple script
 
-output=/tmp/pianobar-update
-
-. script/functions/global $output
+. script/functions/global /dev/null
 
 # Cleanup
 info 'cleaning'
-$make clean >> $output
+$make clean >> /dev/null
 success 'cleaned'
 
 # Get any updates.
 info 'updating'
-git pull >> $output
+git pull --quiet
 success 'updated'
 
-if [[ "$OS" == "Darwin" ]]
-then
-  . script/setup.osx/install $output
-elif [[ "$OS" == "Linux" ]]
-then
-  . script/setup.linux/install $output
-fi
+. script/bootstrap

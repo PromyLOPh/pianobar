@@ -7,4 +7,12 @@ then
   . script/setup.osx/brew
 fi
 
-. script/setup.osx/install $output
+# Build pianobar 
+info 'building'
+$make >> $output 2>&1
+success 'built'
+
+# Installing FTW!
+info 'installing'
+$make install >> $output 2>&1
+success 'installed'

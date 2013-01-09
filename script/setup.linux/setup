@@ -2,15 +2,20 @@
 #
 # This is the general build process for all linux versions.
 
-if test $(which apt-get)
+if [[ "Ubuntu" == "$(lsb_release -i | awk '{print $3}')" ]]
 then
-  if [[ "Ubuntu" == "$(lsb_release -i | awk '{print $3}')" ]]
+  if [[ "12.04" == "$(lsb_release -r | awk '{print $2}')" ]]
   then
-    if [[ "12.04" == "$(lsb_release -r | awk '{print $2}')" ]]
-    then
-      . script/setup.linux/ubuntu.12.04
-    fi
+    . script/setup.linux/ubuntu.12.04
   fi
 fi
 
-. script/setup.linux/install $output
+# Build it and they will come.
+info 'building'
+$make >> $output 2>&1
+success 'built'
+
+# Installing FTW!
+info 'installing'
+sudo $make install >> $output 2>&1
+success 'installed'

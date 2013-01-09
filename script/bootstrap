@@ -7,16 +7,6 @@ output=/tmp/pianobar-bootstrap
 
 . script/functions/global $output
 
-# Before we even start, make sure we are on the most recent version of pianobar.
-if test $(which git)
-then
-  info 'updating'
-  git pull >> $output &> /dev/null
-  success 'updated'
-fi
-
-# TRAFFIC COP!
-
 if [[ "$OS" == "Darwin" ]]
 then
   . script/setup.osx/setup
