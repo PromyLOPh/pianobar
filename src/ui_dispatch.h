@@ -71,7 +71,7 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_addshared"},
 		{'n', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActSkipSong, "next song",
 				"act_songnext"},
-		{'p', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, "pause/continue",
+		{'p', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActTogglePause, "pause/continue",
 				"act_songpause"},
 		{'q', BAR_DC_GLOBAL, BarUiActQuit, "quit", "act_quit"},
 		{'r', BAR_DC_STATION, BarUiActRenameStation, "rename station",
@@ -93,10 +93,14 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_volup"},
 		{'=', BAR_DC_STATION, BarUiActManageStation, "delete seeds/feedback",
 				"act_managestation"},
-		{' ', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, NULL,
+		{' ', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActTogglePause, NULL,
 				"act_songpause2"},
 		{'v', BAR_DC_SONG, BarUiActCreateStationFromSong,
 				"create new station from song or artist", "act_stationcreatefromsong"},
+		{'P', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPlay, "play",
+				"act_songplay"},
+		{'S', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, "pause",
+				"act_songstop"},
 		};
 
 #include <piano.h>
