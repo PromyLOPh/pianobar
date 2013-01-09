@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# Update pianobar in one simple script
+
+set -e
+
+echo ''
+echo '' > /tmp/pianobar-update
+
+# Cleanup
+make clean >> /tmp/pianobar-update
+
+# Get any updates.
+git pull >> /tmp/pianobar-update
+
+# Build it and they will come.
+make >> /tmp/pianobar-update
+
+# Installing FTW!
+make install >> /tmp/pianobar-update
