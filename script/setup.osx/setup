@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# Process to install pianobar for osx.
+  
+if test $(which brew)
+then
+  . script/setup.osx/brew
+fi
+
+# Build pianobar 
+info 'building'
+$make >> $output
+success 'built'
+
+# Installing FTW!
+info 'installing'
+$make install >> $output
+success 'installed'
