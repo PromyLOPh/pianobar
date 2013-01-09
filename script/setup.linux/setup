@@ -4,21 +4,13 @@
 
 if test $(which apt-get)
 then
-  if test ! -z $(lsb_release -i | grep "Ubuntu")
+  if [[ "Ubuntu" == "$(lsb_release -i | awk '{print $3}')" ]]
   then
-    if [[ "$(lsb_release -r | awk '/Release/ {print $2}')" == "12.04" ]]
+    if [[ "12.04" == "$(lsb_release -r | awk '{print $2}')" ]]
     then
       . script/setup.linux/ubuntu.12.04
     fi
   fi
 fi
 
-# Build it and they will come.
-info 'building pianobar'
-$make >> $output
-success 'built pianobar'
-
-# Installing FTW!
-info 'installing pianobar'
-$make install >> $output
-success 'installed pianobar'
+. script/setup.linux/install $output

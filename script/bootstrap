@@ -4,39 +4,13 @@
 # Bootstrap concept from github.com/play/play
 
 output=/tmp/pianobar-bootstrap
-OS=$(uname -s)
 
-if test $(which gmake)
-then
-  make=gmake
-else
-  make=make
-fi
-
-set -e
-
-echo ''
-echo '' > /tmp/pianobar-bootstrap
-
-info() {
-  printf "  [    ] $1"
-}
-
-success() {
-  printf "\r  [ ok ] $1           \n"
-}
-
-fail() {
-  printf "\r  [FAIL] $1           \n"
-  echo ''
-  echo 'See /tmp/pianobar-bootstrap for more information.'
-  exit
-}
+. script/functions/global $output
 
 # Before we even start, make sure we are on the most recent version of pianobar.
 if test $(which git)
 then
-  info 'updating from git'
+  info 'updating'
   git pull >> $output &> /dev/null
   success 'updated'
 fi

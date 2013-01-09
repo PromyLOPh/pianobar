@@ -2,29 +2,7 @@
 #
 # Install dependancies for pianobar.
 
-# original from memborsky/play
-apt_installed() {
-  dpkg -l $1 | grep "ii  $1" > /dev/null
-  [ $? -eq 0 ]
-}
-
-# original from memborsky/play
-apt_install() {
-  if apt_installed $1
-  then
-    success $1
-    return
-  fi
-
-  info "installing $1"
-  if $2 >> $output
-  then
-    sudo apt-get install $1 >> $output
-    success $1
-  else
-    fail $1
-  fi
-}
+. script/functions/apt
 
 apt_install 'libao-dev'
 apt_install 'libmad0-dev'

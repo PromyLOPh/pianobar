@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# Our shortcuts to install apt packages.
+# Original idea from github.com/play/play/script/bootstrap
+
+apt_installed() {
+  dpkg -l $1 | grep "ii  $1" > /dev/null 2>&1
+  [ $? -eq 0 ]
+}
+
+apt_install() {
+  if apt_installed $1
+  then
+    success $1
+    return
+  fi
+
+  info "installing $1"
+  if $2 >> $output
+  then
+    sudo apt-get install $1 >> $output 2>&1
+    success $1
+  else
+    fail $1
+  fi
+}

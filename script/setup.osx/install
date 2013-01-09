@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+# Process to install pianobar for osx.
+
+# Build pianobar 
+info 'building'
+$make >> $1 2>&1
+success 'built'
+
+# Installing FTW!
+info 'installing'
+$make install >> $1 2>&1
+success 'installed'
