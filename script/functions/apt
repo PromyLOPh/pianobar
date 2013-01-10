@@ -1,7 +1,6 @@
 #!/bin/bash
 #
 # Our shortcuts to install apt packages.
-# Original idea from github.com/play/play/script/bootstrap
 
 apt_installed() {
   dpkg -l $1 | grep "ii  $1" > /dev/null 2>&1

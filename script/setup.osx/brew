@@ -2,13 +2,11 @@
 #
 # Install needed packages to be able to build pianobar from a fresh install.
 
-# original from play/play
 brew_installed () {
   brew list | grep -i $1 > /dev/null
   [ $? -eq 0 ]
 }
 
-# original from play/play
 brew_install () {
   if brew_installed $1
   then

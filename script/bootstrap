@@ -1,7 +1,6 @@
 #!/bin/bash
 #
 # Bootstrap pianobar installation.
-# Bootstrap concept from github.com/play/play
 
 output=/tmp/pianobar-bootstrap
 
