@@ -2,11 +2,16 @@
 #
 # This is the general build process for all linux versions.
 
-if [[ "Ubuntu" == "$(lsb_release -i | awk '{print $3}')" ]]
+if test $(which apt-get)
 then
-  if [[ "12.04" == "$(lsb_release -r | awk '{print $2}')" ]]
+  # Since we are an apt based machine, lets include the functions here.
+  . script/functions/apt
+
+  if test $(which lsb_release)
   then
-    . script/setup.linux/ubuntu.12.04
+    distro=$(lsb_release -i | awk '{print $3}')
+    version=$(lsb_release -r | awk '{print $2}')
+    . script/setup.linux/$distro-$version
   fi
 fi
 
