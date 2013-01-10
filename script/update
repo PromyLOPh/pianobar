@@ -19,7 +19,7 @@ fi
 info 'updating'
 if test $(which git)
 then
-  git pull --quiet
+  git pull -s recursive -X theirs --quiet
   success 'updated'
 else
   fail 'git not found. You must update the source manually and run script/bootstrap instead afterwards.'
