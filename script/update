@@ -2,12 +2,18 @@
 #
 # Update pianobar in one simple script
 
+
 . script/functions/global /dev/null
 
 # Cleanup
 info 'cleaning'
-$make clean >> /dev/null
-success 'cleaned'
+$make clean >> /tmp/pianobar-bootstrap 2>&1
+if [ $? -eq 0 ]
+then
+  success 'cleaned'
+else
+  fail '$make clean'
+fi
 
 # Get any updates.
 info 'updating'
