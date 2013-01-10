@@ -17,7 +17,12 @@ fi
 
 # Get any updates.
 info 'updating'
-git pull --quiet
-success 'updated'
+if test $(which git)
+then
+  git pull --quiet
+  success 'updated'
+else
+  fail 'git not found. You must update the source manually and run script/bootstrap instead afterwards.'
+fi
 
 . script/bootstrap
