@@ -11,8 +11,15 @@ then
   then
     distro=$(lsb_release -i | awk '{print $3}')
     version=$(lsb_release -r | awk '{print $2}')
-    . script/setup.linux/$distro-$version
   fi
+fi
+
+
+if [ -f script/setup.linux/$distro-$version ]
+then
+  . script/setup.linux/$distro-$version
+else
+  "Your system is currently not supported via bootstrap."
 fi
 
 # Build it and they will come.
