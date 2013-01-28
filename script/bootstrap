@@ -4,12 +4,14 @@
 
 output=/tmp/pianobar-bootstrap
 
-. script/functions/global $output
+. script/functions $output
 
 if [[ "$OS" == "Darwin" ]]
 then
-  . script/setup.osx/setup
-elif [[ "$OS" == "Linux" ]]
+  OS=osx
+fi
+
+if [ -f "script/setup.$OS/setup" ]
 then
-  . script/setup.linux/setup
+  . script/setup.$OS/setup
 fi

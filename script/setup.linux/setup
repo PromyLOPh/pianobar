@@ -5,7 +5,7 @@
 if test $(which apt-get)
 then
   # Since we are an apt based machine, lets include the functions here.
-  . script/functions/apt
+  . script/setup.linux/apt.functions
 
   if test $(which lsb_release)
   then

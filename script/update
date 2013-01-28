@@ -2,8 +2,7 @@
 #
 # Update pianobar in one simple script
 
-
-. script/functions/global /dev/null
+. script/functions /dev/null
 
 # Cleanup
 info 'cleaning'
@@ -12,7 +11,7 @@ if [ $? -eq 0 ]
 then
   success 'cleaned'
 else
-  fail '$make clean'
+  fail "$make clean"
 fi
 
 # Get any updates.
