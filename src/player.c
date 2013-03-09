@@ -530,6 +530,12 @@ void *BarPlayerThread (void *data) {
 		ret = (void *) PLAYER_RET_ERR;
 	}
 
+	if (wRet != WAITRESS_RET_OK && wRet != WAITRESS_RET_CB_ABORT) {
+		BarUiMsg (player->settings, MSG_ERR, "Cannot access audio file: %s\n",
+				WaitressErrorToStr (wRet));
+		ret = (void *) PLAYER_RET_ERR;
+	}
+
 	ao_close(player->audioOutDevice);
 	WaitressFree (&player->waith);
 	free (player->buffer);
