@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2012
+Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -38,19 +38,33 @@ THE SOFTWARE.
 
 #define bigToHostEndian32(x) ntohl(x)
 
-/* wait while locked, but don't slow down main thread by keeping
- * locks too long */
-#define QUIT_PAUSE_CHECK \
-	pthread_mutex_lock (&player->pauseMutex); \
-	pthread_mutex_unlock (&player->pauseMutex); \
-	if (player->doQuit) { \
-		/* err => abort playback */ \
-		return WAITRESS_CB_RET_ERR; \
-	}
-
 /* pandora uses float values with 2 digits precision. Scale them by 100 to get
  * a "nice" integer */
 #define RG_SCALE_FACTOR 100
+
+/*	wait until the pause flag is cleared
+ *	@param player structure
+ *	@return true if the player should quit
+ */
+static bool BarPlayerCheckPauseQuit (struct audioPlayer *player) {
+	bool quit = false;
+
+	pthread_mutex_lock (&player->pauseMutex);
+	while (true) {
+		if (player->doQuit) {
+			quit = true;
+			break;
+		}
+		if (!player->doPause) {
+			break;
+		}
+		pthread_cond_wait(&player->pauseCond,
+				  &player->pauseMutex);
+	}
+	pthread_mutex_unlock (&player->pauseMutex);
+
+	return quit;
+}
 
 /*	compute replaygain scale factor
  *	algo taken from here: http://www.dsprelated.com/showmessage/29246/1.php
@@ -125,9 +139,8 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size,
 	const char *data = ptr;
 	struct audioPlayer *player = stream;
 
-	QUIT_PAUSE_CHECK;
-
-	if (!BarPlayerBufferFill (player, data, size)) {
+	if (BarPlayerCheckPauseQuit (player) ||
+			!BarPlayerBufferFill (player, data, size)) {
 		return WAITRESS_CB_RET_ERR;
 	}
 
@@ -141,7 +154,9 @@ static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size,
 			player->sampleSize[player->sampleSizeCurr]) {
 			/* going through this loop can take up to a few seconds =>
 			 * allow earlier thread abort */
-			QUIT_PAUSE_CHECK;
+			if (BarPlayerCheckPauseQuit (player)) {
+				return WAITRESS_CB_RET_ERR;
+			}
 
 			/* decode frame */
 			aacDecoded = NeAACDecDecode(player->aacHandle, &frameInfo,
@@ -335,9 +350,8 @@ static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size,
 	struct audioPlayer *player = stream;
 	size_t i;
 
-	QUIT_PAUSE_CHECK;
-
-	if (!BarPlayerBufferFill (player, data, size)) {
+	if (BarPlayerCheckPauseQuit (player) ||
+			!BarPlayerBufferFill (player, data, size)) {
 		return WAITRESS_CB_RET_ERR;
 	}
 
@@ -417,7 +431,9 @@ static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size,
 					(unsigned long long int) player->samplerate;
 		}
 
-		QUIT_PAUSE_CHECK;
+		if (BarPlayerCheckPauseQuit (player)) {
+			return WAITRESS_CB_RET_ERR;
+		}
 	} while (player->mp3Stream.error != MAD_ERROR_BUFLEN);
 
 	player->bufferRead += player->mp3Stream.next_frame - player->buffer;
@@ -511,6 +527,12 @@ void *BarPlayerThread (void *data) {
 	}
 
 	if (player->aoError) {
+		ret = (void *) PLAYER_RET_ERR;
+	}
+
+	if (wRet != WAITRESS_RET_OK && wRet != WAITRESS_RET_CB_ABORT) {
+		BarUiMsg (player->settings, MSG_ERR, "Cannot access audio file: %s\n",
+				WaitressErrorToStr (wRet));
 		ret = (void *) PLAYER_RET_ERR;
 	}
 

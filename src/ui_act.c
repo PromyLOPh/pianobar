@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2012
+Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -49,9 +49,9 @@ THE SOFTWARE.
 static inline void BarUiDoSkipSong (struct audioPlayer *player) {
 	assert (player != NULL);
 
-	player->doQuit = 1;
-	/* unlocking an unlocked mutex is forbidden by some implementations */
-	pthread_mutex_trylock (&player->pauseMutex);
+	pthread_mutex_lock (&player->pauseMutex);
+	player->doQuit = true;
+	pthread_cond_broadcast (&player->pauseCond);
 	pthread_mutex_unlock (&player->pauseMutex);
 }
 
@@ -122,11 +122,18 @@ BarUiActCallback(BarUiActAddMusic) {
 BarUiActCallback(BarUiActBanSong) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
+	PianoStation_t *realStation;
 
 	assert (selStation != NULL);
 	assert (selSong != NULL);
+	assert (selSong->stationId != NULL);
 
-	if (!BarTransformIfShared (app, selStation)) {
+	if ((realStation = PianoFindStationById (app->ph.stations,
+			selSong->stationId)) == NULL) {
+		assert (0);
+		return;
+	}
+	if (!BarTransformIfShared (app, realStation)) {
 		return;
 	}
 
@@ -219,7 +226,7 @@ BarUiActCallback(BarUiActDeleteStation) {
 	assert (selStation != NULL);
 
 	BarUiMsg (&app->settings, MSG_QUESTION, "Really delete \"%s\"? [yN] ",
-			app->curStation->name);
+			selStation->name);
 	if (BarReadlineYesNo (false, &app->input)) {
 		BarUiMsg (&app->settings, MSG_INFO, "Deleting station... ");
 		if (BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_STATION,
@@ -312,11 +319,18 @@ BarUiActCallback(BarUiActDebug) {
 BarUiActCallback(BarUiActLoveSong) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
+	PianoStation_t *realStation;
 
 	assert (selStation != NULL);
 	assert (selSong != NULL);
+	assert (selSong->stationId != NULL);
 
-	if (!BarTransformIfShared (app, selStation)) {
+	if ((realStation = PianoFindStationById (app->ph.stations,
+			selSong->stationId)) == NULL) {
+		assert (0);
+		return;
+	}
+	if (!BarTransformIfShared (app, realStation)) {
 		return;
 	}
 
@@ -335,13 +349,31 @@ BarUiActCallback(BarUiActSkipSong) {
 	BarUiDoSkipSong (&app->player);
 }
 
+/*	play
+ */
+BarUiActCallback(BarUiActPlay) {
+	pthread_mutex_lock (&app->player.pauseMutex);
+	app->player.doPause = false;
+	pthread_cond_broadcast (&app->player.pauseCond);
+	pthread_mutex_unlock (&app->player.pauseMutex);
+}
+
 /*	pause
  */
 BarUiActCallback(BarUiActPause) {
-	/* already locked => unlock/unpause */
-	if (pthread_mutex_trylock (&app->player.pauseMutex) == EBUSY) {
-		pthread_mutex_unlock (&app->player.pauseMutex);
-	}
+	pthread_mutex_lock (&app->player.pauseMutex);
+	app->player.doPause = true;
+	pthread_cond_broadcast (&app->player.pauseCond);
+	pthread_mutex_unlock (&app->player.pauseMutex);
+}
+
+/*	toggle pause
+ */
+BarUiActCallback(BarUiActTogglePause) {
+	pthread_mutex_lock (&app->player.pauseMutex);
+	app->player.doPause = !app->player.doPause;
+	pthread_cond_broadcast (&app->player.pauseCond);
+	pthread_mutex_unlock (&app->player.pauseMutex);
 }
 
 /*	rename current station
@@ -483,7 +515,7 @@ BarUiActCallback(BarUiActSelectQuickMix) {
 /*	quit
  */
 BarUiActCallback(BarUiActQuit) {
-	app->doQuit = 1;
+	app->doQuit = true;
 	BarUiDoSkipSong (&app->player);
 }
 

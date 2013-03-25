@@ -46,18 +46,6 @@ DISABLE_FAAD=1
 DISABLE_MAD=1
 	Disables MP3 playback.
 
-Mac OS X
-++++++++
-
-NOTE: The above won't work on Mac OS X (Snow Leopard) since c99 targets i386
-and cc (gcc4.2) targets x86_64. If you've built supporting libraries
-(libao, etc.) using gcc, you'll be unable to link. You can work around
-this issue by overriding CFLAGS[1]
-
-	make clean && make CFLAGS="-O2 -DNDEBUG -W64"
-
-[1] https://github.com/PromyLOPh/pianobar/issues/98
-
 Ubuntu 12.04
 ++++++++++++
 

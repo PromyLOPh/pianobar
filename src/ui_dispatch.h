@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010-2012
+Copyright (c) 2010-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -71,8 +71,8 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_addshared"},
 		{'n', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActSkipSong, "next song",
 				"act_songnext"},
-		{'p', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, "pause/continue",
-				"act_songpause"},
+		{'p', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActTogglePause, "pause/resume playback",
+				"act_songpausetoggle"},
 		{'q', BAR_DC_GLOBAL, BarUiActQuit, "quit", "act_quit"},
 		{'r', BAR_DC_STATION, BarUiActRenameStation, "rename station",
 				"act_stationrename"},
@@ -93,12 +93,16 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_volup"},
 		{'=', BAR_DC_STATION, BarUiActManageStation, "delete seeds/feedback",
 				"act_managestation"},
-		{' ', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, NULL,
-				"act_songpause2"},
+		{' ', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActTogglePause, NULL,
+				"act_songpausetoggle2"},
 		{'v', BAR_DC_SONG, BarUiActCreateStationFromSong,
 				"create new station from song or artist", "act_stationcreatefromsong"},
 		{'l', BAR_DC_GLOBAL, BarUiActClear,
-				"clear terminal", "act_clearterm"}
+				"clear terminal", "act_clearterm"},
+		{'P', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPlay, "resume playback",
+				"act_songplay"},
+		{'S', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, "pause playback",
+				"act_songpause"},
 		};
 
 #include <piano.h>

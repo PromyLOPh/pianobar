@@ -24,10 +24,14 @@
 #act_addshared = j
 #act_songmove = m
 #act_songnext = n
-#act_songpause = p
+#act_songpause = S
+#act_songpausetoggle = p
+#act_songpausetoggle2 =  
+#act_songplay = P
 #act_quit = q
 #act_stationrename = r
 #act_stationchange = s
+#act_stationcreatefromsong = v
 #act_songtired = t
 #act_upcoming = u
 #act_stationselectquickmix = x
