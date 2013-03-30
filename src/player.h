@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2010
+Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -49,7 +49,8 @@ THE SOFTWARE.
 #define BAR_PLAYER_BUFSIZE (WAITRESS_BUFFER_SIZE*2)
 
 struct audioPlayer {
-	char doQuit;
+	bool doQuit; /* protected by pauseMutex */
+	bool doPause; /* protected by pauseMutex */
 	unsigned char channels;
 	unsigned char aoError;
 
@@ -102,6 +103,7 @@ struct audioPlayer {
 	unsigned char *buffer;
 
 	pthread_mutex_t pauseMutex;
+	pthread_cond_t pauseCond;
 	WaitressHandle_t waith;
 };
 

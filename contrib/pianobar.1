@@ -113,10 +113,18 @@ Move current song to another station
 Skip current song.
 
 .TP
-.B act_songpause = p
+.B act_songpause = S
+Pause playback
+
+.TP
+.B act_songpausetoggle = p
 .TQ
-.B act_songpause2 = <Space>
-Pause/Continue
+.B act_songpausetoggle2 = <Space>
+Pause/resume playback
+
+.TP
+.B act_songplay = P
+Resume playback
 
 .TP
 .B act_quit = q
@@ -367,10 +375,11 @@ related to the current event, is supplied through stdin.
 
 Currently supported events are: artistbookmark, songban, songbookmark,
 songexplain, songfinish, songlove, songmove, songshelf, songstart,
-stationaddmusic, stationaddshared, stationcreate, stationdelete,
-stationdeleteartistseed, stationdeletefeedback, stationdeletesongseed,
-stationfetchinfo, stationfetchplaylist, stationquickmixtoggle, stationrename,
-userlogin, usergetstations
+stationaddgenre, stationaddmusic, stationaddshared, stationcreate,
+stationdelete, stationdeleteartistseed, stationdeletefeedback,
+stationdeletesongseed, stationfetchinfo, stationfetchplaylist,
+stationfetchgenre stationquickmixtoggle, stationrename, userlogin,
+usergetstations
 
 An example script can be found in the contrib/ directory of
 .B pianobar's

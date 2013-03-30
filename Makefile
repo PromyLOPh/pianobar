@@ -12,7 +12,12 @@ ifeq (${CFLAGS},)
 	CFLAGS=-O2 -DNDEBUG
 endif
 ifeq (${CC},cc)
-	CC=c99
+	OS := $(shell uname)
+	ifeq (${OS},Darwin)
+		CC=gcc -std=c99
+	else
+		CC=c99
+	endif
 endif
 
 PIANOBAR_DIR=src

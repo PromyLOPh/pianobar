@@ -304,6 +304,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 			return "Listener not authorized.";
 			break;
 
+		case PIANO_RET_P_RATE_LIMIT:
+			return "Access denied. Try again later.";
+			break;
+
 		default:
 			return "No error message available.";
 			break;
