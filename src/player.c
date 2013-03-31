@@ -530,7 +530,9 @@ void *BarPlayerThread (void *data) {
 		ret = (void *) PLAYER_RET_ERR;
 	}
 
-	if (wRet != WAITRESS_RET_OK && wRet != WAITRESS_RET_CB_ABORT) {
+	/* Pandora sends broken audio url’s sometimes (“bad request”). ignore them. */
+	if (wRet != WAITRESS_RET_OK && wRet != WAITRESS_RET_CB_ABORT &&
+			wRet != WAITRESS_RET_BAD_REQUEST) {
 		BarUiMsg (player->settings, MSG_ERR, "Cannot access audio file: %s\n",
 				WaitressErrorToStr (wRet));
 		ret = (void *) PLAYER_RET_ERR;

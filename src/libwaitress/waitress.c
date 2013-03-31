@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2009-2012
+Copyright (c) 2009-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -972,6 +972,10 @@ static WaitressReturn_t WaitressReceiveHeaders (WaitressHandle_t *waith,
 						case 200:
 						case 206:
 							hdrParseMode = HDRM_LINES;
+							break;
+
+						case 400:
+							return WAITRESS_RET_BAD_REQUEST;
 							break;
 
 						case 403:
