@@ -263,8 +263,74 @@ BarUiActCallback(BarUiActExplain) {
 /*	choose genre station and add it as shared station
  */
 BarUiActCallback(BarUiActStationFromGenre) {
-	/* use genre station */
-	BarStationFromGenre (app);
+	PianoReturn_t pRet;
+	WaitressReturn_t wRet;
+	const PianoGenreCategory_t *curCat;
+	const PianoGenre_t *curGenre;
+	int i;
+
+	/* receive genre stations list if not yet available */
+	if (app->ph.genreStations == NULL) {
+		BarUiMsg (&app->settings, MSG_INFO, "Receiving genre stations... ");
+		const bool ret = BarUiActDefaultPianoCall (
+				PIANO_REQUEST_GET_GENRE_STATIONS, NULL);
+		BarUiActDefaultEventcmd ("stationfetchgenre");
+		if (!ret) {
+			return;
+		}
+	}
+
+	/* print all available categories */
+	curCat = app->ph.genreStations;
+	i = 0;
+	while (curCat != NULL) {
+		BarUiMsg (&app->settings, MSG_LIST, "%2i) %s\n", i, curCat->name);
+		i++;
+		curCat = curCat->next;
+	}
+
+	do {
+		/* select category or exit */
+		BarUiMsg (&app->settings, MSG_QUESTION, "Select category: ");
+		if (BarReadlineInt (&i, &app->input) == 0) {
+			return;
+		}
+		curCat = app->ph.genreStations;
+		while (curCat != NULL && i > 0) {
+			curCat = curCat->next;
+			i--;
+		}
+	} while (curCat == NULL);
+
+	/* print all available stations */
+	curGenre = curCat->genres;
+	i = 0;
+	while (curGenre != NULL) {
+		BarUiMsg (&app->settings, MSG_LIST, "%2i) %s\n", i, curGenre->name);
+		i++;
+		curGenre = curGenre->next;
+	}
+
+	do {
+		BarUiMsg (&app->settings, MSG_QUESTION, "Select genre: ");
+		if (BarReadlineInt (&i, &app->input) == 0) {
+			return;
+		}
+		curGenre = curCat->genres;
+		while (curGenre != NULL && i > 0) {
+			curGenre = curGenre->next;
+			i--;
+		}
+	} while (curGenre == NULL);
+
+	/* create station */
+	PianoRequestDataCreateStation_t reqData;
+	reqData.token = curGenre->musicId;
+	reqData.type = PIANO_MUSICTYPE_INVALID;
+	BarUiMsg (&app->settings, MSG_INFO, "Adding genre station \"%s\"... ",
+			curGenre->name);
+	BarUiActDefaultPianoCall (PIANO_REQUEST_CREATE_STATION, &reqData);
+	BarUiActDefaultEventcmd ("stationaddgenre");
 }
 
 /*	print verbose song information
