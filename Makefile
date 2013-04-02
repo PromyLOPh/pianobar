@@ -16,7 +16,7 @@ ifeq (${CC},cc)
 	ifeq (${OS},Darwin)
 		CC=gcc -std=c99
 	else
-		CC=c99
+		CC=gcc -std=c99
 	endif
 endif
 
