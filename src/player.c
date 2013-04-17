@@ -488,9 +488,9 @@ void *BarPlayerThread (void *data) {
 		#endif /* ENABLE_MAD */
 
 		default:
-			/* FIXME: leaks memory */
 			BarUiMsg (player->settings, MSG_ERR, "Unsupported audio format!\n");
-			return PLAYER_RET_OK;
+			ret = (void *) PLAYER_RET_ERR;
+			goto cleanup;
 			break;
 	}
 	
@@ -522,7 +522,8 @@ void *BarPlayerThread (void *data) {
 		#endif /* ENABLE_MAD */
 
 		default:
-			/* this should never happen: thread is aborted above */
+			/* this should never happen */
+			assert (0);
 			break;
 	}
 
@@ -538,7 +539,8 @@ void *BarPlayerThread (void *data) {
 		ret = (void *) PLAYER_RET_ERR;
 	}
 
-	ao_close(player->audioOutDevice);
+cleanup:
+	ao_close (player->audioOutDevice);
 	WaitressFree (&player->waith);
 	free (player->buffer);
 
