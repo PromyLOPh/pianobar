@@ -96,7 +96,8 @@ ifeq (${DYNLINK},1)
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} libpiano.so.0
 	@echo "  LINK  $@"
 	@${CC} -o $@ ${PIANOBAR_OBJ} ${LDFLAGS} -lao -lpthread -lm -L. -lpiano \
-			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS}
+			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
+			${LIBGCRYPT_LDFLAGS}
 else
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
 		${LIBWAITRESS_HDR}
