@@ -88,8 +88,8 @@ LIBGNUTLS_LDFLAGS=$(shell pkg-config --libs gnutls)
 LIBGCRYPT_CFLAGS=
 LIBGCRYPT_LDFLAGS=-lgcrypt
 
-LIBJSONC_CFLAGS=$(shell pkg-config --cflags json)
-LIBJSONC_LDFLAGS=$(shell pkg-config --libs json)
+LIBJSONC_CFLAGS=$(shell pkg-config --cflags json-c 2>/dev/null || pkg-config --cflags json)
+LIBJSONC_LDFLAGS=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --libs json)
 
 # build pianobar
 ifeq (${DYNLINK},1)
