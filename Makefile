@@ -20,8 +20,8 @@ ifeq (${CC},cc)
 	endif
 endif
 
-PIANOBAR_DIR=src
-PIANOBAR_SRC=\
+PIANOBAR_DIR:=src
+PIANOBAR_SRC:=\
 		${PIANOBAR_DIR}/main.c \
 		${PIANOBAR_DIR}/player.c \
 		${PIANOBAR_DIR}/settings.c \
@@ -30,7 +30,7 @@ PIANOBAR_SRC=\
 		${PIANOBAR_DIR}/ui.c \
 		${PIANOBAR_DIR}/ui_readline.c \
 		${PIANOBAR_DIR}/ui_dispatch.c
-PIANOBAR_HDR=\
+PIANOBAR_HDR:=\
 		${PIANOBAR_DIR}/player.h \
 		${PIANOBAR_DIR}/settings.h \
 		${PIANOBAR_DIR}/terminal.h \
@@ -39,57 +39,57 @@ PIANOBAR_HDR=\
 		${PIANOBAR_DIR}/ui_readline.h \
 		${PIANOBAR_DIR}/main.h \
 		${PIANOBAR_DIR}/config.h
-PIANOBAR_OBJ=${PIANOBAR_SRC:.c=.o}
+PIANOBAR_OBJ:=${PIANOBAR_SRC:.c=.o}
 
-LIBPIANO_DIR=src/libpiano
-LIBPIANO_SRC=\
+LIBPIANO_DIR:=src/libpiano
+LIBPIANO_SRC:=\
 		${LIBPIANO_DIR}/crypt.c \
 		${LIBPIANO_DIR}/piano.c \
 		${LIBPIANO_DIR}/request.c \
 		${LIBPIANO_DIR}/response.c
-LIBPIANO_HDR=\
+LIBPIANO_HDR:=\
 		${LIBPIANO_DIR}/config.h \
 		${LIBPIANO_DIR}/crypt.h \
 		${LIBPIANO_DIR}/piano.h \
 		${LIBPIANO_DIR}/piano_private.h
-LIBPIANO_OBJ=${LIBPIANO_SRC:.c=.o}
-LIBPIANO_RELOBJ=${LIBPIANO_SRC:.c=.lo}
-LIBPIANO_INCLUDE=${LIBPIANO_DIR}
+LIBPIANO_OBJ:=${LIBPIANO_SRC:.c=.o}
+LIBPIANO_RELOBJ:=${LIBPIANO_SRC:.c=.lo}
+LIBPIANO_INCLUDE:=${LIBPIANO_DIR}
 
-LIBWAITRESS_DIR=src/libwaitress
-LIBWAITRESS_SRC=${LIBWAITRESS_DIR}/waitress.c
-LIBWAITRESS_HDR=\
+LIBWAITRESS_DIR:=src/libwaitress
+LIBWAITRESS_SRC:=${LIBWAITRESS_DIR}/waitress.c
+LIBWAITRESS_HDR:=\
 		${LIBWAITRESS_DIR}/config.h \
 		${LIBWAITRESS_DIR}/waitress.h
-LIBWAITRESS_OBJ=${LIBWAITRESS_SRC:.c=.o}
-LIBWAITRESS_RELOBJ=${LIBWAITRESS_SRC:.c=.lo}
-LIBWAITRESS_INCLUDE=${LIBWAITRESS_DIR}
+LIBWAITRESS_OBJ:=${LIBWAITRESS_SRC:.c=.o}
+LIBWAITRESS_RELOBJ:=${LIBWAITRESS_SRC:.c=.lo}
+LIBWAITRESS_INCLUDE:=${LIBWAITRESS_DIR}
 
 ifeq (${DISABLE_FAAD}, 1)
-	LIBFAAD_CFLAGS=
-	LIBFAAD_LDFLAGS=
+	LIBFAAD_CFLAGS:=
+	LIBFAAD_LDFLAGS:=
 else
-	LIBFAAD_CFLAGS=-DENABLE_FAAD
-	LIBFAAD_LDFLAGS=-lfaad
+	LIBFAAD_CFLAGS:=-DENABLE_FAAD
+	LIBFAAD_LDFLAGS:=-lfaad
 endif
 
 ifeq (${DISABLE_MAD}, 1)
-	LIBMAD_CFLAGS=
-	LIBMAD_LDFLAGS=
+	LIBMAD_CFLAGS:=
+	LIBMAD_LDFLAGS:=
 else
-	LIBMAD_CFLAGS=-DENABLE_MAD
+	LIBMAD_CFLAGS:=-DENABLE_MAD
 	LIBMAD_CFLAGS+=$(shell pkg-config --cflags mad)
-	LIBMAD_LDFLAGS=$(shell pkg-config --libs mad)
+	LIBMAD_LDFLAGS:=$(shell pkg-config --libs mad)
 endif
 
-LIBGNUTLS_CFLAGS=$(shell pkg-config --cflags gnutls)
-LIBGNUTLS_LDFLAGS=$(shell pkg-config --libs gnutls)
+LIBGNUTLS_CFLAGS:=$(shell pkg-config --cflags gnutls)
+LIBGNUTLS_LDFLAGS:=$(shell pkg-config --libs gnutls)
 
-LIBGCRYPT_CFLAGS=
-LIBGCRYPT_LDFLAGS=-lgcrypt
+LIBGCRYPT_CFLAGS:=
+LIBGCRYPT_LDFLAGS:=-lgcrypt
 
-LIBJSONC_CFLAGS=$(shell pkg-config --cflags json-c 2>/dev/null || pkg-config --cflags json)
-LIBJSONC_LDFLAGS=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --libs json)
+LIBJSONC_CFLAGS:=$(shell pkg-config --cflags json-c 2>/dev/null || pkg-config --cflags json)
+LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --libs json)
 
 # build pianobar
 ifeq (${DYNLINK},1)
