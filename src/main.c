@@ -300,8 +300,15 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 	pthread_cond_destroy (&app->player.pauseCond);
 	pthread_mutex_destroy (&app->player.pauseMutex);
 
-	/* don't continue playback if thread reports error */
-	if (threadRet != (void *) PLAYER_RET_OK) {
+	if (threadRet == (void *) PLAYER_RET_OK) {
+		app->playerErrors = 0;
+	} else if (threadRet == (void *) PLAYER_RET_SOFTFAIL) {
+		++app->playerErrors;
+		if (app->playerErrors >= app->settings.maxPlayerErrors) {
+			/* don't continue playback if thread reports too many error */
+			app->curStation = NULL;
+		}
+	} else {
 		app->curStation = NULL;
 	}
 
