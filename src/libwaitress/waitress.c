@@ -537,6 +537,14 @@ static WaitressReturn_t WaitressGnutlsRead (void *data, char *buf,
 
 	ssize_t ret = gnutls_record_recv (waith->request.tlsSession, buf, size);
 	if (ret < 0) {
+		if (ret == GNUTLS_E_UNEXPECTED_PACKET_LENGTH
+#ifdef GNUTLS_E_PREMATURE_TERMINATION
+                      || ret == GNUTLS_E_PREMATURE_TERMINATION
+#endif
+                   ) {
+			*retSize = 0;
+			return waith->request.readWriteRet;
+		}
 		return WAITRESS_RET_TLS_READ_ERR;
 	} else {
 		*retSize = ret;
