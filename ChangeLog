@@ -1,3 +1,15 @@
+Release 2013.05.19
+
+- Keyboard shortcuts for play/pause, config setting act_songpause has been
+  renamed to act_songpausetoggle
+- Better error handling of audio file download errors
+- Fix TLS read error when using Pandora One tuner URL
+- Fix a bug where rating a song from a shared station, played by quickmix
+  resulted in an error message
+- Fix wrong name when deleting station from history menu
+- New events for genre station selection: stationfetchgenre, stationaddgenre
+- Minor Makefile and documentation bugfixes/improvements
+
 Release 2012.12.01
 
 - Save last station and volume to statefile

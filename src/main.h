@@ -42,6 +42,7 @@ typedef struct {
 	PianoStation_t *curStation;
 	char doQuit;
 	BarReadlineFds_t input;
+	unsigned int playerErrors;
 } BarApp_t;
 
 #endif /* _MAIN_H */

@@ -110,6 +110,7 @@ typedef struct {
 		WaitressReturn_t readWriteRet;
 
 		size_t contentLength, contentReceived, chunkSize;
+		bool contentLengthKnown;
 		enum {CHUNKSIZE = 0, DATA = 1} chunkedState;
 
 		char *buf;

@@ -107,7 +107,7 @@ struct audioPlayer {
 	WaitressHandle_t waith;
 };
 
-enum {PLAYER_RET_OK = 0, PLAYER_RET_ERR = 1};
+enum {PLAYER_RET_OK = 0, PLAYER_RET_HARDFAIL = 1, PLAYER_RET_SOFTFAIL = 2};
 
 void *BarPlayerThread (void *data);
 unsigned int BarPlayerCalcScale (float);

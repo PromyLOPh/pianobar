@@ -703,6 +703,7 @@ static void WaitressHandleHeader (WaitressHandle_t *waith, const char * const ke
 
 	if (strcaseeq (key, "Content-Length")) {
 		waith->request.contentLength = atol (value);
+		waith->request.contentLengthKnown = true;
 	} else if (strcaseeq (key, "Transfer-Encoding")) {
 		if (strcaseeq (value, "chunked")) {
 			waith->request.dataHandler = WaitressHandleChunked;
@@ -1064,6 +1065,12 @@ static WaitressReturn_t WaitressReceiveResponse (WaitressHandle_t *waith) {
 				/* go on */
 				break;
 		}
+		if (waith->request.contentLengthKnown &&
+				waith->request.contentReceived >= waith->request.contentLength) {
+			/* don’t call read() again if we know the body’s size and have all
+			 * of it already */
+			break;
+		}
 		READ_RET (buf, WAITRESS_BUFFER_SIZE-1, &recvSize);
 	} while (recvSize > 0);
 
@@ -1083,6 +1090,7 @@ WaitressReturn_t WaitressFetchCall (WaitressHandle_t *waith) {
 	waith->request.dataHandler = WaitressHandleIdentity;
 	waith->request.read = WaitressOrdinaryRead;
 	waith->request.write = WaitressOrdinaryWrite;
+	waith->request.contentLengthKnown = false;
 
 	if (waith->url.tls) {
 		gnutls_init (&waith->request.tlsSession, GNUTLS_CLIENT);
