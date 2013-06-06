@@ -25,6 +25,9 @@ THE SOFTWARE.
 #define _PIANO_H
 
 #include <stdbool.h>
+#if __FreeBSD__
+#define _GCRYPT_IN_LIBGCRYPT
+#endif
 #include <gcrypt.h>
 
 /* this is our public API; don't expect this api to be stable as long as
