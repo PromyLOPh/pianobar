@@ -23,7 +23,6 @@ THE SOFTWARE.
 
 #include <string.h>
 #include <assert.h>
-#include <gcrypt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

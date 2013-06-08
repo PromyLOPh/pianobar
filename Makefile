@@ -15,6 +15,8 @@ ifeq (${CC},cc)
 	OS := $(shell uname)
 	ifeq (${OS},Darwin)
 		CC=gcc -std=c99
+	else ifeq (${OS},FreeBSD)
+		CC=cc -std=c99
 	else
 		CC=c99
 	endif
