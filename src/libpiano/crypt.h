@@ -24,6 +24,9 @@ THE SOFTWARE.
 #ifndef _CRYPH_H
 #define _CRYPT_H
 
+#ifdef __FreeBSD__
+#define _GCRYPT_IN_LIBGCRYPT
+#endif
 #include <gcrypt.h>
 
 char *PianoDecryptString (gcry_cipher_hd_t, const char * const,
