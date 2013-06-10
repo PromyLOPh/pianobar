@@ -489,7 +489,7 @@ void *BarPlayerThread (void *data) {
 
 		default:
 			BarUiMsg (player->settings, MSG_ERR, "Unsupported audio format!\n");
-			ret = (void *) PLAYER_RET_ERR;
+			ret = (void *) PLAYER_RET_HARDFAIL;
 			goto cleanup;
 			break;
 	}
@@ -528,15 +528,14 @@ void *BarPlayerThread (void *data) {
 	}
 
 	if (player->aoError) {
-		ret = (void *) PLAYER_RET_ERR;
+		ret = (void *) PLAYER_RET_HARDFAIL;
 	}
 
 	/* Pandora sends broken audio url’s sometimes (“bad request”). ignore them. */
-	if (wRet != WAITRESS_RET_OK && wRet != WAITRESS_RET_CB_ABORT &&
-			wRet != WAITRESS_RET_BAD_REQUEST) {
+	if (wRet != WAITRESS_RET_OK && wRet != WAITRESS_RET_CB_ABORT) {
 		BarUiMsg (player->settings, MSG_ERR, "Cannot access audio file: %s\n",
 				WaitressErrorToStr (wRet));
-		ret = (void *) PLAYER_RET_ERR;
+		ret = (void *) PLAYER_RET_SOFTFAIL;
 	}
 
 cleanup:
