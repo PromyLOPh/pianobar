@@ -655,6 +655,25 @@ BarUiActCallback(BarUiActVolDown) {
 	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
 }
 
+/*	reset volume
+ */
+BarUiActCallback(BarUiActVolReset) {
+
+	char msg[128];
+        sprintf(msg, "Resetting volume from %d back to 0..", app->settings.volume);
+	BarUiMsg (&app->settings, MSG_NONE, "\r");
+	BarUiMsg (&app->settings, MSG_LIST, "%c    %s\n", '*', msg);
+	BarUiMsg (&app->settings, MSG_NONE, "\r");
+
+        // I'd prefer to do this next line, but nothing comes out?
+	// BarUiMsg (&app->settings, MSG_INFO, msg);
+
+	app->settings.volume=0;
+
+	/* FIXME: assuming unsigned integer store is atomic operation */
+	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
+}
+
 /*	increase volume
  */
 BarUiActCallback(BarUiActVolUp) {

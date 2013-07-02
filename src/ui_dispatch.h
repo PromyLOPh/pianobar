@@ -89,6 +89,8 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_bookmark"},
 		{'(', BAR_DC_GLOBAL, BarUiActVolDown, "decrease volume",
 				"act_voldown"},
+		{'^', BAR_DC_GLOBAL, BarUiActVolReset, "reset volume",
+				"act_volreset"},
 		{')', BAR_DC_GLOBAL, BarUiActVolUp, "increase volume",
 				"act_volup"},
 		{'=', BAR_DC_STATION, BarUiActManageStation, "delete seeds/feedback",

@@ -58,6 +58,7 @@ BarUiActCallback(BarUiActDebug);
 BarUiActCallback(BarUiActHistory);
 BarUiActCallback(BarUiActBookmark);
 BarUiActCallback(BarUiActVolDown);
+BarUiActCallback(BarUiActVolReset);
 BarUiActCallback(BarUiActVolUp);
 BarUiActCallback(BarUiActManageStation);
 
