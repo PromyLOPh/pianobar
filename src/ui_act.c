@@ -659,14 +659,8 @@ BarUiActCallback(BarUiActVolDown) {
  */
 BarUiActCallback(BarUiActVolReset) {
 
-	char msg[128];
-        sprintf(msg, "Resetting volume from %d back to 0..", app->settings.volume);
-	BarUiMsg (&app->settings, MSG_NONE, "\r");
-	BarUiMsg (&app->settings, MSG_LIST, "%c    %s\n", '*', msg);
-	BarUiMsg (&app->settings, MSG_NONE, "\r");
-
-        // I'd prefer to do this next line, but nothing comes out?
-	// BarUiMsg (&app->settings, MSG_INFO, msg);
+	BarUiMsg (&app->settings, MSG_INFO, 
+                    "Resetting volume from %d back to 0\n", app->settings.volume);
 
 	app->settings.volume=0;
 
