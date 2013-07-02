@@ -40,7 +40,7 @@ THE SOFTWARE.
  *	@param piano handle
  *	@return nothing
  */
-void PianoInit (PianoHandle_t *ph, const char *partnerUser,
+PianoReturn_t PianoInit (PianoHandle_t *ph, const char *partnerUser,
 		const char *partnerPassword, const char *device, const char *inkey,
 		const char *outkey) {
 	memset (ph, 0, sizeof (*ph));
@@ -48,15 +48,25 @@ void PianoInit (PianoHandle_t *ph, const char *partnerUser,
 	ph->partner.password = strdup (partnerPassword);
 	ph->partner.device = strdup (device);
 
-	gcry_cipher_open (&ph->partner.in, GCRY_CIPHER_BLOWFISH,
-			GCRY_CIPHER_MODE_ECB, 0);
-	gcry_cipher_setkey (ph->partner.in, (const unsigned char *) inkey,
-			strlen (inkey));
+	if (gcry_cipher_open (&ph->partner.in, GCRY_CIPHER_BLOWFISH,
+			GCRY_CIPHER_MODE_ECB, 0) != GPG_ERR_NO_ERROR) {
+		return PIANO_RET_GCRY_ERR;
+	}
+	if (gcry_cipher_setkey (ph->partner.in, (const unsigned char *) inkey,
+			strlen (inkey)) != GPG_ERR_NO_ERROR) {
+		return PIANO_RET_GCRY_ERR;
+	}
 
-	gcry_cipher_open (&ph->partner.out, GCRY_CIPHER_BLOWFISH,
-			GCRY_CIPHER_MODE_ECB, 0);
-	gcry_cipher_setkey (ph->partner.out, (const unsigned char *) outkey,
-			strlen (outkey));
+	if (gcry_cipher_open (&ph->partner.out, GCRY_CIPHER_BLOWFISH,
+			GCRY_CIPHER_MODE_ECB, 0) != GPG_ERR_NO_ERROR) {
+		return PIANO_RET_GCRY_ERR;
+	}
+	if (gcry_cipher_setkey (ph->partner.out, (const unsigned char *) outkey,
+			strlen (outkey)) != GPG_ERR_NO_ERROR) {
+		return PIANO_RET_GCRY_ERR;
+	}
+
+	return PIANO_RET_OK;
 }
 
 /*	destroy artist linked list
@@ -256,6 +266,10 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 
 		case PIANO_RET_QUALITY_UNAVAILABLE:
 			return "Selected audio quality is not available.";
+			break;
+
+		case PIANO_RET_GCRY_ERR:
+			return "libgcrypt initialization failed.";
 			break;
 
 		/* pandora error messages */
