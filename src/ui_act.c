@@ -658,10 +658,6 @@ BarUiActCallback(BarUiActVolDown) {
 /*	reset volume
  */
 BarUiActCallback(BarUiActVolReset) {
-
-	BarUiMsg (&app->settings, MSG_INFO, 
-                    "Resetting volume from %d back to 0\n", app->settings.volume);
-
 	app->settings.volume=0;
 
 	/* FIXME: assuming unsigned integer store is atomic operation */
