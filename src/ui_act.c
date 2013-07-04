@@ -655,6 +655,15 @@ BarUiActCallback(BarUiActVolDown) {
 	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
 }
 
+/*	reset volume
+ */
+BarUiActCallback(BarUiActVolReset) {
+	app->settings.volume=0;
+
+	/* FIXME: assuming unsigned integer store is atomic operation */
+	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
+}
+
 /*	increase volume
  */
 BarUiActCallback(BarUiActVolUp) {
