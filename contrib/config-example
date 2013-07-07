@@ -37,6 +37,7 @@
 #act_stationselectquickmix = x
 #act_voldown = (
 #act_volup = )
+#act_volreset = ^
 
 # Misc
 #audio_quality = low

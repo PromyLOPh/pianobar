@@ -60,5 +60,6 @@ BarUiActCallback(BarUiActBookmark);
 BarUiActCallback(BarUiActVolDown);
 BarUiActCallback(BarUiActVolUp);
 BarUiActCallback(BarUiActManageStation);
+BarUiActCallback(BarUiActVolReset);
 
 #endif /* _UI_ACT_H */
