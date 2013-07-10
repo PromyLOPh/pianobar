@@ -8,7 +8,7 @@ Dependencies
 - pthreads
 - libao
 - gnutls
-- gcrypt
+- gcrypt (with blowfish cipher enabled)
 - json-c
 - libfaad2 (compiled with --without-drm)
 - libmad (optional, Pandora One users only)

@@ -38,6 +38,7 @@
 #act_voldown = (
 #act_volup = )
 #act_clearterm = l
+#act_volreset = ^
 
 # Misc
 #audio_quality = low

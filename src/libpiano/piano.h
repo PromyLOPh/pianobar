@@ -250,6 +250,7 @@ typedef enum {
 	PIANO_RET_OUT_OF_MEMORY = 4,
 	PIANO_RET_INVALID_LOGIN = 5,
 	PIANO_RET_QUALITY_UNAVAILABLE = 6,
+	PIANO_RET_GCRY_ERR = 7,
 
 	/* pandora error codes */
 	PIANO_RET_P_INTERNAL = PIANO_RET_OFFSET+0,
@@ -297,7 +298,7 @@ typedef enum {
 	PIANO_RET_P_RATE_LIMIT = PIANO_RET_OFFSET+1039,
 } PianoReturn_t;
 
-void PianoInit (PianoHandle_t *, const char *,
+PianoReturn_t PianoInit (PianoHandle_t *, const char *,
 		const char *, const char *, const char *,
 		const char *);
 void PianoDestroy (PianoHandle_t *);

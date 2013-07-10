@@ -424,8 +424,14 @@ int main (int argc, char **argv) {
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
 
-	PianoInit (&app.ph, app.settings.partnerUser, app.settings.partnerPassword,
-			app.settings.device, app.settings.inkey, app.settings.outkey);
+	PianoReturn_t pret;
+	if ((pret = PianoInit (&app.ph, app.settings.partnerUser,
+			app.settings.partnerPassword, app.settings.device,
+			app.settings.inkey, app.settings.outkey)) != PIANO_RET_OK) {
+		BarUiMsg (&app.settings, MSG_ERR, "Initialization failed:"
+				" %s\n", PianoErrorToStr (pret));
+		return 0;
+	}
 
 	BarUiMsg (&app.settings, MSG_NONE,
 			"Welcome to " PACKAGE " (" VERSION ")! ");

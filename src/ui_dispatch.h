@@ -103,6 +103,8 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_songplay"},
 		{'S', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, "pause playback",
 				"act_songpause"},
+		{'^', BAR_DC_GLOBAL, BarUiActVolReset, "reset volume",
+				"act_volreset"},
 		};
 
 #include <piano.h>

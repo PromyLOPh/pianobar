@@ -647,20 +647,30 @@ BarUiActCallback(BarUiActBookmark) {
 	}
 }
 
+static void BarUiActUpdateScale (BarApp_t *app) {
+	/* FIXME: assuming unsigned integer store is atomic operation */
+	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
+}
+
 /*	decrease volume
  */
 BarUiActCallback(BarUiActVolDown) {
 	--app->settings.volume;
-	/* FIXME: assuming unsigned integer store is atomic operation */
-	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
+	BarUiActUpdateScale (app);
 }
 
 /*	increase volume
  */
 BarUiActCallback(BarUiActVolUp) {
 	++app->settings.volume;
-	/* FIXME: assuming unsigned integer store is atomic operation */
-	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
+	BarUiActUpdateScale (app);
+}
+
+/*	reset volume
+ */
+BarUiActCallback(BarUiActVolReset) {
+	app->settings.volume = 0;
+	BarUiActUpdateScale (app);
 }
 
 /*	manage station (remove seeds or feedback)
