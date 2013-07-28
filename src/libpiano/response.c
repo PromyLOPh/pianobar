@@ -438,15 +438,31 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 
 			PianoJsonParseStation (result, tmpStation);
 
-			/* start new linked list or append */
 			if (ph->stations == NULL) {
 				ph->stations = tmpStation;
 			} else {
-				PianoStation_t *curStation = ph->stations;
+				PianoStation_t *curStation = ph->stations, *prevStation = NULL;
 				while (curStation->next != NULL) {
+					/* replace if station with same id exists already */
+					if (strcmp (curStation->id, tmpStation->id) == 0) {
+						if (prevStation == NULL) {
+							ph->stations = tmpStation;
+						} else {
+							prevStation->next = tmpStation;
+						}
+						tmpStation->next = curStation->next;
+
+						PianoDestroyStation (curStation);
+						free (curStation);
+						break;
+					}
+					prevStation = curStation;
 					curStation = curStation->next;
 				}
-				curStation->next = tmpStation;
+				/* append otherwise */
+				if (tmpStation->next == NULL) {
+					curStation->next = tmpStation;
+				}
 			}
 			break;
 		}
