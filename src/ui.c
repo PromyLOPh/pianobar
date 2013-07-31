@@ -675,7 +675,7 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 size_t BarUiListSongs (const BarSettings_t *settings,
 		const PianoSong_t *song, const char *filter) {
 	size_t i = 0;
-	char digits[4];
+	char digits[8];
 
 	while (song != NULL) {
 		if (filter == NULL ||

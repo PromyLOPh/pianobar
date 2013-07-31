@@ -59,11 +59,11 @@
 # This script regularly checks whether or not pianobar is running in the
 # background in order to detect when it closes.  This variable sets how long of
 # a delay there will be between checks (in seconds).
-CHECK_PERIOD="1"
+CHECK_PERIOD=${CHECK_PERIOD:-"1"}
 
 # This variable will set how many lines of pianobar's output to print when
 # re-connecting to pianobar.
-OUTPUT_LINES="30"
+OUTPUT_LINES=${OUTPUT_LINES:-"30"}
 
 # Ensure the ctrl fifo exists.
 if [ ! -p $HOME/.config/pianobar/ctl ]
@@ -151,7 +151,10 @@ IFS=""
 while /bin/true
 do
 	read -n1 -s INPUT
-	if [ "$INPUT" == "" ]
+        if [[ $? == "1" || "$INPUT" == $'\004' ]]
+        then
+                quit
+	elif [ "$INPUT" == "" ]
 	then
 		echo "" > $HOME/.config/pianobar/ctl
 	else
