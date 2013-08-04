@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2012
+Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -272,14 +272,12 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			PianoStation_t *curStation = ph->stations;
 			json_object *a = json_object_new_array ();
 
-			while (curStation != NULL) {
+			PianoListForeachP (curStation) {
 				/* quick mix can't contain itself */
 				if (curStation->useQuickMix && !curStation->isQuickMix) {
 					json_object_array_add (a,
 							json_object_new_string (curStation->id));
 				}
-
-				curStation = curStation->next;
 			}
 
 			json_object_object_add (j, "quickMixStationIds", a);

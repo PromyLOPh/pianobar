@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2011
+Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -305,20 +305,14 @@ static PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
 
 	assert (order < sizeof (orderMapping)/sizeof(*orderMapping));
 
-	/* get size */
-	currStation = unsortedStations;
-	while (currStation != NULL) {
-		++stationCount;
-		currStation = currStation->next;
-	}
+	stationCount = PianoListCountP (unsortedStations);
 	stationArray = calloc (stationCount, sizeof (*stationArray));
 
 	/* copy station pointers */
-	currStation = unsortedStations;
 	i = 0;
-	while (currStation != NULL) {
+	currStation = unsortedStations;
+	PianoListForeachP (currStation) {
 		stationArray[i] = currStation;
-		currStation = currStation->next;
 		++i;
 	}
 
@@ -422,11 +416,7 @@ PianoSong_t *BarUiSelectSong (const BarSettings_t *settings,
 
 		if (isnumeric (buf)) {
 			unsigned long i = strtoul (buf, NULL, 0);
-			tmpSong = startSong;
-			while (tmpSong != NULL && i > 0) {
-				tmpSong = tmpSong->next;
-				i--;
-			}
+			tmpSong = PianoListGetP (startSong, i);
 		}
 	} while (tmpSong == NULL);
 
@@ -449,12 +439,12 @@ PianoArtist_t *BarUiSelectArtist (BarApp_t *app, PianoArtist_t *startArtist) {
 		/* print all artists */
 		i = 0;
 		tmpArtist = startArtist;
-		while (tmpArtist != NULL) {
+		PianoListForeachP (tmpArtist) {
 			if (BarStrCaseStr (tmpArtist->name, buf) != NULL) {
-				BarUiMsg (&app->settings, MSG_LIST, "%2u) %s\n", i, tmpArtist->name);
+				BarUiMsg (&app->settings, MSG_LIST, "%2u) %s\n", i,
+						tmpArtist->name);
 			}
 			i++;
-			tmpArtist = tmpArtist->next;
 		}
 
 		BarUiMsg (&app->settings, MSG_QUESTION, "Select artist: ");
@@ -465,11 +455,7 @@ PianoArtist_t *BarUiSelectArtist (BarApp_t *app, PianoArtist_t *startArtist) {
 
 		if (isnumeric (buf)) {
 			i = strtoul (buf, NULL, 0);
-			tmpArtist = startArtist;
-			while (tmpArtist != NULL && i > 0) {
-				tmpArtist = tmpArtist->next;
-				i--;
-			}
+			tmpArtist = PianoListGetP (startArtist, i);
 		}
 	} while (tmpArtist == NULL);
 
@@ -667,7 +653,7 @@ size_t BarUiListSongs (const BarSettings_t *settings,
 	size_t i = 0;
 	char digits[8];
 
-	while (song != NULL) {
+	PianoListForeachP (song) {
 		if (filter == NULL ||
 				(filter != NULL && (BarStrCaseStr (song->artist, filter) != NULL ||
 				BarStrCaseStr (song->title, filter) != NULL))) {
@@ -683,7 +669,6 @@ size_t BarUiListSongs (const BarSettings_t *settings,
 			BarUiMsg (settings, MSG_LIST, "%s", outstr);
 		}
 		i++;
-		song = song->next;
 	}
 
 	return i;
@@ -798,32 +783,26 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 	}
 }
 
-/*	prepend song to history, must not be a list of songs as ->next is modified!
+/*	prepend song to history
  */
 void BarUiHistoryPrepend (BarApp_t *app, PianoSong_t *song) {
+	assert (app != NULL);
+	assert (song != NULL);
+	/* make sure it's a single song */
+	assert (PianoListNextP (song) == NULL);
+
 	if (app->settings.history != 0) {
-		PianoSong_t *tmpSong;
-
-		song->next = app->songHistory;
-		app->songHistory = song;
-
-		/* limit history's length */
-		/* start with 1, so we're stopping at n-1 and have the
-		 * chance to set ->next = NULL */
-		unsigned int i = 1;
-		tmpSong = app->songHistory;
-		while (i < app->settings.history && tmpSong != NULL) {
-			tmpSong = tmpSong->next;
-			++i;
-		}
-		/* if too many songs in history... */
-		if (tmpSong != NULL) {
-			PianoSong_t *delSong = tmpSong->next;
-			tmpSong->next = NULL;
-			if (delSong != NULL) {
-				PianoDestroyPlaylist (delSong);
+		app->songHistory = PianoListPrependP (app->songHistory, song);
+		PianoSong_t *del;
+		do {
+			del = PianoListGetP (app->songHistory, app->settings.history);
+			if (del != NULL) {
+				app->songHistory = PianoListDeleteP (app->songHistory, del);
+				PianoDestroyPlaylist (del);
+			} else {
+				break;
 			}
-		}
+		} while (true);
 	} else {
 		PianoDestroyPlaylist (song);
 	}

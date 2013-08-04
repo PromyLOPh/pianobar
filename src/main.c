@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2012
+Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -372,8 +372,8 @@ static void BarMainLoop (BarApp_t *app) {
 			/* what's next? */
 			if (app->playlist != NULL) {
 				PianoSong_t *histsong = app->playlist;
-				app->playlist = app->playlist->next;
-				histsong->next = NULL;
+				app->playlist = PianoListNextP (app->playlist);
+				histsong->head.next = NULL;
 				BarUiHistoryPrepend (app, histsong);
 			}
 			if (app->playlist == NULL) {

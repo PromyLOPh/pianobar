@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2012
+Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -80,7 +80,7 @@ static void PianoDestroyArtists (PianoArtist_t *artists) {
 		free (curArtist->musicId);
 		free (curArtist->seedId);
 		lastArtist = curArtist;
-		curArtist = curArtist->next;
+		curArtist = (PianoArtist_t *) curArtist->head.next;
 		free (lastArtist);
 	}
 }
@@ -113,7 +113,7 @@ static void PianoDestroyStations (PianoStation_t *stations) {
 	curStation = stations;
 	while (curStation != NULL) {
 		lastStation = curStation;
-		curStation = curStation->next;
+		curStation = (PianoStation_t *) curStation->head.next;
 		PianoDestroyStation (lastStation);
 		free (lastStation);
 	}
@@ -141,7 +141,7 @@ void PianoDestroyPlaylist (PianoSong_t *playlist) {
 		free (curSong->detailUrl);
 		free (curSong->trackToken);
 		lastSong = curSong;
-		curSong = curSong->next;
+		curSong = (PianoSong_t *) curSong->head.next;
 		free (lastSong);
 	}
 }
@@ -163,7 +163,7 @@ static void PianoDestroyGenres (PianoGenre_t *genres) {
 		free (curGenre->name);
 		free (curGenre->musicId);
 		lastGenre = curGenre;
-		curGenre = curGenre->next;
+		curGenre = (PianoGenre_t *) curGenre->head.next;
 		free (lastGenre);
 	}
 }
@@ -201,7 +201,7 @@ void PianoDestroy (PianoHandle_t *ph) {
 		PianoDestroyGenres (curGenreCat->genres);
 		free (curGenreCat->name);
 		lastGenreCat = curGenreCat;
-		curGenreCat = curGenreCat->next;
+		curGenreCat = (PianoGenreCategory_t *) curGenreCat->head.next;
 		free (lastGenreCat);
 	}
 	memset (ph, 0, sizeof (*ph));
@@ -221,14 +221,17 @@ void PianoDestroyRequest (PianoRequest_t *req) {
  *	@param search for this
  *	@return the first station structure matching the given id
  */
-PianoStation_t *PianoFindStationById (PianoStation_t *stations,
-		const char *searchStation) {
-	while (stations != NULL) {
-		if (strcmp (stations->id, searchStation) == 0) {
-			return stations;
+PianoStation_t *PianoFindStationById (PianoStation_t * const stations,
+		const char * const searchStation) {
+	assert (searchStation != NULL);
+
+	PianoStation_t *currStation = stations;
+	PianoListForeachP (currStation) {
+		if (strcmp (currStation->id, searchStation) == 0) {
+			return currStation;
 		}
-		stations = stations->next;
 	}
+
 	return NULL;
 }
 
