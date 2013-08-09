@@ -53,7 +53,6 @@ LIBPIANO_SRC:=\
 LIBPIANO_HDR:=\
 		${LIBPIANO_DIR}/config.h \
 		${LIBPIANO_DIR}/crypt.h \
-		${LIBPIANO_DIR}/list.h \
 		${LIBPIANO_DIR}/piano.h \
 		${LIBPIANO_DIR}/piano_private.h
 LIBPIANO_OBJ:=${LIBPIANO_SRC:.c=.o}
