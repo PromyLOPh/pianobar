@@ -770,8 +770,8 @@ static WaitressReturn_t WaitressTlsVerify (const WaitressHandle_t *waith) {
 /*	Connect to server
  */
 static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
-	struct addrinfo hints, *res;
-	int pollres;
+	WaitressReturn_t ret;
+	struct addrinfo hints, *gares;
 
 	memset (&hints, 0, sizeof hints);
 
@@ -781,47 +781,66 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 	/* Use proxy? */
 	if (WaitressProxyEnabled (waith)) {
 		if (getaddrinfo (waith->proxy.host,
-				WaitressDefaultPort (&waith->proxy), &hints, &res) != 0) {
+				WaitressDefaultPort (&waith->proxy), &hints, &gares) != 0) {
 			return WAITRESS_RET_GETADDR_ERR;
 		}
 	} else {
 		if (getaddrinfo (waith->url.host,
-				WaitressDefaultPort (&waith->url), &hints, &res) != 0) {
+				WaitressDefaultPort (&waith->url), &hints, &gares) != 0) {
 			return WAITRESS_RET_GETADDR_ERR;
 		}
 	}
 
-	if ((waith->request.sockfd = socket (res->ai_family, res->ai_socktype,
-			res->ai_protocol)) == -1) {
-		freeaddrinfo (res);
-		return WAITRESS_RET_SOCK_ERR;
+	/* try all addresses */
+	for (struct addrinfo *gacurr = gares; gacurr != NULL;
+			gacurr = gacurr->ai_next) {
+		int sock = -1;
+
+		ret = WAITRESS_RET_OK;
+
+		if ((sock = socket (gacurr->ai_family, gacurr->ai_socktype,
+				gacurr->ai_protocol)) == -1) {
+			ret = WAITRESS_RET_SOCK_ERR;
+		} else {
+			int pollres;
+
+			/* we need shorter timeouts for connect() */
+			fcntl (sock, F_SETFL, O_NONBLOCK);
+
+			/* increase socket receive buffer */
+			const int sockopt = 256*1024;
+			setsockopt (sock, SOL_SOCKET, SO_RCVBUF, &sockopt,
+					sizeof (sockopt));
+
+			/* non-blocking connect will return immediately */
+			connect (sock, gacurr->ai_addr, gacurr->ai_addrlen);
+
+			pollres = WaitressPollLoop (sock, POLLOUT, waith->timeout);
+			if (pollres == 0) {
+				ret = WAITRESS_RET_TIMEOUT;
+			} else if (pollres == -1) {
+				ret = WAITRESS_RET_ERR;
+			} else {
+				/* check connect () return value */
+				socklen_t pollresSize = sizeof (pollres);
+				getsockopt (sock, SOL_SOCKET, SO_ERROR, &pollres,
+						&pollresSize);
+				if (pollres != 0) {
+					ret = WAITRESS_RET_CONNECT_REFUSED;
+				} else {
+					/* this one is working */
+					waith->request.sockfd = sock;
+					break;
+				}
+			}
+			close (sock);
+		}
 	}
 
-	/* we need shorter timeouts for connect() */
-	fcntl (waith->request.sockfd, F_SETFL, O_NONBLOCK);
-
-	/* increase socket receive buffer */
-	const int sockopt = 256*1024;
-	setsockopt (waith->request.sockfd, SOL_SOCKET, SO_RCVBUF, &sockopt,
-			sizeof (sockopt));
-
-	/* non-blocking connect will return immediately */
-	connect (waith->request.sockfd, res->ai_addr, res->ai_addrlen);
-
-	pollres = WaitressPollLoop (waith->request.sockfd, POLLOUT,
-			waith->timeout);
-	freeaddrinfo (res);
-	if (pollres == 0) {
-		return WAITRESS_RET_TIMEOUT;
-	} else if (pollres == -1) {
-		return WAITRESS_RET_ERR;
-	}
-	/* check connect () return value */
-	socklen_t pollresSize = sizeof (pollres);
-	getsockopt (waith->request.sockfd, SOL_SOCKET, SO_ERROR, &pollres,
-			&pollresSize);
-	if (pollres != 0) {
-		return WAITRESS_RET_CONNECT_REFUSED;
+	freeaddrinfo (gares);
+	/* could not connect to any of the addresses */
+	if (ret != WAITRESS_RET_OK) {
+		return ret;
 	}
 
 	if (waith->url.tls) {

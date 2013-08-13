@@ -48,7 +48,8 @@ LIBPIANO_SRC:=\
 		${LIBPIANO_DIR}/crypt.c \
 		${LIBPIANO_DIR}/piano.c \
 		${LIBPIANO_DIR}/request.c \
-		${LIBPIANO_DIR}/response.c
+		${LIBPIANO_DIR}/response.c \
+		${LIBPIANO_DIR}/list.c
 LIBPIANO_HDR:=\
 		${LIBPIANO_DIR}/config.h \
 		${LIBPIANO_DIR}/crypt.h \

@@ -232,7 +232,8 @@ BarUiActCallback(BarUiActDeleteStation) {
 		if (BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_STATION,
 				selStation) && selStation == app->curStation) {
 			BarUiDoSkipSong (&app->player);
-			PianoDestroyPlaylist (app->playlist->next);
+			PianoDestroyPlaylist (PianoListNextP (app->playlist));
+			app->playlist->head.next = NULL;
 			BarUiHistoryPrepend (app, app->playlist);
 			app->playlist = NULL;
 			app->curStation = NULL;
@@ -283,10 +284,9 @@ BarUiActCallback(BarUiActStationFromGenre) {
 	/* print all available categories */
 	curCat = app->ph.genreStations;
 	i = 0;
-	while (curCat != NULL) {
+	PianoListForeachP (curCat) {
 		BarUiMsg (&app->settings, MSG_LIST, "%2i) %s\n", i, curCat->name);
 		i++;
-		curCat = curCat->next;
 	}
 
 	do {
@@ -295,20 +295,15 @@ BarUiActCallback(BarUiActStationFromGenre) {
 		if (BarReadlineInt (&i, &app->input) == 0) {
 			return;
 		}
-		curCat = app->ph.genreStations;
-		while (curCat != NULL && i > 0) {
-			curCat = curCat->next;
-			i--;
-		}
+		curCat = PianoListGetP (app->ph.genreStations, i);
 	} while (curCat == NULL);
 
 	/* print all available stations */
-	curGenre = curCat->genres;
 	i = 0;
-	while (curGenre != NULL) {
+	curGenre = curCat->genres;
+	PianoListForeachP (curGenre) {
 		BarUiMsg (&app->settings, MSG_LIST, "%2i) %s\n", i, curGenre->name);
 		i++;
-		curGenre = curGenre->next;
 	}
 
 	do {
@@ -316,11 +311,7 @@ BarUiActCallback(BarUiActStationFromGenre) {
 		if (BarReadlineInt (&i, &app->input) == 0) {
 			return;
 		}
-		curGenre = curCat->genres;
-		while (curGenre != NULL && i > 0) {
-			curGenre = curGenre->next;
-			i--;
-		}
+		curGenre = PianoListGetP (curCat->genres, i);
 	} while (curGenre == NULL);
 
 	/* create station */
@@ -477,7 +468,8 @@ BarUiActCallback(BarUiActSelectStation) {
 		BarUiPrintStation (&app->settings, app->curStation);
 		BarUiDoSkipSong (&app->player);
 		if (app->playlist != NULL) {
-			PianoDestroyPlaylist (app->playlist->next);
+			PianoDestroyPlaylist (PianoListNextP (app->playlist));
+			app->playlist->head.next = NULL;
 			BarUiHistoryPrepend (app, app->playlist);
 			app->playlist = NULL;
 		}
@@ -505,7 +497,7 @@ BarUiActCallback(BarUiActTempBanSong) {
 BarUiActCallback(BarUiActPrintUpcoming) {
 	assert (selSong != NULL);
 
-	PianoSong_t *nextSong = selSong->next;
+	PianoSong_t *nextSong = PianoListNextP (selSong);
 	if (nextSong != NULL) {
 		BarUiListSongs (&app->settings, nextSong, NULL);
 	} else {
@@ -527,27 +519,24 @@ static void BarUiActQuickmixCallback (BarApp_t *app, char *buf) {
 	switch (*buf) {
 		case 't':
 			/* toggle */
-			while (curStation != NULL) {
+			PianoListForeachP (curStation) {
 				curStation->useQuickMix = !curStation->useQuickMix;
-				curStation = curStation->next;
 			}
 			*buf = '\0';
 			break;
 
 		case 'a':
 			/* enable all */
-			while (curStation != NULL) {
+			PianoListForeachP (curStation) {
 				curStation->useQuickMix = true;
-				curStation = curStation->next;
 			}
 			*buf = '\0';
 			break;
 
 		case 'n':
 			/* enable none */
-			while (curStation != NULL) {
+			PianoListForeachP (curStation) {
 				curStation->useQuickMix = false;
-				curStation = curStation->next;
 			}
 			*buf = '\0';
 			break;

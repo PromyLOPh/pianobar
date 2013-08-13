@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2012
+Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -193,21 +193,13 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				}
 
 				/* start new linked list or append */
-				if (ph->stations == NULL) {
-					ph->stations = tmpStation;
-				} else {
-					PianoStation_t *curStation = ph->stations;
-					while (curStation->next != NULL) {
-						curStation = curStation->next;
-					}
-					curStation->next = tmpStation;
-				}
+				ph->stations = PianoListAppendP (ph->stations, tmpStation);
 			}
 
 			/* fix quickmix flags */
 			if (mix != NULL) {
 				PianoStation_t *curStation = ph->stations;
-				while (curStation != NULL) {
+				PianoListForeachP (curStation) {
 					for (size_t i = 0; i < json_object_array_length (mix); i++) {
 						json_object *id = json_object_array_get_idx (mix, i);
 						if (strcmp (json_object_get_string (id),
@@ -215,7 +207,6 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 							curStation->useQuickMix = true;
 						}
 					}
-					curStation = curStation->next;
 				}
 			}
 			break;
@@ -293,16 +284,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 						break;
 				}
 
-				/* begin linked list or append */
-				if (playlist == NULL) {
-					playlist = song;
-				} else {
-					PianoSong_t *curSong = playlist;
-					while (curSong->next != NULL) {
-						curSong = curSong->next;
-					}
-					curSong->next = song;
-				}
+				playlist = PianoListAppendP (playlist, song);
 			}
 
 			reqData->retPlaylist = playlist;
@@ -340,23 +322,9 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 
 			assert (station != NULL);
 
-			/* delete station from local station list */
-			PianoStation_t *curStation = ph->stations, *lastStation = NULL;
-			while (curStation != NULL) {
-				if (curStation == station) {
-					if (lastStation != NULL) {
-						lastStation->next = curStation->next;
-					} else {
-						/* first station in list */
-						ph->stations = curStation->next;
-					}
-					PianoDestroyStation (curStation);
-					free (curStation);
-					break;
-				}
-				lastStation = curStation;
-				curStation = curStation->next;
-			}
+			ph->stations = PianoListDeleteP (ph->stations, station);
+			PianoDestroyStation (station);
+			free (station);
 			break;
 		}
 
@@ -385,16 +353,8 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					artist->name = PianoJsonStrdup (a, "artistName");
 					artist->musicId = PianoJsonStrdup (a, "musicToken");
 
-					/* add result to linked list */
-					if (searchResult->artists == NULL) {
-						searchResult->artists = artist;
-					} else {
-						PianoArtist_t *curArtist = searchResult->artists;
-						while (curArtist->next != NULL) {
-							curArtist = curArtist->next;
-						}
-						curArtist->next = artist;
-					}
+					searchResult->artists =
+							PianoListAppendP (searchResult->artists, artist);
 				}
 			}
 
@@ -413,16 +373,8 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					song->artist = PianoJsonStrdup (s, "artistName");
 					song->musicId = PianoJsonStrdup (s, "musicToken");
 
-					/* add result to linked list */
-					if (searchResult->songs == NULL) {
-						searchResult->songs = song;
-					} else {
-						PianoSong_t *curSong = searchResult->songs;
-						while (curSong->next != NULL) {
-							curSong = curSong->next;
-						}
-						curSong->next = song;
-					}
+					searchResult->songs =
+							PianoListAppendP (searchResult->songs, song);
 				}
 			}
 			break;
@@ -438,32 +390,14 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 
 			PianoJsonParseStation (result, tmpStation);
 
-			if (ph->stations == NULL) {
-				ph->stations = tmpStation;
-			} else {
-				PianoStation_t *curStation = ph->stations, *prevStation = NULL;
-				while (curStation->next != NULL) {
-					/* replace if station with same id exists already */
-					if (strcmp (curStation->id, tmpStation->id) == 0) {
-						if (prevStation == NULL) {
-							ph->stations = tmpStation;
-						} else {
-							prevStation->next = tmpStation;
-						}
-						tmpStation->next = curStation->next;
-
-						PianoDestroyStation (curStation);
-						free (curStation);
-						break;
-					}
-					prevStation = curStation;
-					curStation = curStation->next;
-				}
-				/* append otherwise */
-				if (tmpStation->next == NULL) {
-					curStation->next = tmpStation;
-				}
+			PianoStation_t *search = PianoFindStationById (ph->stations,
+					tmpStation->id);
+			if (search != NULL) {
+				ph->stations = PianoListDeleteP (ph->stations, search);
+				PianoDestroyStation (search);
+				free (search);
 			}
+			ph->stations = PianoListAppendP (ph->stations, tmpStation);
 			break;
 		}
 
@@ -514,29 +448,14 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 							tmpGenre->musicId = PianoJsonStrdup (s,
 									"stationToken");
 
-							/* append station */
-							if (tmpGenreCategory->genres == NULL) {
-								tmpGenreCategory->genres = tmpGenre;
-							} else {
-								PianoGenre_t *curGenre =
-										tmpGenreCategory->genres;
-								while (curGenre->next != NULL) {
-									curGenre = curGenre->next;
-								}
-								curGenre->next = tmpGenre;
-							}
+							tmpGenreCategory->genres =
+									PianoListAppendP (tmpGenreCategory->genres,
+									tmpGenre);
 						}
 					}
-					/* append category */
-					if (ph->genreStations == NULL) {
-						ph->genreStations = tmpGenreCategory;
-					} else {
-						PianoGenreCategory_t *curCat = ph->genreStations;
-						while (curCat->next != NULL) {
-							curCat = curCat->next;
-						}
-						curCat->next = tmpGenreCategory;
-					}
+
+					ph->genreStations = PianoListAppendP (ph->genreStations,
+							tmpGenreCategory);
 				}
 			}
 			break;
@@ -615,15 +534,8 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 						seedSong->artist = PianoJsonStrdup (s, "artistName");
 						seedSong->seedId = PianoJsonStrdup (s, "seedId");
 
-						if (info->songSeeds == NULL) {
-							info->songSeeds = seedSong;
-						} else {
-							PianoSong_t *curSong = info->songSeeds;
-							while (curSong->next != NULL) {
-								curSong = curSong->next;
-							}
-							curSong->next = seedSong;
-						}
+						info->songSeeds = PianoListAppendP (info->songSeeds,
+								seedSong);
 					}
 				}
 
@@ -643,15 +555,8 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 						seedArtist->name = PianoJsonStrdup (a, "artistName");
 						seedArtist->seedId = PianoJsonStrdup (a, "seedId");
 
-						if (info->artistSeeds == NULL) {
-							info->artistSeeds = seedArtist;
-						} else {
-							PianoArtist_t *curArtist = info->artistSeeds;
-							while (curArtist->next != NULL) {
-								curArtist = curArtist->next;
-							}
-							curArtist->next = seedArtist;
-						}
+						info->artistSeeds =
+								PianoListAppendP (info->artistSeeds, seedArtist);
 					}
 				}
 			}
@@ -679,16 +584,8 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 								json_object_object_get (s, "isPositive")) ?
 								PIANO_RATE_LOVE : PIANO_RATE_BAN;
 
-
-						if (info->feedback == NULL) {
-							info->feedback = feedbackSong;
-						} else {
-							PianoSong_t *curSong = info->feedback;
-							while (curSong->next != NULL) {
-								curSong = curSong->next;
-							}
-							curSong->next = feedbackSong;
-						}
+						info->feedback = PianoListAppendP (info->feedback,
+								feedbackSong);
 					}
 				}
 			}
