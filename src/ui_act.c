@@ -347,7 +347,8 @@ BarUiActCallback(BarUiActDebug) {
 	BarUiMsg (&app->settings, MSG_NONE,
 			"album:\t%s\n"
 			"artist:\t%s\n"
-			"audioFormat:\t%i\n"
+			"audioFormat:\t%s\n"
+			"audioQualitySetting:\t%s\n"
 			"audioUrl:\t%s\n"
 			"coverArt:\t%s\n"
 			"detailUrl:\t%s\n"
@@ -359,7 +360,13 @@ BarUiActCallback(BarUiActDebug) {
 			"trackToken:\t%s\n",
 			selSong->album,
 			selSong->artist,
-			selSong->audioFormat,
+			(selSong->audioFormat==PIANO_AF_UNKNOWN?"UNKNOWN":
+				(selSong->audioFormat==PIANO_AF_AACPLUS?"AAC PLUS":
+				(selSong->audioFormat==PIANO_AF_MP3?"MP3":"INVALID"))),
+			(app->settings.audioQuality == PIANO_AQ_UNKNOWN?"UNKNOWN":
+				(app->settings.audioQuality == PIANO_AQ_LOW?"LOW":
+				(app->settings.audioQuality == PIANO_AQ_MEDIUM?"MEDIUM":
+				(app->settings.audioQuality == PIANO_AQ_HIGH?"HIGH":"INVALID")))),
 			selSong->audioUrl,
 			selSong->coverArt,
 			selSong->detailUrl,
