@@ -784,3 +784,19 @@ BarUiActCallback(BarUiActManageStation) {
 	PianoDestroyStationInfo (&reqData.info);
 }
 
+/*  Download song using curl
+ */
+BarUiActCallback(BarUiActSave) {
+	char buffer [1000];
+	PianoReturn_t pRet;
+	WaitressReturn_t wRet;
+	assert (selStation != NULL);
+	assert (selSong != NULL);
+	sprintf(buffer, "Starting download: %s - %s.%s\n", selSong->artist, selSong->title,
+			selSong->audioFormat==PIANO_AF_AACPLUS?"m4a":"mp3");
+	BarUiMsg (&app->settings, MSG_INFO, buffer);
+	sprintf (buffer, "curl -# \"%s\" > \"%s - %s.%s\"", selSong->audioUrl,
+			selSong->artist, selSong->title, selSong->audioFormat==PIANO_AF_AACPLUS?"m4a":"mp3");
+	system(buffer);
+	BarUiActDefaultEventcmd ("songsave");
+}
