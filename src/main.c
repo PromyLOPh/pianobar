@@ -370,15 +370,29 @@ static void BarMainLoop (BarApp_t *app) {
 		 * song */
 		if (app->player.mode == PLAYER_FREED && app->curStation != NULL) {
 			/* what's next? */
-			if (app->playlist != NULL) {
+			if (app->playlist != NULL && !app->doRestart && !app->doPrevious) {
 				PianoSong_t *histsong = app->playlist;
 				app->playlist = PianoListNextP (app->playlist);
 				histsong->head.next = NULL;
 				BarUiHistoryPrepend (app, histsong);
-			}
+			}else app->doRestart = false;
+
 			if (app->playlist == NULL) {
 				BarMainGetPlaylist (app);
 			}
+
+			if(app->doPrevious)
+			{
+				if(app->songHistory != NULL)
+				{
+					PianoSong_t *lastsong = app->songHistory;
+					app->songHistory = PianoListDeleteP (app->songHistory, app->songHistory);
+					lastsong->head.next = NULL;
+					app->playlist = PianoListPrependP (app->playlist, lastsong);
+					app->doPrevious = false;
+				} 
+ 			}
+
 			/* song ready to play */
 			if (app->playlist != NULL) {
 				BarMainStartPlayback (app, &playerThread);

@@ -62,5 +62,7 @@ BarUiActCallback(BarUiActVolUp);
 BarUiActCallback(BarUiActManageStation);
 BarUiActCallback(BarUiActVolReset);
 BarUiActCallback(BarUiActSave);
+BarUiActCallback(BarUiActRestartSong);
+BarUiActCallback(BarUiActPreviousSong);
 
 #endif /* _UI_ACT_H */

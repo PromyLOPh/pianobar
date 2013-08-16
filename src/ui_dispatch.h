@@ -97,14 +97,18 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_songpausetoggle2"},
 		{'v', BAR_DC_SONG, BarUiActCreateStationFromSong,
 				"create new station from song or artist", "act_stationcreatefromsong"},
+		{'L', BAR_DC_SONG, BarUiActSave, "\"loot\" (save) song",
+				"act_save"},
+		{'N', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPreviousSong, "play previous song",
+				"act_songrestart"},
 		{'P', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPlay, "resume playback",
 				"act_songplay"},
+		{'R', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActRestartSong, "restart current song",
+				"act_songrestart"},
 		{'S', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, "pause playback",
 				"act_songpause"},
 		{'^', BAR_DC_GLOBAL, BarUiActVolReset, "reset volume",
 				"act_volreset"},
-		{'l', BAR_DC_SONG, BarUiActSave, "\"loot\" (save) song",
-				"act_save"},
 		};
 
 #include <piano.h>

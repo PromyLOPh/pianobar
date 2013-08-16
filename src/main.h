@@ -41,6 +41,8 @@ typedef struct {
 	PianoSong_t *songHistory;
 	PianoStation_t *curStation;
 	char doQuit;
+	bool doRestart;
+	bool doPrevious;
 	BarReadlineFds_t input;
 	unsigned int playerErrors;
 } BarApp_t;

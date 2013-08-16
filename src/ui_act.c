@@ -413,6 +413,25 @@ BarUiActCallback(BarUiActSkipSong) {
 	BarUiDoSkipSong (&app->player);
 }
 
+/*	restart
+ */
+BarUiActCallback(BarUiActRestartSong) {
+	app->doRestart = true;
+	BarUiDoSkipSong (&app->player);
+}
+
+/*	previous
+ */
+BarUiActCallback(BarUiActPreviousSong) {
+	if(app->songHistory == NULL) {
+		BarUiMsg (&app->settings, MSG_ERR, "History empty!\n");
+		return;
+	}
+
+	app->doPrevious = true;
+	BarUiDoSkipSong (&app->player);
+}
+
 /*	play
  */
 BarUiActCallback(BarUiActPlay) {
