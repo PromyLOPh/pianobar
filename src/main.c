@@ -384,16 +384,13 @@ static void BarMainLoop (BarApp_t *app) {
 				BarMainGetPlaylist (app);
 			}
 
-			if(app->doPrevious)
+			if(app->doPrevious && app->songHistory != NULL)
 			{
-				if(app->songHistory != NULL)
-				{
-					PianoSong_t *lastsong = app->songHistory;
-					app->songHistory = PianoListDeleteP (app->songHistory, app->songHistory);
-					lastsong->head.next = NULL;
-					app->playlist = PianoListPrependP (app->playlist, lastsong);
-					app->doPrevious = false;
-				} 
+				PianoSong_t *lastsong = app->songHistory;
+				app->songHistory = PianoListDeleteP (app->songHistory, app->songHistory);
+				lastsong->head.next = NULL;
+				app->playlist = PianoListPrependP (app->playlist, lastsong);
+				app->doPrevious = false;
  			}
 
 			/* song ready to play */

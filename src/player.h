@@ -51,7 +51,6 @@ THE SOFTWARE.
 struct audioPlayer {
 	bool doQuit; /* protected by pauseMutex */
 	bool doPause; /* protected by pauseMutex */
-
 	unsigned char channels;
 	unsigned char aoError;
 
