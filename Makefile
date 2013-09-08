@@ -68,6 +68,9 @@ LIBWAITRESS_OBJ:=${LIBWAITRESS_SRC:.c=.o}
 LIBWAITRESS_RELOBJ:=${LIBWAITRESS_SRC:.c=.lo}
 LIBWAITRESS_INCLUDE:=${LIBWAITRESS_DIR}
 
+LIBWAITRESS_TEST_SRC=${LIBWAITRESS_DIR}/waitress-test.c
+LIBWAITRESS_TEST_OBJ:=${LIBWAITRESS_TEST_SRC:.c=.o}
+
 ifeq (${DISABLE_FAAD}, 1)
 	LIBFAAD_CFLAGS:=
 	LIBFAAD_LDFLAGS:=
@@ -189,9 +192,8 @@ debug: CFLAGS=-pedantic -ggdb -Wall -Wmissing-declarations -Wshadow -Wcast-qual 
 # -Wstack-protector: we don't use stack protector
 # -Woverlength-strings: over-portability-ish
 
-waitress-test: CFLAGS+= -DTEST
-waitress-test: ${LIBWAITRESS_OBJ}
-	${CC} ${LDFLAGS} ${LIBWAITRESS_OBJ} ${LIBGNUTLS_LDFLAGS} -o waitress-test
+waitress-test: ${LIBWAITRESS_TEST_OBJ}
+	${CC} ${LDFLAGS} ${LIBWAITRESS_TEST_OBJ} ${LIBGNUTLS_LDFLAGS} -o waitress-test
 
 test: waitress-test
 	./waitress-test
