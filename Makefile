@@ -1,22 +1,33 @@
 # makefile of pianobar
 
+ifeq (${PREFIX},)
 PREFIX:=/usr/local
+endif
 BINDIR:=${PREFIX}/bin
 LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
+ifeq (${SHARED},)
 DYNLINK:=0
+endif
+ifeq (${SHARED},1)
+DYNLINK:=1
+endif
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
 	CFLAGS=-O2 -DNDEBUG
 endif
-ifeq (${CC},cc)
+ifeq (${CC},)
 	OS := $(shell uname)
 	ifeq (${OS},Darwin)
 		CC=gcc -std=c99
 	else ifeq (${OS},FreeBSD)
 		CC=cc -std=c99
+	else ifeq (${OS},Linux)
+	    CC=gcc -std=c99
+	else ifeq (${OS},CYGWIN_NT-6.1)
+	    CC=gcc -std=c99
 	else
 		CC=c99
 	endif
