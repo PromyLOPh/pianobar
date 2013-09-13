@@ -1,11 +1,17 @@
 # makefile of pianobar
 
+ifeq (${PREFIX},)
 PREFIX:=/usr/local
+endif
 BINDIR:=${PREFIX}/bin
 LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
+ifeq (${SHARED},1)
+DYNLINK:=1
+else
 DYNLINK:=0
+endif
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
@@ -17,6 +23,8 @@ ifeq (${CC},cc)
 		CC=gcc -std=c99
 	else ifeq (${OS},FreeBSD)
 		CC=cc -std=c99
+	else ifeq (${OS},CYGWIN_NT-*)
+	    CC=gcc -std=gnu99
 	else
 		CC=c99
 	endif
@@ -115,6 +123,7 @@ pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
 endif
 
 # build shared and static libpiano
+libpiano: libpiano.so.0
 libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 		${LIBWAITRESS_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
 	@echo "  LINK  $@"
@@ -216,5 +225,5 @@ install-libpiano:
 	install -m644 libpiano.a ${DESTDIR}/${LIBDIR}/
 	install -d ${DESTDIR}/${INCDIR}/
 	install -m644 src/libpiano/piano.h ${DESTDIR}/${INCDIR}/
-
+		
 .PHONY: install install-libpiano test debug all
