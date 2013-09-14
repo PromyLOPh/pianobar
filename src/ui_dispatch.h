@@ -2,6 +2,9 @@
 Copyright (c) 2010-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
+Copyright (c) 2013
+	Elias Oenal <pianobar@eliasoenal.com>
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -97,8 +100,14 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_songpausetoggle2"},
 		{'v', BAR_DC_SONG, BarUiActCreateStationFromSong,
 				"create new station from song or artist", "act_stationcreatefromsong"},
+		{'L', BAR_DC_SONG, BarUiActSave, "\"loot\" (save) song",
+				"act_save"},
+		{'N', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPreviousSong, "play previous song",
+				"act_songrestart"},
 		{'P', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPlay, "resume playback",
 				"act_songplay"},
+		{'R', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActRestartSong, "restart current song",
+				"act_songrestart"},
 		{'S', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPause, "pause playback",
 				"act_songpause"},
 		{'^', BAR_DC_GLOBAL, BarUiActVolReset, "reset volume",
