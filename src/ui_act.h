@@ -2,6 +2,9 @@
 Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
+Copyright (c) 2013
+	Elias Oenal <pianobar@eliasoenal.com>
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -61,5 +64,8 @@ BarUiActCallback(BarUiActVolDown);
 BarUiActCallback(BarUiActVolUp);
 BarUiActCallback(BarUiActManageStation);
 BarUiActCallback(BarUiActVolReset);
+BarUiActCallback(BarUiActSave);
+BarUiActCallback(BarUiActRestartSong);
+BarUiActCallback(BarUiActPreviousSong);
 
 #endif /* _UI_ACT_H */

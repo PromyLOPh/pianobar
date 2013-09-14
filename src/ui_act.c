@@ -2,6 +2,9 @@
 Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
+Copyright (c) 2013
+	Elias Oenal <pianobar@eliasoenal.com>
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -347,7 +350,8 @@ BarUiActCallback(BarUiActDebug) {
 	BarUiMsg (&app->settings, MSG_NONE,
 			"album:\t%s\n"
 			"artist:\t%s\n"
-			"audioFormat:\t%i\n"
+			"audioFormat:\t%s\n"
+			"audioQualitySetting:\t%s\n"
 			"audioUrl:\t%s\n"
 			"coverArt:\t%s\n"
 			"detailUrl:\t%s\n"
@@ -359,7 +363,13 @@ BarUiActCallback(BarUiActDebug) {
 			"trackToken:\t%s\n",
 			selSong->album,
 			selSong->artist,
-			selSong->audioFormat,
+			(selSong->audioFormat==PIANO_AF_UNKNOWN?"UNKNOWN":
+				(selSong->audioFormat==PIANO_AF_AACPLUS?"AAC PLUS":
+				(selSong->audioFormat==PIANO_AF_MP3?"MP3":"INVALID"))),
+			(app->settings.audioQuality == PIANO_AQ_UNKNOWN?"UNKNOWN":
+				(app->settings.audioQuality == PIANO_AQ_LOW?"LOW":
+				(app->settings.audioQuality == PIANO_AQ_MEDIUM?"MEDIUM":
+				(app->settings.audioQuality == PIANO_AQ_HIGH?"HIGH":"INVALID")))),
 			selSong->audioUrl,
 			selSong->coverArt,
 			selSong->detailUrl,
@@ -403,6 +413,25 @@ BarUiActCallback(BarUiActLoveSong) {
 /*	skip song
  */
 BarUiActCallback(BarUiActSkipSong) {
+	BarUiDoSkipSong (&app->player);
+}
+
+/*	restart
+ */
+BarUiActCallback(BarUiActRestartSong) {
+	app->doRestart = true;
+	BarUiDoSkipSong (&app->player);
+}
+
+/*	previous
+ */
+BarUiActCallback(BarUiActPreviousSong) {
+	if(app->songHistory == NULL) {
+		BarUiMsg (&app->settings, MSG_ERR, "History empty!\n");
+		return;
+	}
+
+	app->doPrevious = true;
 	BarUiDoSkipSong (&app->player);
 }
 
@@ -777,3 +806,19 @@ BarUiActCallback(BarUiActManageStation) {
 	PianoDestroyStationInfo (&reqData.info);
 }
 
+/*  Download song using curl
+ */
+BarUiActCallback(BarUiActSave) {
+	char buffer [1000];
+	PianoReturn_t pRet;
+	WaitressReturn_t wRet;
+	assert (selStation != NULL);
+	assert (selSong != NULL);
+	sprintf(buffer, "Starting download: %s - %s.%s\n", selSong->artist, selSong->title,
+			selSong->audioFormat==PIANO_AF_AACPLUS?"m4a":"mp3");
+	BarUiMsg (&app->settings, MSG_INFO, buffer);
+	sprintf (buffer, "curl -# \"%s\" > \"%s - %s.%s\"", selSong->audioUrl,
+			selSong->artist, selSong->title, selSong->audioFormat==PIANO_AF_AACPLUS?"m4a":"mp3");
+	system(buffer);
+	BarUiActDefaultEventcmd ("songsave");
+}
