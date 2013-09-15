@@ -1,3 +1,13 @@
+Release 2013.09.15
+
+- Generic linked lists for libpiano. This change breaks libpiano’s API and
+  ABI!
+- New reset volume keyboard shortcut (^)
+- libgcrypt error handling
+- Fix display of lists with more than 999 items
+- Fix duplicate/“ghost” stations
+- Fix libwaitress not trying all addresses returned by getaddrinfo
+
 Release 2013.05.19
 
 - Keyboard shortcuts for play/pause, config setting act_songpause has been
