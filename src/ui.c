@@ -90,6 +90,16 @@ static const char *BarStrCaseStr (const char *haystack, const char *needle) {
 	return NULL;
 }
 
+/* clear terminal screen
+ */
+void BarUiClear () {
+	/* print ANSI clear screen */
+	fputs ("\033[2J", stdout);
+	/* move cursor back to upper-left */
+	fputs ("\033[f", stdout);
+	fflush (stdout);
+}
+
 /*	output message and flush stdout
  *	@param message
  */
@@ -775,7 +785,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 			const char * const msg = "stationCount=0\n";
 			fwrite (msg, sizeof (*msg), strlen (msg), pipeWriteFd);
 		}
-	
+
 		/* closes pipeFd[1] as well */
 		fclose (pipeWriteFd);
 		/* wait to get rid of the zombie */
