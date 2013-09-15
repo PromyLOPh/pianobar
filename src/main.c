@@ -2,6 +2,9 @@
 Copyright (c) 2008-2013
 	Lars-Dominik Braun <lars@6xq.net>
 
+Copyright (c) 2013
+	Elias Oenal <pianobar@eliasoenal.com>
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -370,15 +373,26 @@ static void BarMainLoop (BarApp_t *app) {
 		 * song */
 		if (app->player.mode == PLAYER_FREED && app->curStation != NULL) {
 			/* what's next? */
-			if (app->playlist != NULL) {
+			if (app->playlist != NULL && !app->doRestart && !app->doPrevious) {
 				PianoSong_t *histsong = app->playlist;
 				app->playlist = PianoListNextP (app->playlist);
 				histsong->head.next = NULL;
 				BarUiHistoryPrepend (app, histsong);
-			}
+			}else app->doRestart = false;
+
 			if (app->playlist == NULL) {
 				BarMainGetPlaylist (app);
 			}
+
+			if(app->doPrevious && app->songHistory != NULL)
+			{
+				PianoSong_t *lastsong = app->songHistory;
+				app->songHistory = PianoListDeleteP (app->songHistory, app->songHistory);
+				lastsong->head.next = NULL;
+				app->playlist = PianoListPrependP (app->playlist, lastsong);
+				app->doPrevious = false;
+ 			}
+
 			/* song ready to play */
 			if (app->playlist != NULL) {
 				BarMainStartPlayback (app, &playerThread);
