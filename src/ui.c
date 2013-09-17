@@ -738,7 +738,8 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 				"songDuration=%lu\n"
 				"songPlayed=%lu\n"
 				"rating=%i\n"
-				"detailUrl=%s\n",
+				"detailUrl=%s\n"
+				"doPause=%s\n",
 				curSong == NULL ? "" : curSong->artist,
 				curSong == NULL ? "" : curSong->title,
 				curSong == NULL ? "" : curSong->album,
@@ -752,7 +753,8 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 				player->songDuration,
 				player->songPlayed,
 				curSong == NULL ? PIANO_RATE_NONE : curSong->rating,
-				curSong == NULL ? "" : curSong->detailUrl
+				curSong == NULL ? "" : curSong->detailUrl,
+				player->doPause == true ? "Paused" : "Playing"
 				);
 
 		if (stations != NULL) {
