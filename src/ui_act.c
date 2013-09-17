@@ -413,6 +413,10 @@ BarUiActCallback(BarUiActPlay) {
 	app->player.doPause = false;
 	pthread_cond_broadcast (&app->player.pauseCond);
 	pthread_mutex_unlock (&app->player.pauseMutex);
+	
+	BarUiStartEventCmd (&app->settings, "songplay",
+			app->curStation, app->playlist, &app->player, app->ph.stations,
+			PIANO_RET_OK, WAITRESS_RET_OK);
 }
 
 /*	pause
@@ -422,6 +426,10 @@ BarUiActCallback(BarUiActPause) {
 	app->player.doPause = true;
 	pthread_cond_broadcast (&app->player.pauseCond);
 	pthread_mutex_unlock (&app->player.pauseMutex);
+	
+	BarUiStartEventCmd (&app->settings, "songpause",
+			app->curStation, app->playlist, &app->player, app->ph.stations,
+			PIANO_RET_OK, WAITRESS_RET_OK);
 }
 
 /*	toggle pause
@@ -429,6 +437,20 @@ BarUiActCallback(BarUiActPause) {
 BarUiActCallback(BarUiActTogglePause) {
 	pthread_mutex_lock (&app->player.pauseMutex);
 	app->player.doPause = !app->player.doPause;
+	
+	if(true == app->player.doPause)
+	{
+		BarUiStartEventCmd (&app->settings, "songpause",
+				app->curStation, app->playlist, &app->player, app->ph.stations,
+				PIANO_RET_OK, WAITRESS_RET_OK);
+	}
+	else
+	{
+		BarUiStartEventCmd (&app->settings, "songplay",
+				app->curStation, app->playlist, &app->player, app->ph.stations,
+				PIANO_RET_OK, WAITRESS_RET_OK);
+	}
+	
 	pthread_cond_broadcast (&app->player.pauseCond);
 	pthread_mutex_unlock (&app->player.pauseMutex);
 }
