@@ -17,6 +17,8 @@ ifeq (${CC},cc)
 		CC=gcc -std=c99
 	else ifeq (${OS},FreeBSD)
 		CC=cc -std=c99
+	else ifeq (${OS},OpenBSD)
+		CC=cc -std=c99
 	else
 		CC=c99
 	endif
