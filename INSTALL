@@ -62,3 +62,22 @@ To install on Ubuntu >= 12.04
 	sudo make install
 
 You can then fire it up with `pianobar`
+
+OS X Using [Macports](http://www.macports.org/)
++++++++++++++++++++
+
+	cd [path/to/pianobar/]
+
+Install libraries:
+
+	sudo port install \
+		gmake \
+		libao \
+		gnutls \
+		libgcrypt \
+		json-c \
+		faad2 \
+		libmad
+	gmake clean && gmake
+	
+You should now have a `pianobar` executable in the folder
