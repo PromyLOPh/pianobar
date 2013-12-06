@@ -70,6 +70,7 @@ XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 FIFO=$XDG_CONFIG_HOME/pianobar/ctl
 OUT=$XDG_CONFIG_HOME/pianobar/out
 CONFIG=$XDG_CONFIG_HOME/pianobar/config
+SELF=$0
 
 
 # Load the pianobar config file as bash variables
@@ -142,7 +143,7 @@ output(){
         # Sanity check: ensure pianobar's output can be read.
         if [ ! -f $OUT ]
         then
-                echo "pianobar does not seem to be outputting to $OUT, try killing it and starting $0 again"
+                echo "pianobar does not seem to be outputting to $OUT, try killing it and starting $SELF again"
                 exit 2
         fi
 
