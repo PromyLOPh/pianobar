@@ -148,7 +148,7 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 				break;
 
 			/* clear line */
-			case '':
+			case 21:
 				/* move caret back and delete last character */
 				if (echo) {
 					for(int i = 0; i < bufLen; i++)
