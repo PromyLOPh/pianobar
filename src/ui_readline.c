@@ -154,8 +154,8 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 					for(int i = 0; i < bufLen; i++)
 					{
 						fputs ("\033[D\033[K", stdout);
-						fflush (stdout);
 					}
+					fflush (stdout);
 				}
 				bufPos = 0;
 				bufLen = 0;
