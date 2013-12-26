@@ -161,6 +161,7 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 				bufLen = 0;
 
 				buf[0] = '\0';
+				break;
 
 			default:
 				/* ignore control/escape characters */
