@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2011
+Copyright (c) 2008-2014
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -53,7 +53,6 @@ static size_t BarReadlinePrevUtf8 (char *ptr) {
  */
 size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 		BarReadlineFds_t *input, const BarReadlineFlags_t flags, int timeout) {
-	size_t bufPos = 0;
 	size_t bufLen = 0;
 	unsigned char escapeState = 0;
 	fd_set set;
@@ -107,7 +106,24 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 				if (echo) {
 					fputs ("\n", stdout);
 				}
+				buf[bufLen] = '\0';
 				return bufLen;
+				break;
+
+			/* clear line */
+			case 21:
+				if (echo) {
+					while (bufLen > 0) {
+						const size_t moveSize = BarReadlinePrevUtf8 (&buf[bufLen]);
+						assert (bufLen >= moveSize);
+
+						/* move caret and delete character */
+						fputs ("\033[D\033[K", stdout);
+						bufLen -= moveSize;
+					}
+					fflush (stdout);
+				}
+				bufLen = 0;
 				break;
 
 			/* escape */
@@ -122,26 +138,16 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 			/* backspace */
 			case 8: /* ASCII BS */
 			case 127: /* ASCII DEL */
-				if (bufPos > 0) {
-					size_t moveSize = BarReadlinePrevUtf8 (&buf[bufPos]);
-					assert ((signed int) bufPos - (signed int) moveSize >= 0);
-					memmove (&buf[bufPos-moveSize], &buf[bufPos], moveSize);
+				if (bufLen > 0) {
+					size_t moveSize = BarReadlinePrevUtf8 (&buf[bufLen]);
+					assert (bufLen >= moveSize);
+					memmove (&buf[bufLen-moveSize], &buf[bufLen], moveSize);
 
-					bufPos -= moveSize;
 					bufLen -= moveSize;
-
-					buf[bufLen] = '\0';
 
 					/* move caret back and delete last character */
 					if (echo) {
 						fputs ("\033[D\033[K", stdout);
-						fflush (stdout);
-					}
-				} else if (bufPos == 0 && buf[bufPos] != '\0') {
-					/* delete char at position 0 but don't move cursor any further */
-					buf[bufPos] = '\0';
-					if (echo) {
-						fputs ("\033[K", stdout);
 						fflush (stdout);
 					}
 				}
@@ -165,25 +171,26 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 					break;
 				}
 				/* don't write beyond buffer's limits */
-				if (bufPos < bufSize-1) {
-					buf[bufPos] = chr;
-					++bufPos;
+				if (bufLen < bufSize-1) {
+					buf[bufLen] = chr;
 					++bufLen;
 					if (echo) {
 						putchar (chr);
 						fflush (stdout);
 					}
 					/* buffer full => return if requested */
-					if (bufPos >= bufSize-1 && (flags & BAR_RL_FULLRETURN)) {
+					if (bufLen >= bufSize-1 && (flags & BAR_RL_FULLRETURN)) {
 						if (echo) {
 							fputs ("\n", stdout);
 						}
+						buf[bufLen] = '\0';
 						return bufLen;
 					}
 				}
 				break;
 		} /* end switch */
 	} /* end while */
+	buf[0] = '\0';
 	return 0;
 }
 
