@@ -873,6 +873,10 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 			}
 		}
 
+		/* Ignore return code as connection will likely still succeed */
+		gnutls_server_name_set(waith->request.tlsSession, GNUTLS_NAME_DNS,
+				waith->url.host, strlen(waith->url.host));
+
 		if (gnutls_handshake (waith->request.tlsSession) != GNUTLS_E_SUCCESS) {
 			return WAITRESS_RET_TLS_HANDSHAKE_ERR;
 		}
