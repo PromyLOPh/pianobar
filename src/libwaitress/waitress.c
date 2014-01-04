@@ -914,21 +914,18 @@ static WaitressReturn_t WaitressSendRequest (WaitressHandle_t *waith) {
 	/* send request */
 	if (WaitressProxyEnabled (waith) && !waith->url.tls) {
 		snprintf (buf, WAITRESS_BUFFER_SIZE,
-			"%s http://%s:%s/%s HTTP/" WAITRESS_HTTP_VERSION "\r\n",
+			"%s http://%s:%s/%s HTTP/" WAITRESS_HTTP_VERSION "\r\n"
+			"Host: %s\r\nUser-Agent: " PACKAGE "\r\nConnection: Close\r\n",
 			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
 			waith->url.host,
-			WaitressDefaultPort (&waith->url), path);
+			WaitressDefaultPort (&waith->url), path, waith->url.host);
 	} else {
 		snprintf (buf, WAITRESS_BUFFER_SIZE,
-			"%s /%s HTTP/" WAITRESS_HTTP_VERSION "\r\n",
-			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
-			path);
-	}
-	WRITE_RET (buf, strlen (buf));
-
-	snprintf (buf, WAITRESS_BUFFER_SIZE,
+			"%s /%s HTTP/" WAITRESS_HTTP_VERSION "\r\n"
 			"Host: %s\r\nUser-Agent: " PACKAGE "\r\nConnection: Close\r\n",
-			waith->url.host);
+			(waith->method == WAITRESS_METHOD_GET ? "GET" : "POST"),
+			path, waith->url.host);
+	}
 	WRITE_RET (buf, strlen (buf));
 
 	if (waith->method == WAITRESS_METHOD_POST && waith->postData != NULL) {
