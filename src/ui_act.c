@@ -675,8 +675,12 @@ BarUiActCallback(BarUiActManageStation) {
 	reqData.station = selStation;
 
 	BarUiMsg (&app->settings, MSG_INFO, "Fetching station info... ");
-	BarUiActDefaultPianoCall (PIANO_REQUEST_GET_STATION_INFO, &reqData);
+	const bool bret = BarUiActDefaultPianoCall (PIANO_REQUEST_GET_STATION_INFO,
+			&reqData);
 	BarUiActDefaultEventcmd ("stationfetchinfo");
+	if (!bret) {
+		return;
+	}
 
 	/* enable submenus depending on data availability */
 	strcpy (question, "Delete ");
