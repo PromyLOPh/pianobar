@@ -130,9 +130,8 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			switch (reqData->step) {
 				case 0: {
 					/* decrypt timestamp */
-					const char *cryptedTimestamp = json_object_get_string (
+					const char * const cryptedTimestamp = json_object_get_string (
 							json_object_object_get (result, "syncTime"));
-					unsigned long timestamp = 0;
 					const time_t realTimestamp = time (NULL);
 					char *decryptedTimestamp = NULL;
 					size_t decryptedSize;
@@ -142,8 +141,10 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 							cryptedTimestamp, &decryptedSize)) != NULL &&
 							decryptedSize > 4) {
 						/* skip four bytes garbage(?) at beginning */
-						timestamp = strtoul (decryptedTimestamp+4, NULL, 0);
-						ph->timeOffset = realTimestamp - timestamp;
+						const unsigned long timestamp = strtoul (
+								decryptedTimestamp+4, NULL, 0);
+						ph->timeOffset = (long int) realTimestamp -
+								(long int) timestamp;
 						ret = PIANO_RET_CONTINUE_REQUEST;
 					}
 					free (decryptedTimestamp);
@@ -177,7 +178,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			json_object *stations = json_object_object_get (result,
 					"stations"), *mix = NULL;
 
-			for (size_t i=0; i < json_object_array_length (stations); i++) {
+			for (int i = 0; i < json_object_array_length (stations); i++) {
 				PianoStation_t *tmpStation;
 				json_object *s = json_object_array_get_idx (stations, i);
 
@@ -200,7 +201,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			if (mix != NULL) {
 				PianoStation_t *curStation = ph->stations;
 				PianoListForeachP (curStation) {
-					for (size_t i = 0; i < json_object_array_length (mix); i++) {
+					for (int i = 0; i < json_object_array_length (mix); i++) {
 						json_object *id = json_object_array_get_idx (mix, i);
 						if (strcmp (json_object_get_string (id),
 								curStation->id) == 0) {
@@ -224,7 +225,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			json_object *items = json_object_object_get (result, "items");
 			assert (items != NULL);
 
-			for (size_t i=0; i < json_object_array_length (items); i++) {
+			for (int i = 0; i < json_object_array_length (items); i++) {
 				json_object *s = json_object_array_get_idx (items, i);
 				PianoSong_t *song;
 
@@ -342,7 +343,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			/* get artists */
 			json_object *artists = json_object_object_get (result, "artists");
 			if (artists != NULL) {
-				for (size_t i=0; i < json_object_array_length (artists); i++) {
+				for (int i = 0; i < json_object_array_length (artists); i++) {
 					json_object *a = json_object_array_get_idx (artists, i);
 					PianoArtist_t *artist;
 
@@ -361,7 +362,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			/* get songs */
 			json_object *songs = json_object_object_get (result, "songs");
 			if (songs != NULL) {
-				for (size_t i=0; i < json_object_array_length (songs); i++) {
+				for (int i = 0; i < json_object_array_length (songs); i++) {
 					json_object *s = json_object_array_get_idx (songs, i);
 					PianoSong_t *song;
 
@@ -415,7 +416,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			/* get genre stations */
 			json_object *categories = json_object_object_get (result, "categories");
 			if (categories != NULL) {
-				for (size_t i = 0; i < json_object_array_length (categories); i++) {
+				for (int i = 0; i < json_object_array_length (categories); i++) {
 					json_object *c = json_object_array_get_idx (categories, i);
 					PianoGenreCategory_t *tmpGenreCategory;
 
@@ -431,7 +432,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					json_object *stations = json_object_object_get (c,
 							"stations");
 					if (stations != NULL) {
-						for (size_t k = 0;
+						for (int k = 0;
 								k < json_object_array_length (stations); k++) {
 							json_object *s =
 									json_object_array_get_idx (stations, k);
@@ -486,7 +487,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 						sizeof (*reqData->retExplain));
 				strncpy (reqData->retExplain, "We're playing this track "
 						"because it features ", strSize);
-				for (size_t i=0; i < json_object_array_length (explanations); i++) {
+				for (int i = 0; i < json_object_array_length (explanations); i++) {
 					json_object *e = json_object_array_get_idx (explanations,
 							i);
 					const char *s = json_object_get_string (
@@ -521,7 +522,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				/* songs */
 				json_object *songs = json_object_object_get (music, "songs");
 				if (songs != NULL) {
-					for (size_t i = 0; i < json_object_array_length (songs); i++) {
+					for (int i = 0; i < json_object_array_length (songs); i++) {
 						json_object *s = json_object_array_get_idx (songs, i);
 						PianoSong_t *seedSong;
 
@@ -543,7 +544,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				json_object *artists = json_object_object_get (music,
 						"artists");
 				if (artists != NULL) {
-					for (size_t i = 0; i < json_object_array_length (artists); i++) {
+					for (int i = 0; i < json_object_array_length (artists); i++) {
 						json_object *a = json_object_array_get_idx (artists, i);
 						PianoArtist_t *seedArtist;
 
@@ -566,7 +567,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					"feedback");
 			if (feedback != NULL) {
 				json_object_object_foreach (feedback, key, val) {
-					for (size_t i = 0; i < json_object_array_length (val); i++) {
+					for (int i = 0; i < json_object_array_length (val); i++) {
 						json_object *s = json_object_array_get_idx (val, i);
 						PianoSong_t *feedbackSong;
 

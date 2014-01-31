@@ -83,8 +83,8 @@ unsigned int BarPlayerCalcScale (const float applyGain) {
  */
 static inline signed short int applyReplayGain (const signed short int value,
 		const unsigned int scale) {
-	int tmpReplayBuf = value * scale;
-	/* avoid clipping */
+	int tmpReplayBuf = value * (signed int) scale;
+	/* clipping */
 	if (tmpReplayBuf > SHRT_MAX*RG_SCALE_FACTOR) {
 		return SHRT_MAX;
 	} else if (tmpReplayBuf < SHRT_MIN*RG_SCALE_FACTOR) {

@@ -310,14 +310,17 @@ size_t PianoListCount (const PianoListHead_t * const l);
 #define PianoListCountP(l) PianoListCount(&(l)->head)
 void *PianoListAppend (PianoListHead_t * const l, PianoListHead_t * const e)
 		__attribute__ ((warn_unused_result));
-#define PianoListAppendP(l,e) PianoListAppend(&(l)->head, &(e)->head)
+#define PianoListAppendP(l,e) PianoListAppend(((l) == NULL) ? NULL : &(l)->head, \
+		&(e)->head)
 void *PianoListDelete (PianoListHead_t * const l, PianoListHead_t * const e)
 		__attribute__ ((warn_unused_result));
-#define PianoListDeleteP(l,e) PianoListDelete(&(l)->head, &(e)->head)
+#define PianoListDeleteP(l,e) PianoListDelete(((l) == NULL) ? NULL : &(l)->head, \
+		&(e)->head)
 #define PianoListNextP(e) ((void *) (e)->head.next)
 void *PianoListPrepend (PianoListHead_t * const l, PianoListHead_t * const e)
 		__attribute__ ((warn_unused_result));
-#define PianoListPrependP(l,e) PianoListPrepend (&(l)->head, &(e)->head)
+#define PianoListPrependP(l,e) PianoListPrepend (((l) == NULL) ? NULL : &(l)->head, \
+		&(e)->head)
 void *PianoListGet (PianoListHead_t * const l, const size_t n);
 #define PianoListGetP(l,n) PianoListGet (&(l)->head, n)
 #define PianoListForeachP(l) for (; (l) != NULL; (l) = (void *) (l)->head.next)
