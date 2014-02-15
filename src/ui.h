@@ -37,7 +37,7 @@ THE SOFTWARE.
 
 typedef void (*BarUiSelectStationCallback_t) (BarApp_t *app, char *buf);
 
-void BarUiMsg (const BarSettings_t *, const BarUiMsg_t, const char *, ...);
+void BarUiMsg (const BarSettings_t *, const BarUiMsg_t, const char *, ...) __attribute__((format(printf, 3, 4)));
 PianoStation_t *BarUiSelectStation (BarApp_t *, PianoStation_t *, const char *,
 		BarUiSelectStationCallback_t, bool);
 PianoSong_t *BarUiSelectSong (const BarSettings_t *, PianoSong_t *,
