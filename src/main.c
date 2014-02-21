@@ -246,6 +246,56 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 /*	start new player thread
  */
 static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
+	PianoReturn_t pRet;
+	WaitressReturn_t wRet;
+
+	/* is this an advertising track? */
+	if (app->playlist->adToken != NULL) {
+		PianoRequestDataGetAdMetadata_t adReqData;
+
+		adReqData.token = app->playlist->adToken;
+		adReqData.quality = app->settings.audioQuality;
+
+		BarUiMsg (&app->settings, MSG_INFO, "Fetching ads with token %s... ",
+				adReqData.token);
+		BarUiPianoCall (app, PIANO_REQUEST_GET_AD_METADATA,
+				&adReqData, &pRet, &wRet);
+
+		/* got token? */
+		if (adReqData.retTokenCount > 0) {
+			PianoRequestDataRegisterAd_t regReqData;
+
+			regReqData.token = adReqData.retToken;
+			regReqData.tokenCount = adReqData.retTokenCount;
+			regReqData.station = app->curStation;
+
+			BarUiMsg (&app->settings, MSG_INFO, "Registering ad... ");
+			BarUiPianoCall (app, PIANO_REQUEST_REGISTER_AD, &regReqData, &pRet,
+					&wRet);
+
+			// change the current song to the actual audio ad url
+			app->playlist->audioUrl = adReqData.audioUrl;
+			// you can configure to get silence instead of ads or you can choose
+			// to hear the ads. The default is silence
+			if (app->settings.silenceAds) {
+				app->playlist->fileGain = -999;
+				app->playlist->title = strdup("Audio Ad (Silenced)");
+			} else {
+				app->playlist->fileGain = adReqData.fileGain;
+				app->playlist->title = strdup("Audio Ad");
+			}
+			app->playlist->audioFormat = adReqData.audioFormat;
+			app->playlist->artist = strdup("advertiser");
+			app->playlist->album = strdup("pianobar");
+
+			/* delete */
+			for (size_t i = 0; i < adReqData.retTokenCount; i++) {
+				free (adReqData.retToken[i]);
+			}
+			free (adReqData.retToken);
+		}
+	}
+
 	BarUiPrintSong (&app->settings, app->playlist, app->curStation->isQuickMix ?
 			PianoFindStationById (app->ph.stations,
 			app->playlist->stationId) : NULL);

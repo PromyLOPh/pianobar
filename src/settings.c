@@ -123,6 +123,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	/* apply defaults */
 	settings->audioQuality = PIANO_AQ_HIGH;
 	settings->autoselect = true;
+	settings->silenceAds = true;
 	settings->history = 5;
 	settings->volume = 0;
 	settings->maxPlayerErrors = 5;
@@ -286,6 +287,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->fifo = strdup (val);
 			} else if (streq ("autoselect", key)) {
 				settings->autoselect = atoi (val);
+			} else if (streq ("silence_ads", key)) {
+				settings->silenceAds = atoi (val);
 			} else if (streq ("tls_fingerprint", key)) {
 				/* expects 40 byte hex-encoded sha1 */
 				if (strlen (val) == 40) {

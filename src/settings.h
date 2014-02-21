@@ -106,6 +106,7 @@ typedef struct {
 	char tlsFingerprint[20];
 	char keys[BAR_KS_COUNT];
 	BarMsgFormatStr_t msgFormat[MSG_COUNT];
+	bool silenceAds;
 } BarSettings_t;
 
 #include <piano.h>

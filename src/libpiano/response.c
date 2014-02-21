@@ -26,6 +26,7 @@ THE SOFTWARE.
 #define _DARWIN_C_SOURCE /* strdup() on OS X */
 #endif
 
+#include <stdio.h>
 #include <json.h>
 #include <string.h>
 #include <assert.h>
@@ -37,7 +38,12 @@ THE SOFTWARE.
 #include "crypt.h"
 
 static char *PianoJsonStrdup (json_object *j, const char *key) {
-	return strdup (json_object_get_string (json_object_object_get (j, key)));
+	json_object * const o = json_object_object_get (j, key);
+	if (o != NULL) {
+		return strdup (json_object_get_string (o));
+	} else {
+		return NULL;
+	}
 }
 
 static void PianoJsonParseStation (json_object *j, PianoStation_t *s) {
@@ -71,6 +77,33 @@ static void PianoStrpcat (char * restrict dest, const char * restrict src,
 	}
 
 	*dest = '\0';
+}
+
+/* get audio url based on selected quality */
+static char *extractAudioUrl(json_object *s, PianoAudioQuality_t quality,
+							 PianoAudioFormat_t *audioFormat) {
+	static const char *qualityMap[] = {"", "lowQuality", "mediumQuality",
+			"highQuality"};
+	static const char *formatMap[] = {"", "aacplus", "mp3"};
+	json_object *map = json_object_object_get (s, "audioUrlMap");
+
+	if (map != NULL) {
+		map = json_object_object_get (map, qualityMap[quality]);
+
+		if (map != NULL) {
+			const char *encoding = json_object_get_string (
+					json_object_object_get (map, "encoding"));
+			assert (encoding != NULL);
+			for (size_t k = 0; k < sizeof (formatMap)/sizeof (*formatMap); k++) {
+				if (strcmp (formatMap[k], encoding) == 0) {
+					*audioFormat = k;
+					break;
+				}
+			}
+			return PianoJsonStrdup (map, "audioUrl");;
+		}
+	}
+	return NULL;
 }
 
 /*	parse xml response and update data structures/return new data structure
@@ -233,58 +266,34 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					return PIANO_RET_OUT_OF_MEMORY;
 				}
 
-				if (json_object_object_get (s, "artistName") == NULL) {
-					free (song);
-					continue;
-				}
-
-				/* get audio url based on selected quality */
-				static const char *qualityMap[] = {"", "lowQuality", "mediumQuality",
-						"highQuality"};
-				assert (reqData->quality < sizeof (qualityMap)/sizeof (*qualityMap));
-				static const char *formatMap[] = {"", "aacplus", "mp3"};
-				json_object *map = json_object_object_get (s, "audioUrlMap");
-				assert (map != NULL);
-
-				if (map != NULL) {
-					map = json_object_object_get (map, qualityMap[reqData->quality]);
-
-					if (map != NULL) {
-						const char *encoding = json_object_get_string (
-								json_object_object_get (map, "encoding"));
-						assert (encoding != NULL);
-						for (size_t k = 0; k < sizeof (formatMap)/sizeof (*formatMap); k++) {
-							if (strcmp (formatMap[k], encoding) == 0) {
-								song->audioFormat = k;
-								break;
-							}
-						}
-						song->audioUrl = PianoJsonStrdup (map, "audioUrl");
-					} else {
+				song->adToken = PianoJsonStrdup (s, "adToken");
+				if (!song->adToken) {
+					song->audioUrl = extractAudioUrl(s, reqData->quality,
+													 &(song->audioFormat));
+					if (song->audioUrl == NULL && song->adToken == NULL) {
 						/* requested quality is not available */
 						ret = PIANO_RET_QUALITY_UNAVAILABLE;
 						free (song);
 						PianoDestroyPlaylist (playlist);
 						goto cleanup;
 					}
-				}
 
-				song->artist = PianoJsonStrdup (s, "artistName");
-				song->album = PianoJsonStrdup (s, "albumName");
-				song->title = PianoJsonStrdup (s, "songName");
-				song->trackToken = PianoJsonStrdup (s, "trackToken");
-				song->stationId = PianoJsonStrdup (s, "stationId");
-				song->coverArt = PianoJsonStrdup (s, "albumArtUrl");
-				song->detailUrl = PianoJsonStrdup (s, "songDetailUrl");
-				song->fileGain = json_object_get_double (
-						json_object_object_get (s, "trackGain"));
-				switch (json_object_get_int (json_object_object_get (s,
-						"songRating"))) {
-					case 1:
-						song->rating = PIANO_RATE_LOVE;
-						break;
+					song->artist = PianoJsonStrdup (s, "artistName");
+					song->album = PianoJsonStrdup (s, "albumName");
+					song->title = PianoJsonStrdup (s, "songName");
+					song->trackToken = PianoJsonStrdup (s, "trackToken");
+					song->stationId = PianoJsonStrdup (s, "stationId");
+					song->coverArt = PianoJsonStrdup (s, "albumArtUrl");
+					song->detailUrl = PianoJsonStrdup (s, "songDetailUrl");
+					song->fileGain = json_object_get_double (
+							json_object_object_get (s, "trackGain"));
+					switch (json_object_get_int (json_object_object_get (s,
+							"songRating"))) {
+						case 1:
+							song->rating = PIANO_RATE_LOVE;
+							break;
+					}
 				}
-
 				playlist = PianoListAppendP (playlist, song);
 			}
 
@@ -590,6 +599,40 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					}
 				}
 			}
+			break;
+		}
+
+		case PIANO_REQUEST_GET_AD_METADATA: {
+			PianoRequestDataGetAdMetadata_t *reqData = req->data;
+
+			assert (reqData != NULL);
+
+			json_object *token = json_object_object_get (result,
+					"adTrackingTokens");
+			if (token != NULL) {
+				reqData->retTokenCount = json_object_array_length (token);
+				reqData->retToken = malloc (reqData->retTokenCount *
+						sizeof (*reqData->retToken));
+				for (size_t i = 0; i < reqData->retTokenCount; i++) {
+					json_object * const t = json_object_array_get_idx (token,
+							i);
+					assert (t != NULL);
+					reqData->retToken[i] = strdup (json_object_get_string (t));
+				}
+
+				reqData->audioUrl = extractAudioUrl (result, reqData->quality,
+												     &(reqData->audioFormat));
+				reqData->fileGain = json_object_get_double (
+                						json_object_object_get (result,
+                												"trackGain"));
+			} else {
+				reqData->retTokenCount = 0;
+				reqData->retToken = NULL;
+			}
+			break;
+		}
+
+		case PIANO_REQUEST_REGISTER_AD: {
 			break;
 		}
 	}
