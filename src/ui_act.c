@@ -724,7 +724,7 @@ BarUiActCallback(BarUiActManageStation) {
 		return;
 	}
 
-	BarUiMsg (&app->settings, MSG_QUESTION, question);
+	BarUiMsg (&app->settings, MSG_QUESTION, "%s", question);
 	if (BarReadline (selectBuf, sizeof (selectBuf), allowedActions, &app->input,
 					BAR_RL_FULLRETURN, -1)) {
 		if (selectBuf[0] == 'a') {
