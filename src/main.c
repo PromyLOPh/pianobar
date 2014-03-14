@@ -268,6 +268,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 		app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
 		app->player.audioFormat = app->playlist->audioFormat;
 		app->player.settings = &app->settings;
+		app->player.songDuration = app->playlist->length * 1000;
 		pthread_mutex_init (&app->player.pauseMutex, NULL);
 		pthread_cond_init (&app->player.pauseCond, NULL);
 
@@ -388,8 +389,7 @@ static void BarMainLoop (BarApp_t *app) {
 		BarMainHandleUserInput (app);
 
 		/* show time */
-		if (app->player.mode >= PLAYER_SAMPLESIZE_INITIALIZED &&
-				app->player.mode < PLAYER_FINISHED_PLAYBACK) {
+		if (app->player.mode < PLAYER_FINISHED_PLAYBACK) {
 			BarMainPrintTime (app);
 		}
 	}

@@ -133,6 +133,8 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 
 			json_object_object_add (j, "stationToken",
 					json_object_new_string (reqData->station->id));
+			json_object_object_add (j, "includeTrackLength",
+					json_object_new_boolean (true));
 
 			method = "station.getPlaylist";
 			break;

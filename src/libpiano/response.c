@@ -278,6 +278,8 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				song->detailUrl = PianoJsonStrdup (s, "songDetailUrl");
 				song->fileGain = json_object_get_double (
 						json_object_object_get (s, "trackGain"));
+				song->length = json_object_get_int (
+						json_object_object_get (s, "trackLength"));
 				switch (json_object_get_int (json_object_object_get (s,
 						"songRating"))) {
 					case 1:
