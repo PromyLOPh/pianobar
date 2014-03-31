@@ -51,7 +51,6 @@ THE SOFTWARE.
 #include <sys/types.h>
 #include <sys/wait.h>
 
-
 /* pandora.com library */
 #include <piano.h>
 
@@ -246,38 +245,38 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 /*	start new player thread
  */
 static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
-	BarUiPrintSong (&app->settings, app->playlist, app->curStation->isQuickMix ?
-			PianoFindStationById (app->ph.stations,
-			app->playlist->stationId) : NULL);
+	assert (app != NULL);
+	assert (playerThread != NULL);
 
-	if (app->playlist->audioUrl == NULL) {
+	const PianoSong_t * const curSong = app->playlist;
+	assert (curSong != NULL);
+
+	BarUiPrintSong (&app->settings, curSong, app->curStation->isQuickMix ?
+			PianoFindStationById (app->ph.stations,
+			curSong->stationId) : NULL);
+
+	static const char httpPrefix[] = "http://";
+	/* avoid playing local files */
+	if (curSong->audioUrl == NULL ||
+			strncmp (curSong->audioUrl, httpPrefix, strlen (httpPrefix)) != 0) {
 		BarUiMsg (&app->settings, MSG_ERR, "Invalid song url.\n");
 	} else {
 		/* setup player */
 		memset (&app->player, 0, sizeof (app->player));
 
-		WaitressInit (&app->player.waith);
-		WaitressSetUrl (&app->player.waith, app->playlist->audioUrl);
-
-		/* set up global proxy, player is NULLed on songfinish */
-		if (app->settings.proxy != NULL) {
-			WaitressSetProxy (&app->player.waith, app->settings.proxy);
-		}
-
-		app->player.gain = app->playlist->fileGain;
-		app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
-		app->player.audioFormat = app->playlist->audioFormat;
+		app->player.url = curSong->audioUrl;
+		app->player.gain = curSong->fileGain;
 		app->player.settings = &app->settings;
-		app->player.songDuration = app->playlist->length * 1000;
+		app->player.songDuration = curSong->length;
 		pthread_mutex_init (&app->player.pauseMutex, NULL);
 		pthread_cond_init (&app->player.pauseCond, NULL);
 
 		/* throw event */
 		BarUiStartEventCmd (&app->settings, "songstart",
-				app->curStation, app->playlist, &app->player, app->ph.stations,
+				app->curStation, curSong, &app->player, app->ph.stations,
 				PIANO_RET_OK, WAITRESS_RET_OK);
 
-		/* prevent race condition, mode must _not_ be FREED if
+		/* prevent race condition, mode must _not_ be DEAD if
 		 * thread has been started */
 		app->player.mode = PLAYER_STARTING;
 		/* start player */
@@ -319,21 +318,21 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 /*	print song duration
  */
 static void BarMainPrintTime (BarApp_t *app) {
-	/* Ugly: songDuration is unsigned _long_ int! Lets hope this won't
-	 * overflow */
-	int songRemaining = (signed long int) (app->player.songDuration -
-			app->player.songPlayed) / BAR_PLAYER_MS_TO_S_FACTOR;
-	enum {POSITIVE, NEGATIVE} sign = NEGATIVE;
-	if (songRemaining < 0) {
-		/* song is longer than expected */
-		sign = POSITIVE;
-		songRemaining = -songRemaining;
+	unsigned int songRemaining;
+	char sign;
+
+	if (app->player.songPlayed <= app->player.songDuration) {
+		songRemaining = app->player.songDuration - app->player.songPlayed;
+		sign = '-';
+	} else {
+		/* longer than expected */
+		songRemaining = app->player.songPlayed - app->player.songDuration;
+		sign = '+';
 	}
-	BarUiMsg (&app->settings, MSG_TIME, "%c%02i:%02i/%02li:%02li\r",
-			(sign == POSITIVE ? '+' : '-'),
-			songRemaining / 60, songRemaining % 60,
-			app->player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR / 60,
-			app->player.songDuration / BAR_PLAYER_MS_TO_S_FACTOR % 60);
+	BarUiMsg (&app->settings, MSG_TIME, "%c%02u:%02u/%02u:%02u\r",
+			sign, songRemaining / 60, songRemaining % 60,
+			app->player.songDuration / 60,
+			app->player.songDuration % 60);
 }
 
 /*	main loop
@@ -363,13 +362,13 @@ static void BarMainLoop (BarApp_t *app) {
 
 	while (!app->doQuit) {
 		/* song finished playing, clean up things/scrobble song */
-		if (app->player.mode == PLAYER_FINISHED_PLAYBACK) {
+		if (app->player.mode == PLAYER_FINISHED) {
 			BarMainPlayerCleanup (app, &playerThread);
 		}
 
 		/* check whether player finished playing and start playing new
 		 * song */
-		if (app->player.mode == PLAYER_FREED && app->curStation != NULL) {
+		if (app->player.mode == PLAYER_DEAD && app->curStation != NULL) {
 			/* what's next? */
 			if (app->playlist != NULL) {
 				PianoSong_t *histsong = app->playlist;
@@ -389,12 +388,12 @@ static void BarMainLoop (BarApp_t *app) {
 		BarMainHandleUserInput (app);
 
 		/* show time */
-		if (app->player.mode < PLAYER_FINISHED_PLAYBACK) {
+		if (app->player.mode < PLAYER_FINISHED) {
 			BarMainPrintTime (app);
 		}
 	}
 
-	if (app->player.mode != PLAYER_FREED) {
+	if (app->player.mode != PLAYER_DEAD) {
 		pthread_join (playerThread, NULL);
 	}
 }
@@ -415,11 +414,11 @@ int main (int argc, char **argv) {
 	signal (SIGPIPE, SIG_IGN);
 
 	/* init some things */
-	ao_initialize ();
 	gcry_check_version (NULL);
 	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
 	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 	gnutls_global_init ();
+	BarPlayerInit ();
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
@@ -488,7 +487,7 @@ int main (int argc, char **argv) {
 	PianoDestroyPlaylist (app.songHistory);
 	PianoDestroyPlaylist (app.playlist);
 	WaitressFree (&app.waith);
-	ao_shutdown();
+	BarPlayerDestroy ();
 	gnutls_global_deinit ();
 	BarSettingsDestroy (&app.settings);
 

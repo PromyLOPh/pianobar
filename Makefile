@@ -73,22 +73,8 @@ LIBWAITRESS_INCLUDE:=${LIBWAITRESS_DIR}
 LIBWAITRESS_TEST_SRC=${LIBWAITRESS_DIR}/waitress-test.c
 LIBWAITRESS_TEST_OBJ:=${LIBWAITRESS_TEST_SRC:.c=.o}
 
-ifeq (${DISABLE_FAAD}, 1)
-	LIBFAAD_CFLAGS:=
-	LIBFAAD_LDFLAGS:=
-else
-	LIBFAAD_CFLAGS:=-DENABLE_FAAD
-	LIBFAAD_LDFLAGS:=-lfaad
-endif
-
-ifeq (${DISABLE_MAD}, 1)
-	LIBMAD_CFLAGS:=
-	LIBMAD_LDFLAGS:=
-else
-	LIBMAD_CFLAGS:=-DENABLE_MAD
-	LIBMAD_CFLAGS+=$(shell pkg-config --cflags mad)
-	LIBMAD_LDFLAGS:=$(shell pkg-config --libs mad)
-endif
+LIBAV_CFLAGS=$(shell pkg-config --cflags libavcodec libavformat libavutil libavfilter)
+LIBAV_LDFLAGS=$(shell pkg-config --libs libavcodec libavformat libavutil libavfilter)
 
 LIBGNUTLS_CFLAGS:=$(shell pkg-config --cflags gnutls)
 LIBGNUTLS_LDFLAGS:=$(shell pkg-config --libs gnutls)
@@ -104,15 +90,14 @@ ifeq (${DYNLINK},1)
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} libpiano.so.0
 	@echo "  LINK  $@"
 	@${CC} -o $@ ${PIANOBAR_OBJ} ${LDFLAGS} -lao -lpthread -lm -L. -lpiano \
-			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
-			${LIBGCRYPT_LDFLAGS}
+			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} ${LIBGCRYPT_LDFLAGS}
 else
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
 		${LIBWAITRESS_HDR}
 	@echo "  LINK  $@"
 	@${CC} ${CFLAGS} ${LDFLAGS} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} \
 			${LIBWAITRESS_OBJ} -lao -lpthread -lm \
-			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
+			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
 			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS} -o $@
 endif
 
@@ -134,7 +119,7 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 %.d: %.c
 	@set -e; rm -f $@; \
 			$(CC) -M ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
-			${LIBFAAD_CFLAGS} ${LIBMAD_CFLAGS} ${LIBGNUTLS_CFLAGS} \
+			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
 			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS} $< > $@.$$$$; \
 			sed '1 s,^.*\.o[ :]*,$*.o $@ : ,g' < $@.$$$$ > $@; \
 			rm -f $@.$$$$
@@ -147,7 +132,7 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 %.o: %.c
 	@echo "    CC  $<"
 	@${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
-			${LIBFAAD_CFLAGS} ${LIBMAD_CFLAGS} ${LIBGNUTLS_CFLAGS} \
+			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
 			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS} -c -o $@ $<
 
 # create position independent code (for shared libraries)
@@ -168,10 +153,9 @@ all: pianobar
 
 debug: pianobar
 debug: CC=clang
-debug: CFLAGS=-Wall -Wextra \
+debug: CFLAGS=-g -Wall -Wextra \
 				-pedantic \
 				-Wno-unused-parameter \
-				-fsanitize=address \
 				-fsanitize=integer \
 				-fsanitize=undefined \
 				-fsanitize=alignment \

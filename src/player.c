@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2013
+Copyright (c) 2008-2014
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -31,519 +31,293 @@ THE SOFTWARE.
 #include <assert.h>
 #include <arpa/inet.h>
 
+#include <ao/ao.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
+#include <libavfilter/avfilter.h>
+#include <libavfilter/avfiltergraph.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/opt.h>
+
 #include "player.h"
 #include "config.h"
 #include "ui.h"
 #include "ui_types.h"
 
-#define bigToHostEndian32(x) ntohl(x)
-
-/* pandora uses float values with 2 digits precision. Scale them by 100 to get
- * a "nice" integer */
-#define RG_SCALE_FACTOR 100
-
-/*	wait until the pause flag is cleared
- *	@param player structure
- *	@return true if the player should quit
- */
-static bool BarPlayerCheckPauseQuit (struct audioPlayer *player) {
-	bool quit = false;
-
-	pthread_mutex_lock (&player->pauseMutex);
-	while (true) {
-		if (player->doQuit) {
-			quit = true;
-			break;
-		}
-		if (!player->doPause) {
-			break;
-		}
-		pthread_cond_wait(&player->pauseCond,
-				  &player->pauseMutex);
-	}
-	pthread_mutex_unlock (&player->pauseMutex);
-
-	return quit;
+static void printError (const BarSettings_t * const settings,
+		const char * const msg, int ret) {
+	char avmsg[128];
+	av_strerror (ret, avmsg, sizeof (avmsg));
+	BarUiMsg (settings, MSG_ERR, "%s (%s)\n", msg, avmsg);
 }
 
-/*	compute replaygain scale factor
- *	algo taken from here: http://www.dsprelated.com/showmessage/29246/1.php
- *	mpd does the same
- *	@param apply this gain
- *	@return this * yourvalue = newgain value
+/*	global initialization
+ *
+ *	XXX: in theory we can select the filters/formats we want to support, but
+ *	this does not work in practise.
  */
-unsigned int BarPlayerCalcScale (const float applyGain) {
-	return pow (10.0, applyGain / 20.0) * RG_SCALE_FACTOR;
+void BarPlayerInit () {
+	ao_initialize ();
+	av_register_all ();
+	avfilter_register_all ();
+	avformat_network_init ();
 }
 
-/*	apply replaygain to signed short value
- *	@param value
- *	@param replaygain scale (calculated by computeReplayGainScale)
- *	@return scaled value
+void BarPlayerDestroy () {
+	avformat_network_deinit ();
+	avfilter_uninit ();
+	ao_shutdown ();
+}
+
+/*	Update volume filter
+ *
+ *	XXX: I’m not sure whether this is thread-safe or not
  */
-static inline signed short int applyReplayGain (const signed short int value,
-		const unsigned int scale) {
-	int tmpReplayBuf = value * (signed int) scale;
-	/* clipping */
-	if (tmpReplayBuf > SHRT_MAX*RG_SCALE_FACTOR) {
-		return SHRT_MAX;
-	} else if (tmpReplayBuf < SHRT_MIN*RG_SCALE_FACTOR) {
-		return SHRT_MIN;
-	} else {
-		return tmpReplayBuf / RG_SCALE_FACTOR;
+void BarPlayerSetVolume (struct audioPlayer * const player) {
+	assert (player != NULL);
+	assert (player->fvolume != NULL);
+
+	int ret;
+	/* convert from decibel */
+	const double volume = pow (10, (player->settings->volume + player->gain) / 20);
+	/* XXX: can we avoid accessing ->priv here? */
+	if ((ret = av_opt_set_double (player->fvolume->priv, "volume", volume,
+			0)) != 0) {
+		printError (player->settings, "Cannot set volume", ret);
 	}
 }
 
-/*	Refill player's buffer with dataSize of data
- *	@param player structure
- *	@param new data
- *	@param data size
- *	@return 1 on success, 0 when buffer overflow occured
- */
-static inline int BarPlayerBufferFill (struct audioPlayer *player,
-		const char *data, const size_t dataSize) {
-	/* fill buffer */
-	if (player->bufferFilled + dataSize > BAR_PLAYER_BUFSIZE) {
-		BarUiMsg (player->settings, MSG_ERR, "Buffer overflow!\n");
-		return 0;
-	}
-	memcpy (player->buffer+player->bufferFilled, data, dataSize);
-	player->bufferFilled += dataSize;
-	player->bufferRead = 0;
-	player->bytesReceived += dataSize;
-	return 1;
-}
-
-/*	move data beginning from read pointer to buffer beginning and
- *	overwrite data already read from buffer
- *	@param player structure
- *	@return nothing at all
- */
-static inline void BarPlayerBufferMove (struct audioPlayer *player) {
-	/* move remaining bytes to buffer beginning */
-	memmove (player->buffer, player->buffer + player->bufferRead,
-			(player->bufferFilled - player->bufferRead));
-	player->bufferFilled -= player->bufferRead;
-}
-
-#ifdef ENABLE_FAAD
-
-/*	play aac stream
- *	@param streamed data
- *	@param received bytes
- *	@param extra data (player data)
- *	@return received bytes or less on error
- */
-static WaitressCbReturn_t BarPlayerAACCb (void *ptr, size_t size,
-		void *stream) {
-	const char *data = ptr;
-	struct audioPlayer *player = stream;
-
-	if (BarPlayerCheckPauseQuit (player) ||
-			!BarPlayerBufferFill (player, data, size)) {
-		return WAITRESS_CB_RET_ERR;
-	}
-
-	if (player->mode == PLAYER_RECV_DATA) {
-		short int *aacDecoded;
-		NeAACDecFrameInfo frameInfo;
-		size_t i;
-
-		while (player->sampleSizeCurr < player->sampleSizeN &&
-				(player->bufferFilled - player->bufferRead) >=
-			player->sampleSize[player->sampleSizeCurr]) {
-			/* going through this loop can take up to a few seconds =>
-			 * allow earlier thread abort */
-			if (BarPlayerCheckPauseQuit (player)) {
-				return WAITRESS_CB_RET_ERR;
-			}
-
-			/* decode frame */
-			aacDecoded = NeAACDecDecode(player->aacHandle, &frameInfo,
-					&player->buffer[player->bufferRead],
-					player->sampleSize[player->sampleSizeCurr]);
-			player->bufferRead += player->sampleSize[player->sampleSizeCurr];
-			++player->sampleSizeCurr;
-
-			if (frameInfo.error != 0) {
-				/* skip this frame, songPlayed will be slightly off if this
-				 * happens */
-				BarUiMsg (player->settings, MSG_ERR, "Decoding error: %s\n",
-						NeAACDecGetErrorMessage (frameInfo.error));
-				continue;
-			}
-			/* assuming data in stsz atom is correct */
-			assert (frameInfo.bytesconsumed ==
-					player->sampleSize[player->sampleSizeCurr-1]);
-
-			for (i = 0; i < frameInfo.samples; i++) {
-				aacDecoded[i] = applyReplayGain (aacDecoded[i], player->scale);
-			}
-			/* ao_play needs bytes: 1 sample = 16 bits = 2 bytes */
-			ao_play (player->audioOutDevice, (char *) aacDecoded,
-					frameInfo.samples * 2);
-			/* add played frame length to played time, explained below */
-			player->songPlayed += (unsigned long long int) frameInfo.samples *
-					(unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR /
-					(unsigned long long int) player->samplerate /
-					(unsigned long long int) player->channels;
-		}
-		if (player->sampleSizeCurr >= player->sampleSizeN) {
-			/* no more frames, drop data */
-			player->bufferRead = player->bufferFilled;
-		}
-	} else {
-		if (player->mode == PLAYER_INITIALIZED) {
-			while (player->bufferRead+4 < player->bufferFilled) {
-				if (memcmp (player->buffer + player->bufferRead, "esds",
-						4) == 0) {
-					player->mode = PLAYER_FOUND_ESDS;
-					player->bufferRead += 4;
-					break;
-				}
-				player->bufferRead++;
-			}
-		}
-		if (player->mode == PLAYER_FOUND_ESDS) {
-			/* FIXME: is this the correct way? */
-			/* we're gonna read 10 bytes */
-			while (player->bufferRead+1+4+5 < player->bufferFilled) {
-				if (memcmp (player->buffer + player->bufferRead,
-						"\x05\x80\x80\x80", 4) == 0) {
-					ao_sample_format format;
-					int audioOutDriver;
-
-					/* +1+4 needs to be replaced by <something>! */
-					player->bufferRead += 1+4;
-					char err = NeAACDecInit2 (player->aacHandle, player->buffer +
-							player->bufferRead, 5, &player->samplerate,
-							&player->channels);
-					player->bufferRead += 5;
-					if (err != 0) {
-						BarUiMsg (player->settings, MSG_ERR,
-								"Error while initializing audio decoder "
-								"(%i)\n", err);
-						return WAITRESS_CB_RET_ERR;
-					}
-					audioOutDriver = ao_default_driver_id();
-					memset (&format, 0, sizeof (format));
-					format.bits = 16;
-					format.channels = player->channels;
-					format.rate = player->samplerate;
-					format.byte_format = AO_FMT_NATIVE;
-					if ((player->audioOutDevice = ao_open_live (audioOutDriver,
-							&format, NULL)) == NULL) {
-						/* we're not interested in the errno */
-						player->aoError = 1;
-						BarUiMsg (player->settings, MSG_ERR,
-								"Cannot open audio device\n");
-						return WAITRESS_CB_RET_ERR;
-					}
-					player->mode = PLAYER_AUDIO_INITIALIZED;
-					break;
-				}
-				player->bufferRead++;
-			}
-		}
-		if (player->mode == PLAYER_AUDIO_INITIALIZED) {
-			while (player->bufferRead+4+8 < player->bufferFilled) {
-				if (memcmp (player->buffer + player->bufferRead, "stsz",
-						4) == 0) {
-					player->mode = PLAYER_FOUND_STSZ;
-					player->bufferRead += 4;
-					/* skip version and unknown */
-					player->bufferRead += 8;
-					break;
-				}
-				player->bufferRead++;
-			}
-		}
-		/* get frame sizes */
-		if (player->mode == PLAYER_FOUND_STSZ) {
-			while (player->bufferRead+4 < player->bufferFilled) {
-				/* how many frames do we have? */
-				if (player->sampleSizeN == 0) {
-					/* mp4 uses big endian, convert */
-					memcpy (&player->sampleSizeN, player->buffer +
-							player->bufferRead, sizeof (uint32_t));
-					player->sampleSizeN =
-							bigToHostEndian32 (player->sampleSizeN);
-
-					player->sampleSize = malloc (player->sampleSizeN *
-							sizeof (*player->sampleSize));
-					assert (player->sampleSize != NULL);
-					player->bufferRead += sizeof (uint32_t);
-					player->sampleSizeCurr = 0;
-					/* set up song duration (assuming one frame always contains
-					 * the same number of samples)
-					 * calculation: channels * number of frames * samples per
-					 * frame / samplerate */
-					/* FIXME: Hard-coded number of samples per frame */
-					player->songDuration = (unsigned long long int) player->sampleSizeN *
-							4096LL * (unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR /
-							(unsigned long long int) player->samplerate /
-							(unsigned long long int) player->channels;
-					break;
-				} else {
-					memcpy (&player->sampleSize[player->sampleSizeCurr],
-							player->buffer + player->bufferRead,
-							sizeof (uint32_t));
-					player->sampleSize[player->sampleSizeCurr] =
-							bigToHostEndian32 (
-							player->sampleSize[player->sampleSizeCurr]);
-
-					player->sampleSizeCurr++;
-					player->bufferRead += sizeof (uint32_t);
-				}
-				/* all sizes read, nearly ready for data mode */
-				if (player->sampleSizeCurr >= player->sampleSizeN) {
-					player->mode = PLAYER_SAMPLESIZE_INITIALIZED;
-					break;
-				}
-			}
-		}
-		/* search for data atom and let the show begin... */
-		if (player->mode == PLAYER_SAMPLESIZE_INITIALIZED) {
-			while (player->bufferRead+4 < player->bufferFilled) {
-				if (memcmp (player->buffer + player->bufferRead, "mdat",
-						4) == 0) {
-					player->mode = PLAYER_RECV_DATA;
-					player->sampleSizeCurr = 0;
-					player->bufferRead += 4;
-					break;
-				}
-				player->bufferRead++;
-			}
-		}
-	}
-
-	BarPlayerBufferMove (player);
-
-	return WAITRESS_CB_RET_OK;
-}
-
-#endif /* ENABLE_FAAD */
-
-#ifdef ENABLE_MAD
-
-/*	convert mad's internal fixed point format to short int
- *	@param mad fixed
- *	@return short int
- */
-static inline signed short int BarPlayerMadToShort (const mad_fixed_t fixed) {
-	/* Clipping */
-	if (fixed >= MAD_F_ONE) {
-		return SHRT_MAX;
-	} else if (fixed <= -MAD_F_ONE) {
-		return -SHRT_MAX;
-	}
-
-	/* Conversion */
-	return (signed short int) (fixed >> (MAD_F_FRACBITS - 15));
-}
-
-/*	mp3 playback callback
- */
-static WaitressCbReturn_t BarPlayerMp3Cb (void *ptr, size_t size,
-		void *stream) {
-	const char *data = ptr;
-	struct audioPlayer *player = stream;
-	size_t i;
-
-	if (BarPlayerCheckPauseQuit (player) ||
-			!BarPlayerBufferFill (player, data, size)) {
-		return WAITRESS_CB_RET_ERR;
-	}
-
-	/* some "prebuffering" */
-	if (player->mode < PLAYER_RECV_DATA &&
-			player->bufferFilled < BAR_PLAYER_BUFSIZE / 2) {
-		return WAITRESS_CB_RET_OK;
-	}
-
-	mad_stream_buffer (&player->mp3Stream, player->buffer,
-			player->bufferFilled);
-	player->mp3Stream.error = 0;
-	do {
-		/* channels * max samples, found in mad.h */
-		signed short int madDecoded[2*1152], *madPtr = madDecoded;
-
-		if (mad_frame_decode (&player->mp3Frame, &player->mp3Stream) != 0) {
-			if (player->mp3Stream.error != MAD_ERROR_BUFLEN) {
-				BarUiMsg (player->settings, MSG_ERR,
-						"mp3 decoding error: %s\n",
-						mad_stream_errorstr (&player->mp3Stream));
-				return WAITRESS_CB_RET_ERR;
-			} else {
-				/* rebuffering required => exit loop */
-				break;
-			}
-		}
-		mad_synth_frame (&player->mp3Synth, &player->mp3Frame);
-		for (i = 0; i < player->mp3Synth.pcm.length; i++) {
-			/* left channel */
-			*(madPtr++) = applyReplayGain (BarPlayerMadToShort (
-					player->mp3Synth.pcm.samples[0][i]), player->scale);
-
-			/* right channel */
-			*(madPtr++) = applyReplayGain (BarPlayerMadToShort (
-					player->mp3Synth.pcm.samples[1][i]), player->scale);
-		}
-		if (player->mode < PLAYER_AUDIO_INITIALIZED) {
-			ao_sample_format format;
-			int audioOutDriver;
-
-			player->channels = player->mp3Synth.pcm.channels;
-			player->samplerate = player->mp3Synth.pcm.samplerate;
-			audioOutDriver = ao_default_driver_id();
-			memset (&format, 0, sizeof (format));
-			format.bits = 16;
-			format.channels = player->channels;
-			format.rate = player->samplerate;
-			format.byte_format = AO_FMT_NATIVE;
-			if ((player->audioOutDevice = ao_open_live (audioOutDriver,
-					&format, NULL)) == NULL) {
-				player->aoError = 1;
-				BarUiMsg (player->settings, MSG_ERR,
-						"Cannot open audio device\n");
-				return WAITRESS_CB_RET_ERR;
-			}
-
-			/* calc song length using the framerate of the first decoded frame */
-			player->songDuration = (unsigned long long int) player->waith.request.contentLength /
-					((unsigned long long int) player->mp3Frame.header.bitrate /
-					(unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR / 8LL);
-
-			/* must be > PLAYER_SAMPLESIZE_INITIALIZED, otherwise time won't
-			 * be visible to user (ugly, but mp3 decoding != aac decoding) */
-			player->mode = PLAYER_RECV_DATA;
-		}
-		/* samples * length * channels */
-		ao_play (player->audioOutDevice, (char *) madDecoded,
-				player->mp3Synth.pcm.length * 2 * 2);
-
-		/* avoid division by 0 */
-		if (player->mode == PLAYER_RECV_DATA) {
-			/* same calculation as in aac player; don't need to divide by
-			 * channels, length is number of samples for _one_ channel */
-			player->songPlayed += (unsigned long long int) player->mp3Synth.pcm.length *
-					(unsigned long long int) BAR_PLAYER_MS_TO_S_FACTOR /
-					(unsigned long long int) player->samplerate;
-		}
-
-		if (BarPlayerCheckPauseQuit (player)) {
-			return WAITRESS_CB_RET_ERR;
-		}
-	} while (player->mp3Stream.error != MAD_ERROR_BUFLEN);
-
-	player->bufferRead += player->mp3Stream.next_frame - player->buffer;
-
-	BarPlayerBufferMove (player);
-
-	return WAITRESS_CB_RET_OK;
-}
-#endif /* ENABLE_MAD */
+#define softfail(msg) \
+	printError (player->settings, msg, ret); \
+	pret = PLAYER_RET_SOFTFAIL; \
+	goto finish;
 
 /*	player thread; for every song a new thread is started
  *	@param audioPlayer structure
  *	@return PLAYER_RET_*
  */
 void *BarPlayerThread (void *data) {
-	struct audioPlayer *player = data;
-	char extraHeaders[32];
-	void *ret = PLAYER_RET_OK;
-	#ifdef ENABLE_FAAD
-	NeAACDecConfigurationPtr conf;
-	#endif
-	WaitressReturn_t wRet = WAITRESS_RET_ERR;
+	assert (data != NULL);
 
-	/* init handles */
-	player->waith.data = (void *) player;
-	/* extraHeaders will be initialized later */
-	player->waith.extraHeaders = extraHeaders;
-	player->buffer = malloc (BAR_PLAYER_BUFSIZE);
+	struct audioPlayer * const player = data;
+	int ret;
+	intptr_t pret = PLAYER_RET_OK;
+	const enum AVSampleFormat avformat = AV_SAMPLE_FMT_S16;
 
-	switch (player->audioFormat) {
-		#ifdef ENABLE_FAAD
-		case PIANO_AF_AACPLUS:
-			player->aacHandle = NeAACDecOpen();
-			/* set aac conf */
-			conf = NeAACDecGetCurrentConfiguration(player->aacHandle);
-			conf->outputFormat = FAAD_FMT_16BIT;
-		    conf->downMatrix = 1;
-			NeAACDecSetConfiguration(player->aacHandle, conf);
+	ao_device *aoDev = NULL;
+	ao_sample_format aoFmt;
 
-			player->waith.callback = BarPlayerAACCb;
-			break;
-		#endif /* ENABLE_FAAD */
+	AVFilterGraph *fgraph = NULL;
+	AVFrame *frame = NULL, *filteredFrame = NULL;
+	AVFormatContext *fctx = NULL;
+	AVCodecContext *cctx = NULL;
 
-		#ifdef ENABLE_MAD
-		case PIANO_AF_MP3:
-			mad_stream_init (&player->mp3Stream);
-			mad_frame_init (&player->mp3Frame);
-			mad_synth_init (&player->mp3Synth);
-
-			player->waith.callback = BarPlayerMp3Cb;
-			break;
-		#endif /* ENABLE_MAD */
-
-		default:
-			BarUiMsg (player->settings, MSG_ERR, "Unsupported audio format!\n");
-			ret = (void *) PLAYER_RET_HARDFAIL;
-			goto cleanup;
-			break;
-	}
-	
-	player->mode = PLAYER_INITIALIZED;
-
-	/* This loop should work around song abortions by requesting the
-	 * missing part of the song */
-	do {
-		snprintf (extraHeaders, sizeof (extraHeaders), "Range: bytes=%zu-\r\n",
-				player->bytesReceived);
-		wRet = WaitressFetchCall (&player->waith);
-	} while (wRet == WAITRESS_RET_PARTIAL_FILE || wRet == WAITRESS_RET_TIMEOUT
-			|| wRet == WAITRESS_RET_READ_ERR);
-
-	switch (player->audioFormat) {
-		#ifdef ENABLE_FAAD
-		case PIANO_AF_AACPLUS:
-			NeAACDecClose(player->aacHandle);
-			free (player->sampleSize);
-			break;
-		#endif /* ENABLE_FAAD */
-
-		#ifdef ENABLE_MAD
-		case PIANO_AF_MP3:
-			mad_synth_finish (&player->mp3Synth);
-			mad_frame_finish (&player->mp3Frame);
-			mad_stream_finish (&player->mp3Stream);
-			break;
-		#endif /* ENABLE_MAD */
-
-		default:
-			/* this should never happen */
-			assert (0);
-			break;
+	/* stream setup */
+	if ((ret = avformat_open_input (&fctx, player->url, NULL, NULL)) < 0) {
+		softfail ("Unable to open audio file");
 	}
 
-	if (player->aoError) {
-		ret = (void *) PLAYER_RET_HARDFAIL;
+	if ((ret = avformat_find_stream_info (fctx, NULL)) < 0) {
+		softfail ("find_stream_info");
 	}
 
-	/* Pandora sends broken audio url’s sometimes (“bad request”). ignore them. */
-	if (wRet != WAITRESS_RET_OK && wRet != WAITRESS_RET_CB_ABORT) {
-		BarUiMsg (player->settings, MSG_ERR, "Cannot access audio file: %s\n",
-				WaitressErrorToStr (wRet));
-		ret = (void *) PLAYER_RET_SOFTFAIL;
+	const int streamIdx = av_find_best_stream (fctx, AVMEDIA_TYPE_AUDIO, -1,
+			-1, NULL, 0);
+	if (streamIdx < 0) {
+		softfail ("find_best_stream");
 	}
 
-cleanup:
-	ao_close (player->audioOutDevice);
-	WaitressFree (&player->waith);
-	free (player->buffer);
+	AVStream * const st = fctx->streams[streamIdx];
+	cctx = st->codec;
 
-	player->mode = PLAYER_FINISHED_PLAYBACK;
+	/* decoder setup */
+	AVCodec * const decoder = avcodec_find_decoder (cctx->codec_id);
+	if (decoder == NULL) {
+		softfail ("find_decoder");
+	}
 
-	return ret;
+	if ((ret = avcodec_open2 (cctx, decoder, NULL)) < 0) {
+		softfail ("codec_open2");
+	}
+
+	frame = avcodec_alloc_frame ();
+	assert (frame != NULL);
+	filteredFrame = avcodec_alloc_frame ();
+	assert (filteredFrame != NULL);
+
+	AVPacket pkt;
+	av_init_packet (&pkt);
+	pkt.data = NULL;
+	pkt.size = 0;
+
+	/* filter setup */
+	char strbuf[256];
+
+	if ((fgraph = avfilter_graph_alloc ()) == NULL) {
+		softfail ("graph_alloc");
+	}
+
+	/* abuffer */
+	AVFilterContext *fabuf = NULL;
+	AVRational time_base = st->time_base;
+	snprintf (strbuf, sizeof (strbuf),
+			"time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"PRIx64, 
+			time_base.num, time_base.den, cctx->sample_rate,
+			av_get_sample_fmt_name (cctx->sample_fmt),
+			cctx->channel_layout);
+	if ((ret = avfilter_graph_create_filter (&fabuf,
+			avfilter_get_by_name ("abuffer"), NULL, strbuf, NULL, fgraph)) < 0) {
+		softfail ("create_filter abuffer");
+	}
+
+	/* volume */
+	if ((ret = avfilter_graph_create_filter (&player->fvolume,
+			avfilter_get_by_name ("volume"), NULL, NULL, NULL, fgraph)) < 0) {
+		softfail ("create_filter volume");
+	}
+	BarPlayerSetVolume (player);
+
+	/* aformat: convert float samples into something more usable */
+	AVFilterContext *fafmt = NULL;
+	snprintf (strbuf, sizeof (strbuf), "sample_fmts=%s",
+			av_get_sample_fmt_name (avformat));
+	if ((ret = avfilter_graph_create_filter (&fafmt,
+					avfilter_get_by_name ("aformat"), NULL, strbuf, NULL,
+					fgraph)) < 0) {
+		softfail ("create_filter aformat");
+	}
+
+	/* abuffersink */
+	AVFilterContext *fbufsink = NULL;
+	if ((ret = avfilter_graph_create_filter (&fbufsink,
+			avfilter_get_by_name ("abuffersink"), NULL, NULL, NULL, fgraph)) < 0) {
+		softfail ("create_filter abuffersink");
+	}
+
+	/* connect filter: abuffer -> volume -> aformat -> abuffersink */
+	if (avfilter_link (fabuf, 0, player->fvolume, 0) != 0 ||
+			avfilter_link (player->fvolume, 0, fafmt, 0) != 0 ||
+			avfilter_link (fafmt, 0, fbufsink, 0) != 0) {
+		softfail ("filter_link");
+	}
+
+	if ((ret = avfilter_graph_config (fgraph, NULL)) < 0) {
+		softfail ("graph_config");
+	}
+
+	/* setup libao */
+	memset (&aoFmt, 0, sizeof (aoFmt));
+	aoFmt.bits = av_get_bytes_per_sample (avformat) * 8;
+	assert (aoFmt.bits > 0);
+	aoFmt.channels = cctx->channels;
+	aoFmt.rate = cctx->sample_rate;
+	aoFmt.byte_format = AO_FMT_NATIVE;
+
+	int driver = ao_default_driver_id ();
+	if ((aoDev = ao_open_live (driver, &aoFmt, NULL)) == NULL) {
+		BarUiMsg (player->settings, MSG_ERR, "Cannot open audio device.\n");
+		pret = PLAYER_RET_HARDFAIL;
+		goto finish;
+	}
+
+	player->songPlayed = 0;
+	player->songDuration = av_q2d (st->time_base) * (double) st->duration;
+
+	while (av_read_frame (fctx, &pkt) >= 0) {
+		AVPacket pkt_orig = pkt;
+
+		/* pausing */
+		pthread_mutex_lock (&player->pauseMutex);
+		while (true) {
+			if (!player->doPause) {
+				av_read_play (fctx);
+				break;
+			} else {
+				av_read_pause (fctx);
+			}
+			pthread_cond_wait (&player->pauseCond, &player->pauseMutex);
+		}
+		pthread_mutex_unlock (&player->pauseMutex);
+
+		if (player->doQuit) {
+			av_free_packet (&pkt_orig);
+			break;
+		}
+
+		if (pkt.stream_index != streamIdx) {
+			av_free_packet (&pkt_orig);
+			continue;
+		}
+
+		do {
+			int got_frame = 0;
+
+			const int decoded = avcodec_decode_audio4 (cctx, frame, &got_frame,
+					&pkt);
+			if (decoded < 0) {
+				softfail ("decode_audio4");
+			}
+
+			if (got_frame != 0) {
+				/* XXX: suppresses warning from resample filter */
+				if (frame->pts == (int64_t) AV_NOPTS_VALUE) {
+					frame->pts = 0;
+				}
+				ret = av_buffersrc_write_frame (fabuf, frame);
+				assert (ret >= 0);
+
+				while (true) {
+					AVFilterBufferRef *audioref = NULL;
+					if (av_buffersink_read (fbufsink, &audioref) < 0) {
+						/* try again next frame */
+						break;
+					}
+
+					ret = avfilter_copy_buf_props (filteredFrame, audioref);
+					assert (ret >= 0);
+
+					const int numChannels = av_get_channel_layout_nb_channels (
+							filteredFrame->channel_layout);
+					const int bps = av_get_bytes_per_sample(filteredFrame->format);
+					ao_play (aoDev, (char *) filteredFrame->data[0],
+							filteredFrame->nb_samples * numChannels * bps);
+
+					avfilter_unref_bufferp (&audioref);
+				}
+			}
+
+			pkt.data += decoded;
+			pkt.size -= decoded;
+		} while (pkt.size > 0);
+
+		av_free_packet (&pkt_orig);
+
+		player->songPlayed = av_q2d (st->time_base) * (double) pkt.pts;
+	}
+
+finish:
+	ao_close (aoDev);
+	if (fgraph != NULL) {
+		avfilter_graph_free (&fgraph);
+	}
+	if (cctx != NULL) {
+		avcodec_close (cctx);
+	}
+	if (fctx != NULL) {
+		avformat_close_input (&fctx);
+	}
+	if (frame != NULL) {
+		avcodec_free_frame (&frame);
+	}
+	if (filteredFrame != NULL) {
+		avcodec_free_frame (&filteredFrame);
+	}
+
+	player->mode = PLAYER_FINISHED;
+
+	return (void *) pret;
 }
+

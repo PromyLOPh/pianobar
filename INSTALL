@@ -10,8 +10,7 @@ Dependencies
 - gnutls
 - gcrypt (with blowfish cipher enabled)
 - json-c
-- libfaad2 (compiled with --without-drm)
-- libmad (optional, Pandora One users only)
+- libav/ffmpeg
 - UTF-8 console/locale
 
 Building
@@ -29,36 +28,3 @@ Or install it by issuing
 	
 	gmake install
 
-Selecting features
-++++++++++++++++++
-
-It is possible to disable certain features when building pianobar by setting
-one of the variables listed below. In fact it is required if you don’t have the
-corresponding library installed. So if you don’t want AAC playback or don’t
-have libfaad installed for example, run
-
-	gmake DISABLE_FAAD=1
-
-instead of a plain `gmake`.
-
-DISABLE_FAAD=1
-	Disables AAC playback.
-DISABLE_MAD=1
-	Disables MP3 playback.
-
-Ubuntu 12.04
-++++++++++++
-
-To install on Ubuntu >= 12.04
-
-	sudo apt-get install \
-			libao-dev \
-			libmad0-dev \
-			libfaad-dev \
-			libgnutls-dev \
-			libjson0-dev \
-			libgcrypt11-dev
-	make
-	sudo make install
-
-You can then fire it up with `pianobar`

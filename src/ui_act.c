@@ -51,6 +51,7 @@ static inline void BarUiDoSkipSong (struct audioPlayer *player) {
 
 	pthread_mutex_lock (&player->pauseMutex);
 	player->doQuit = true;
+	player->doPause = false;
 	pthread_cond_broadcast (&player->pauseCond);
 	pthread_mutex_unlock (&player->pauseMutex);
 }
@@ -636,30 +637,25 @@ BarUiActCallback(BarUiActBookmark) {
 	}
 }
 
-static void BarUiActUpdateScale (BarApp_t *app) {
-	/* FIXME: assuming unsigned integer store is atomic operation */
-	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
-}
-
 /*	decrease volume
  */
 BarUiActCallback(BarUiActVolDown) {
 	--app->settings.volume;
-	BarUiActUpdateScale (app);
+	BarPlayerSetVolume (&app->player);
 }
 
 /*	increase volume
  */
 BarUiActCallback(BarUiActVolUp) {
 	++app->settings.volume;
-	BarUiActUpdateScale (app);
+	BarPlayerSetVolume (&app->player);
 }
 
 /*	reset volume
  */
 BarUiActCallback(BarUiActVolReset) {
 	app->settings.volume = 0;
-	BarUiActUpdateScale (app);
+	BarPlayerSetVolume (&app->player);
 }
 
 /*	manage station (remove seeds or feedback)

@@ -26,90 +26,48 @@ THE SOFTWARE.
 
 #include "config.h"
 
-#ifdef ENABLE_FAAD
-#include <neaacdec.h>
-#endif
-
-#ifdef ENABLE_MAD
-#include <mad.h>
-#endif
-
-#include <ao/ao.h>
 /* required for freebsd */
 #include <sys/types.h>
 #include <pthread.h>
 #include <stdint.h>
 
+#include <libavfilter/avfilter.h>
 #include <piano.h>
 #include <waitress.h>
 
 #include "settings.h"
 
-#define BAR_PLAYER_MS_TO_S_FACTOR 1000
-#define BAR_PLAYER_BUFSIZE (WAITRESS_BUFFER_SIZE*2)
-
 struct audioPlayer {
-	bool doQuit; /* protected by pauseMutex */
-	bool doPause; /* protected by pauseMutex */
-	unsigned char channels;
-	unsigned char aoError;
-
-	enum {
-		PLAYER_FREED = 0, /* thread is not running */
-		PLAYER_STARTING, /* thread is starting */
-		PLAYER_INITIALIZED, /* decoder/waitress initialized */
-		PLAYER_FOUND_ESDS,
-		PLAYER_AUDIO_INITIALIZED, /* audio device opened */
-		PLAYER_FOUND_STSZ,
-		PLAYER_SAMPLESIZE_INITIALIZED,
-		PLAYER_RECV_DATA, /* playing track */
-		PLAYER_FINISHED_PLAYBACK
-	} mode;
-	PianoAudioFormat_t audioFormat;
-
-	unsigned int scale;
-	float gain;
-
-	/* duration and already played time; measured in milliseconds */
-	unsigned long int songDuration;
-	unsigned long int songPlayed;
-
-	unsigned long samplerate;
-
-	size_t bufferFilled;
-	size_t bufferRead;
-	size_t bytesReceived;
-
-	/* aac */
-	#ifdef ENABLE_FAAD
-	/* stsz atom: sample sizes */
-	size_t sampleSizeN;
-	size_t sampleSizeCurr;
-	uint32_t *sampleSize;
-	NeAACDecHandle aacHandle;
-	#endif
-
-	/* mp3 */
-	#ifdef ENABLE_MAD
-	struct mad_stream mp3Stream;
-	struct mad_frame mp3Frame;
-	struct mad_synth mp3Synth;
-	#endif
-
-	/* audio out */
-	ao_device *audioOutDevice;
-	const BarSettings_t *settings;
-
-	unsigned char *buffer;
-
+	/* protected by pauseMutex */
+	volatile bool doQuit;
+	volatile bool doPause;
 	pthread_mutex_t pauseMutex;
 	pthread_cond_t pauseCond;
-	WaitressHandle_t waith;
+
+	enum {
+		PLAYER_DEAD = 0, /* thread is not running */
+		PLAYER_STARTING, /* thread is starting */
+		PLAYER_PLAYING,
+		PLAYER_FINISHED,
+	} mode;
+
+	AVFilterContext *fvolume;
+
+	volatile double volume;
+	double gain;
+	char *url;
+	const BarSettings_t *settings;
+
+	/* measured in seconds */
+	volatile unsigned int songDuration;
+	volatile unsigned int songPlayed;
 };
 
 enum {PLAYER_RET_OK = 0, PLAYER_RET_HARDFAIL = 1, PLAYER_RET_SOFTFAIL = 2};
 
 void *BarPlayerThread (void *data);
-unsigned int BarPlayerCalcScale (float);
+void BarPlayerSetVolume (struct audioPlayer * const player);
+void BarPlayerInit ();
+void BarPlayerDestroy ();
 
 #endif /* _PLAYER_H */
