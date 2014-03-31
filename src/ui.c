@@ -611,7 +611,7 @@ static void BarUiAppendNewline (char *s, size_t maxlen) {
  *	@param pianobar settings
  *	@param the station
  */
-inline void BarUiPrintStation (const BarSettings_t *settings,
+void BarUiPrintStation (const BarSettings_t *settings,
 		PianoStation_t *station) {
 	char outstr[512];
 	const char *vals[] = {station->name, station->id};
@@ -627,7 +627,7 @@ inline void BarUiPrintStation (const BarSettings_t *settings,
  *	@param the song
  *	@param alternative station info (show real station for quickmix, e.g.)
  */
-inline void BarUiPrintSong (const BarSettings_t *settings,
+void BarUiPrintSong (const BarSettings_t *settings,
 		const PianoSong_t *song, const PianoStation_t *station) {
 	char outstr[512];
 	const char *vals[] = {song->title, song->artist, song->album,
