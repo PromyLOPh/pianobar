@@ -73,19 +73,28 @@ void BarPlayerDestroy () {
 }
 
 /*	Update volume filter
- *
- *	XXX: I’m not sure whether this is thread-safe or not
  */
 void BarPlayerSetVolume (struct audioPlayer * const player) {
 	assert (player != NULL);
 	assert (player->fvolume != NULL);
 
 	int ret;
+#ifdef HAVE_AVFILTER_GRAPH_SEND_COMMAND
+	/* ffmpeg and libav disagree on the type of this option (string vs. double)
+	 * -> print to string and let them parse it again */
+	char strbuf[16];
+	snprintf (strbuf, sizeof (strbuf), "%fdB",
+			player->settings->volume + player->gain);
+	if ((ret = avfilter_graph_send_command (player->fgraph, "volume", "volume",
+					strbuf, NULL, 0, 0)) < 0) {
+#else
 	/* convert from decibel */
 	const double volume = pow (10, (player->settings->volume + player->gain) / 20);
-	/* XXX: can we avoid accessing ->priv here? */
+	/* libav does not provide other means to set this right now. it might not
+	 * even work everywhere. */
 	if ((ret = av_opt_set_double (player->fvolume->priv, "volume", volume,
 			0)) != 0) {
+#endif
 		printError (player->settings, "Cannot set volume", ret);
 	}
 }
@@ -110,7 +119,6 @@ void *BarPlayerThread (void *data) {
 	ao_device *aoDev = NULL;
 	ao_sample_format aoFmt;
 
-	AVFilterGraph *fgraph = NULL;
 	AVFrame *frame = NULL, *filteredFrame = NULL;
 	AVFormatContext *fctx = NULL;
 	AVCodecContext *cctx = NULL;
@@ -162,7 +170,7 @@ void *BarPlayerThread (void *data) {
 	/* filter setup */
 	char strbuf[256];
 
-	if ((fgraph = avfilter_graph_alloc ()) == NULL) {
+	if ((player->fgraph = avfilter_graph_alloc ()) == NULL) {
 		softfail ("graph_alloc");
 	}
 
@@ -175,13 +183,15 @@ void *BarPlayerThread (void *data) {
 			av_get_sample_fmt_name (cctx->sample_fmt),
 			cctx->channel_layout);
 	if ((ret = avfilter_graph_create_filter (&fabuf,
-			avfilter_get_by_name ("abuffer"), NULL, strbuf, NULL, fgraph)) < 0) {
+			avfilter_get_by_name ("abuffer"), NULL, strbuf, NULL,
+			player->fgraph)) < 0) {
 		softfail ("create_filter abuffer");
 	}
 
 	/* volume */
 	if ((ret = avfilter_graph_create_filter (&player->fvolume,
-			avfilter_get_by_name ("volume"), NULL, NULL, NULL, fgraph)) < 0) {
+			avfilter_get_by_name ("volume"), NULL, NULL, NULL,
+			player->fgraph)) < 0) {
 		softfail ("create_filter volume");
 	}
 	BarPlayerSetVolume (player);
@@ -192,14 +202,15 @@ void *BarPlayerThread (void *data) {
 			av_get_sample_fmt_name (avformat));
 	if ((ret = avfilter_graph_create_filter (&fafmt,
 					avfilter_get_by_name ("aformat"), NULL, strbuf, NULL,
-					fgraph)) < 0) {
+					player->fgraph)) < 0) {
 		softfail ("create_filter aformat");
 	}
 
 	/* abuffersink */
 	AVFilterContext *fbufsink = NULL;
 	if ((ret = avfilter_graph_create_filter (&fbufsink,
-			avfilter_get_by_name ("abuffersink"), NULL, NULL, NULL, fgraph)) < 0) {
+			avfilter_get_by_name ("abuffersink"), NULL, NULL, NULL,
+			player->fgraph)) < 0) {
 		softfail ("create_filter abuffersink");
 	}
 
@@ -210,7 +221,7 @@ void *BarPlayerThread (void *data) {
 		softfail ("filter_link");
 	}
 
-	if ((ret = avfilter_graph_config (fgraph, NULL)) < 0) {
+	if ((ret = avfilter_graph_config (player->fgraph, NULL)) < 0) {
 		softfail ("graph_config");
 	}
 
@@ -277,7 +288,12 @@ void *BarPlayerThread (void *data) {
 
 				while (true) {
 					AVFilterBufferRef *audioref = NULL;
+#ifdef TEST_AV_BUFFERSINK_GET_BUFFER_REF
+					/* ffmpeg’s compatibility layer is broken in some releases */
+					if (av_buffersink_get_buffer_ref (fbufsink, &audioref, 0) < 0) {
+#else
 					if (av_buffersink_read (fbufsink, &audioref) < 0) {
+#endif
 						/* try again next frame */
 						break;
 					}
@@ -306,8 +322,8 @@ void *BarPlayerThread (void *data) {
 
 finish:
 	ao_close (aoDev);
-	if (fgraph != NULL) {
-		avfilter_graph_free (&fgraph);
+	if (player->fgraph != NULL) {
+		avfilter_graph_free (&player->fgraph);
 	}
 	if (cctx != NULL) {
 		avcodec_close (cctx);

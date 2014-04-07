@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2013
+Copyright (c) 2008-2014
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -32,6 +32,7 @@ THE SOFTWARE.
 #include <stdint.h>
 
 #include <libavfilter/avfilter.h>
+#include <libavfilter/avfiltergraph.h>
 #include <piano.h>
 #include <waitress.h>
 
@@ -52,6 +53,7 @@ struct audioPlayer {
 	} mode;
 
 	AVFilterContext *fvolume;
+	AVFilterGraph *fgraph;
 
 	volatile double volume;
 	double gain;

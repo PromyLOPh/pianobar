@@ -85,30 +85,52 @@ LIBGCRYPT_LDFLAGS:=-lgcrypt
 LIBJSONC_CFLAGS:=$(shell pkg-config --cflags json-c 2>/dev/null || pkg-config --cflags json)
 LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --libs json)
 
+# simple feature testing
+define TEST_AV_BUFFERSINK_GET_BUFFER_REF
+#include <libavfilter/buffersink.h>\n
+int main() {
+	void *foo = av_buffersink_get_buffer_ref;
+}
+endef
+
+define TEST_AVFILTER_GRAPH_SEND_COMMAND
+#include <libavfilter/avfiltergraph.h>\n
+int main() {
+	void *foo = avfilter_graph_send_command;
+}
+endef
+
+EXTRA_CFLAGS:=\
+		$(shell echo -e "${TEST_AV_BUFFERSINK_GET_BUFFER_REF}" | ${CC} ${LIBAV_CFLAGS} ${LIBAV_LDFLAGS} -x c -c -o /dev/null - 2>/dev/null && echo "-DHAVE_AV_BUFFERSINK_GET_BUFFER_REF") \
+		$(shell echo -e "${TEST_AVFILTER_GRAPH_SEND_COMMAND}" | ${CC} ${LIBAV_CFLAGS} ${LIBAV_LDFLAGS} -x c -c -o /dev/null - 2>/dev/null && echo "-DHAVE_AVFILTER_GRAPH_SEND_COMMAND")
+
+# combine all flags
+ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
+			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
+			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS} ${EXTRA_CFLAGS}
+ALL_LDFLAGS:=${LDFLAGS} -lao -lpthread -lm \
+			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
+			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS}
+
 # build pianobar
 ifeq (${DYNLINK},1)
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} libpiano.so.0
 	@echo "  LINK  $@"
-	@${CC} -o $@ ${PIANOBAR_OBJ} ${LDFLAGS} -lao -lpthread -lm -L. -lpiano \
-			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} ${LIBGCRYPT_LDFLAGS}
+	@${CC} -o $@ ${PIANOBAR_OBJ} -L. -lpiano ${ALL_LDFLAGS}
 else
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
 		${LIBWAITRESS_HDR}
 	@echo "  LINK  $@"
-	@${CC} ${CFLAGS} ${LDFLAGS} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} \
-			${LIBWAITRESS_OBJ} -lao -lpthread -lm \
-			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
-			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS} -o $@
+	@${CC} -o $@ ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
+			${ALL_LDFLAGS}
 endif
 
 # build shared and static libpiano
 libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 		${LIBWAITRESS_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
 	@echo "  LINK  $@"
-	@${CC} -shared -Wl,-soname,libpiano.so.0 ${CFLAGS} ${LDFLAGS} \
-			-o libpiano.so.0.0.0 ${LIBPIANO_RELOBJ} \
-			${LIBWAITRESS_RELOBJ} ${LIBGNUTLS_LDFLAGS} ${LIBGCRYPT_LDFLAGS} \
-			${LIBJSONC_LDFLAGS}
+	@${CC} -shared -Wl,-soname,libpiano.so.0 -o libpiano.so.0.0.0 \
+			${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} ${ALL_LDFLAGS}
 	@ln -s libpiano.so.0.0.0 libpiano.so.0
 	@ln -s libpiano.so.0 libpiano.so
 	@echo "    AR  libpiano.a"
@@ -118,9 +140,7 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 # build dependency files
 %.d: %.c
 	@set -e; rm -f $@; \
-			$(CC) -M ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
-			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
-			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS} $< > $@.$$$$; \
+			$(CC) -M ${ALL_CFLAGS} $< > $@.$$$$; \
 			sed '1 s,^.*\.o[ :]*,$*.o $@ : ,g' < $@.$$$$ > $@; \
 			rm -f $@.$$$$
 
@@ -131,16 +151,12 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 # build standard object files
 %.o: %.c
 	@echo "    CC  $<"
-	@${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
-			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
-			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS} -c -o $@ $<
+	@${CC} -c -o $@ ${ALL_CFLAGS} $<
 
 # create position independent code (for shared libraries)
 %.lo: %.c
 	@echo "    CC  $< (PIC)"
-	@${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
-			${LIBJSONC_CFLAGS} \
-			-c -fPIC -o $@ $<
+	@${CC} -c -fPIC -o $@ ${ALL_CFLAGS} $<
 
 clean:
 	@echo " CLEAN"
