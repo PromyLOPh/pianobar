@@ -124,6 +124,11 @@ void *BarPlayerThread (void *data) {
 		softfail ("find_stream_info");
 	}
 
+	/* ignore all streams, undone for audio stream below */
+	for (size_t i = 0; i < fctx->nb_streams; i++) {
+		fctx->streams[i]->discard = AVDISCARD_ALL;
+	}
+
 	const int streamIdx = av_find_best_stream (fctx, AVMEDIA_TYPE_AUDIO, -1,
 			-1, NULL, 0);
 	if (streamIdx < 0) {
@@ -132,6 +137,7 @@ void *BarPlayerThread (void *data) {
 
 	AVStream * const st = fctx->streams[streamIdx];
 	cctx = st->codec;
+	st->discard = AVDISCARD_DEFAULT;
 
 	/* decoder setup */
 	AVCodec * const decoder = avcodec_find_decoder (cctx->codec_id);
