@@ -16,7 +16,7 @@ Dependencies
 Building
 --------
 
-If you have all of the dependencies listed above just type
+Edit the Makefile and then type
 
 	gmake clean && gmake
 

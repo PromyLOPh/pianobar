@@ -288,7 +288,7 @@ void *BarPlayerThread (void *data) {
 
 				while (true) {
 					AVFilterBufferRef *audioref = NULL;
-#ifdef TEST_AV_BUFFERSINK_GET_BUFFER_REF
+#ifdef HAVE_AV_BUFFERSINK_GET_BUFFER_REF
 					/* ffmpeg’s compatibility layer is broken in some releases */
 					if (av_buffersink_get_buffer_ref (fbufsink, &audioref, 0) < 0) {
 #else

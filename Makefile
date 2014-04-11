@@ -6,6 +6,9 @@ LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
 DYNLINK:=0
+# choose your libav implementation.
+# supported: ffmpeg2.2, ffmpeg2.1, ffmpeg1.2, libav10, libav9
+LIBAV:=undefined
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
@@ -85,24 +88,20 @@ LIBGCRYPT_LDFLAGS:=-lgcrypt
 LIBJSONC_CFLAGS:=$(shell pkg-config --cflags json-c 2>/dev/null || pkg-config --cflags json)
 LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --libs json)
 
-# simple feature testing
-define TEST_AV_BUFFERSINK_GET_BUFFER_REF
-#include <libavfilter/buffersink.h>\n
-int main() {
-	void *foo = av_buffersink_get_buffer_ref;
-}
-endef
-
-define TEST_AVFILTER_GRAPH_SEND_COMMAND
-#include <libavfilter/avfiltergraph.h>\n
-int main() {
-	void *foo = avfilter_graph_send_command;
-}
-endef
-
-EXTRA_CFLAGS:=\
-		$(shell echo -e "${TEST_AV_BUFFERSINK_GET_BUFFER_REF}" | ${CC} ${LIBAV_CFLAGS} ${LIBAV_LDFLAGS} -x c -c -o /dev/null - 2>/dev/null && echo "-DHAVE_AV_BUFFERSINK_GET_BUFFER_REF") \
-		$(shell echo -e "${TEST_AVFILTER_GRAPH_SEND_COMMAND}" | ${CC} ${LIBAV_CFLAGS} ${LIBAV_LDFLAGS} -x c -c -o /dev/null - 2>/dev/null && echo "-DHAVE_AVFILTER_GRAPH_SEND_COMMAND")
+# libav* quirks
+ifeq (${LIBAV}, ffmpeg2.2)
+EXTRA_CFLAGS:=-DHAVE_AVFILTER_GRAPH_SEND_COMMAND
+else ifeq (${LIBAV}, ffmpeg2.1)
+EXTRA_CFLAGS:=
+else ifeq (${LIBAV}, ffmpeg1.2)
+EXTRA_CFLAGS:=-DHAVE_AV_BUFFERSINK_GET_BUFFER_REF
+else ifeq (${LIBAV}, libav10)
+EXTRA_CFLAGS:=
+else ifeq (${LIBAV}, libav9)
+EXTRA_CFLAGS:=
+else
+$(error Please choose a valid libav implementation by setting LIBAV)
+endif
 
 # combine all flags
 ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
@@ -166,23 +165,6 @@ clean:
 			$(LIBWAITRESS_SRC:.c=.d)
 
 all: pianobar
-
-debug: pianobar
-debug: CC=clang
-debug: CFLAGS=-g -Wall -Wextra \
-				-pedantic \
-				-Wno-unused-parameter \
-				-fsanitize=integer \
-				-fsanitize=undefined \
-				-fsanitize=alignment \
-				-fsanitize=bool \
-				-fsanitize=bounds \
-				-fsanitize=enum \
-				-fsanitize=shift \
-				-fsanitize=signed-integer-overflow \
-				-fsanitize=unsigned-integer-overflow \
-				-fno-sanitize-recover
-debug: LDFLAGS=$(CFLAGS)
 
 waitress-test: ${LIBWAITRESS_TEST_OBJ}
 	${CC} ${LDFLAGS} ${LIBWAITRESS_TEST_OBJ} ${LIBGNUTLS_LDFLAGS} -o waitress-test
