@@ -8,10 +8,14 @@ Dependencies
 - pthreads
 - libao
 - gnutls
-- gcrypt (with blowfish cipher enabled)
+- gcrypt[1]
 - json-c
-- libav/ffmpeg
+- libav/ffmpeg[2]
 - UTF-8 console/locale
+
+[1] with blowfish cipher enabled
+[2] required: demuxer mov, decoder aac, protocol http and filters volume,
+    aformat, aresample
 
 Building
 --------
