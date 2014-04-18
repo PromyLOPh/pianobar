@@ -388,7 +388,7 @@ static void BarMainLoop (BarApp_t *app) {
 		BarMainHandleUserInput (app);
 
 		/* show time */
-		if (app->player.mode < PLAYER_FINISHED) {
+		if (app->player.mode == PLAYER_PLAYING) {
 			BarMainPrintTime (app);
 		}
 	}

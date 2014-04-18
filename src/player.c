@@ -242,6 +242,7 @@ void *BarPlayerThread (void *data) {
 
 	player->songPlayed = 0;
 	player->songDuration = av_q2d (st->time_base) * (double) st->duration;
+	player->mode = PLAYER_PLAYING;
 
 	while (av_read_frame (fctx, &pkt) >= 0) {
 		AVPacket pkt_orig = pkt;
