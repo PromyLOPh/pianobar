@@ -807,11 +807,6 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 			/* we need shorter timeouts for connect() */
 			fcntl (sock, F_SETFL, O_NONBLOCK);
 
-			/* increase socket receive buffer */
-			const int sockopt = 5*1024*1024;
-			setsockopt (sock, SOL_SOCKET, SO_RCVBUF, &sockopt,
-					sizeof (sockopt));
-
 			/* non-blocking connect will return immediately */
 			connect (sock, gacurr->ai_addr, gacurr->ai_addrlen);
 
