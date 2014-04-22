@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _WAITRESS_H
-#define _WAITRESS_H
+#ifndef SRC_LIBWAITRESS_WAITRESS_H_ZE5NT8JI
+#define SRC_LIBWAITRESS_WAITRESS_H_ZE5NT8JI
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -132,5 +132,5 @@ WaitressReturn_t WaitressFetchBuf (WaitressHandle_t *, char **);
 WaitressReturn_t WaitressFetchCall (WaitressHandle_t *);
 const char *WaitressErrorToStr (WaitressReturn_t);
 
-#endif /* _WAITRESS_H */
+#endif /* SRC_LIBWAITRESS_WAITRESS_H_ZE5NT8JI */
 

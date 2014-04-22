@@ -1,9 +1,9 @@
-#ifndef _CONFIG_H
-#define _CONFIG_H
+#ifndef SRC_CONFIG_H_S6A1C09K
+#define SRC_CONFIG_H_S6A1C09K
 
 /* package name */
 #define PACKAGE "pianobar"
 
 #define VERSION "2013.09.15-dev"
 
-#endif /* _CONFIG_H */
+#endif /* SRC_CONFIG_H_S6A1C09K */

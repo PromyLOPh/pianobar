@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _PLAYER_H
-#define _PLAYER_H
+#ifndef SRC_PLAYER_H_CN979RE9
+#define SRC_PLAYER_H_CN979RE9
 
 #include "config.h"
 
@@ -72,4 +72,4 @@ void BarPlayerSetVolume (struct audioPlayer * const player);
 void BarPlayerInit ();
 void BarPlayerDestroy ();
 
-#endif /* _PLAYER_H */
+#endif /* SRC_PLAYER_H_CN979RE9 */

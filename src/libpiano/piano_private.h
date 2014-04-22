@@ -21,12 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _PIANO_PRIVATE_H
-#define _PIANO_PRIVATE_H
+#ifndef SRC_LIBPIANO_PIANO_PRIVATE_H_C35CDGGL
+#define SRC_LIBPIANO_PIANO_PRIVATE_H_C35CDGGL
 
 #include "piano.h"
 
 void PianoDestroyStation (PianoStation_t *station);
 void PianoDestroyUserInfo (PianoUserInfo_t *user);
 
-#endif /* _PIANO_PRIVATE_H */
+#endif /* SRC_LIBPIANO_PIANO_PRIVATE_H_C35CDGGL */

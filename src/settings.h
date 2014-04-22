@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _SETTINGS_H
-#define _SETTINGS_H
+#ifndef SRC_SETTINGS_H_IPL0ON9L
+#define SRC_SETTINGS_H_IPL0ON9L
 
 #include <stdbool.h>
 
@@ -116,4 +116,4 @@ void BarSettingsRead (BarSettings_t *);
 void BarSettingsWrite (PianoStation_t *, BarSettings_t *);
 void BarGetXdgConfigDir (const char *, char *, size_t);
 
-#endif /* _SETTINGS_H */
+#endif /* SRC_SETTINGS_H_IPL0ON9L */

@@ -21,12 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _TERMINAL_H
-#define _TERMINAL_H
+#ifndef SRC_TERMINAL_H_WY8F3MNH
+#define SRC_TERMINAL_H_WY8F3MNH
 
 void BarTermSetEcho (char);
 void BarTermSetBuffer (char);
 void BarTermSave (struct termios *);
 void BarTermRestore (struct termios *termOrig);
 
-#endif /* _TERMINAL_H */
+#endif /* SRC_TERMINAL_H_WY8F3MNH */

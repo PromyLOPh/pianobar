@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _MAIN_H
-#define _MAIN_H
+#ifndef SRC_MAIN_H_4ZGSCG6X
+#define SRC_MAIN_H_4ZGSCG6X
 
 #include <piano.h>
 #include <waitress.h>
@@ -45,5 +45,5 @@ typedef struct {
 	unsigned int playerErrors;
 } BarApp_t;
 
-#endif /* _MAIN_H */
+#endif /* SRC_MAIN_H_4ZGSCG6X */
 

@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _PIANO_H
-#define _PIANO_H
+#ifndef SRC_LIBPIANO_PIANO_H_MFBT13PN
+#define SRC_LIBPIANO_PIANO_H_MFBT13PN
 
 #include <stdbool.h>
 #ifdef __FreeBSD__
@@ -346,4 +346,4 @@ PianoStation_t *PianoFindStationById (PianoStation_t * const,
 		const char * const);
 const char *PianoErrorToStr (PianoReturn_t);
 
-#endif /* _PIANO_H */
+#endif /* SRC_LIBPIANO_PIANO_H_MFBT13PN */
