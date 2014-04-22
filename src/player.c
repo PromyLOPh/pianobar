@@ -39,6 +39,10 @@ THE SOFTWARE.
 #include <libavfilter/avfiltergraph.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
+#ifdef HAVE_LIBAVFILTER_AVCODEC_H
+/* required by ffmpeg1.2 for avfilter_copy_buf_props */
+#include <libavfilter/avcodec.h>
+#endif
 #include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
 
