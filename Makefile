@@ -8,7 +8,7 @@ MANDIR:=${PREFIX}/share/man
 DYNLINK:=0
 # choose your libav implementation.
 # supported: ffmpeg2.2, ffmpeg2.1, ffmpeg1.2, libav10, libav9
-LIBAV:=undefined
+LIBAV?=undefined
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
