@@ -6,9 +6,13 @@ LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
 DYNLINK:=0
-# choose your libav implementation.
-# supported: ffmpeg2.2, ffmpeg2.1, ffmpeg1.2, libav10, libav9
-LIBAV:=undefined
+# Choose the libav implementation your system is using by uncommenting one line
+# below. These versions are supported:
+#LIBAV:=ffmpeg2.2
+#LIBAV:=ffmpeg2.1
+#LIBAV:=ffmpeg1.2
+#LIBAV:=libav10
+#LIBAV:=libav9
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
@@ -100,7 +104,7 @@ EXTRA_CFLAGS:=
 else ifeq (${LIBAV}, libav9)
 EXTRA_CFLAGS:=
 else
-$(error Please choose a valid libav implementation by setting LIBAV)
+$(error Please choose a valid libav implementation at the top of this file)
 endif
 
 # combine all flags
