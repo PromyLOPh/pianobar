@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <limits.h>
 #include <assert.h>
+#include <wordexp.h>
 
 #include <piano.h>
 
@@ -42,6 +43,19 @@ THE SOFTWARE.
 #include "ui_dispatch.h"
 
 #define streq(a, b) (strcmp (a, b) == 0)
+
+static char *BarEvalString (const char *cfgvalue)
+{
+	wordexp_t p;
+	char *s;
+	int r = wordexp(cfgvalue, &p, 0);
+	if (r)
+		return NULL;
+
+	s = strdup(p.we_wordv[0]);
+	wordfree(&p);
+	return s;
+}
 
 /*	tries to guess your config dir; somehow conforming to
  *	http://standards.freedesktop.org/basedir-spec/basedir-spec-0.6.html
@@ -283,7 +297,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->listSongFormat = strdup (val);
 			} else if (streq ("fifo", key)) {
 				free (settings->fifo);
-				settings->fifo = strdup (val);
+				settings->fifo = BarEvalString (val);
 			} else if (streq ("autoselect", key)) {
 				settings->autoselect = atoi (val);
 			} else if (streq ("tls_fingerprint", key)) {
