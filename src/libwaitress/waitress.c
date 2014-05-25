@@ -1189,7 +1189,7 @@ const char *WaitressErrorToStr (WaitressReturn_t wRet) {
 			break;
 
 		case WAITRESS_RET_GETADDR_ERR:
-			return "getaddr failed.";
+			return "DNS lookup failed.";
 			break;
 
 		case WAITRESS_RET_CB_ABORT:
