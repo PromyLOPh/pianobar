@@ -34,6 +34,8 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <limits.h>
 #include <assert.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include <piano.h>
 
@@ -43,32 +45,58 @@ THE SOFTWARE.
 
 #define streq(a, b) (strcmp (a, b) == 0)
 
-/*	tries to guess your config dir; somehow conforming to
- *	http://standards.freedesktop.org/basedir-spec/basedir-spec-0.6.html
- *	@param name of the config file (can contain subdirs too)
- *	@param store the whole path here
- *	@param but only up to this size
- *	@return nothing
+/*	Get current user’s home directory
  */
-void BarGetXdgConfigDir (const char *filename, char *retDir,
-		size_t retDirN) {
-	char *xdgConfigDir = NULL;
+static char *BarSettingsGetHome () {
+	char *home;
+
+	/* try environment variable */
+	if ((home = getenv ("HOME")) != NULL && strlen (home) > 0) {
+		return strdup (home);
+	}
+
+	/* try passwd mechanism */
+	struct passwd * const pw = getpwuid (getuid ());
+	if (pw != NULL && pw->pw_dir != NULL && strlen (pw->pw_dir) > 0) {
+		return strdup (pw->pw_dir);
+	}
+
+	return NULL;
+}
+
+/*	Get XDG config directory, which is set by BarSettingsRead (if not set)
+ */
+static char *BarGetXdgConfigDir (const char * const filename) {
+	assert (filename != NULL);
+
+	char *xdgConfigDir;
 
 	if ((xdgConfigDir = getenv ("XDG_CONFIG_HOME")) != NULL &&
 			strlen (xdgConfigDir) > 0) {
-		/* special dir: $xdg_config_home */
-		snprintf (retDir, retDirN, "%s/%s", xdgConfigDir, filename);
-	} else {
-		if ((xdgConfigDir = getenv ("HOME")) != NULL &&
-				strlen (xdgConfigDir) > 0) {
-			/* standard config dir: $home/.config */
-			snprintf (retDir, retDirN, "%s/.config/%s", xdgConfigDir,
-					filename);
-		} else {
-			/* fallback: working dir */
-			snprintf (retDir, retDirN, "%s", filename);
-		}
+		const size_t len = (strlen (xdgConfigDir) + 1 +
+				strlen (filename) + 1);
+		char * const concat = malloc (len * sizeof (*concat));
+		snprintf (concat, len, "%s/%s", xdgConfigDir, filename);
+		return concat;
 	}
+
+	return NULL;
+}
+
+/*	Expand ~/ to user’s home directory
+ */
+char *BarSettingsExpandTilde (const char * const path, const char * const home) {
+	assert (path != NULL);
+	assert (home != NULL);
+
+	if (strncmp (path, "~/", 2) == 0) {
+		char * const expanded = malloc ((strlen (home) + 1 + strlen (path)-2 + 1) *
+				sizeof (*expanded));
+		sprintf (expanded, "%s/%s", home, &path[2]);
+		return expanded;
+	}
+
+	return strdup (path);
 }
 
 /*	initialize settings structure
@@ -115,7 +143,14 @@ void BarSettingsDestroy (BarSettings_t *settings) {
  *	@return nothing yet
  */
 void BarSettingsRead (BarSettings_t *settings) {
-	char *configfiles[] = {PACKAGE "/state", PACKAGE "/config"};
+	char * const configfiles[] = {PACKAGE "/state", PACKAGE "/config"};
+	char * const userhome = BarSettingsGetHome ();
+	assert (userhome != NULL);
+	/* set xdg config path (if not set) */
+	char * const defaultxdg = malloc (strlen (userhome) + strlen ("/.config") + 1);
+	sprintf (defaultxdg, "%s/.config", userhome);
+	setenv ("XDG_CONFIG_HOME", defaultxdg, 0);
+	free (defaultxdg);
 
 	assert (sizeof (settings->keys) / sizeof (*settings->keys) ==
 			sizeof (dispatchActions) / sizeof (*dispatchActions));
@@ -140,8 +175,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->device = strdup ("android-generic");
 	settings->inkey = strdup ("R=U!LH$O2B#");
 	settings->outkey = strdup ("6#26FRL$ZWD");
-	settings->fifo = malloc (PATH_MAX * sizeof (*settings->fifo));
-	BarGetXdgConfigDir (PACKAGE "/ctl", settings->fifo, PATH_MAX);
+	settings->fifo = BarGetXdgConfigDir (PACKAGE "/ctl");
+	assert (settings->fifo != NULL);
 	memcpy (settings->tlsFingerprint, "\x2D\x0A\xFD\xAF\xA1\x6F\x4B\x5C\x0A"
 			"\x43\xF3\xCB\x1D\x47\x52\xF9\x53\x55\x07\xC0",
 			sizeof (settings->tlsFingerprint));
@@ -168,11 +203,13 @@ void BarSettingsRead (BarSettings_t *settings) {
 	/* read config files */
 	for (size_t j = 0; j < sizeof (configfiles) / sizeof (*configfiles); j++) {
 		static const char *formatMsgPrefix = "format_msg_";
-		char key[256], val[256], path[PATH_MAX];
+		char key[256], val[256];
 		FILE *configfd;
 
-		BarGetXdgConfigDir (configfiles[j], path, sizeof (path));
+		char * const path = BarGetXdgConfigDir (configfiles[j]);
+		assert (path != NULL);
 		if ((configfd = fopen (path, "r")) == NULL) {
+			free (path);
 			continue;
 		}
 
@@ -283,7 +320,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->listSongFormat = strdup (val);
 			} else if (streq ("fifo", key)) {
 				free (settings->fifo);
-				settings->fifo = strdup (val);
+				settings->fifo = BarSettingsExpandTilde (val, userhome);
 			} else if (streq ("autoselect", key)) {
 				settings->autoselect = atoi (val);
 			} else if (streq ("tls_fingerprint", key)) {
@@ -330,6 +367,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 		}
 
 		fclose (configfd);
+		free (path);
 	}
 
 	/* check environment variable if proxy is not set explicitly */
@@ -339,18 +377,21 @@ void BarSettingsRead (BarSettings_t *settings) {
 			settings->proxy = strdup (tmpProxy);
 		}
 	}
+
+	free (userhome);
 }
 
 /*	write statefile
  */
 void BarSettingsWrite (PianoStation_t *station, BarSettings_t *settings) {
-	char path[PATH_MAX];
 	FILE *fd;
 
 	assert (settings != NULL);
 
-	BarGetXdgConfigDir (PACKAGE "/state", path, sizeof (path));
+	char * const path = BarGetXdgConfigDir (PACKAGE "/state");
+	assert (path != NULL);
 	if ((fd = fopen (path, "w")) == NULL) {
+		free (path);
 		return;
 	}
 
@@ -361,5 +402,6 @@ void BarSettingsWrite (PianoStation_t *station, BarSettings_t *settings) {
 	}
 
 	fclose (fd);
+	free (path);
 }
 
