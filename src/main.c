@@ -69,9 +69,17 @@ static void BarMainLoadProxy (const BarSettings_t *settings,
 	 * firewalled fellows) */
 	if (settings->controlProxy != NULL) {
 		/* control proxy overrides global proxy */
-		WaitressSetProxy (waith, settings->controlProxy);
+		if (!WaitressSetProxy (waith, settings->controlProxy)) {
+			/* if setting proxy fails, url is invalid */
+			BarUiMsg(settings, MSG_ERR, "Control proxy (%s) is invalid!\n",
+					 settings->controlProxy);
+		}
 	} else if (settings->proxy != NULL && strlen (settings->proxy) > 0) {
-		WaitressSetProxy (waith, settings->proxy);
+		if (!WaitressSetProxy (waith, settings->proxy)) {
+			/* if setting proxy fails, url is invalid */
+			BarUiMsg(settings, MSG_ERR, "Proxy (%s) is invalid!\n",
+					 settings->proxy);
+		}
 	}
 }
 
