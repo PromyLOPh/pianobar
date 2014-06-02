@@ -31,6 +31,26 @@ THE SOFTWARE.
 #include <assert.h>
 #include <arpa/inet.h>
 
+/* ffmpeg/libav quirks
+ * ffmpeg’s micro versions always start at 100, that’s how we can distinguish
+ * ffmpeg and libav */
+#include <libavfilter/version.h>
+/* ffmpeg 2.2 */
+#if LIBAVFILTER_VERSION_MAJOR == 4 && \
+		LIBAVFILTER_VERSION_MINOR <= 2 && \
+		LIBAVFILTER_VERSION_MICRO >= 100
+#define HAVE_AVFILTER_GRAPH_SEND_COMMAND
+#endif
+
+/* ffmpeg 1.2 */
+#if LIBAVFILTER_VERSION_MAJOR == 3 && \
+		LIBAVFILTER_VERSION_MINOR <= 42 && \
+		LIBAVFILTER_VERSION_MINOR > 32 && \
+		LIBAVFILTER_VERSION_MICRO >= 100
+#define HAVE_AV_BUFFERSINK_GET_BUFFER_REF
+#define HAVE_LIBAVFILTER_AVCODEC_H
+#endif
+
 #include <ao/ao.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>

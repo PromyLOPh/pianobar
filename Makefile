@@ -6,13 +6,6 @@ LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
 DYNLINK:=0
-# Choose the libav implementation your system is using by uncommenting one line
-# below. These versions are supported:
-#LIBAV:=ffmpeg2.2
-#LIBAV:=ffmpeg2.1
-#LIBAV:=ffmpeg1.2
-#LIBAV:=libav10
-#LIBAV:=libav9
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
@@ -92,25 +85,10 @@ LIBGCRYPT_LDFLAGS:=-lgcrypt
 LIBJSONC_CFLAGS:=$(shell pkg-config --cflags json-c 2>/dev/null || pkg-config --cflags json)
 LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --libs json)
 
-# libav* quirks
-ifeq (${LIBAV}, ffmpeg2.2)
-EXTRA_CFLAGS:=-DHAVE_AVFILTER_GRAPH_SEND_COMMAND
-else ifeq (${LIBAV}, ffmpeg2.1)
-EXTRA_CFLAGS:=
-else ifeq (${LIBAV}, ffmpeg1.2)
-EXTRA_CFLAGS:=-DHAVE_AV_BUFFERSINK_GET_BUFFER_REF -DHAVE_LIBAVFILTER_AVCODEC_H
-else ifeq (${LIBAV}, libav10)
-EXTRA_CFLAGS:=
-else ifeq (${LIBAV}, libav9)
-EXTRA_CFLAGS:=
-else
-$(error Please choose a valid libav implementation at the top of this file)
-endif
-
 # combine all flags
 ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
 			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
-			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS} ${EXTRA_CFLAGS}
+			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS}
 ALL_LDFLAGS:=${LDFLAGS} -lao -lpthread -lm \
 			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
 			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS}
