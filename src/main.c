@@ -98,16 +98,23 @@ static bool BarMainLoginUser (BarApp_t *app) {
  */
 static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 		BarReadlineFds_t *input) {
+	bool usernameFromConfig = true;
+
 	if (settings->username == NULL) {
 		char nameBuf[100];
 
 		BarUiMsg (settings, MSG_QUESTION, "Email: ");
 		BarReadlineStr (nameBuf, sizeof (nameBuf), input, BAR_RL_DEFAULT);
 		settings->username = strdup (nameBuf);
+		usernameFromConfig = false;
 	}
 
 	if (settings->password == NULL) {
 		char passBuf[100];
+
+		if (usernameFromConfig) {
+			BarUiMsg (settings, MSG_QUESTION, "Email: %s\n", settings->username);
+		}
 
 		if (settings->passwordCmd == NULL) {
 			BarUiMsg (settings, MSG_QUESTION, "Password: ");
@@ -163,8 +170,7 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 					return false;
 				}
 			}
-
-		}
+		} /* end else passwordCmd */
 	}
 
 	return true;
