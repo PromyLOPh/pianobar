@@ -35,9 +35,8 @@ THE SOFTWARE.
  * ffmpeg’s micro versions always start at 100, that’s how we can distinguish
  * ffmpeg and libav */
 #include <libavfilter/version.h>
-/* ffmpeg 2.2 */
+/* ffmpeg >=2.2 */
 #if LIBAVFILTER_VERSION_MAJOR == 4 && \
-		LIBAVFILTER_VERSION_MINOR <= 2 && \
 		LIBAVFILTER_VERSION_MICRO >= 100
 #define HAVE_AVFILTER_GRAPH_SEND_COMMAND
 #endif
