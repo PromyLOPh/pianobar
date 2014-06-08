@@ -1,3 +1,14 @@
+Release 2014.06.08
+
+- Switch to ffmpeg/libav for audio playback. ffmpeg 2.2, 2.1 and 1.2 as well as
+  libav 10 and 9 are supported. libav 8 does *not* work. libmad/libfaad are not
+  required any more.
+- Tilde-expansion for the fifo setting
+- eventcmd’s songstart reports correct song length
+- Readline improvements
+- Support TLS SNI
+- Improved error messages
+
 Release 2013.09.15
 
 - Generic linked lists for libpiano. This change breaks libpiano’s API and
