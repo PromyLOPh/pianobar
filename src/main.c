@@ -414,15 +414,11 @@ static void BarMainLoop (BarApp_t *app) {
 
 int main (int argc, char **argv) {
 	static BarApp_t app;
-	/* terminal attributes _before_ we started messing around with ~ECHO */
-	struct termios termOrig;
 
 	memset (&app, 0, sizeof (app));
 
 	/* save terminal attributes, before disabling echoing */
-	BarTermSave (&termOrig);
-	BarTermSetEcho (0);
-	BarTermSetBuffer (0);
+	BarTermInit ();
 
 	/* signals */
 	signal (SIGPIPE, SIG_IGN);
@@ -506,7 +502,7 @@ int main (int argc, char **argv) {
 	BarSettingsDestroy (&app.settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */
-	BarTermRestore (&termOrig);
+	BarTermRestore ();
 
 	return 0;
 }

@@ -24,9 +24,7 @@ THE SOFTWARE.
 #ifndef SRC_TERMINAL_H_WY8F3MNH
 #define SRC_TERMINAL_H_WY8F3MNH
 
-void BarTermSetEcho (char);
-void BarTermSetBuffer (char);
-void BarTermSave (struct termios *);
-void BarTermRestore (struct termios *termOrig);
+void BarTermInit ();
+void BarTermRestore ();
 
 #endif /* SRC_TERMINAL_H_WY8F3MNH */
