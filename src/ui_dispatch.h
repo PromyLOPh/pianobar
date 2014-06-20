@@ -84,7 +84,7 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"upcoming songs", "act_upcoming"},
 		{'x', BAR_DC_STATION, BarUiActSelectQuickMix, "select quickmix stations",
 				"act_stationselectquickmix"},
-		{'$', BAR_DC_GLOBAL, BarUiActDebug, NULL, "act_debug"},
+		{'$', BAR_DC_SONG, BarUiActDebug, NULL, "act_debug"},
 		{'b', BAR_DC_SONG, BarUiActBookmark, "bookmark song/artist",
 				"act_bookmark"},
 		{'(', BAR_DC_GLOBAL, BarUiActVolDown, "decrease volume",
