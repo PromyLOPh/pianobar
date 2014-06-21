@@ -568,7 +568,14 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			json_object *feedback = json_object_object_get (result,
 					"feedback");
 			if (feedback != NULL) {
-				json_object_object_foreach (feedback, key, val) {
+				static const char * const keys[] = {"thumbsUp", "thumbsDown"};
+				for (size_t i = 0; i < sizeof (keys)/sizeof (*keys); i++) {
+					json_object * const val = json_object_object_get (feedback,
+							keys[i]);
+					if (val == NULL) {
+						continue;
+					}
+					assert (json_object_is_type (val, json_type_array));
 					for (int i = 0; i < json_object_array_length (val); i++) {
 						json_object *s = json_object_array_get_idx (val, i);
 						PianoSong_t *feedbackSong;
