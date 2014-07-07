@@ -36,7 +36,7 @@ THE SOFTWARE.
  * be nice and check the encoding of your strings. thanks :) */
 
 /* Pandora API documentation is available at
- * http://pan-do-ra-api.wikia.com
+ * http://6xq.net/playground/pandora-apidoc/
  */
 
 #define PIANO_RPC_HOST "tuner.pandora.com"
