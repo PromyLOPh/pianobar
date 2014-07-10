@@ -58,6 +58,7 @@ THE SOFTWARE.
 #include <libavfilter/avfiltergraph.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
+#include <libavformat/avio.h>
 #ifdef HAVE_LIBAVFILTER_AVCODEC_H
 /* required by ffmpeg1.2 for avfilter_copy_buf_props */
 #include <libavfilter/avcodec.h>
@@ -147,7 +148,7 @@ void *BarPlayerThread (void *data) {
 	AVCodecContext *cctx = NULL;
 
 	/* stream setup */
-	if ((ret = avformat_open_input (&fctx, player->url, NULL, NULL)) < 0) {
+    if ((ret = avformat_open_input (&fctx, player->url, NULL, NULL)) < 0) {
 		softfail ("Unable to open audio file");
 	}
 
@@ -266,9 +267,73 @@ void *BarPlayerThread (void *data) {
 	player->songPlayed = 0;
 	player->songDuration = av_q2d (st->time_base) * (double) st->duration;
 	player->mode = PLAYER_PLAYING;
+    
+    bool save_file = false;
+    char * save_dir = player->settings->save_dir;
+    char tmp_filename [1000];
+    char save_filename [1000];
+
+    AVFormatContext *ofcx;
+    AVOutputFormat *ofmt;
+    AVStream *ost;
+
+    if (save_dir == NULL){
+        save_file = false;
+    }
+    else{
+        save_file = true;
+    }
+
+    if ( save_file ){
+        char *music;
+        int i;
+
+
+        sprintf(save_filename, "%s/%s - %s.aac", save_dir, player->artist, player->title);
+        sprintf(tmp_filename, "/tmp/%s - %s.aac",  player->artist, player->title);
+
+        music = strstr(save_filename, save_dir);
+        i = (int) (music - save_filename + strlen(save_dir));
+        for (i; i < 1000; i++){
+            if (save_filename[i] == '/'){
+                save_filename[i] = ' ';
+            }
+        }
+
+        if( access( save_filename, F_OK ) != -1){
+            save_file = false;    
+        }
+        else{
+            save_file = true;
+        }
+
+        if ( save_file ){
+            ofmt = av_guess_format( NULL, tmp_filename, NULL);
+            ofcx = avformat_alloc_context();
+            ofcx->oformat = ofmt;
+            avio_open2(&ofcx->pb, tmp_filename, AVIO_FLAG_WRITE, NULL, NULL);
+
+            ost = avformat_new_stream( ofcx, NULL);
+            avcodec_copy_context( ost->codec, cctx);
+
+            ost->time_base = time_base; 
+            ost->codec->time_base = ost->time_base;
+
+            avformat_write_header( ofcx, NULL );
+        }
+    }
 
 	while (av_read_frame (fctx, &pkt) >= 0) {
 		AVPacket pkt_orig = pkt;
+		AVPacket pkt_write = pkt;
+
+
+        if ( save_file ){
+            pkt_write.stream_index = ost->id; 
+            pkt_write.pts = av_rescale_q(pkt_write.pts, fctx->streams[0]->codec->time_base, ofcx->streams[0]->time_base);
+            pkt_write.dts = av_rescale_q(pkt_write.dts, fctx->streams[0]->codec->time_base, ofcx->streams[0]->time_base);
+            av_write_frame( ofcx, &pkt_write);
+        }
 
 		/* pausing */
 		pthread_mutex_lock (&player->pauseMutex);
@@ -302,7 +367,10 @@ void *BarPlayerThread (void *data) {
 				softfail ("decode_audio4");
 			}
 
+
 			if (got_frame != 0) {
+
+
 				/* XXX: suppresses warning from resample filter */
 				if (frame->pts == (int64_t) AV_NOPTS_VALUE) {
 					frame->pts = 0;
@@ -334,10 +402,10 @@ void *BarPlayerThread (void *data) {
 					avfilter_unref_bufferp (&audioref);
 				}
 			}
-
 			pkt.data += decoded;
 			pkt.size -= decoded;
 		} while (pkt.size > 0);
+
 
 		av_free_packet (&pkt_orig);
 
@@ -364,6 +432,14 @@ finish:
 
 	player->mode = PLAYER_FINISHED;
 
+    if ( save_file ){
+        char * buffer [2000];
+        av_write_trailer(ofcx);
+        avformat_free_context (ofcx);
+        avio_close(ofcx->pb);
+        sprintf(buffer, "mv \"%s\" \"%s\"", tmp_filename, save_filename);
+        system(buffer);
+    }
 	return (void *) pret;
 }
 

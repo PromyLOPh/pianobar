@@ -58,6 +58,8 @@ struct audioPlayer {
 	volatile double volume;
 	double gain;
 	char *url;
+    char *artist;
+    char *title;
 	const BarSettings_t *settings;
 
 	/* measured in seconds */

@@ -94,6 +94,7 @@ typedef struct {
 	char *controlProxy; /* non-american listeners need this */
 	char *proxy;
 	char *autostartStation;
+	char *save_dir;
 	char *eventCmd;
 	char *loveIcon;
 	char *banIcon;
