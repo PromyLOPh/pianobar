@@ -416,8 +416,9 @@ void *BarPlayerThread (void *data) {
 	player_t * const player = data;
 	intptr_t pret = PLAYER_RET_OK;
 
-	bool retry = false;
+	bool retry;
 	do {
+		retry = false;
 		if (openStream (player)) {
 			if (openFilter (player) && openDevice (player)) {
 				retry = play (player) == AVERROR_INVALIDDATA;
