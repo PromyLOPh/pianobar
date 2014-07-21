@@ -46,7 +46,7 @@ THE SOFTWARE.
 /*	helper to _really_ skip a song (unlock mutex, quit player)
  *	@param player handle
  */
-static inline void BarUiDoSkipSong (struct audioPlayer *player) {
+static inline void BarUiDoSkipSong (player_t * const player) {
 	assert (player != NULL);
 
 	pthread_mutex_lock (&player->pauseMutex);

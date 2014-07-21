@@ -31,14 +31,17 @@ THE SOFTWARE.
 #include <pthread.h>
 #include <stdint.h>
 
+#include <ao/ao.h>
+#include <libavformat/avformat.h>
 #include <libavfilter/avfilter.h>
 #include <libavfilter/avfiltergraph.h>
 #include <piano.h>
 #include <waitress.h>
 
 #include "settings.h"
+#include "config.h"
 
-struct audioPlayer {
+typedef struct {
 	/* protected by pauseMutex */
 	volatile bool doQuit;
 	volatile bool doPause;
@@ -52,9 +55,21 @@ struct audioPlayer {
 		PLAYER_FINISHED,
 	} mode;
 
+	/* libav */
 	AVFilterContext *fvolume;
 	AVFilterGraph *fgraph;
+	AVFormatContext *fctx;
+	AVStream *st;
+	AVFilterContext *fbufsink, *fabuf;
+	int streamIdx;
+	int64_t lastTimestamp;
+#ifndef HAVE_AV_TIMEOUT
+	int64_t ping;
+#endif
 
+	ao_device *aoDev;
+
+	/* settings */
 	volatile double volume;
 	double gain;
 	char *url;
@@ -63,12 +78,12 @@ struct audioPlayer {
 	/* measured in seconds */
 	volatile unsigned int songDuration;
 	volatile unsigned int songPlayed;
-};
+} player_t;
 
 enum {PLAYER_RET_OK = 0, PLAYER_RET_HARDFAIL = 1, PLAYER_RET_SOFTFAIL = 2};
 
 void *BarPlayerThread (void *data);
-void BarPlayerSetVolume (struct audioPlayer * const player);
+void BarPlayerSetVolume (player_t * const player);
 void BarPlayerInit ();
 void BarPlayerDestroy ();
 

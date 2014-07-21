@@ -31,28 +31,9 @@ THE SOFTWARE.
 #include <assert.h>
 #include <arpa/inet.h>
 
-/* ffmpeg/libav quirks
- * ffmpeg’s micro versions always start at 100, that’s how we can distinguish
- * ffmpeg and libav */
-#include <libavfilter/version.h>
-/* ffmpeg >=2.2 */
-#if LIBAVFILTER_VERSION_MAJOR == 4 && \
-		LIBAVFILTER_VERSION_MICRO >= 100
-#define HAVE_AVFILTER_GRAPH_SEND_COMMAND
-#endif
+#include "config.h"
 
-/* ffmpeg 1.2 */
-#if LIBAVFILTER_VERSION_MAJOR == 3 && \
-		LIBAVFILTER_VERSION_MINOR <= 42 && \
-		LIBAVFILTER_VERSION_MINOR > 32 && \
-		LIBAVFILTER_VERSION_MICRO >= 100
-#define HAVE_AV_BUFFERSINK_GET_BUFFER_REF
-#define HAVE_LIBAVFILTER_AVCODEC_H
-#endif
-
-#include <ao/ao.h>
 #include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavfilter/avfilter.h>
 #include <libavfilter/avfiltergraph.h>
@@ -64,11 +45,16 @@ THE SOFTWARE.
 #endif
 #include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
+#ifndef HAVE_AV_TIMEOUT
+#include <libavutil/time.h>
+#endif
 
 #include "player.h"
-#include "config.h"
 #include "ui.h"
 #include "ui_types.h"
+
+/* default sample format */
+const enum AVSampleFormat avformat = AV_SAMPLE_FMT_S16;
 
 static void printError (const BarSettings_t * const settings,
 		const char * const msg, int ret) {
@@ -97,7 +83,7 @@ void BarPlayerDestroy () {
 
 /*	Update volume filter
  */
-void BarPlayerSetVolume (struct audioPlayer * const player) {
+void BarPlayerSetVolume (player_t * const player) {
 	assert (player != NULL);
 	assert (player->fvolume != NULL);
 
@@ -124,51 +110,74 @@ void BarPlayerSetVolume (struct audioPlayer * const player) {
 
 #define softfail(msg) \
 	printError (player->settings, msg, ret); \
-	pret = PLAYER_RET_SOFTFAIL; \
-	goto finish;
+	return false;
 
-/*	player thread; for every song a new thread is started
- *	@param audioPlayer structure
- *	@return PLAYER_RET_*
+#ifndef HAVE_AV_TIMEOUT
+/*	interrupt callback for libav, which lacks a timeout option
+ *
+ *	obviously calling ping() a lot of times and then calling av_gettime here
+ *	again is rather inefficient.
  */
-void *BarPlayerThread (void *data) {
-	assert (data != NULL);
+static int intCb (void * const data) {
+	player_t * const player = data;
+	assert (player != NULL);
+	/* 10 seconds timeout (usec) */
+	return (av_gettime () - player->ping) > 10*1000000;
+}
 
-	struct audioPlayer * const player = data;
+#define ping() player->ping = av_gettime ()
+#else
+#define ping()
+#endif
+
+static bool openStream (player_t * const player) {
+	assert (player != NULL);
+	/* no leak? */
+	assert (player->fctx == NULL);
+
 	int ret;
-	intptr_t pret = PLAYER_RET_OK;
-	const enum AVSampleFormat avformat = AV_SAMPLE_FMT_S16;
-
-	ao_device *aoDev = NULL;
-	ao_sample_format aoFmt;
-
-	AVFrame *frame = NULL, *filteredFrame = NULL;
-	AVFormatContext *fctx = NULL;
-	AVCodecContext *cctx = NULL;
 
 	/* stream setup */
-	if ((ret = avformat_open_input (&fctx, player->url, NULL, NULL)) < 0) {
+	AVDictionary *options = NULL;
+#ifdef HAVE_AV_TIMEOUT
+	/* 10 seconds timeout on TCP r/w */
+	av_dict_set (&options, "timeout", "10000000", 0);
+#else
+	/* libav does not support the timeout option above. the workaround stores
+	 * the current time with ping() now and then, registers an interrupt
+	 * callback (below) and compares saved/current time in this callback. it’s
+	 * not bullet-proof, but seems to work fine for av_read_frame. */
+	player->fctx = avformat_alloc_context ();
+	player->fctx->interrupt_callback.callback = intCb;
+	player->fctx->interrupt_callback.opaque = player;
+#endif
+
+	assert (player->url != NULL);
+	ping ();
+	if ((ret = avformat_open_input (&player->fctx, player->url, NULL, &options)) < 0) {
 		softfail ("Unable to open audio file");
 	}
 
-	if ((ret = avformat_find_stream_info (fctx, NULL)) < 0) {
+	ping ();
+	if ((ret = avformat_find_stream_info (player->fctx, NULL)) < 0) {
 		softfail ("find_stream_info");
 	}
 
 	/* ignore all streams, undone for audio stream below */
-	for (size_t i = 0; i < fctx->nb_streams; i++) {
-		fctx->streams[i]->discard = AVDISCARD_ALL;
+	for (size_t i = 0; i < player->fctx->nb_streams; i++) {
+		player->fctx->streams[i]->discard = AVDISCARD_ALL;
 	}
 
-	const int streamIdx = av_find_best_stream (fctx, AVMEDIA_TYPE_AUDIO, -1,
-			-1, NULL, 0);
-	if (streamIdx < 0) {
+	ping ();
+	player->streamIdx = av_find_best_stream (player->fctx, AVMEDIA_TYPE_AUDIO,
+			-1, -1, NULL, 0);
+	if (player->streamIdx < 0) {
 		softfail ("find_best_stream");
 	}
 
-	AVStream * const st = fctx->streams[streamIdx];
-	cctx = st->codec;
-	st->discard = AVDISCARD_DEFAULT;
+	player->st = player->fctx->streams[player->streamIdx];
+	AVCodecContext * const cctx = player->st->codec;
+	player->st->discard = AVDISCARD_DEFAULT;
 
 	/* decoder setup */
 	AVCodec * const decoder = avcodec_find_decoder (cctx->codec_id);
@@ -180,32 +189,39 @@ void *BarPlayerThread (void *data) {
 		softfail ("codec_open2");
 	}
 
-	frame = avcodec_alloc_frame ();
-	assert (frame != NULL);
-	filteredFrame = avcodec_alloc_frame ();
-	assert (filteredFrame != NULL);
+	if (player->lastTimestamp > 0) {
+		ping ();
+		av_seek_frame (player->fctx, player->streamIdx, player->lastTimestamp, 0);
+	}
 
-	AVPacket pkt;
-	av_init_packet (&pkt);
-	pkt.data = NULL;
-	pkt.size = 0;
+	player->songPlayed = 0;
+	player->songDuration = av_q2d (player->st->time_base) *
+			(double) player->st->duration;
+	player->mode = PLAYER_PLAYING;
 
+	return true;
+}
+
+/*	setup filter chain
+ */
+static bool openFilter (player_t * const player) {
 	/* filter setup */
 	char strbuf[256];
+	int ret = 0;
+	AVCodecContext * const cctx = player->st->codec;
 
 	if ((player->fgraph = avfilter_graph_alloc ()) == NULL) {
 		softfail ("graph_alloc");
 	}
 
 	/* abuffer */
-	AVFilterContext *fabuf = NULL;
-	AVRational time_base = st->time_base;
+	AVRational time_base = player->st->time_base;
 	snprintf (strbuf, sizeof (strbuf),
 			"time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"PRIx64, 
 			time_base.num, time_base.den, cctx->sample_rate,
 			av_get_sample_fmt_name (cctx->sample_fmt),
 			cctx->channel_layout);
-	if ((ret = avfilter_graph_create_filter (&fabuf,
+	if ((ret = avfilter_graph_create_filter (&player->fabuf,
 			avfilter_get_by_name ("abuffer"), NULL, strbuf, NULL,
 			player->fgraph)) < 0) {
 		softfail ("create_filter abuffer");
@@ -230,17 +246,16 @@ void *BarPlayerThread (void *data) {
 	}
 
 	/* abuffersink */
-	AVFilterContext *fbufsink = NULL;
-	if ((ret = avfilter_graph_create_filter (&fbufsink,
+	if ((ret = avfilter_graph_create_filter (&player->fbufsink,
 			avfilter_get_by_name ("abuffersink"), NULL, NULL, NULL,
 			player->fgraph)) < 0) {
 		softfail ("create_filter abuffersink");
 	}
 
 	/* connect filter: abuffer -> volume -> aformat -> abuffersink */
-	if (avfilter_link (fabuf, 0, player->fvolume, 0) != 0 ||
+	if (avfilter_link (player->fabuf, 0, player->fvolume, 0) != 0 ||
 			avfilter_link (player->fvolume, 0, fafmt, 0) != 0 ||
-			avfilter_link (fafmt, 0, fbufsink, 0) != 0) {
+			avfilter_link (fafmt, 0, player->fbufsink, 0) != 0) {
 		softfail ("filter_link");
 	}
 
@@ -248,7 +263,15 @@ void *BarPlayerThread (void *data) {
 		softfail ("graph_config");
 	}
 
-	/* setup libao */
+	return true;
+}
+
+/*	setup libao
+ */
+static bool openDevice (player_t * const player) {
+	AVCodecContext * const cctx = player->st->codec;
+
+	ao_sample_format aoFmt;
 	memset (&aoFmt, 0, sizeof (aoFmt));
 	aoFmt.bits = av_get_bytes_per_sample (avformat) * 8;
 	assert (aoFmt.bits > 0);
@@ -257,49 +280,64 @@ void *BarPlayerThread (void *data) {
 	aoFmt.byte_format = AO_FMT_NATIVE;
 
 	int driver = ao_default_driver_id ();
-	if ((aoDev = ao_open_live (driver, &aoFmt, NULL)) == NULL) {
+	if ((player->aoDev = ao_open_live (driver, &aoFmt, NULL)) == NULL) {
 		BarUiMsg (player->settings, MSG_ERR, "Cannot open audio device.\n");
-		pret = PLAYER_RET_HARDFAIL;
-		goto finish;
+		return false;
 	}
 
-	player->songPlayed = 0;
-	player->songDuration = av_q2d (st->time_base) * (double) st->duration;
-	player->mode = PLAYER_PLAYING;
+	return true;
+}
 
-	while (av_read_frame (fctx, &pkt) >= 0) {
+/*	decode and play stream. returns 0 or av error code.
+ */
+static int play (player_t * const player) {
+	assert (player != NULL);
+
+	AVPacket pkt;
+	av_init_packet (&pkt);
+	pkt.data = NULL;
+	pkt.size = 0;
+
+	AVFrame *frame = NULL, *filteredFrame = NULL;
+	frame = avcodec_alloc_frame ();
+	assert (frame != NULL);
+	filteredFrame = avcodec_alloc_frame ();
+	assert (filteredFrame != NULL);
+
+	while (!player->doQuit) {
+		ping ();
+		int ret = av_read_frame (player->fctx, &pkt);
+		if (ret < 0) {
+			av_free_packet (&pkt);
+			return ret;
+		} else if (pkt.stream_index != player->streamIdx) {
+			av_free_packet (&pkt);
+			continue;
+		}
+
 		AVPacket pkt_orig = pkt;
 
 		/* pausing */
 		pthread_mutex_lock (&player->pauseMutex);
 		while (true) {
 			if (!player->doPause) {
-				av_read_play (fctx);
+				av_read_play (player->fctx);
 				break;
 			} else {
-				av_read_pause (fctx);
+				av_read_pause (player->fctx);
 			}
 			pthread_cond_wait (&player->pauseCond, &player->pauseMutex);
 		}
 		pthread_mutex_unlock (&player->pauseMutex);
 
-		if (player->doQuit) {
-			av_free_packet (&pkt_orig);
-			break;
-		}
-
-		if (pkt.stream_index != streamIdx) {
-			av_free_packet (&pkt_orig);
-			continue;
-		}
-
 		do {
 			int got_frame = 0;
 
-			const int decoded = avcodec_decode_audio4 (cctx, frame, &got_frame,
-					&pkt);
+			const int decoded = avcodec_decode_audio4 (player->st->codec,
+					frame, &got_frame, &pkt);
 			if (decoded < 0) {
-				softfail ("decode_audio4");
+				/* skip this one */
+				break;
 			}
 
 			if (got_frame != 0) {
@@ -307,16 +345,17 @@ void *BarPlayerThread (void *data) {
 				if (frame->pts == (int64_t) AV_NOPTS_VALUE) {
 					frame->pts = 0;
 				}
-				ret = av_buffersrc_write_frame (fabuf, frame);
+				ret = av_buffersrc_write_frame (player->fabuf, frame);
 				assert (ret >= 0);
 
 				while (true) {
 					AVFilterBufferRef *audioref = NULL;
 #ifdef HAVE_AV_BUFFERSINK_GET_BUFFER_REF
 					/* ffmpeg’s compatibility layer is broken in some releases */
-					if (av_buffersink_get_buffer_ref (fbufsink, &audioref, 0) < 0) {
+					if (av_buffersink_get_buffer_ref (player->fbufsink,
+							&audioref, 0) < 0) {
 #else
-					if (av_buffersink_read (fbufsink, &audioref) < 0) {
+					if (av_buffersink_read (player->fbufsink, &audioref) < 0) {
 #endif
 						/* try again next frame */
 						break;
@@ -328,7 +367,7 @@ void *BarPlayerThread (void *data) {
 					const int numChannels = av_get_channel_layout_nb_channels (
 							filteredFrame->channel_layout);
 					const int bps = av_get_bytes_per_sample(filteredFrame->format);
-					ao_play (aoDev, (char *) filteredFrame->data[0],
+					ao_play (player->aoDev, (char *) filteredFrame->data[0],
 							filteredFrame->nb_samples * numChannels * bps);
 
 					avfilter_unref_bufferp (&audioref);
@@ -341,26 +380,57 @@ void *BarPlayerThread (void *data) {
 
 		av_free_packet (&pkt_orig);
 
-		player->songPlayed = av_q2d (st->time_base) * (double) pkt.pts;
+		player->songPlayed = av_q2d (player->st->time_base) * (double) pkt.pts;
+		player->lastTimestamp = pkt.pts;
 	}
 
-finish:
-	ao_close (aoDev);
+	avcodec_free_frame (&filteredFrame);
+	avcodec_free_frame (&frame);
+
+	return 0;
+}
+
+static void finish (player_t * const player) {
+	ao_close (player->aoDev);
+	player->aoDev = NULL;
 	if (player->fgraph != NULL) {
 		avfilter_graph_free (&player->fgraph);
+		player->fgraph = NULL;
 	}
-	if (cctx != NULL) {
-		avcodec_close (cctx);
+	if (player->st != NULL && player->st->codec != NULL) {
+		avcodec_close (player->st->codec);
+		player->st = NULL;
 	}
-	if (fctx != NULL) {
-		avformat_close_input (&fctx);
+	if (player->fctx != NULL) {
+		avformat_close_input (&player->fctx);
 	}
-	if (frame != NULL) {
-		avcodec_free_frame (&frame);
-	}
-	if (filteredFrame != NULL) {
-		avcodec_free_frame (&filteredFrame);
-	}
+}
+
+/*	player thread; for every song a new thread is started
+ *	@param audioPlayer structure
+ *	@return PLAYER_RET_*
+ */
+void *BarPlayerThread (void *data) {
+	assert (data != NULL);
+
+	player_t * const player = data;
+	intptr_t pret = PLAYER_RET_OK;
+
+	bool retry = false;
+	do {
+		if (openStream (player)) {
+			if (openFilter (player) && openDevice (player)) {
+				retry = play (player) == AVERROR_INVALIDDATA;
+			} else {
+				/* filter missing or audio device busy */
+				pret = PLAYER_RET_HARDFAIL;
+			}
+		} else {
+			/* stream not found */
+			pret = PLAYER_RET_SOFTFAIL;
+		}
+		finish (player);
+	} while (retry);
 
 	player->mode = PLAYER_FINISHED;
 
