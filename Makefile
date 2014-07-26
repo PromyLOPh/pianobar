@@ -118,13 +118,6 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 	@${AR} rcs libpiano.a ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
 
 
-# build dependency files
-%.d: %.c
-	@set -e; rm -f $@; \
-			$(CC) -M ${ALL_CFLAGS} $< > $@.$$$$; \
-			sed '1 s,^.*\.o[ :]*,$*.o $@ : ,g' < $@.$$$$ > $@; \
-			rm -f $@.$$$$
-
 -include $(PIANOBAR_SRC:.c=.d)
 -include $(LIBPIANO_SRC:.c=.d)
 -include $(LIBWAITRESS_SRC:.c=.d)
@@ -132,12 +125,12 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 # build standard object files
 %.o: %.c
 	@echo "    CC  $<"
-	@${CC} -c -o $@ ${ALL_CFLAGS} $<
+	@${CC} -c -o $@ ${ALL_CFLAGS} -MMD -MF $*.d -MP $<
 
 # create position independent code (for shared libraries)
 %.lo: %.c
 	@echo "    CC  $< (PIC)"
-	@${CC} -c -fPIC -o $@ ${ALL_CFLAGS} $<
+	@${CC} -c -fPIC -o $@ ${ALL_CFLAGS} -MMD -MF $*.d -MP $<
 
 clean:
 	@echo " CLEAN"
