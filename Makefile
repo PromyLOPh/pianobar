@@ -152,18 +152,18 @@ install: pianobar install-libpiano
 else
 install: pianobar
 endif
-	install -d ${DESTDIR}/${BINDIR}/
-	install -m755 pianobar ${DESTDIR}/${BINDIR}/
-	install -d ${DESTDIR}/${MANDIR}/man1/
-	install -m644 contrib/pianobar.1 ${DESTDIR}/${MANDIR}/man1/
+	install -d ${DESTDIR}${BINDIR}/
+	install -m755 pianobar ${DESTDIR}${BINDIR}/
+	install -d ${DESTDIR}${MANDIR}/man1/
+	install -m644 contrib/pianobar.1 ${DESTDIR}${MANDIR}/man1/
 
 install-libpiano:
-	install -d ${DESTDIR}/${LIBDIR}/
-	install -m644 libpiano.so.0.0.0 ${DESTDIR}/${LIBDIR}/
-	ln -s libpiano.so.0.0.0 ${DESTDIR}/${LIBDIR}/libpiano.so.0
-	ln -s libpiano.so.0 ${DESTDIR}/${LIBDIR}/libpiano.so
-	install -m644 libpiano.a ${DESTDIR}/${LIBDIR}/
-	install -d ${DESTDIR}/${INCDIR}/
-	install -m644 src/libpiano/piano.h ${DESTDIR}/${INCDIR}/
+	install -d ${DESTDIR}${LIBDIR}/
+	install -m644 libpiano.so.0.0.0 ${DESTDIR}${LIBDIR}/
+	ln -s libpiano.so.0.0.0 ${DESTDIR}${LIBDIR}/libpiano.so.0
+	ln -s libpiano.so.0 ${DESTDIR}${LIBDIR}/libpiano.so
+	install -m644 libpiano.a ${DESTDIR}${LIBDIR}/
+	install -d ${DESTDIR}${INCDIR}/
+	install -m644 src/libpiano/piano.h ${DESTDIR}${INCDIR}/
 
 .PHONY: install install-libpiano test debug all
