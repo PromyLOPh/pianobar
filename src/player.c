@@ -24,6 +24,8 @@ THE SOFTWARE.
 /* receive/play audio stream */
 
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
@@ -269,9 +271,12 @@ void *BarPlayerThread (void *data) {
 	player->mode = PLAYER_PLAYING;
     
     bool save_file = false;
-    char * save_dir = player->settings->save_dir;
+    char *save_dir = player->settings->save_dir;
     char tmp_filename [1000];
+    char save_path[1000];
     char save_filename [1000];
+    char save_complete[1000];
+    int len_flag = 0;
 
     AVFormatContext *ofcx;
     AVOutputFormat *ofmt;
@@ -288,19 +293,33 @@ void *BarPlayerThread (void *data) {
         char *music;
         int i;
 
+        if (save_dir[strlen(save_dir) - 1] == '/'){
+            strcpy(save_path, save_dir);
+        }
+        else{
+            sprintf(save_path, "%s/", save_dir);
+        }
 
-        sprintf(save_filename, "%s/%s - %s.aac", save_dir, player->artist, player->title);
-        sprintf(tmp_filename, "/tmp/%s - %s.aac",  player->artist, player->title);
+        sprintf(save_path, "%s%s/", save_path, player->station);
 
-        music = strstr(save_filename, save_dir);
-        i = (int) (music - save_filename + strlen(save_dir));
-        for (i; i < 1000; i++){
+        struct stat st = {0};
+        if( stat(save_path, &st) == -1 ){
+            mkdir(save_path, 0700);
+        }
+
+        sprintf(save_filename, "%s - %s.aac", player->artist, player->title);
+
+        sprintf(tmp_filename, "/tmp/%s",  save_filename);
+        
+        for (int i=0; i < 1000; i++){
             if (save_filename[i] == '/'){
                 save_filename[i] = ' ';
             }
         }
 
-        if( access( save_filename, F_OK ) != -1){
+        sprintf(save_complete, "%s%s", save_path, save_filename);
+
+        if( access( save_complete, F_OK ) != -1){
             save_file = false;    
         }
         else{
@@ -432,12 +451,13 @@ finish:
 
 	player->mode = PLAYER_FINISHED;
 
-    if ( save_file ){
+    if ( save_file && !player->doQuit ){
+    /*if ( save_file ){*/
         char * buffer [2000];
         av_write_trailer(ofcx);
         avformat_free_context (ofcx);
         avio_close(ofcx->pb);
-        sprintf(buffer, "mv \"%s\" \"%s\"", tmp_filename, save_filename);
+        sprintf(buffer, "mv \"%s\" \"%s\"", tmp_filename, save_complete);
         system(buffer);
     }
 	return (void *) pret;

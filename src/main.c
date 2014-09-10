@@ -281,6 +281,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 		app->player.url = curSong->audioUrl;
 		app->player.artist = curSong->artist;
 		app->player.title = curSong->title;
+		app->player.station = app->curStation->name;
 		app->player.gain = curSong->fileGain;
 		app->player.settings = &app->settings;
 		app->player.songDuration = curSong->length;

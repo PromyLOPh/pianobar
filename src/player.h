@@ -60,6 +60,7 @@ struct audioPlayer {
 	char *url;
     char *artist;
     char *title;
+    char *station;
 	const BarSettings_t *settings;
 
 	/* measured in seconds */

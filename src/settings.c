@@ -159,7 +159,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	/* apply defaults */
 	settings->audioQuality = PIANO_AQ_HIGH;
 	settings->autoselect = true;
-    settings->save_dir = strdup("~/");
+    settings->save_dir = NULL;
 	settings->history = 5;
 	settings->volume = 0;
 	settings->maxPlayerErrors = 5;
@@ -254,7 +254,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->outkey = strdup (val);
 			} else if (streq ("save_dir", key)) {
 				free (settings->save_dir);
-				settings->save_dir = strdup (val);
+				settings->save_dir = BarSettingsExpandTilde (val, userhome);
 			} else if (streq ("decrypt_password", key)) {
 				free (settings->inkey);
 				settings->inkey = strdup (val);
