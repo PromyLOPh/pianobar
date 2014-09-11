@@ -87,7 +87,7 @@ LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --l
 
 # combine all flags
 ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
-			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
+			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} -g \
 			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS}
 ALL_LDFLAGS:=${LDFLAGS} -lao -lpthread -lm \
 			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \

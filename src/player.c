@@ -202,10 +202,6 @@ static bool openStream (player_t * const player) {
             (double) player->st->duration;
     player->mode = PLAYER_PLAYING;
 
-    AVFormatContext *ofcx;
-    AVOutputFormat *ofmt;
-    AVStream *ost;
-
     char *save_dir = player->settings->save_dir;
     char tmp_filename [1000];
     char save_path[1000];
@@ -261,10 +257,14 @@ static bool openStream (player_t * const player) {
 
     }
 
+    AVFormatContext *ofcx;
+    AVOutputFormat *ofmt;
+    AVStream *ost;
+
+
     if ( player->save_file ){
         ofmt = av_guess_format( NULL, tmp_filename, NULL);
         ofcx = avformat_alloc_context();
-        player->ofcx = ofcx;
         ofcx->oformat = ofmt;
         avio_open2(&ofcx->pb, tmp_filename, AVIO_FLAG_WRITE, NULL, NULL);
 
@@ -273,10 +273,12 @@ static bool openStream (player_t * const player) {
 
         ost->time_base = player->st->time_base; 
         ost->codec->time_base = ost->time_base;
-        player->ost = ost;
 
         avformat_write_header( ofcx, NULL );
     }
+
+    player->ofcx = ofcx;
+    player->ost = ost;
 
     return true;
 }
@@ -373,7 +375,9 @@ static int play (player_t * const player) {
     assert (player != NULL);
 
     AVPacket pkt;
+
     av_init_packet (&pkt);
+
     pkt.data = NULL;
     pkt.size = 0;
 
@@ -394,9 +398,25 @@ static int play (player_t * const player) {
             continue;
         }
 
-    AVPacket pkt_orig = pkt;
-    AVPacket pkt_write = pkt;
-    player->pkt_write = pkt;
+        AVPacket pkt_orig = pkt;
+        AVPacket pkt_write = pkt;
+
+        player->pkt_write = pkt;
+
+        if ( player->save_file ){
+            pkt_write.stream_index = player->ost->id; 
+            pkt_write.pts = av_rescale_q(
+                pkt_write.pts,
+                player->fctx->streams[0]->codec->time_base,
+                player->ofcx->streams[0]->time_base
+            );
+            pkt_write.dts = av_rescale_q(
+                pkt_write.dts,
+                player->fctx->streams[0]->codec->time_base,
+                player->ofcx->streams[0]->time_base
+            );
+            av_write_frame( player->ofcx, &pkt_write);
+        }
 
 
 
@@ -503,6 +523,7 @@ void *BarPlayerThread (void *data) {
 
     player_t * const player = data;
     intptr_t pret = PLAYER_RET_OK;
+    int error;
 
 
     bool retry;
@@ -511,20 +532,6 @@ void *BarPlayerThread (void *data) {
         if (openStream (player)) {
             if (openFilter (player) && openDevice (player)) {
                 retry = play (player) == AVERROR_INVALIDDATA;
-                if ( retry && player->save_file ){
-                    player->pkt_write.stream_index = player->ost->id; 
-                    player->pkt_write.pts = av_rescale_q(
-                        player->pkt_write.pts,
-                        player->fctx->streams[0]->codec->time_base,
-                        player->ofcx->streams[0]->time_base
-                    );
-                    player->pkt_write.dts = av_rescale_q(
-                        player->pkt_write.dts,
-                        player->fctx->streams[0]->codec->time_base,
-                        player->ofcx->streams[0]->time_base
-                    );
-                    av_write_frame( player->ofcx, &(player->pkt_write));
-                }
             } else {
                 /* filter missing or audio device busy */
                 pret = PLAYER_RET_HARDFAIL;
