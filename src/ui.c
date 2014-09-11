@@ -684,7 +684,7 @@ size_t BarUiListSongs (const BarSettings_t *settings,
  */
 void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		const PianoStation_t *curStation, const PianoSong_t *curSong,
-		const struct audioPlayer *player, PianoStation_t *stations,
+		const player_t * const player, PianoStation_t *stations,
                 PianoReturn_t pRet, WaitressReturn_t wRet) {
 	pid_t chld;
 	int pipeFd[2];

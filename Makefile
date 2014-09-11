@@ -118,13 +118,6 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 	@${AR} rcs libpiano.a ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
 
 
-# build dependency files
-%.d: %.c
-	@set -e; rm -f $@; \
-			$(CC) -M ${ALL_CFLAGS} $< > $@.$$$$; \
-			sed '1 s,^.*\.o[ :]*,$*.o $@ : ,g' < $@.$$$$ > $@; \
-			rm -f $@.$$$$
-
 -include $(PIANOBAR_SRC:.c=.d)
 -include $(LIBPIANO_SRC:.c=.d)
 -include $(LIBWAITRESS_SRC:.c=.d)
@@ -132,12 +125,12 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 # build standard object files
 %.o: %.c
 	@echo "    CC  $<"
-	@${CC} -c -o $@ ${ALL_CFLAGS} $<
+	@${CC} -c -o $@ ${ALL_CFLAGS} -MMD -MF $*.d -MP $<
 
 # create position independent code (for shared libraries)
 %.lo: %.c
 	@echo "    CC  $< (PIC)"
-	@${CC} -c -fPIC -o $@ ${ALL_CFLAGS} $<
+	@${CC} -c -fPIC -o $@ ${ALL_CFLAGS} -MMD -MF $*.d -MP $<
 
 clean:
 	@echo " CLEAN"
@@ -159,18 +152,18 @@ install: pianobar install-libpiano
 else
 install: pianobar
 endif
-	install -d ${DESTDIR}/${BINDIR}/
-	install -m755 pianobar ${DESTDIR}/${BINDIR}/
-	install -d ${DESTDIR}/${MANDIR}/man1/
-	install -m644 contrib/pianobar.1 ${DESTDIR}/${MANDIR}/man1/
+	install -d ${DESTDIR}${BINDIR}/
+	install -m755 pianobar ${DESTDIR}${BINDIR}/
+	install -d ${DESTDIR}${MANDIR}/man1/
+	install -m644 contrib/pianobar.1 ${DESTDIR}${MANDIR}/man1/
 
 install-libpiano:
-	install -d ${DESTDIR}/${LIBDIR}/
-	install -m644 libpiano.so.0.0.0 ${DESTDIR}/${LIBDIR}/
-	ln -s libpiano.so.0.0.0 ${DESTDIR}/${LIBDIR}/libpiano.so.0
-	ln -s libpiano.so.0 ${DESTDIR}/${LIBDIR}/libpiano.so
-	install -m644 libpiano.a ${DESTDIR}/${LIBDIR}/
-	install -d ${DESTDIR}/${INCDIR}/
-	install -m644 src/libpiano/piano.h ${DESTDIR}/${INCDIR}/
+	install -d ${DESTDIR}${LIBDIR}/
+	install -m644 libpiano.so.0.0.0 ${DESTDIR}${LIBDIR}/
+	ln -s libpiano.so.0.0.0 ${DESTDIR}${LIBDIR}/libpiano.so.0
+	ln -s libpiano.so.0 ${DESTDIR}${LIBDIR}/libpiano.so
+	install -m644 libpiano.a ${DESTDIR}${LIBDIR}/
+	install -d ${DESTDIR}${INCDIR}/
+	install -m644 src/libpiano/piano.h ${DESTDIR}${INCDIR}/
 
 .PHONY: install install-libpiano test debug all
