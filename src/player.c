@@ -319,18 +319,16 @@ static int play (player_t * const player) {
 
 		/* pausing */
 		pthread_mutex_lock (&player->pauseMutex);
-		while (true) {
-			if (!player->doPause) {
-				av_read_play (player->fctx);
-				break;
-			} else {
-				av_read_pause (player->fctx);
-			}
-			pthread_cond_wait (&player->pauseCond, &player->pauseMutex);
+		if (player->doPause) {
+			av_read_pause (player->fctx);
+			do {
+				pthread_cond_wait (&player->pauseCond, &player->pauseMutex);
+			} while (player->doPause);
+			av_read_play (player->fctx);
 		}
 		pthread_mutex_unlock (&player->pauseMutex);
 
-		do {
+		while (pkt.size > 0 && !player->doQuit) {
 			int got_frame = 0;
 
 			const int decoded = avcodec_decode_audio4 (player->st->codec,
@@ -376,7 +374,7 @@ static int play (player_t * const player) {
 
 			pkt.data += decoded;
 			pkt.size -= decoded;
-		} while (pkt.size > 0);
+		};
 
 		av_free_packet (&pkt_orig);
 
