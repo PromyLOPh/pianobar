@@ -1,3 +1,9 @@
+Release 2014.09.28
+- Fix segfault when retrieving station’s feedback list
+- Refactored audio player
+- Correctly detect ffmpeg 2.3 and 2.4
+- Restore terminal attributes after waking up (SIGCONT)
+
 Release 2014.06.08
 
 - Switch to ffmpeg/libav for audio playback. ffmpeg 2.2, 2.1 and 1.2 as well as
