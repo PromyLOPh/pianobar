@@ -4,7 +4,7 @@
 /* package name */
 #define PACKAGE "pianobar"
 
-#define VERSION "2014.09.28"
+#define VERSION "2014.09.28-dev"
 
 /* ffmpeg/libav quirks detection
  * ffmpeg’s micro versions always start at 100, that’s how we can distinguish
