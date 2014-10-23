@@ -65,8 +65,8 @@ def main():
 
   # events: songstart, songfinish, ???
   import pylast
-  if event == "songfinish" and song_duration > 1000*MIN_DURATION and (100.0 * song_played / song_duration > THRESHOLD or song_played > 1000*PLAYED_ENOUGH):
-    song_started = int(time.time() - song_played / 1000.0)
+  if event == "songfinish" and song_duration > MIN_DURATION and (100.0 * song_played / song_duration > THRESHOLD or song_played > PLAYED_ENOUGH):
+    song_started = int(time.time() - song_played)
     network = pylast.LastFMNetwork(api_key = API_KEY, api_secret = API_SECRET, username = USERNAME, password_hash = pylast.md5(PASSWORD))
     network.scrobble(artist = artist, title = title, timestamp = song_started)
   if event == "songfinish" and rating > 0:
