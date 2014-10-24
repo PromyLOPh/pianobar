@@ -153,9 +153,7 @@ BarUiActCallback(BarUiActBanSong) {
                     BarUiDoSkipSong (&app->player);
                 }
         }
-
-
-			BarUiActDefaultEventcmd ("songban");
+	BarUiActDefaultEventcmd ("songban");
 }
 
 /*	create new station
