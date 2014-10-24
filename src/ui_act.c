@@ -124,6 +124,8 @@ BarUiActCallback(BarUiActBanSong) {
 	PianoReturn_t pRet;
 	WaitressReturn_t wRet;
 	PianoStation_t *realStation;
+	char selectBuf[2];
+	bool confirm = false;
 
 	assert (selStation != NULL);
 	assert (selSong != NULL);
@@ -142,12 +144,25 @@ BarUiActCallback(BarUiActBanSong) {
 	reqData.song = selSong;
 	reqData.rating = PIANO_RATE_BAN;
 
-	BarUiMsg (&app->settings, MSG_INFO, "Banning song... ");
-	if (BarUiActDefaultPianoCall (PIANO_REQUEST_RATE_SONG, &reqData) &&
-			selSong == app->playlist) {
-		BarUiDoSkipSong (&app->player);
-	}
-	BarUiActDefaultEventcmd ("songban");
+       BarUiMsg (&app->settings, MSG_QUESTION, "Are You sure? [y/n] ");
+       BarReadline (selectBuf, sizeof(selectBuf), "yn", &app->input,
+               BAR_RL_FULLRETURN, -1);
+               
+       switch (selectBuf[0]) {
+               case 'y':
+                       BarUiMsg (&app->settings, MSG_INFO, "Banning song... ");
+                       if (BarUiActDefaultPianoCall (PIANO_REQUEST_RATE_SONG, &reqData) &&
+                                       selSong == app->playlist) {
+                               BarUiDoSkipSong (&app->player);
+                       }
+                       BarUiActDefaultEventcmd ("songban");
+               break;
+
+               case 'n':
+                       BarUiMsg (&app->settings, MSG_INFO, "Action Cancelled...");
+                       break;
+        }
+
 }
 
 /*	create new station
