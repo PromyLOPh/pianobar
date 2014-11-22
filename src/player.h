@@ -70,7 +70,6 @@ typedef struct {
 	ao_device *aoDev;
 
 	/* settings */
-	volatile double volume;
 	double gain;
 	char *url;
 	const BarSettings_t *settings;
