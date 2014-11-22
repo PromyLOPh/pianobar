@@ -216,6 +216,12 @@ static bool openFilter (player_t * const player) {
 
 	/* abuffer */
 	AVRational time_base = player->st->time_base;
+
+	/* Use default channel layout if currently null */
+	if(cctx->channel_layout == NULL){
+		cctx->channel_layout = av_get_default_channel_layout( cctx->channels );
+	}
+
 	snprintf (strbuf, sizeof (strbuf),
 			"time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"PRIx64, 
 			time_base.num, time_base.den, cctx->sample_rate,
