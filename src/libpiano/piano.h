@@ -317,7 +317,7 @@ void *PianoListDelete (PianoListHead_t * const l, PianoListHead_t * const e)
 		__attribute__ ((warn_unused_result));
 #define PianoListDeleteP(l,e) PianoListDelete(((l) == NULL) ? NULL : &(l)->head, \
 		&(e)->head)
-#define PianoListNextP(e) ((void *) (e)->head.next)
+#define PianoListNextP(e) ((e) == NULL ? NULL : (void *) (e)->head.next)
 void *PianoListPrepend (PianoListHead_t * const l, PianoListHead_t * const e)
 		__attribute__ ((warn_unused_result));
 #define PianoListPrependP(l,e) PianoListPrepend (((l) == NULL) ? NULL : &(l)->head, \

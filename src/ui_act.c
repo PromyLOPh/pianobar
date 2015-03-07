@@ -496,9 +496,7 @@ BarUiActCallback(BarUiActTempBanSong) {
 /*	print upcoming songs
  */
 BarUiActCallback(BarUiActPrintUpcoming) {
-	assert (selSong != NULL);
-
-	PianoSong_t *nextSong = PianoListNextP (selSong);
+	PianoSong_t * const nextSong = PianoListNextP (selSong);
 	if (nextSong != NULL) {
 		BarUiListSongs (&app->settings, nextSong, NULL);
 	} else {
