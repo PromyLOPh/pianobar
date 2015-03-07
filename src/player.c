@@ -85,7 +85,10 @@ void BarPlayerDestroy () {
  */
 void BarPlayerSetVolume (player_t * const player) {
 	assert (player != NULL);
-	assert (player->fvolume != NULL);
+
+	if (player->mode != PLAYER_PLAYING) {
+		return;
+	}
 
 	int ret;
 #ifdef HAVE_AVFILTER_GRAPH_SEND_COMMAND
@@ -94,6 +97,7 @@ void BarPlayerSetVolume (player_t * const player) {
 	char strbuf[16];
 	snprintf (strbuf, sizeof (strbuf), "%fdB",
 			player->settings->volume + player->gain);
+	assert (player->fgraph != NULL);
 	if ((ret = avfilter_graph_send_command (player->fgraph, "volume", "volume",
 					strbuf, NULL, 0, 0)) < 0) {
 #else
@@ -101,6 +105,7 @@ void BarPlayerSetVolume (player_t * const player) {
 	const double volume = pow (10, (player->settings->volume + player->gain) / 20);
 	/* libav does not provide other means to set this right now. it might not
 	 * even work everywhere. */
+	assert (player->fvolume != NULL);
 	if ((ret = av_opt_set_double (player->fvolume->priv, "volume", volume,
 			0)) != 0) {
 #endif
@@ -197,7 +202,6 @@ static bool openStream (player_t * const player) {
 	player->songPlayed = 0;
 	player->songDuration = av_q2d (player->st->time_base) *
 			(double) player->st->duration;
-	player->mode = PLAYER_PLAYING;
 
 	return true;
 }
@@ -426,6 +430,7 @@ void *BarPlayerThread (void *data) {
 		retry = false;
 		if (openStream (player)) {
 			if (openFilter (player) && openDevice (player)) {
+				player->mode = PLAYER_PLAYING;
 				retry = play (player) == AVERROR_INVALIDDATA;
 			} else {
 				/* filter missing or audio device busy */
@@ -435,6 +440,7 @@ void *BarPlayerThread (void *data) {
 			/* stream not found */
 			pret = PLAYER_RET_SOFTFAIL;
 		}
+		player->mode = PLAYER_WAITING;
 		finish (player);
 	} while (retry);
 

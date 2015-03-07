@@ -49,9 +49,13 @@ typedef struct {
 	pthread_cond_t pauseCond;
 
 	enum {
-		PLAYER_DEAD = 0, /* thread is not running */
-		PLAYER_STARTING, /* thread is starting */
+		/* not running */
+		PLAYER_DEAD = 0,
+		/* running, but not ready to play music yet */
+		PLAYER_WAITING,
+		/* currently playing a song */
 		PLAYER_PLAYING,
+		/* finished playing a song */
 		PLAYER_FINISHED,
 	} mode;
 

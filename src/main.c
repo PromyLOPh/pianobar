@@ -292,7 +292,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 
 		/* prevent race condition, mode must _not_ be DEAD if
 		 * thread has been started */
-		app->player.mode = PLAYER_STARTING;
+		app->player.mode = PLAYER_WAITING;
 		/* start player */
 		pthread_create (playerThread, NULL, BarPlayerThread,
 				&app->player);
