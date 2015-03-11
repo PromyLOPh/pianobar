@@ -244,7 +244,6 @@ static bool openFilter (player_t * const player) {
 			player->fgraph)) < 0) {
 		softfail ("create_filter volume");
 	}
-	BarPlayerSetVolume (player);
 
 	/* aformat: convert float samples into something more usable */
 	AVFilterContext *fafmt = NULL;
@@ -431,6 +430,7 @@ void *BarPlayerThread (void *data) {
 		if (openStream (player)) {
 			if (openFilter (player) && openDevice (player)) {
 				player->mode = PLAYER_PLAYING;
+				BarPlayerSetVolume (player);
 				retry = play (player) == AVERROR_INVALIDDATA;
 			} else {
 				/* filter missing or audio device busy */
