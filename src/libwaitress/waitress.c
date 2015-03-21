@@ -808,7 +808,14 @@ static WaitressReturn_t WaitressConnect (WaitressHandle_t *waith) {
 			fcntl (sock, F_SETFL, O_NONBLOCK);
 
 			/* non-blocking connect will return immediately */
-			connect (sock, gacurr->ai_addr, gacurr->ai_addrlen);
+			if (connect (sock, gacurr->ai_addr, gacurr->ai_addrlen) == -1) {
+				// Error if not in-progress or immediate success
+				if (errno != EINPROGRESS) {
+					// Close socket and try alternatives
+					close (sock);
+					continue;
+				}
+			}
 
 			pollres = WaitressPollLoop (sock, POLLOUT, waith->timeout);
 			if (pollres == 0) {
