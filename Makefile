@@ -76,8 +76,13 @@ LIBWAITRESS_TEST_OBJ:=${LIBWAITRESS_TEST_SRC:.c=.o}
 LIBAV_CFLAGS=$(shell pkg-config --cflags libavcodec libavformat libavutil libavfilter)
 LIBAV_LDFLAGS=$(shell pkg-config --libs libavcodec libavformat libavutil libavfilter)
 
-LIBGNUTLS_CFLAGS:=$(shell pkg-config --cflags gnutls)
-LIBGNUTLS_LDFLAGS:=$(shell pkg-config --libs gnutls)
+ifeq (${POLARSSL},1)
+LIBTLS_CFLAGS:=-DUSE_POLARSSL
+LIBTLS_LDFLAGS:=-lpolarssl
+else
+LIBTLS_CFLAGS:=$(shell pkg-config --cflags gnutls)
+LIBTLS_LDFLAGS:=$(shell pkg-config --libs gnutls)
+endif
 
 LIBGCRYPT_CFLAGS:=
 LIBGCRYPT_LDFLAGS:=-lgcrypt
@@ -87,10 +92,10 @@ LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --l
 
 # combine all flags
 ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
-			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
+			${LIBAV_CFLAGS} ${LIBTLS_CFLAGS} \
 			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS}
 ALL_LDFLAGS:=${LDFLAGS} -lao -lpthread -lm \
-			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
+			${LIBAV_LDFLAGS} ${LIBTLS_LDFLAGS} \
 			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS}
 
 # build pianobar
@@ -142,7 +147,7 @@ clean:
 all: pianobar
 
 waitress-test: ${LIBWAITRESS_TEST_OBJ}
-	${CC} ${LDFLAGS} ${LIBWAITRESS_TEST_OBJ} ${LIBGNUTLS_LDFLAGS} -o waitress-test
+	${CC} ${LDFLAGS} ${LIBWAITRESS_TEST_OBJ} ${LIBTLS_LDFLAGS} -o waitress-test
 
 test: waitress-test
 	./waitress-test
