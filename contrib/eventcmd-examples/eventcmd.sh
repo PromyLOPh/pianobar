@@ -19,6 +19,8 @@ case "$1" in
 #		else
 #			kdialog --title pianobar --passivepopup "'$title' by '$artist' on '$album'" 10
 #		fi
+#		# show an OS X notification
+#		osascript -e "display notification \"$album\" with title \"$title\" subtitle \"$artist\""
 #		# or whatever you like...
 #		;;
 
