@@ -30,6 +30,7 @@ THE SOFTWARE.
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 /* needed for urlencode */
 #include <waitress.h>
 

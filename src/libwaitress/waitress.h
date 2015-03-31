@@ -27,7 +27,12 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+
+#if defined(USE_POLARSSL)
+typedef struct _polarssl_ctx polarssl_ctx;
+#else
 #include <gnutls/gnutls.h>
+#endif
 
 #define WAITRESS_BUFFER_SIZE 10*1024
 
@@ -100,8 +105,9 @@ typedef struct {
 	WaitressUrl_t url;
 	WaitressUrl_t proxy;
 
+#if !defined(USE_POLARSSL)
 	gnutls_certificate_credentials_t tlsCred;
-
+#endif
 	/* per-request data */
 	struct {
 		int sockfd;
@@ -119,7 +125,11 @@ typedef struct {
 		WaitressReturn_t (*read) (void *, char *, const size_t, size_t *);
 		WaitressReturn_t (*write) (void *, const char *, const size_t);
 
+#if defined(USE_POLARSSL)
+		polarssl_ctx* sslCtx;
+#else
 		gnutls_session_t tlsSession;
+#endif
 	} request;
 } WaitressHandle_t;
 

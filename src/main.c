@@ -427,7 +427,9 @@ int main (int argc, char **argv) {
 	gcry_check_version (NULL);
 	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
 	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#if !defined(USE_POLARSSL)
 	gnutls_global_init ();
+#endif
 	BarPlayerInit ();
 
 	BarSettingsInit (&app.settings);
@@ -498,7 +500,9 @@ int main (int argc, char **argv) {
 	PianoDestroyPlaylist (app.playlist);
 	WaitressFree (&app.waith);
 	BarPlayerDestroy ();
+#if !defined(USE_POLARSSL)
 	gnutls_global_deinit ();
+#endif
 	BarSettingsDestroy (&app.settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */
