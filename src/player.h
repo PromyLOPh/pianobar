@@ -36,7 +36,6 @@ THE SOFTWARE.
 #include <libavfilter/avfilter.h>
 #include <libavfilter/avfiltergraph.h>
 #include <piano.h>
-#include <waitress.h>
 
 #include "settings.h"
 #include "config.h"

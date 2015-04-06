@@ -24,8 +24,9 @@ THE SOFTWARE.
 #ifndef SRC_MAIN_H_4ZGSCG6X
 #define SRC_MAIN_H_4ZGSCG6X
 
+#include <curl/curl.h>
+
 #include <piano.h>
-#include <waitress.h>
 
 #include "player.h"
 #include "settings.h"
@@ -33,7 +34,7 @@ THE SOFTWARE.
 
 typedef struct {
 	PianoHandle_t ph;
-	WaitressHandle_t waith;
+	CURL *http;
 	player_t player;
 	BarSettings_t settings;
 	/* first item is current song */

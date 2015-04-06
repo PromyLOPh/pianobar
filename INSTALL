@@ -7,7 +7,7 @@ Dependencies
 - gmake
 - pthreads
 - libao
-- gnutls
+- libcurl
 - gcrypt[1]
 - json-c
 - libav/ffmpeg[2]

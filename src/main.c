@@ -61,33 +61,11 @@ THE SOFTWARE.
 #include "ui_dispatch.h"
 #include "ui_readline.h"
 
-/*	copy proxy settings to waitress handle
- */
-static void BarMainLoadProxy (const BarSettings_t *settings,
-		WaitressHandle_t *waith) {
-	/* set up proxy (control proxy for non-us citizen or global proxy for poor
-	 * firewalled fellows) */
-	if (settings->controlProxy != NULL) {
-		/* control proxy overrides global proxy */
-		if (!WaitressSetProxy (waith, settings->controlProxy)) {
-			/* if setting proxy fails, url is invalid */
-			BarUiMsg (settings, MSG_ERR, "Control proxy (%s) is invalid!\n",
-					 settings->controlProxy);
-		}
-	} else if (settings->proxy != NULL && strlen (settings->proxy) > 0) {
-		if (!WaitressSetProxy (waith, settings->proxy)) {
-			/* if setting proxy fails, url is invalid */
-			BarUiMsg (settings, MSG_ERR, "Proxy (%s) is invalid!\n",
-					 settings->proxy);
-		}
-	}
-}
-
 /*	authenticate user
  */
 static bool BarMainLoginUser (BarApp_t *app) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	PianoRequestDataLogin_t reqData;
 	bool ret;
 
@@ -188,7 +166,7 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
  */
 static bool BarMainGetStations (BarApp_t *app) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	bool ret;
 
 	BarUiMsg (&app->settings, MSG_INFO, "Get stations... ");
@@ -235,7 +213,7 @@ static void BarMainHandleUserInput (BarApp_t *app) {
  */
 static void BarMainGetPlaylist (BarApp_t *app) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	PianoRequestDataGetPlaylist_t reqData;
 	reqData.station = app->curStation;
 	reqData.quality = app->settings.audioQuality;
@@ -288,7 +266,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 		/* throw event */
 		BarUiStartEventCmd (&app->settings, "songstart",
 				app->curStation, curSong, &app->player, app->ph.stations,
-				PIANO_RET_OK, WAITRESS_RET_OK);
+				PIANO_RET_OK, CURLE_OK);
 
 		/* prevent race condition, mode must _not_ be DEAD if
 		 * thread has been started */
@@ -306,7 +284,7 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 
 	BarUiStartEventCmd (&app->settings, "songfinish", app->curStation,
 			app->playlist, &app->player, app->ph.stations, PIANO_RET_OK,
-			WAITRESS_RET_OK);
+			CURLE_OK);
 
 	/* FIXME: pthread_join blocks everything if network connection
 	 * is hung up e.g. */
@@ -357,8 +335,6 @@ static void BarMainLoop (BarApp_t *app) {
 	if (!BarMainGetLoginCredentials (&app->settings, &app->input)) {
 		return;
 	}
-
-	BarMainLoadProxy (&app->settings, &app->waith);
 
 	if (!BarMainLoginUser (app)) {
 		return;
@@ -427,7 +403,6 @@ int main (int argc, char **argv) {
 	gcry_check_version (NULL);
 	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
 	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
-	gnutls_global_init ();
 	BarPlayerInit ();
 
 	BarSettingsInit (&app.settings);
@@ -452,10 +427,9 @@ int main (int argc, char **argv) {
 				app.settings.keys[BAR_KS_HELP]);
 	}
 
-	WaitressInit (&app.waith);
-	app.waith.url.host = app.settings.rpcHost;
-	app.waith.url.tlsPort = app.settings.rpcTlsPort;
-	app.waith.tlsFingerprint = app.settings.tlsFingerprint;
+	curl_global_init (CURL_GLOBAL_DEFAULT);
+	app.http = curl_easy_init ();
+	assert (app.http != NULL);
 
 	/* init fds */
 	FD_ZERO(&app.input.set);
@@ -496,9 +470,9 @@ int main (int argc, char **argv) {
 	PianoDestroy (&app.ph);
 	PianoDestroyPlaylist (app.songHistory);
 	PianoDestroyPlaylist (app.playlist);
-	WaitressFree (&app.waith);
+	curl_easy_cleanup (app.http);
+	curl_global_cleanup ();
 	BarPlayerDestroy ();
-	gnutls_global_deinit ();
 	BarSettingsDestroy (&app.settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */

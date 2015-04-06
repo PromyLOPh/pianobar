@@ -63,7 +63,7 @@ static inline void BarUiDoSkipSong (player_t * const player) {
  */
 static int BarTransformIfShared (BarApp_t *app, PianoStation_t *station) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 
 	assert (station != NULL);
 
@@ -96,7 +96,7 @@ BarUiActCallback(BarUiActHelp) {
  */
 BarUiActCallback(BarUiActAddMusic) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	PianoRequestDataAddSeed_t reqData;
 
 	assert (selStation != NULL);
@@ -122,7 +122,7 @@ BarUiActCallback(BarUiActAddMusic) {
  */
 BarUiActCallback(BarUiActBanSong) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	PianoStation_t *realStation;
 
 	assert (selStation != NULL);
@@ -154,7 +154,7 @@ BarUiActCallback(BarUiActBanSong) {
  */
 BarUiActCallback(BarUiActCreateStation) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	PianoRequestDataCreateStation_t reqData;
 
 	reqData.type = PIANO_MUSICTYPE_INVALID;
@@ -172,7 +172,7 @@ BarUiActCallback(BarUiActCreateStation) {
  */
 BarUiActCallback(BarUiActCreateStationFromSong) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	PianoRequestDataCreateStation_t reqData;
 	char selectBuf[2];
 
@@ -202,7 +202,7 @@ BarUiActCallback(BarUiActCreateStationFromSong) {
  */
 BarUiActCallback(BarUiActAddSharedStation) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	char stationId[50];
 	PianoRequestDataCreateStation_t reqData;
 
@@ -222,7 +222,7 @@ BarUiActCallback(BarUiActAddSharedStation) {
  */
 BarUiActCallback(BarUiActDeleteStation) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 
 	assert (selStation != NULL);
 
@@ -247,7 +247,7 @@ BarUiActCallback(BarUiActDeleteStation) {
  */
 BarUiActCallback(BarUiActExplain) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	PianoRequestDataExplain_t reqData;
 
 	assert (selSong != NULL);
@@ -266,7 +266,7 @@ BarUiActCallback(BarUiActExplain) {
  */
 BarUiActCallback(BarUiActStationFromGenre) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	const PianoGenreCategory_t *curCat;
 	const PianoGenre_t *curGenre;
 	int i;
@@ -376,7 +376,7 @@ BarUiActCallback(BarUiActDebug) {
  */
 BarUiActCallback(BarUiActLoveSong) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	PianoStation_t *realStation;
 
 	assert (selStation != NULL);
@@ -438,7 +438,7 @@ BarUiActCallback(BarUiActTogglePause) {
  */
 BarUiActCallback(BarUiActRenameStation) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	char lineBuf[100];
 
 	assert (selStation != NULL);
@@ -481,7 +481,7 @@ BarUiActCallback(BarUiActSelectStation) {
  */
 BarUiActCallback(BarUiActTempBanSong) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 
 	assert (selSong != NULL);
 
@@ -547,7 +547,7 @@ static void BarUiActQuickmixCallback (BarApp_t *app, char *buf) {
  */
 BarUiActCallback(BarUiActSelectQuickMix) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 
 	assert (selStation != NULL);
 
@@ -616,7 +616,7 @@ BarUiActCallback(BarUiActHistory) {
  */
 BarUiActCallback(BarUiActBookmark) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	char selectBuf[2];
 
 	assert (selSong != NULL);
@@ -660,7 +660,7 @@ BarUiActCallback(BarUiActVolReset) {
  */
 BarUiActCallback(BarUiActManageStation) {
 	PianoReturn_t pRet;
-	WaitressReturn_t wRet;
+	CURLcode wRet;
 	PianoRequestDataGetStationInfo_t reqData;
 	char selectBuf[2], allowedActions[6], *allowedPos = allowedActions;
 	char question[64];

@@ -61,20 +61,11 @@ LIBPIANO_OBJ:=${LIBPIANO_SRC:.c=.o}
 LIBPIANO_RELOBJ:=${LIBPIANO_SRC:.c=.lo}
 LIBPIANO_INCLUDE:=${LIBPIANO_DIR}
 
-LIBWAITRESS_DIR:=src/libwaitress
-LIBWAITRESS_SRC:=${LIBWAITRESS_DIR}/waitress.c
-LIBWAITRESS_HDR:=\
-		${LIBWAITRESS_DIR}/config.h \
-		${LIBWAITRESS_DIR}/waitress.h
-LIBWAITRESS_OBJ:=${LIBWAITRESS_SRC:.c=.o}
-LIBWAITRESS_RELOBJ:=${LIBWAITRESS_SRC:.c=.lo}
-LIBWAITRESS_INCLUDE:=${LIBWAITRESS_DIR}
-
-LIBWAITRESS_TEST_SRC=${LIBWAITRESS_DIR}/waitress-test.c
-LIBWAITRESS_TEST_OBJ:=${LIBWAITRESS_TEST_SRC:.c=.o}
-
 LIBAV_CFLAGS=$(shell pkg-config --cflags libavcodec libavformat libavutil libavfilter)
 LIBAV_LDFLAGS=$(shell pkg-config --libs libavcodec libavformat libavutil libavfilter)
+
+LIBCURL_CFLAGS=$(shell pkg-config --cflags libcurl)
+LIBCURL_LDFLAGS=$(shell pkg-config --libs libcurl)
 
 LIBGNUTLS_CFLAGS:=$(shell pkg-config --cflags gnutls)
 LIBGNUTLS_LDFLAGS:=$(shell pkg-config --libs gnutls)
@@ -86,12 +77,12 @@ LIBJSONC_CFLAGS:=$(shell pkg-config --cflags json-c 2>/dev/null || pkg-config --
 LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --libs json)
 
 # combine all flags
-ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
+ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} \
 			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
 			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS}
 ALL_LDFLAGS:=${LDFLAGS} -lao -lpthread -lm \
 			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
-			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS}
+			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS} ${LIBCURL_LDFLAGS}
 
 # build pianobar
 ifeq (${DYNLINK},1)
@@ -99,28 +90,24 @@ pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} libpiano.so.0
 	@echo "  LINK  $@"
 	@${CC} -o $@ ${PIANOBAR_OBJ} -L. -lpiano ${ALL_LDFLAGS}
 else
-pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
-		${LIBWAITRESS_HDR}
+pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ}
 	@echo "  LINK  $@"
-	@${CC} -o $@ ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
-			${ALL_LDFLAGS}
+	@${CC} -o $@ ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${ALL_LDFLAGS}
 endif
 
 # build shared and static libpiano
-libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
-		${LIBWAITRESS_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
+libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBPIANO_OBJ}
 	@echo "  LINK  $@"
 	@${CC} -shared -Wl,-soname,libpiano.so.0 -o libpiano.so.0.0.0 \
-			${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} ${ALL_LDFLAGS}
+			${LIBPIANO_RELOBJ} ${ALL_LDFLAGS}
 	@ln -s libpiano.so.0.0.0 libpiano.so.0
 	@ln -s libpiano.so.0 libpiano.so
 	@echo "    AR  libpiano.a"
-	@${AR} rcs libpiano.a ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ}
+	@${AR} rcs libpiano.a ${LIBPIANO_OBJ}
 
 
 -include $(PIANOBAR_SRC:.c=.d)
 -include $(LIBPIANO_SRC:.c=.d)
--include $(LIBWAITRESS_SRC:.c=.d)
 
 # build standard object files
 %.o: %.c
@@ -134,18 +121,11 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 
 clean:
 	@echo " CLEAN"
-	@${RM} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} ${LIBWAITRESS_OBJ}/test.o \
-			${LIBPIANO_RELOBJ} ${LIBWAITRESS_RELOBJ} pianobar libpiano.so* \
-			libpiano.a waitress-test $(PIANOBAR_SRC:.c=.d) $(LIBPIANO_SRC:.c=.d) \
-			$(LIBWAITRESS_SRC:.c=.d)
+	@${RM} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} \
+			${LIBPIANO_RELOBJ} pianobar libpiano.so* \
+			libpiano.a $(PIANOBAR_SRC:.c=.d) $(LIBPIANO_SRC:.c=.d)
 
 all: pianobar
-
-waitress-test: ${LIBWAITRESS_TEST_OBJ}
-	${CC} ${LDFLAGS} ${LIBWAITRESS_TEST_OBJ} ${LIBGNUTLS_LDFLAGS} -o waitress-test
-
-test: waitress-test
-	./waitress-test
 
 ifeq (${DYNLINK},1)
 install: pianobar install-libpiano

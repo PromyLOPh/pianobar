@@ -27,7 +27,6 @@ THE SOFTWARE.
 #include <stdbool.h>
 
 #include <piano.h>
-#include <waitress.h>
 
 /* update structure in ui_dispatch.h if you add shortcuts here */
 typedef enum {
