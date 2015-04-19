@@ -76,6 +76,10 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 							json_object_new_string ("5"));
 					json_object_object_add (j, "includeUrls",
 							json_object_new_boolean (true));
+					json_object_object_add (j, "returnDeviceType",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "returnUpdatePromptVersions",
+							json_object_new_boolean (true));
 					snprintf (req->urlPath, sizeof (req->urlPath),
 							PIANO_RPC_PATH "method=auth.partnerLogin");
 					break;
@@ -95,6 +99,36 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 							json_object_new_string (ph->partner.authToken));
 					json_object_object_add (j, "syncTime",
 							json_object_new_int (timestamp));
+					json_object_object_add (j, "includePandoraOneInfo",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeDemographics",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeAdAttributes",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeShuffleInsteadOfQuickMix",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "returnCollectTrackLifetimeStats",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "xplatformAdCapable",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "returnUserstate",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeListeningHours",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeDailySkipLimit",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeSkipDelay",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeAdvertiserAttributes",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includePlaylistAttributes",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeSkipAttributes",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeStationExpirationTime",
+							json_object_new_boolean (true));
+					json_object_object_add (j, "includeStationDescription",
+							json_object_new_boolean (true));
 
 					CURL * const curl = curl_easy_init ();
 					urlencAuthToken = curl_easy_escape (curl,
@@ -134,6 +168,20 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			json_object_object_add (j, "stationToken",
 					json_object_new_string (reqData->station->id));
 			json_object_object_add (j, "includeTrackLength",
+					json_object_new_boolean (true));
+			json_object_object_add (j, "includeAudioToken",
+					json_object_new_boolean (true));
+			json_object_object_add (j, "xplatformAdCapable",
+					json_object_new_boolean (true));
+			json_object_object_add (j, "includeAudioReceiptUrl",
+					json_object_new_boolean (true));
+			json_object_object_add (j, "includeCompetitiveSepIndicator",
+					json_object_new_boolean (true));
+			json_object_object_add (j, "includeCompletePlaylist",
+					json_object_new_boolean (true));
+			json_object_object_add (j, "includeTrackOptions",
+					json_object_new_boolean (true));
+			json_object_object_add (j, "audioAdPodCapable",
 					json_object_new_boolean (true));
 
 			method = "station.getPlaylist";
@@ -441,6 +489,49 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			req->secure = true;
 
 			method = "user.changeSettings";
+			break;
+		}
+
+		case PIANO_REQUEST_GET_AD_METADATA: {
+			PianoRequestDataGetAdMetadata_t *reqData = req->data;
+
+			assert (reqData != NULL);
+			assert (reqData->token != NULL);
+
+			json_object_object_add (j, "adToken",
+					json_object_new_string (reqData->token));
+			json_object_object_add (j, "returnAdTrackingTokens",
+							json_object_new_boolean (true));
+			json_object_object_add (j, "supportAudioAds",
+							json_object_new_boolean (true));
+			json_object_object_add (j, "includeBannerAd",
+							json_object_new_boolean (true));
+			json_object_object_add (j, "includeListeningHours",
+							json_object_new_boolean (true));
+
+			method = "ad.getAdMetadata";
+			break;
+		}
+
+		case PIANO_REQUEST_REGISTER_AD: {
+			PianoRequestDataRegisterAd_t *reqData = req->data;
+
+			assert (reqData != NULL);
+			assert (reqData->token != NULL);
+			assert (reqData->tokenCount > 0);
+			assert (reqData->station != NULL);
+			assert (reqData->station->id != NULL);
+
+			json_object_object_add (j, "stationId",
+					json_object_new_string (reqData->station->id));
+			json_object * const token = json_object_new_array ();
+			for (size_t i = 0; i < reqData->tokenCount; i++) {
+				json_object_array_add (token,
+						json_object_new_string (reqData->token[i]));
+			}
+			json_object_object_add (j, "adTrackingTokens", token);
+
+			method = "ad.registerAd";
 			break;
 		}
 
