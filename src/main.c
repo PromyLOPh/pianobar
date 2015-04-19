@@ -211,6 +211,7 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 	PianoReturn_t pRet;
 	CURLcode wRet;
 	PianoRequestDataGetPlaylist_t reqData;
+
 	reqData.station = app->curStation;
 	reqData.quality = app->settings.audioQuality;
 
@@ -238,6 +239,44 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 
 	const PianoSong_t * const curSong = app->playlist;
 	assert (curSong != NULL);
+
+	/* ads */
+	PianoReturn_t pRet;
+	CURLcode wRet;
+
+	/* is this an advertising track? */
+	if (curSong->adToken != NULL) {
+		PianoRequestDataGetAdMetadata_t adReqData;
+
+		memset (&adReqData, 0, sizeof (adReqData));
+		adReqData.token = curSong->adToken;
+		adReqData.song = curSong;
+		adReqData.quality = app->settings.audioQuality;
+
+		BarUiMsg (&app->settings, MSG_INFO, "Fetching ads with token %s... ",
+				adReqData.token);
+		BarUiPianoCall (app, PIANO_REQUEST_GET_AD_METADATA,
+				&adReqData, &pRet, &wRet);
+
+		/* got token? */
+		if (adReqData.retTokenCount > 0) {
+			PianoRequestDataRegisterAd_t regReqData;
+
+			regReqData.token = adReqData.retToken;
+			regReqData.tokenCount = adReqData.retTokenCount;
+			regReqData.station = app->curStation;
+
+			BarUiMsg (&app->settings, MSG_INFO, "Registering ad... ");
+			BarUiPianoCall (app, PIANO_REQUEST_REGISTER_AD, &regReqData, &pRet,
+					&wRet);
+
+			/* delete */
+			for (size_t i = 0; i < adReqData.retTokenCount; i++) {
+				free (adReqData.retToken[i]);
+			}
+			free (adReqData.retToken);
+		}
+	}
 
 	BarUiPrintSong (&app->settings, curSong, app->curStation->isQuickMix ?
 			PianoFindStationById (app->ph.stations,

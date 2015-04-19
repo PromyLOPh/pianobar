@@ -96,6 +96,7 @@ typedef struct PianoSong {
 	char *feedbackId;
 	char *detailUrl;
 	char *trackToken;
+	char *adToken;
 	float fileGain;
 	unsigned int length; /* song length in seconds */
 	PianoSongRating_t rating;
@@ -179,6 +180,8 @@ typedef enum {
 	PIANO_REQUEST_DELETE_SEED = 22,
 	PIANO_REQUEST_GET_SETTINGS = 23,
 	PIANO_REQUEST_CHANGE_SETTINGS = 24,
+	PIANO_REQUEST_GET_AD_METADATA = 25,
+	PIANO_REQUEST_REGISTER_AD = 26,
 } PianoRequestType_t;
 
 typedef struct PianoRequest {
@@ -265,6 +268,20 @@ typedef struct {
 	char *currentPassword, *newPassword;
 	PianoTristate_t explicitContentFilter;
 } PianoRequestDataChangeSettings_t;
+
+typedef struct {
+	char *token;
+	PianoSong_t *song;
+	PianoAudioQuality_t quality;
+	char **retToken;
+	size_t retTokenCount;
+} PianoRequestDataGetAdMetadata_t;
+
+typedef struct {
+	char **token;
+	size_t tokenCount;
+	PianoStation_t *station;
+} PianoRequestDataRegisterAd_t;
 
 /* pandora error code offset */
 #define PIANO_RET_OFFSET 1024
