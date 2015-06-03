@@ -601,6 +601,17 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			}
 			break;
 		}
+		
+		case PIANO_REQUEST_GET_SETTINGS: {
+			PianoRequestDataGetExplicitContentFilterInfo_t *reqData = req->data;
+
+			assert (reqData != NULL);
+
+			reqData->isExplicitContentFilterEnabled = json_object_get_boolean (json_object_object_get (result, "isExplicitContentFilterEnabled"));
+			reqData->isExplicitContentFilterPINProtected = json_object_get_boolean (json_object_object_get (result, "isExplicitContentFilterPINProtected"));
+
+			break;
+		}
 	}
 
 cleanup:
