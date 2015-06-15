@@ -177,9 +177,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->outkey = strdup ("6#26FRL$ZWD");
 	settings->fifo = BarGetXdgConfigDir (PACKAGE "/ctl");
 	assert (settings->fifo != NULL);
-	memcpy (settings->tlsFingerprint, "\x2D\x0A\xFD\xAF\xA1\x6F\x4B\x5C\x0A"
-			"\x43\xF3\xCB\x1D\x47\x52\xF9\x53\x55\x07\xC0",
-			sizeof (settings->tlsFingerprint));
 
 	settings->msgFormat[MSG_NONE].prefix = NULL;
 	settings->msgFormat[MSG_NONE].postfix = NULL;
@@ -253,6 +250,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 			} else if (streq ("decrypt_password", key)) {
 				free (settings->inkey);
 				settings->inkey = strdup (val);
+			} else if (streq ("ca_bundle", key)) {
+				free (settings->caBundle);
+				settings->caBundle = strdup (val);
 			} else if (memcmp ("act_", key, 4) == 0) {
 				size_t i;
 				/* keyboard shortcuts */
@@ -323,16 +323,6 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->fifo = BarSettingsExpandTilde (val, userhome);
 			} else if (streq ("autoselect", key)) {
 				settings->autoselect = atoi (val);
-			} else if (streq ("tls_fingerprint", key)) {
-				/* expects 40 byte hex-encoded sha1 */
-				if (strlen (val) == 40) {
-					for (size_t i = 0; i < 20; i++) {
-						char hex[3];
-						memcpy (hex, &val[i*2], 2);
-						hex[2] = '\0';
-						settings->tlsFingerprint[i] = strtol (hex, NULL, 16);
-					}
-				}
 			} else if (strncmp (formatMsgPrefix, key,
 					strlen (formatMsgPrefix)) == 0) {
 				static const char *mapping[] = {"none", "info", "nowplaying",

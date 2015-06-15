@@ -186,6 +186,9 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 	setAndCheck (CURLOPT_WRITEDATA, &buffer);
 	setAndCheck (CURLOPT_POST, 1);
 	setAndCheck (CURLOPT_TIMEOUT, 30);
+	if (settings->caBundle != NULL) {
+		setAndCheck (CURLOPT_CAINFO, settings->caBundle);
+	}
 
 	/* set up proxy (control proxy for non-us citizen or global proxy for poor
 	 * firewalled fellows) */
