@@ -45,14 +45,24 @@ THE SOFTWARE.
 
 #define streq(a, b) (strcmp (a, b) == 0)
 
+/* Get environment variable
+ */
+static char *BarSettingsGetenv(const char *var) {
+	char *val;
+	if ((val = getenv(var)) != NULL && strlen(val) > 0) {
+		return strdup(val);
+	}
+	return NULL;
+}
+
 /*	Get current user’s home directory
  */
 static char *BarSettingsGetHome () {
 	char *home;
 
 	/* try environment variable */
-	if ((home = getenv ("HOME")) != NULL && strlen (home) > 0) {
-		return strdup (home);
+	if ((home = BarSettingsGetenv ("HOME")) != NULL) {
+		return home;
 	}
 
 	/* try passwd mechanism */
@@ -71,8 +81,7 @@ static char *BarGetXdgConfigDir (const char * const filename) {
 
 	char *xdgConfigDir;
 
-	if ((xdgConfigDir = getenv ("XDG_CONFIG_HOME")) != NULL &&
-			strlen (xdgConfigDir) > 0) {
+	if ((xdgConfigDir = BarSettingsGetenv ("XDG_CONFIG_HOME")) != NULL) {
 		const size_t len = (strlen (xdgConfigDir) + 1 +
 				strlen (filename) + 1);
 		char * const concat = malloc (len * sizeof (*concat));
@@ -360,12 +369,12 @@ void BarSettingsRead (BarSettings_t *settings) {
 		free (path);
 	}
 
-	/* check environment variable if proxy is not set explicitly */
+	/* Check environment variables */
+	if (settings->username == NULL) {
+		settings->username = BarSettingsGetenv("PIANOBAR_USER");
+	}
 	if (settings->proxy == NULL) {
-		char *tmpProxy = getenv ("http_proxy");
-		if (tmpProxy != NULL && strlen (tmpProxy) > 0) {
-			settings->proxy = strdup (tmpProxy);
-		}
+		settings->proxy = BarSettingsGetenv("http_proxy");
 	}
 
 	free (userhome);
