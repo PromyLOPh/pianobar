@@ -655,7 +655,7 @@ BarUiActCallback(BarUiActVolUp) {
 /*	reset volume
  */
 BarUiActCallback(BarUiActVolReset) {
-	app->settings.volume = 0;
+	app->settings.volume = -10;
 	BarPlayerSetVolume (&app->player);
 }
 
