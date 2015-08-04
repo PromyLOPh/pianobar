@@ -36,6 +36,7 @@ THE SOFTWARE.
 #include <assert.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <unistd.h>
 
 #include <piano.h>
 
