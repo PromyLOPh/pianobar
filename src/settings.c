@@ -368,6 +368,11 @@ void BarSettingsRead (BarSettings_t *settings) {
 		}
 	}
 
+	/* ffmpeg does not support setting an http proxy explicitly */
+	if (settings->proxy != NULL) {
+		setenv ("http_proxy", settings->proxy, 1);
+	}
+
 	free (userhome);
 }
 
