@@ -775,3 +775,46 @@ BarUiActCallback(BarUiActManageStation) {
 	PianoDestroyStationInfo (&reqData.info);
 }
 
+/* toggles explicit content filter
+ */
+BarUiActCallback(BarUiActToggleExplicitContentFilter) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+	PianoRequestDataGetExplicitContentFilterInfo_t reqData;
+	char question[64];
+
+	memset (&reqData, 0, sizeof (reqData));
+
+	BarUiMsg (&app->settings, MSG_INFO, "Fetching current explicit content filter setting... ");
+	const bool bret = BarUiActDefaultPianoCall (PIANO_REQUEST_GET_SETTINGS,
+			&reqData);
+	BarUiActDefaultEventcmd ("getusersettings");
+	if (!bret) {
+		return;
+	}
+
+	if (reqData.isExplicitContentFilterPINProtected) {
+		BarUiMsg (&app->settings, MSG_ERR, "Explicit content filter setting protected by PIN, toggle from web interface.\n");
+		return;
+	} else if (reqData.isExplicitContentFilterEnabled) {
+		strcpy (question, "Really remove explicit content filter? [yN] ");
+	} else if (!reqData.isExplicitContentFilterEnabled) {
+		strcpy (question, "Really enable explicit content filter? [yN] ");
+	}
+
+	BarUiMsg (&app->settings, MSG_QUESTION, "%s", question);
+	if (BarReadlineYesNo (false, &app->input)) {
+		bool newExplicitContentFilterSetting = !reqData.isExplicitContentFilterEnabled;
+
+		BarUiMsg (&app->settings, MSG_INFO, "%s explicit content filter... ",
+				newExplicitContentFilterSetting ? "Enabling" : "Disabling");
+
+		PianoRequestDataGetExplicitContentFilterInfo_t subReqData;
+
+		memset (&subReqData, 0, sizeof (subReqData));
+		subReqData.isExplicitContentFilterEnabled = newExplicitContentFilterSetting;
+
+		BarUiActDefaultPianoCall (PIANO_REQUEST_CHANGE_EXPLICIT_CONTENT_SETTING, &subReqData);
+		BarUiActDefaultEventcmd ("changeexplicitcontentsetting");
+	}
+}

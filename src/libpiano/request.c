@@ -426,6 +426,24 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			goto cleanup;
 			break;
 		}
+
+		case PIANO_REQUEST_GET_SETTINGS: {
+			/* receive user settings */
+			method = "user.getSettings";
+			break;
+		}
+
+		case PIANO_REQUEST_CHANGE_EXPLICIT_CONTENT_SETTING: {
+			PianoRequestDataGetExplicitContentFilterInfo_t *reqData = req->data;
+
+			assert (reqData != NULL);
+
+			json_object_object_add (j, "isExplicitContentFilterEnabled",
+					json_object_new_boolean (reqData->isExplicitContentFilterEnabled));
+
+			method = "user.setExplicitContentFilter";
+			break;
+		}
 	}
 
 	/* standard parameter */

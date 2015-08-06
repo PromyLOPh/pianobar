@@ -170,6 +170,8 @@ typedef enum {
 	PIANO_REQUEST_GET_STATION_INFO = 20,
 	PIANO_REQUEST_DELETE_FEEDBACK = 21,
 	PIANO_REQUEST_DELETE_SEED = 22,
+	PIANO_REQUEST_GET_SETTINGS = 23,
+	PIANO_REQUEST_CHANGE_EXPLICIT_CONTENT_SETTING = 24
 } PianoRequestType_t;
 
 typedef struct PianoRequest {
@@ -244,6 +246,11 @@ typedef struct {
 	PianoArtist_t *artist;
 	PianoStation_t *station;
 } PianoRequestDataDeleteSeed_t;
+
+typedef struct {
+	char isExplicitContentFilterEnabled;
+	char isExplicitContentFilterPINProtected;
+} PianoRequestDataGetExplicitContentFilterInfo_t;
 
 /* pandora error code offset */
 #define PIANO_RET_OFFSET 1024
