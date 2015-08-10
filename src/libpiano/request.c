@@ -21,10 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef __FreeBSD__
-#define _BSD_SOURCE /* required by strdup() */
-#define _DARWIN_C_SOURCE /* strdup() on OS X */
-#endif
+#include "../config.h"
 
 #include <curl/curl.h>
 #include <json.h>

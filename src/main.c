@@ -21,11 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef __FreeBSD__
-#define _POSIX_C_SOURCE 1 /* fileno() */
-#define _BSD_SOURCE /* strdup() */
-#define _DARWIN_C_SOURCE /* strdup() on OS X */
-#endif
+#include "config.h"
 
 /* system includes */
 #include <stdlib.h>
@@ -56,7 +52,6 @@ THE SOFTWARE.
 
 #include "main.h"
 #include "terminal.h"
-#include "config.h"
 #include "ui.h"
 #include "ui_dispatch.h"
 #include "ui_readline.h"

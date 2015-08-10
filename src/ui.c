@@ -23,11 +23,7 @@ THE SOFTWARE.
 
 /* everything that interacts with the user */
 
-#ifndef __FreeBSD__
-#define _POSIX_C_SOURCE 1 /* fileno() */
-#define _BSD_SOURCE /* strdup() */
-#define _DARWIN_C_SOURCE /* strdup() on OS X */
-#endif
+#include "config.h"
 
 #include <stdio.h>
 #include <stdarg.h>

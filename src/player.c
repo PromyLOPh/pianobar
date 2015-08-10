@@ -23,6 +23,8 @@ THE SOFTWARE.
 
 /* receive/play audio stream */
 
+#include "config.h"
+
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
@@ -30,8 +32,6 @@ THE SOFTWARE.
 #include <limits.h>
 #include <assert.h>
 #include <arpa/inet.h>
-
-#include "config.h"
 
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>

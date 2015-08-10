@@ -38,7 +38,6 @@ THE SOFTWARE.
 #include <piano.h>
 
 #include "settings.h"
-#include "config.h"
 
 typedef struct {
 	/* protected by pauseMutex */

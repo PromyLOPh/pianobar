@@ -24,6 +24,8 @@ THE SOFTWARE.
 #ifndef SRC_LIBPIANO_PIANO_H_MFBT13PN
 #define SRC_LIBPIANO_PIANO_H_MFBT13PN
 
+#include "../config.h"
+
 #include <stdbool.h>
 #ifdef __FreeBSD__
 #define _GCRYPT_IN_LIBGCRYPT

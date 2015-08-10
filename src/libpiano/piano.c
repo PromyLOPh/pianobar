@@ -21,10 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef __FreeBSD__
-#define _BSD_SOURCE /* required by strdup() */
-#define _DARWIN_C_SOURCE /* strdup() on OS X */
-#endif
+#include "../config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -34,7 +31,6 @@ THE SOFTWARE.
 
 #include "piano_private.h"
 #include "piano.h"
-#include "config.h"
 
 /*	initialize piano handle
  *	@param piano handle

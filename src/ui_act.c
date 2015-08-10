@@ -23,7 +23,7 @@ THE SOFTWARE.
 
 /* functions responding to user's keystrokes */
 
-#define _BSD_SOURCE
+#include "config.h"
 
 #include <string.h>
 #include <unistd.h>
