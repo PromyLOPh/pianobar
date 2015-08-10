@@ -23,10 +23,13 @@ THE SOFTWARE.
 
 /* functions responding to user's keystrokes */
 
+#define _BSD_SOURCE
+
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <assert.h>
+#include <string.h>
 
 #include "ui.h"
 #include "ui_readline.h"
@@ -654,6 +657,106 @@ BarUiActCallback(BarUiActVolUp) {
 BarUiActCallback(BarUiActVolReset) {
 	app->settings.volume = 0;
 	BarPlayerSetVolume (&app->player);
+}
+
+static const char *boolToYesNo (const bool value) {
+	return value ? "yes" : "no";
+}
+
+/*	change pandora settings
+ */
+BarUiActCallback(BarUiActSettings) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+	PianoSettings_t settings;
+	PianoRequestDataChangeSettings_t reqData;
+	bool modified = false;
+
+	memset (&settings, 0, sizeof (settings));
+	memset (&reqData, 0, sizeof (reqData));
+
+	BarUiMsg (&app->settings, MSG_INFO, "Retrieving settings... ");
+	bool bret = BarUiActDefaultPianoCall (PIANO_REQUEST_GET_SETTINGS, &settings);
+	BarUiActDefaultEventcmd ("settingsget");
+	if (!bret) {
+		return;
+	}
+
+	BarUiMsg (&app->settings, MSG_LIST, " 0) Username (%s)\n", settings.username);
+	BarUiMsg (&app->settings, MSG_LIST, " 1) Password (*****)\n");
+	BarUiMsg (&app->settings, MSG_LIST, " 2) Explicit content filter (%s)\n",
+			boolToYesNo (settings.explicitContentFilter));
+
+	while (true) {
+		int val;
+
+		BarUiMsg (&app->settings, MSG_QUESTION, "Change setting: ");
+		if (BarReadlineInt (&val, &app->input) == 0) {
+			break;
+		}
+
+		switch (val) {
+			case 0: {
+				/* username */
+				char buf[80];
+				BarUiMsg (&app->settings, MSG_QUESTION, "New username: ");
+				if (BarReadlineStr (buf, sizeof (buf), &app->input,
+						BAR_RL_DEFAULT) > 0) {
+					reqData.newUsername = strdup (buf);
+					modified = true;
+				}
+				break;
+			}
+
+			case 1: {
+				/* password */
+				char buf[80];
+				BarUiMsg (&app->settings, MSG_QUESTION, "New password: ");
+				if (BarReadlineStr (buf, sizeof (buf), &app->input,
+						BAR_RL_NOECHO) > 0) {
+					reqData.newPassword = strdup (buf);
+					modified = true;
+				}
+				/* write missing newline */
+				puts ("");
+				break;
+			}
+
+			case 2: {
+				/* explicit content filter */
+				BarUiMsg (&app->settings, MSG_QUESTION,
+						"Enable explicit content filter? [yn] ");
+				reqData.explicitContentFilter =
+						BarReadlineYesNo (settings.explicitContentFilter,
+						&app->input) ? PIANO_TRUE : PIANO_FALSE;
+				modified = true;
+				break;
+			}
+
+			default:
+				/* continue */
+				break;
+		}
+	}
+
+	if (modified) {
+		reqData.currentUsername = app->settings.username;
+		reqData.currentPassword = app->settings.password;
+		BarUiMsg (&app->settings, MSG_INFO, "Changing settings... ");
+		BarUiActDefaultPianoCall (PIANO_REQUEST_CHANGE_SETTINGS, &reqData);
+		BarUiActDefaultEventcmd ("settingschange");
+		/* we want to be able to change settings after a username/password
+		 * change, so update our internal structs too. the user will have to
+		 * update his config file by himself though */
+		if (reqData.newUsername != NULL) {
+			free (app->settings.username);
+			app->settings.username = reqData.newUsername;
+		}
+		if (reqData.newPassword != NULL) {
+			free (app->settings.password);
+			app->settings.password = reqData.newPassword;
+		}
+	}
 }
 
 /*	manage station (remove seeds or feedback)

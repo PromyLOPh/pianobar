@@ -77,6 +77,7 @@ static bool BarMainLoginUser (BarApp_t *app) {
 	ret = BarUiPianoCall (app, PIANO_REQUEST_LOGIN, &reqData, &pRet, &wRet);
 	BarUiStartEventCmd (&app->settings, "userlogin", NULL, NULL, &app->player,
 			NULL, pRet, wRet);
+
 	return ret;
 }
 

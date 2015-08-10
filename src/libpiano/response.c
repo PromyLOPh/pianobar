@@ -411,6 +411,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 		case PIANO_REQUEST_BOOKMARK_ARTIST:
 		case PIANO_REQUEST_DELETE_FEEDBACK:
 		case PIANO_REQUEST_DELETE_SEED:
+		case PIANO_REQUEST_CHANGE_SETTINGS:
 			/* response unused */
 			break;
 
@@ -505,6 +506,17 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					}
 				}
 			}
+			break;
+		}
+
+		case PIANO_REQUEST_GET_SETTINGS: {
+			PianoSettings_t * const settings = req->data;
+
+			assert (settings != NULL);
+
+			settings->explicitContentFilter = json_object_get_boolean (
+					json_object_object_get (result, "isExplicitContentFilterEnabled"));
+			settings->username = PianoJsonStrdup (result, "username");
 			break;
 		}
 

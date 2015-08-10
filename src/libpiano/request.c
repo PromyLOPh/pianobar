@@ -402,6 +402,47 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			break;
 		}
 
+		case PIANO_REQUEST_GET_SETTINGS: {
+			method = "user.getSettings";
+			break;
+		}
+
+		case PIANO_REQUEST_CHANGE_SETTINGS: {
+			PianoRequestDataChangeSettings_t *reqData = req->data;
+			assert (reqData != NULL);
+			assert (reqData->currentPassword != NULL);
+			assert (reqData->currentUsername != NULL);
+
+			json_object_object_add (j, "userInitiatedChange",
+					json_object_new_boolean (true));
+			json_object_object_add (j, "currentUsername",
+					json_object_new_string (reqData->currentUsername));
+			json_object_object_add (j, "currentPassword",
+					json_object_new_string (reqData->currentPassword));
+
+			if (reqData->explicitContentFilter != PIANO_UNDEFINED) {
+				json_object_object_add (j, "isExplicitContentFilterEnabled",
+						json_object_new_boolean (
+						reqData->explicitContentFilter == PIANO_TRUE));
+			}
+
+#define changeIfSet(field) \
+	if (reqData->field != NULL) { \
+		json_object_object_add (j, #field, \
+				json_object_new_string (reqData->field)); \
+	}
+
+			changeIfSet (newUsername);
+			changeIfSet (newPassword);
+
+#undef changeIfSet
+
+			req->secure = true;
+
+			method = "user.changeSettings";
+			break;
+		}
+
 		/* "high-level" wrapper */
 		case PIANO_REQUEST_RATE_SONG: {
 			/* love/ban song */
