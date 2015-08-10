@@ -45,6 +45,7 @@ THE SOFTWARE.
 #endif
 #include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
+#include <libavutil/frame.h>
 #ifndef HAVE_AV_TIMEOUT
 #include <libavutil/time.h>
 #endif
@@ -77,7 +78,6 @@ void BarPlayerInit () {
 
 void BarPlayerDestroy () {
 	avformat_network_deinit ();
-	avfilter_uninit ();
 	ao_shutdown ();
 }
 
@@ -309,9 +309,9 @@ static int play (player_t * const player) {
 	pkt.size = 0;
 
 	AVFrame *frame = NULL, *filteredFrame = NULL;
-	frame = avcodec_alloc_frame ();
+	frame = av_frame_alloc ();
 	assert (frame != NULL);
-	filteredFrame = avcodec_alloc_frame ();
+	filteredFrame = av_frame_alloc ();
 	assert (filteredFrame != NULL);
 
 	while (!player->doQuit) {
@@ -357,20 +357,10 @@ static int play (player_t * const player) {
 				assert (ret >= 0);
 
 				while (true) {
-					AVFilterBufferRef *audioref = NULL;
-#ifdef HAVE_AV_BUFFERSINK_GET_BUFFER_REF
-					/* ffmpeg’s compatibility layer is broken in some releases */
-					if (av_buffersink_get_buffer_ref (player->fbufsink,
-							&audioref, 0) < 0) {
-#else
-					if (av_buffersink_read (player->fbufsink, &audioref) < 0) {
-#endif
+					if (av_buffersink_get_frame (player->fbufsink, filteredFrame) < 0) {
 						/* try again next frame */
 						break;
 					}
-
-					ret = avfilter_copy_buf_props (filteredFrame, audioref);
-					assert (ret >= 0);
 
 					const int numChannels = av_get_channel_layout_nb_channels (
 							filteredFrame->channel_layout);
@@ -378,7 +368,7 @@ static int play (player_t * const player) {
 					ao_play (player->aoDev, (char *) filteredFrame->data[0],
 							filteredFrame->nb_samples * numChannels * bps);
 
-					avfilter_unref_bufferp (&audioref);
+					av_frame_unref (filteredFrame);
 				}
 			}
 
@@ -392,8 +382,8 @@ static int play (player_t * const player) {
 		player->lastTimestamp = pkt.pts;
 	}
 
-	avcodec_free_frame (&filteredFrame);
-	avcodec_free_frame (&frame);
+	av_frame_free (&filteredFrame);
+	av_frame_free (&frame);
 
 	return 0;
 }
