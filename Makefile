@@ -100,8 +100,8 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBPIANO_OBJ}
 	@echo "  LINK  $@"
 	@${CC} -shared -Wl,-soname,libpiano.so.0 -o libpiano.so.0.0.0 \
 			${LIBPIANO_RELOBJ} ${ALL_LDFLAGS}
-	@ln -s libpiano.so.0.0.0 libpiano.so.0
-	@ln -s libpiano.so.0 libpiano.so
+	@ln -fs libpiano.so.0.0.0 libpiano.so.0
+	@ln -fs libpiano.so.0 libpiano.so
 	@echo "    AR  libpiano.a"
 	@${AR} rcs libpiano.a ${LIBPIANO_OBJ}
 
@@ -140,8 +140,8 @@ endif
 install-libpiano:
 	install -d ${DESTDIR}${LIBDIR}/
 	install -m644 libpiano.so.0.0.0 ${DESTDIR}${LIBDIR}/
-	ln -s libpiano.so.0.0.0 ${DESTDIR}${LIBDIR}/libpiano.so.0
-	ln -s libpiano.so.0 ${DESTDIR}${LIBDIR}/libpiano.so
+	ln -fs libpiano.so.0.0.0 ${DESTDIR}${LIBDIR}/libpiano.so.0
+	ln -fs libpiano.so.0 ${DESTDIR}${LIBDIR}/libpiano.so
 	install -m644 libpiano.a ${DESTDIR}${LIBDIR}/
 	install -d ${DESTDIR}${INCDIR}/
 	install -m644 src/libpiano/piano.h ${DESTDIR}${INCDIR}/
