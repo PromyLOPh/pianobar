@@ -240,7 +240,7 @@ static bool openFilter (player_t * const player) {
 
 	/* volume */
 	if ((ret = avfilter_graph_create_filter (&player->fvolume,
-			avfilter_get_by_name ("volume"), NULL, NULL, NULL,
+			avfilter_get_by_name ("volume"), NULL, "0dB", NULL,
 			player->fgraph)) < 0) {
 		softfail ("create_filter volume");
 	}
