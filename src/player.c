@@ -30,6 +30,8 @@ THE SOFTWARE.
 #include <limits.h>
 #include <assert.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
+
 
 #include "config.h"
 
@@ -127,7 +129,7 @@ static int intCb (void * const data) {
 	player_t * const player = data;
 	assert (player != NULL);
 	/* 10 seconds timeout (usec) */
-	return (av_gettime () - player->ping) > 10*1000000;
+	return (av_gettime () - player->ping) > 20*1000000;
 }
 
 #define ping() player->ping = av_gettime ()
@@ -135,7 +137,8 @@ static int intCb (void * const data) {
 #define ping()
 #endif
 
-static bool openStream (player_t * const player) {
+
+static bool openStream (player_t * const player ) {
 	assert (player != NULL);
 	/* no leak? */
 	assert (player->fctx == NULL);
@@ -146,7 +149,7 @@ static bool openStream (player_t * const player) {
 	AVDictionary *options = NULL;
 #ifdef HAVE_AV_TIMEOUT
 	/* 10 seconds timeout on TCP r/w */
-	av_dict_set (&options, "timeout", "10000000", 0);
+	av_dict_set (&options, "timeout", "20000000", 0);
 #else
 	/* libav does not support the timeout option above. the workaround stores
 	 * the current time with ping() now and then, registers an interrupt
@@ -157,10 +160,20 @@ static bool openStream (player_t * const player) {
 	player->fctx->interrupt_callback.opaque = player;
 #endif
 
+
 	assert (player->url != NULL);
 	ping ();
+
 	if ((ret = avformat_open_input (&player->fctx, player->url, NULL, &options)) < 0) {
-		softfail ("Unable to open audio file");
+                int tries=0;
+		printError (player->settings, "Unable to open audio file at avformat_open_input", ret); 
+		printError (player->settings, player->url, ret); 
+                while ((ret<0) && (tries++ <10)) {
+                        sleep(1);
+			ret = avformat_open_input (&player->fctx, player->url, NULL, &options);
+                        fprintf(stderr,"Retry yielded status %d\n",ret);
+			}
+                if (ret<0) softfail("Unable to open audio file/URL"); 
 	}
 
 	ping ();
@@ -448,4 +461,3 @@ void *BarPlayerThread (void *data) {
 
 	return (void *) pret;
 }
-
