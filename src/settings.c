@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2012
+Copyright (c) 2008-2015
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -33,11 +33,13 @@ THE SOFTWARE.
 #include <sys/types.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <piano.h>
 
 #include "settings.h"
 #include "config.h"
+#include "ui.h"
 #include "ui_dispatch.h"
 
 #define streq(a, b) (strcmp (a, b) == 0)
@@ -197,8 +199,10 @@ void BarSettingsRead (BarSettings_t *settings) {
 	/* read config files */
 	for (size_t j = 0; j < sizeof (configfiles) / sizeof (*configfiles); j++) {
 		static const char *formatMsgPrefix = "format_msg_";
-		char key[256], val[256];
 		FILE *configfd;
+		/* getline allocates these on the first run */
+		char *line = NULL;
+		size_t lineLen = 0, lineNum = 0;
 
 		char * const path = BarGetXdgConfigDir (configfiles[j]);
 		assert (path != NULL);
@@ -208,14 +212,59 @@ void BarSettingsRead (BarSettings_t *settings) {
 		}
 
 		while (1) {
-			char lwhite, rwhite;
-			int scanRet = fscanf (configfd, "%255s%c=%c%255[^\n]", key, &lwhite, &rwhite, val);
-			if (scanRet == EOF) {
+			++lineNum;
+			ssize_t ret = getline (&line, &lineLen, configfd);
+			if (ret == -1) {
+				/* EOF or error */
 				break;
-			} else if (scanRet != 4 || lwhite != ' ' || rwhite != ' ') {
-				/* invalid config line */
+			}
+			/* parse lines that match "^\s*(.*?)\s?=\s?(.*)$". Windows and Unix
+			 * line terminators are supported. */
+			char *key = line;
+
+			/* skip leading spaces */
+			while (isspace ((unsigned char) key[0])) {
+				++key;
+			}
+
+			/* skip comments */
+			if (key[0] == '#') {
 				continue;
 			}
+
+			/* search for delimiter and split key-value pair */
+			char *val = strchr (line, '=');
+			if (val == NULL) {
+				/* no warning for empty lines */
+				if (key[0] != '\0') {
+					BarUiMsg (settings, MSG_INFO,
+							"Invalid line at %s:%zu\n", path, lineNum);
+				}
+				/* invalid line */
+				continue;
+			}
+			*val = '\0';
+			++val;
+
+			/* drop spaces at the end */
+			char *keyend = &key[strlen (key)-1];
+			while (keyend >= key && isspace ((unsigned char) *keyend)) {
+				*keyend = '\0';
+				--keyend;
+			}
+
+			/* strip at most one space, legacy cruft, required for values with
+			 * leading spaces like love_icon */
+			if (isspace ((unsigned char) val[0])) {
+				++val;
+			}
+			/* drop trailing cr/lf */
+			char *valend = &val[strlen (val)-1];
+			while (valend >= val && (*valend == '\r' || *valend == '\n')) {
+				*valend = '\0';
+				--valend;
+			}
+
 			if (streq ("control_proxy", key)) {
 				settings->controlProxy = strdup (val);
 			} else if (streq ("proxy", key)) {
@@ -350,11 +399,15 @@ void BarSettingsRead (BarSettings_t *settings) {
 						break;
 					}
 				}
+			} else {
+				BarUiMsg (settings, MSG_INFO,
+						"Unrecognized key %s at %s:%zu\n", key, path, lineNum);
 			}
 		}
 
 		fclose (configfd);
 		free (path);
+		free (line);
 	}
 
 	/* check environment variable if proxy is not set explicitly */
