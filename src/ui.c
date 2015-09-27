@@ -182,6 +182,14 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 	setAndCheck (CURLOPT_WRITEDATA, &buffer);
 	setAndCheck (CURLOPT_POST, 1);
 	setAndCheck (CURLOPT_TIMEOUT, 30);
+
+	/* enable TCP keep-alive for this transfer */
+	setAndCheck (CURLOPT_TCP_KEEPALIVE, 1L);
+	/* keep-alive idle time to 120 seconds */
+	setAndCheck (CURLOPT_TCP_KEEPIDLE, 120L);
+	/* interval time between keep-alive probes: 20 seconds */
+	setAndCheck (CURLOPT_TCP_KEEPINTVL, 20L);
+
 	if (settings->caBundle != NULL) {
 		setAndCheck (CURLOPT_CAINFO, settings->caBundle);
 	}
