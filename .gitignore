@@ -7,3 +7,7 @@ pianobar
 libpiano.a
 libpiano.so*
 waitress-test
+
+# JetBrains IDE metadata
+.idea/
+*.iml
