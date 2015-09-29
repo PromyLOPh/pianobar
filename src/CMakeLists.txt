@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.0)
 
 add_subdirectory(libpiano)
 
+if (DYNLINK)
+    set(LIBPIANO piano)
+else ()
+    set(LIBPIANO piano-static)
+endif ()
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${LIBAV_CFLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${LIBCURL_CFLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${LIBGNUTLS_CFLAGS}")
@@ -26,7 +32,7 @@ set(SRCS
 add_executable(pianobar ${SRCS})
 target_link_libraries(pianobar
     # Internal
-    piano
+    ${LIBPIANO}
 
     # External
     ao
@@ -37,3 +43,6 @@ target_link_libraries(pianobar
     gcrypt
     ${LIBJSONC_LIBRARIES}
     ${LIBCURL_LIBRARIES})
+
+install(TARGETS pianobar
+    DESTINATION bin)
