@@ -1,5 +1,6 @@
 set(CPACK_GENERATOR
     ZIP
+    TGZ
     DEB
     RPM
     )
@@ -20,8 +21,6 @@ set(CPACK_PACKAGE_VERSION
 
 set(CPACK_CMAKE_GENERATOR "Unix Makefiles")
 set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/README.md)
-
-
 
 # Debian Specific
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://6xq.net/pianobar/")
