@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 
+# Common flags
+if ("" STREQUAL "$ENV{CFLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+    add_definitions(-DNDEBUG)
+endif ()
+
 add_subdirectory(libpiano)
 
 if (DYNLINK)

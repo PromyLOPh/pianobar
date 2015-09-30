@@ -1,5 +1,19 @@
 cmake_minimum_required(VERSION 3.0)
 
+# Set compiler prior to invoking `project` function or else it won't take affect
+if ("Darwin" STREQUAL "${CMAKE_SYSTEM_NAME}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    set(CMAKE_C_COMPILER "gcc")
+elseif ("FreeBSD" STREQUAL "${CMAKE_SYSTEM_NAME}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    set(CMAKE_C_COMPILER "cc")
+elseif ("OpenBSD" STREQUAL "${CMAKE_SYSTEM_NAME}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    set(CMAKE_C_COMPILER "cc")
+else ()
+    set(CMAKE_C_COMPILER "c99")
+endif ()
+
 project(pianobar
     VERSION 2014.09.28)
 
