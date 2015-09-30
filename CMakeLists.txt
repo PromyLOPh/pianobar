@@ -33,4 +33,4 @@ install(FILES
     DESTINATION share/man/man1
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
-include(CPackConfig.cmake)
+include(CMakeCPack.cmake)
