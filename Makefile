@@ -53,7 +53,6 @@ LIBPIANO_SRC:=\
 		${LIBPIANO_DIR}/response.c \
 		${LIBPIANO_DIR}/list.c
 LIBPIANO_HDR:=\
-		${LIBPIANO_DIR}/config.h \
 		${LIBPIANO_DIR}/crypt.h \
 		${LIBPIANO_DIR}/piano.h \
 		${LIBPIANO_DIR}/piano_private.h
@@ -67,9 +66,6 @@ LIBAV_LDFLAGS=$(shell pkg-config --libs libavcodec libavformat libavutil libavfi
 LIBCURL_CFLAGS=$(shell pkg-config --cflags libcurl)
 LIBCURL_LDFLAGS=$(shell pkg-config --libs libcurl)
 
-LIBGNUTLS_CFLAGS:=$(shell pkg-config --cflags gnutls)
-LIBGNUTLS_LDFLAGS:=$(shell pkg-config --libs gnutls)
-
 LIBGCRYPT_CFLAGS:=
 LIBGCRYPT_LDFLAGS:=-lgcrypt
 
@@ -78,11 +74,11 @@ LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --l
 
 # combine all flags
 ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} \
-			${LIBAV_CFLAGS} ${LIBGNUTLS_CFLAGS} \
+			${LIBAV_CFLAGS} ${LIBCURL_CFLAGS} \
 			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS}
 ALL_LDFLAGS:=${LDFLAGS} -lao -lpthread -lm \
-			${LIBAV_LDFLAGS} ${LIBGNUTLS_LDFLAGS} \
-			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS} ${LIBCURL_LDFLAGS}
+			${LIBAV_LDFLAGS} ${LIBCURL_LDFLAGS} \
+			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS}
 
 # build pianobar
 ifeq (${DYNLINK},1)
