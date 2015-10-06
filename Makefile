@@ -6,21 +6,18 @@ LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
 DYNLINK:=0
+CFLAGS?=-O2 -DNDEBUG
 
-# Respect environment variables set by user; does not work with :=
-ifeq (${CFLAGS},)
-	CFLAGS=-O2 -DNDEBUG
-endif
 ifeq (${CC},cc)
 	OS := $(shell uname)
 	ifeq (${OS},Darwin)
-		CC=gcc -std=c99
+		CC:=gcc -std=c99
 	else ifeq (${OS},FreeBSD)
-		CC=cc -std=c99
+		CC:=cc -std=c99
 	else ifeq (${OS},OpenBSD)
-		CC=cc -std=c99
+		CC:=cc -std=c99
 	else
-		CC=c99
+		CC:=c99
 	endif
 endif
 
@@ -34,15 +31,6 @@ PIANOBAR_SRC:=\
 		${PIANOBAR_DIR}/ui.c \
 		${PIANOBAR_DIR}/ui_readline.c \
 		${PIANOBAR_DIR}/ui_dispatch.c
-PIANOBAR_HDR:=\
-		${PIANOBAR_DIR}/player.h \
-		${PIANOBAR_DIR}/settings.h \
-		${PIANOBAR_DIR}/terminal.h \
-		${PIANOBAR_DIR}/ui_act.h \
-		${PIANOBAR_DIR}/ui.h \
-		${PIANOBAR_DIR}/ui_readline.h \
-		${PIANOBAR_DIR}/main.h \
-		${PIANOBAR_DIR}/config.h
 PIANOBAR_OBJ:=${PIANOBAR_SRC:.c=.o}
 
 LIBPIANO_DIR:=src/libpiano
@@ -52,19 +40,15 @@ LIBPIANO_SRC:=\
 		${LIBPIANO_DIR}/request.c \
 		${LIBPIANO_DIR}/response.c \
 		${LIBPIANO_DIR}/list.c
-LIBPIANO_HDR:=\
-		${LIBPIANO_DIR}/crypt.h \
-		${LIBPIANO_DIR}/piano.h \
-		${LIBPIANO_DIR}/piano_private.h
 LIBPIANO_OBJ:=${LIBPIANO_SRC:.c=.o}
 LIBPIANO_RELOBJ:=${LIBPIANO_SRC:.c=.lo}
 LIBPIANO_INCLUDE:=${LIBPIANO_DIR}
 
-LIBAV_CFLAGS=$(shell pkg-config --cflags libavcodec libavformat libavutil libavfilter)
-LIBAV_LDFLAGS=$(shell pkg-config --libs libavcodec libavformat libavutil libavfilter)
+LIBAV_CFLAGS:=$(shell pkg-config --cflags libavcodec libavformat libavutil libavfilter)
+LIBAV_LDFLAGS:=$(shell pkg-config --libs libavcodec libavformat libavutil libavfilter)
 
-LIBCURL_CFLAGS=$(shell pkg-config --cflags libcurl)
-LIBCURL_LDFLAGS=$(shell pkg-config --libs libcurl)
+LIBCURL_CFLAGS:=$(shell pkg-config --cflags libcurl)
+LIBCURL_LDFLAGS:=$(shell pkg-config --libs libcurl)
 
 LIBGCRYPT_CFLAGS:=
 LIBGCRYPT_LDFLAGS:=-lgcrypt
@@ -72,27 +56,32 @@ LIBGCRYPT_LDFLAGS:=-lgcrypt
 LIBJSONC_CFLAGS:=$(shell pkg-config --cflags json-c 2>/dev/null || pkg-config --cflags json)
 LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --libs json)
 
+LIBAO_CFLAGS:=$(shell pkg-config --cflags ao)
+LIBAO_LDFLAGS:=$(shell pkg-config --libs ao)
+
 # combine all flags
 ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} \
 			${LIBAV_CFLAGS} ${LIBCURL_CFLAGS} \
-			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS}
-ALL_LDFLAGS:=${LDFLAGS} -lao -lpthread -lm \
+			${LIBGCRYPT_CFLAGS} ${LIBJSONC_CFLAGS} \
+			${LIBAO_CFLAGS}
+ALL_LDFLAGS:=${LDFLAGS} -lpthread -lm \
 			${LIBAV_LDFLAGS} ${LIBCURL_LDFLAGS} \
-			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS}
+			${LIBGCRYPT_LDFLAGS} ${LIBJSONC_LDFLAGS} \
+			${LIBAO_LDFLAGS}
 
 # build pianobar
 ifeq (${DYNLINK},1)
-pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} libpiano.so.0
+pianobar: ${PIANOBAR_OBJ} libpiano.so.0
 	@echo "  LINK  $@"
 	@${CC} -o $@ ${PIANOBAR_OBJ} -L. -lpiano ${ALL_LDFLAGS}
 else
-pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ}
+pianobar: ${PIANOBAR_OBJ} ${LIBPIANO_OBJ}
 	@echo "  LINK  $@"
 	@${CC} -o $@ ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} ${ALL_LDFLAGS}
 endif
 
 # build shared and static libpiano
-libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBPIANO_OBJ}
+libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_OBJ}
 	@echo "  LINK  $@"
 	@${CC} -shared -Wl,-soname,libpiano.so.0 -o libpiano.so.0.0.0 \
 			${LIBPIANO_RELOBJ} ${ALL_LDFLAGS}
