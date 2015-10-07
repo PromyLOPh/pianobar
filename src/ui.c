@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include <strings.h>
 #include <assert.h>
 #include <ctype.h> /* tolower() */
+#include <fcntl.h>
 
 /* waitpid () */
 #include <sys/types.h>
@@ -41,6 +42,7 @@ THE SOFTWARE.
 
 #include "ui.h"
 #include "ui_readline.h"
+
 
 typedef int (*BarSortFunc_t) (const void *, const void *);
 
@@ -91,6 +93,11 @@ static const char *BarStrCaseStr (const char *haystack, const char *needle) {
  */
 void BarUiMsg (const BarSettings_t *settings, const BarUiMsg_t type,
 		const char *format, ...) {
+        // GD
+#define PB_MESSAGE_FILE "/tmp/pianobar_messages.txt"
+        char iobuf[4096];
+        FILE *uibuffer = stdout;
+
 	va_list fmtargs;
 
 	assert (settings != NULL);
@@ -98,34 +105,45 @@ void BarUiMsg (const BarSettings_t *settings, const BarUiMsg_t type,
 	assert (format != NULL);
 
 	switch (type) {
-		case MSG_INFO:
 		case MSG_PLAYING:
-		case MSG_TIME:
 		case MSG_ERR:
-		case MSG_QUESTION:
+			if (!isatty(fileno(stdin))) uibuffer = fopen(PB_MESSAGE_FILE,"w"); // important: clear buffer first
+			fputs( "@P2 ", uibuffer);
+                        break;
 		case MSG_LIST:
-			/* print ANSI clear line */
-			fputs ("\033[2K", stdout);
-			break;
-
+		case MSG_INFO:
+		case MSG_TIME:
+		case MSG_QUESTION:
 		default:
+			if (!isatty(fileno(stdin))) uibuffer = fopen(PB_MESSAGE_FILE,"a"); // add text to buffer
+                        break;
+
+			/* print ANSI clear line */
+			fputs ("\033[2K", uibuffer);
 			break;
 	}
 
 	if (settings->msgFormat[type].prefix != NULL) {
-		fputs (settings->msgFormat[type].prefix, stdout);
+		fputs (settings->msgFormat[type].prefix, uibuffer);
 	}
 
 	va_start (fmtargs, format);
-	vprintf (format, fmtargs);
+	vsprintf (iobuf, format, fmtargs);
 	va_end (fmtargs);
 
+        fputs( iobuf, uibuffer);
+
+
 	if (settings->msgFormat[type].postfix != NULL) {
-		fputs (settings->msgFormat[type].postfix, stdout);
+		// if (uibuffer!=stdout) fputs (settings->msgFormat[type].postfix, stdout);
+		fputs (settings->msgFormat[type].postfix, uibuffer);
 	}
 
-	fflush (stdout);
+	fflush(uibuffer);
+
+        if (!isatty(fileno(stdin))) fclose(uibuffer);
 }
+
 
 typedef struct {
 	char *data;

@@ -85,7 +85,7 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 	if (settings->username == NULL) {
 		char nameBuf[100];
 
-		BarUiMsg (settings, MSG_QUESTION, "Email: ");
+		BarUiMsg (settings, MSG_QUESTION, "No User name in config? Email: ");
 		BarReadlineStr (nameBuf, sizeof (nameBuf), input, BAR_RL_DEFAULT);
 		settings->username = strdup (nameBuf);
 		usernameFromConfig = false;
@@ -95,7 +95,7 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 		char passBuf[100];
 
 		if (usernameFromConfig) {
-			BarUiMsg (settings, MSG_QUESTION, "Email: %s\n", settings->username);
+			BarUiMsg (settings, MSG_QUESTION, "Got username Email: %s\n", settings->username);
 		}
 
 		if (settings->passwordCmd == NULL) {
@@ -199,7 +199,7 @@ static void BarMainGetInitialStation (BarApp_t *app) {
 static void BarMainHandleUserInput (BarApp_t *app) {
 	char buf[2];
 	if (BarReadline (buf, sizeof (buf), NULL, &app->input,
-			BAR_RL_FULLRETURN | BAR_RL_NOECHO, 1) > 0) {
+			BAR_RL_FULLRETURN | BAR_RL_NOECHO, 2) > 0) {
 		BarUiDispatch (app, buf[0], app->curStation, app->playlist, true,
 				BAR_DC_GLOBAL);
 	}
@@ -429,35 +429,41 @@ int main (int argc, char **argv) {
 
 	/* init fds */
 	FD_ZERO(&app.input.set);
+
+        int fifo_uses_this_fd = 0;
 	app.input.fds[0] = STDIN_FILENO;
-	FD_SET(app.input.fds[0], &app.input.set);
+        if (isatty(fileno(stdin))) {
+	    fifo_uses_this_fd = 1;
+	    FD_SET(app.input.fds[0], &app.input.set);
+            }
 
 	/* open fifo read/write so it won't EOF if nobody writes to it */
 	assert (sizeof (app.input.fds) / sizeof (*app.input.fds) >= 2);
-	app.input.fds[1] = open (app.settings.fifo, O_RDWR);
-	if (app.input.fds[1] != -1) {
+	app.input.fds[fifo_uses_this_fd] = open (app.settings.fifo, O_RDWR);
+	if (app.input.fds[fifo_uses_this_fd] != -1) {
 		struct stat s;
 
 		/* check for file type, must be fifo */
-		fstat (app.input.fds[1], &s);
+		fstat (app.input.fds[fifo_uses_this_fd], &s);
 		if (!S_ISFIFO (s.st_mode)) {
 			BarUiMsg (&app.settings, MSG_ERR, "File at %s is not a fifo\n", app.settings.fifo);
-			close (app.input.fds[1]);
-			app.input.fds[1] = -1;
+			close (app.input.fds[fifo_uses_this_fd]);
+			app.input.fds[fifo_uses_this_fd] = -1;
 		} else {
-			FD_SET(app.input.fds[1], &app.input.set);
+			FD_SET(app.input.fds[fifo_uses_this_fd], &app.input.set);
 			BarUiMsg (&app.settings, MSG_INFO, "Control fifo at %s opened\n",
 					app.settings.fifo);
 		}
 	}
-	app.input.maxfd = app.input.fds[0] > app.input.fds[1] ? app.input.fds[0] :
-			app.input.fds[1];
+        app.input.maxfd = app.input.fds[0];
+        if (fifo_uses_this_fd>0)
+		app.input.maxfd = app.input.fds[0] > app.input.fds[1] ? app.input.fds[0] : app.input.fds[1];
 	++app.input.maxfd;
 
 	BarMainLoop (&app);
 
-	if (app.input.fds[1] != -1) {
-		close (app.input.fds[1]);
+	if (app.input.fds[fifo_uses_this_fd] != -1) {
+		close (app.input.fds[fifo_uses_this_fd]);
 	}
 
 	/* write statefile */
