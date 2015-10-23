@@ -46,9 +46,6 @@ THE SOFTWARE.
 #include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
 #include <libavutil/frame.h>
-#ifndef HAVE_AV_TIMEOUT
-#include <libavutil/time.h>
-#endif
 
 #include "player.h"
 #include "ui.h"
@@ -117,23 +114,19 @@ void BarPlayerSetVolume (player_t * const player) {
 	printError (player->settings, msg, ret); \
 	return false;
 
-#ifndef HAVE_AV_TIMEOUT
-/*	interrupt callback for libav, which lacks a timeout option
- *
- *	obviously calling ping() a lot of times and then calling av_gettime here
- *	again is rather inefficient.
+/*	interrupt callback for blocking setup functions from openStream
  */
 static int intCb (void * const data) {
 	player_t * const player = data;
 	assert (player != NULL);
-	/* 10 seconds timeout (usec) */
-	return (av_gettime () - player->ping) > 10*1000000;
+	if (player->interrupted != 0) {
+		/* the request is retried with the same player context */
+		player->interrupted = 0;
+		return 1;
+	} else {
+		return 0;
+	}
 }
-
-#define ping() player->ping = av_gettime ()
-#else
-#define ping()
-#endif
 
 static bool openStream (player_t * const player) {
 	assert (player != NULL);
@@ -143,27 +136,15 @@ static bool openStream (player_t * const player) {
 	int ret;
 
 	/* stream setup */
-	AVDictionary *options = NULL;
-#ifdef HAVE_AV_TIMEOUT
-	/* 10 seconds timeout on TCP r/w */
-	av_dict_set (&options, "timeout", "10000000", 0);
-#else
-	/* libav does not support the timeout option above. the workaround stores
-	 * the current time with ping() now and then, registers an interrupt
-	 * callback (below) and compares saved/current time in this callback. it’s
-	 * not bullet-proof, but seems to work fine for av_read_frame. */
 	player->fctx = avformat_alloc_context ();
 	player->fctx->interrupt_callback.callback = intCb;
 	player->fctx->interrupt_callback.opaque = player;
-#endif
 
 	assert (player->url != NULL);
-	ping ();
-	if ((ret = avformat_open_input (&player->fctx, player->url, NULL, &options)) < 0) {
+	if ((ret = avformat_open_input (&player->fctx, player->url, NULL, NULL)) < 0) {
 		softfail ("Unable to open audio file");
 	}
 
-	ping ();
 	if ((ret = avformat_find_stream_info (player->fctx, NULL)) < 0) {
 		softfail ("find_stream_info");
 	}
@@ -173,7 +154,6 @@ static bool openStream (player_t * const player) {
 		player->fctx->streams[i]->discard = AVDISCARD_ALL;
 	}
 
-	ping ();
 	player->streamIdx = av_find_best_stream (player->fctx, AVMEDIA_TYPE_AUDIO,
 			-1, -1, NULL, 0);
 	if (player->streamIdx < 0) {
@@ -195,7 +175,6 @@ static bool openStream (player_t * const player) {
 	}
 
 	if (player->lastTimestamp > 0) {
-		ping ();
 		av_seek_frame (player->fctx, player->streamIdx, player->lastTimestamp, 0);
 	}
 
@@ -315,7 +294,6 @@ static int play (player_t * const player) {
 	assert (filteredFrame != NULL);
 
 	while (!player->doQuit) {
-		ping ();
 		int ret = av_read_frame (player->fctx, &pkt);
 		if (ret < 0) {
 			av_free_packet (&pkt);

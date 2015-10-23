@@ -50,7 +50,7 @@ size_t BarUiListSongs (const BarSettings_t *, const PianoSong_t *, const char *)
 void BarUiStartEventCmd (const BarSettings_t *, const char *,
 		const PianoStation_t *, const PianoSong_t *, const player_t *,
 		PianoStation_t *, PianoReturn_t, CURLcode);
-int BarUiPianoCall (BarApp_t * const, PianoRequestType_t,
+bool BarUiPianoCall (BarApp_t * const, const PianoRequestType_t,
 		void *, PianoReturn_t *, CURLcode *);
 void BarUiHistoryPrepend (BarApp_t *app, PianoSong_t *song);
 

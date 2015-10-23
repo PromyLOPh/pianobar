@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include <assert.h>
 
 #include "ui_readline.h"
+#include "main.h"
 
 /*	return size of previous UTF-8 character
  */
@@ -57,16 +58,24 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 	unsigned char escapeState = 0;
 	fd_set set;
 	const bool echo = !(flags & BAR_RL_NOECHO);
+	bool done = false;
 
 	assert (buf != NULL);
 	assert (bufSize > 0);
 	assert (input != NULL);
 
+	/* not actually used here. just stops the player from receiving the
+	 * signal */
+	sig_atomic_t *prevInt = interrupted, localInt = 0;
+	if (!(flags & BAR_RL_NOINT)) {
+		interrupted = &localInt;
+	}
+
 	memset (buf, 0, bufSize);
 
 	/* if fd is a fifo fgetc will always return EOF if nobody writes to
 	 * it, stdin will block */
-	while (1) {
+	while (!done) {
 		int curFd = -1;
 		unsigned char chr;
 		struct timeval timeoutstruct;
@@ -78,7 +87,8 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 
 		if (select (input->maxfd, &set, NULL, NULL,
 				(timeout == -1) ? NULL : &timeoutstruct) <= 0) {
-			/* fail or timeout */
+			/* timeout or interrupted */
+			bufLen = 0;
 			break;
 		}
 
@@ -103,11 +113,7 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 			case 4:
 			/* return */
 			case 10:
-				if (echo) {
-					fputs ("\n", stdout);
-				}
-				buf[bufLen] = '\0';
-				return bufLen;
+				done = true;
 				break;
 
 			/* clear line */
@@ -180,18 +186,21 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 					}
 					/* buffer full => return if requested */
 					if (bufLen >= bufSize-1 && (flags & BAR_RL_FULLRETURN)) {
-						if (echo) {
-							fputs ("\n", stdout);
-						}
-						buf[bufLen] = '\0';
-						return bufLen;
+						done = true;
 					}
 				}
 				break;
 		} /* end switch */
 	} /* end while */
-	buf[0] = '\0';
-	return 0;
+
+	if (echo) {
+		fputs ("\n", stdout);
+	}
+
+	interrupted = prevInt;
+
+	buf[bufLen] = '\0';
+	return bufLen;
 }
 
 /*	Read string from stdin

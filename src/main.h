@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef SRC_MAIN_H_4ZGSCG6X
-#define SRC_MAIN_H_4ZGSCG6X
+#pragma once
 
 #include <curl/curl.h>
 
@@ -46,5 +45,6 @@ typedef struct {
 	unsigned int playerErrors;
 } BarApp_t;
 
-#endif /* SRC_MAIN_H_4ZGSCG6X */
+#include <signal.h>
+extern sig_atomic_t *interrupted;
 

@@ -14,11 +14,6 @@
  * ffmpeg and libav */
 #include <libavfilter/version.h>
 
-/* is "timeout" option present (all versions of ffmpeg, not libav) */
-#if LIBAVFILTER_VERSION_MICRO >= 100
-#define HAVE_AV_TIMEOUT
-#endif
-
 /* does graph_send_command exist (ffmpeg >=2.2) */
 #if LIBAVFILTER_VERSION_MAJOR >= 4 && \
 		LIBAVFILTER_VERSION_MICRO >= 100

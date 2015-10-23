@@ -30,6 +30,7 @@ THE SOFTWARE.
 #include <sys/types.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <signal.h>
 
 #include <ao/ao.h>
 #include <libavformat/avformat.h>
@@ -65,9 +66,7 @@ typedef struct {
 	AVFilterContext *fbufsink, *fabuf;
 	int streamIdx;
 	int64_t lastTimestamp;
-#ifndef HAVE_AV_TIMEOUT
-	int64_t ping;
-#endif
+	sig_atomic_t interrupted;
 
 	ao_device *aoDev;
 

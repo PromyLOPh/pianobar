@@ -27,10 +27,12 @@ THE SOFTWARE.
 #include <stdbool.h>
 #include <sys/select.h>
 
+/* bitfield */
 typedef enum {
 	BAR_RL_DEFAULT = 0,
 	BAR_RL_FULLRETURN = 1, /* return if buffer is full */
 	BAR_RL_NOECHO = 2, /* don't echo to stdout */
+	BAR_RL_NOINT = 4, /* don’t change interrupted variable */
 } BarReadlineFlags_t;
 
 typedef struct {
