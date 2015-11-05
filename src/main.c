@@ -184,6 +184,31 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 	return true;
 }
 
+/*	check for save folder, create if it does not exist
+ */
+static void BarMainCheckSaveDirectory (BarSettings_t *settings) {
+	BarUiMsg (settings, MSG_INFO, "Looking for save directory... ");
+
+	char *save_dir = settings->save_dir;
+
+	if (0 != access(save_dir, F_OK)) {
+		if (ENOTDIR == errno) {
+			BarUiMsg (settings, MSG_ERR, "\"%s\" Is not a directory!\n", save_dir);
+		}
+		if (ENOENT == errno) {
+			BarUiMsg (settings, MSG_NONE, "\n%s\nNot found! attempting to create... ", save_dir);
+
+			char * buffer [2000];
+
+			sprintf(buffer, "mkdir -p \"%s\"", save_dir);
+			system(buffer);
+			BarUiMsg (settings, MSG_NONE, "Ok.\n");
+		}
+	} else {
+		BarUiMsg (settings, MSG_NONE, "Ok.\n");
+	}
+}
+
 /*	get station list
  */
 static bool BarMainGetStations (BarApp_t *app) {
@@ -357,6 +382,8 @@ static void BarMainPrintTime (BarApp_t *app) {
 static void BarMainLoop (BarApp_t *app) {
 	pthread_t playerThread;
 
+	BarMainCheckSaveDirectory (&app->settings);
+
 	if (!BarMainGetLoginCredentials (&app->settings, &app->input)) {
 		return;
 	}
@@ -370,6 +397,7 @@ static void BarMainLoop (BarApp_t *app) {
 	if (!BarMainGetStations (app)) {
 		return;
 	}
+
 
 	BarMainGetInitialStation (app);
 
