@@ -236,14 +236,14 @@ static bool openStream (player_t * const player) {
 
         sprintf(save_filename, "%s - %s.aac", player->artist, player->title);
 
-        sprintf(tmp_filename, "/tmp/%s",  save_filename);
-        strcpy(player->tmp_filename, tmp_filename);
-        
         for (int i=0; i < 1000; i++){
             if (save_filename[i] == '/'){
                 save_filename[i] = ' ';
             }
         }
+
+        sprintf(tmp_filename, "/tmp/%s",  save_filename);
+        strcpy(player->tmp_filename, tmp_filename);
 
         sprintf(save_complete, "%s%s", save_path, save_filename);
         strcpy(player->save_complete, save_complete);
