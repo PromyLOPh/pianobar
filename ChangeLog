@@ -1,4 +1,16 @@
+Release 2015.11.22
+
+- Switch back to libcurl. tls_fingerprint setting has been replaced by
+  ca_bundle
+- Interruptible network transactions (press ^C). Timeouts removed
+- Config file parser fixes and improvements
+- Player respects proxy, replaced deprecated api calls
+- Added ability to change Pandora settings (username, password, explicit
+  content filter)
+- The usual minor bugfixes/improvements here and there
+
 Release 2014.09.28
+
 - Fix segfault when retrieving station’s feedback list
 - Refactored audio player
 - Correctly detect ffmpeg 2.3 and 2.4
