@@ -827,8 +827,8 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 				PianoErrorToStr (pRet),
 				wRet,
 				curl_easy_strerror (wRet),
-				player->songDuration,
-				player->songPlayed,
+				player == NULL ? 0 : player->songDuration,
+				player == NULL ? 0 : player->songPlayed,
 				curSong == NULL ? PIANO_RATE_NONE : curSong->rating,
 				curSong == NULL ? "" : curSong->detailUrl
 				);
