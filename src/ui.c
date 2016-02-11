@@ -178,7 +178,11 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 		const BarSettings_t * const settings, PianoRequest_t * const req) {
 	buffer buffer = {NULL, 0};
 	sig_atomic_t lint = 0, *prevint;
+
 	char url[2048];
+	assert (settings->rpcHost != NULL);
+	assert (settings->rpcTlsPort != NULL);
+	assert (req->urlPath != NULL);
 	int ret = snprintf (url, sizeof (url), "%s://%s:%s%s",
 		req->secure ? "https" : "http",
 		settings->rpcHost,

@@ -168,7 +168,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->npStationFormat = strdup ("Station \"%n\" (%i)");
 	settings->listSongFormat = strdup ("%i) %a - %t%r");
 	settings->rpcHost = strdup (PIANO_RPC_HOST);
-	settings->rpcTlsPort = NULL;
+	settings->rpcTlsPort = strdup ("443");
 	settings->partnerUser = strdup ("android");
 	settings->partnerPassword = strdup ("AC7IBG09A3DTSYM4R41UJWL07VLN8JI7");
 	settings->device = strdup ("android-generic");
