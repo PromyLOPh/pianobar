@@ -259,7 +259,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 		pthread_mutex_init (&app->player.pauseMutex, NULL);
 		pthread_cond_init (&app->player.pauseCond, NULL);
 
-		assert (interrupted == NULL);
+		assert (interrupted == &app->doQuit);
 		interrupted = &app->player.interrupted;
 
 		/* throw event */
@@ -306,7 +306,7 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 	memset (&app->player, 0, sizeof (app->player));
 
 	assert (interrupted == &app->player.interrupted);
-	interrupted = NULL;
+	interrupted = &app->doQuit;
 }
 
 /*	print song duration
@@ -355,12 +355,16 @@ static void BarMainLoop (BarApp_t *app) {
 	while (!app->doQuit) {
 		/* song finished playing, clean up things/scrobble song */
 		if (app->player.mode == PLAYER_FINISHED) {
+			if (app->player.interrupted != 0) {
+				app->doQuit = 1;
+			}
 			BarMainPlayerCleanup (app, &playerThread);
 		}
 
 		/* check whether player finished playing and start playing new
 		 * song */
-		if (app->player.mode == PLAYER_DEAD && app->curStation != NULL) {
+		if (app->player.mode == PLAYER_DEAD && app->curStation != NULL &&
+				!app->doQuit) {
 			/* what's next? */
 			if (app->playlist != NULL) {
 				PianoSong_t *histsong = app->playlist;
@@ -394,7 +398,7 @@ sig_atomic_t *interrupted = NULL;
 
 static void intHandler (int signal) {
 	if (interrupted != NULL) {
-		*interrupted = 1;
+		*interrupted += 1;
 	}
 }
 
@@ -414,10 +418,11 @@ int main (int argc, char **argv) {
 
 	/* save terminal attributes, before disabling echoing */
 	BarTermInit ();
-	BarMainSetupSigaction ();
 
 	/* signals */
 	signal (SIGPIPE, SIG_IGN);
+	BarMainSetupSigaction ();
+	interrupted = &app.doQuit;
 
 	/* init some things */
 	gcry_check_version (NULL);

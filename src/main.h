@@ -40,7 +40,7 @@ typedef struct {
 	PianoSong_t *playlist;
 	PianoSong_t *songHistory;
 	PianoStation_t *curStation;
-	char doQuit;
+	sig_atomic_t doQuit;
 	BarReadlineFds_t input;
 	unsigned int playerErrors;
 } BarApp_t;

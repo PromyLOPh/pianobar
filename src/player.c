@@ -114,12 +114,16 @@ void BarPlayerSetVolume (player_t * const player) {
 	printError (player->settings, msg, ret); \
 	return false;
 
-/*	interrupt callback for blocking setup functions from openStream
+/*	ffmpeg callback for blocking functions, returns 1 to abort function
  */
 static int intCb (void * const data) {
 	player_t * const player = data;
 	assert (player != NULL);
-	if (player->interrupted != 0) {
+	if (player->interrupted > 1) {
+		/* got a sigint multiple times, quit pianobar (handled by main.c). */
+		player->doQuit = true;
+		return 1;
+	} else if (player->interrupted != 0) {
 		/* the request is retried with the same player context */
 		player->interrupted = 0;
 		return 1;
@@ -390,7 +394,7 @@ void *BarPlayerThread (void *data) {
 	assert (data != NULL);
 
 	player_t * const player = data;
-	intptr_t pret = PLAYER_RET_OK;
+	uintptr_t pret = PLAYER_RET_OK;
 
 	bool retry;
 	do {
@@ -399,7 +403,8 @@ void *BarPlayerThread (void *data) {
 			if (openFilter (player) && openDevice (player)) {
 				player->mode = PLAYER_PLAYING;
 				BarPlayerSetVolume (player);
-				retry = play (player) == AVERROR_INVALIDDATA;
+				retry = play (player) == AVERROR_INVALIDDATA &&
+						!player->interrupted;
 			} else {
 				/* filter missing or audio device busy */
 				pret = PLAYER_RET_HARDFAIL;
