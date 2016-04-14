@@ -177,20 +177,17 @@ static bool BarMainGetStations (BarApp_t *app) {
 static void BarMainGetInitialStation (BarApp_t *app) {
 	/* try to get autostart station */
 	if (app->settings.autostartStation != NULL) {
-		app->curStation = PianoFindStationById (app->ph.stations,
+		app->nextStation = PianoFindStationById (app->ph.stations,
 				app->settings.autostartStation);
-		if (app->curStation == NULL) {
+		if (app->nextStation == NULL) {
 			BarUiMsg (&app->settings, MSG_ERR,
 					"Error: Autostart station not found.\n");
 		}
 	}
 	/* no autostart? ask the user */
-	if (app->curStation == NULL) {
-		app->curStation = BarUiSelectStation (app, app->ph.stations,
+	if (app->nextStation == NULL) {
+		app->nextStation = BarUiSelectStation (app, app->ph.stations,
 				"Select station: ", NULL, app->settings.autoselect);
-	}
-	if (app->curStation != NULL) {
-		BarUiPrintStation (&app->settings, app->curStation);
 	}
 }
 
@@ -211,20 +208,21 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 	PianoReturn_t pRet;
 	CURLcode wRet;
 	PianoRequestDataGetPlaylist_t reqData;
-	reqData.station = app->curStation;
+	reqData.station = app->nextStation;
 	reqData.quality = app->settings.audioQuality;
 
 	BarUiMsg (&app->settings, MSG_INFO, "Receiving new playlist... ");
 	if (!BarUiPianoCall (app, PIANO_REQUEST_GET_PLAYLIST,
 			&reqData, &pRet, &wRet)) {
-		app->curStation = NULL;
+		app->nextStation = NULL;
 	} else {
 		app->playlist = reqData.retPlaylist;
 		if (app->playlist == NULL) {
 			BarUiMsg (&app->settings, MSG_INFO, "No tracks left.\n");
-			app->curStation = NULL;
+			app->nextStation = NULL;
 		}
 	}
+	app->curStation = app->nextStation;
 	BarUiStartEventCmd (&app->settings, "stationfetchplaylist",
 			app->curStation, app->playlist, &app->player, app->ph.stations,
 			pRet, wRet);
@@ -297,10 +295,10 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 		++app->playerErrors;
 		if (app->playerErrors >= app->settings.maxPlayerErrors) {
 			/* don't continue playback if thread reports too many error */
-			app->curStation = NULL;
+			app->nextStation = NULL;
 		}
 	} else {
-		app->curStation = NULL;
+		app->nextStation = NULL;
 	}
 
 	memset (&app->player, 0, sizeof (app->player));
@@ -363,8 +361,7 @@ static void BarMainLoop (BarApp_t *app) {
 
 		/* check whether player finished playing and start playing new
 		 * song */
-		if (app->player.mode == PLAYER_DEAD && app->curStation != NULL &&
-				!app->doQuit) {
+		if (app->player.mode == PLAYER_DEAD) {
 			/* what's next? */
 			if (app->playlist != NULL) {
 				PianoSong_t *histsong = app->playlist;
@@ -372,7 +369,10 @@ static void BarMainLoop (BarApp_t *app) {
 				histsong->head.next = NULL;
 				BarUiHistoryPrepend (app, histsong);
 			}
-			if (app->playlist == NULL) {
+			if (app->playlist == NULL && app->nextStation != NULL && !app->doQuit) {
+				if (app->nextStation != app->curStation) {
+					BarUiPrintStation (&app->settings, app->nextStation);
+				}
 				BarMainGetPlaylist (app);
 			}
 			/* song ready to play */

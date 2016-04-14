@@ -802,7 +802,8 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 
 		pipeWriteFd = fdopen (pipeFd[1], "w");
 
-		if (curSong != NULL && stations != NULL && curStation->isQuickMix) {
+		if (curSong != NULL && stations != NULL && curStation != NULL &&
+				curStation->isQuickMix) {
 			songStation = PianoFindStationById (stations, curSong->stationId);
 		}
 
