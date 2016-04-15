@@ -417,28 +417,45 @@ BarUiActCallback(BarUiActSkipSong) {
 /*	play
  */
 BarUiActCallback(BarUiActPlay) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+
 	pthread_mutex_lock (&app->player.pauseMutex);
 	app->player.doPause = false;
 	pthread_cond_broadcast (&app->player.pauseCond);
 	pthread_mutex_unlock (&app->player.pauseMutex);
+	BarUiActDefaultEventcmd ("songplay");
 }
 
 /*	pause
  */
 BarUiActCallback(BarUiActPause) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+
 	pthread_mutex_lock (&app->player.pauseMutex);
 	app->player.doPause = true;
 	pthread_cond_broadcast (&app->player.pauseCond);
 	pthread_mutex_unlock (&app->player.pauseMutex);
+	BarUiActDefaultEventcmd ("songpause");
 }
 
 /*	toggle pause
  */
 BarUiActCallback(BarUiActTogglePause) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+
 	pthread_mutex_lock (&app->player.pauseMutex);
 	app->player.doPause = !app->player.doPause;
 	pthread_cond_broadcast (&app->player.pauseCond);
 	pthread_mutex_unlock (&app->player.pauseMutex);
+	if (app->player.doPause) {
+		BarUiActDefaultEventcmd ("songpause");
+	}
+	else {
+		BarUiActDefaultEventcmd ("songplay");
+	}
 }
 
 /*	rename current station
