@@ -1,3 +1,8 @@
+Release 2016.06.02
+
+- Quit pianobar upon reception of two SIGINT
+- Minor bugfixes
+
 Release 2015.11.22
 
 - Switch back to libcurl. tls_fingerprint setting has been replaced by
