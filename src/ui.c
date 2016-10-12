@@ -209,6 +209,15 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 		setAndCheck (CURLOPT_CAINFO, settings->caBundle);
 	}
 
+      if (settings->bind_to!= NULL) {
+		if (curl_easy_setopt (http, CURLOPT_INTERFACE,
+				settings->bind_to) != CURLE_OK) {
+			/* if setting proxy fails, url is invalid */
+			BarUiMsg (settings, MSG_ERR, "bind_to (%s) is invalid!\n",
+					 settings->bind_to);
+		}
+      }
+
 	/* set up proxy (control proxy for non-us citizen or global proxy for poor
 	 * firewalled fellows) */
 	if (settings->controlProxy != NULL) {
