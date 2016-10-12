@@ -212,7 +212,7 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
       if (settings->bind_to!= NULL) {
 		if (curl_easy_setopt (http, CURLOPT_INTERFACE,
 				settings->bind_to) != CURLE_OK) {
-			/* if binding fails, notice about thisd */
+			/* if binding fails, notice about that */
 			BarUiMsg (settings, MSG_ERR, "bind_to (%s) is invalid!\n",
 					 settings->bind_to);
 		}
