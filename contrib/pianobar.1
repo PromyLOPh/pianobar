@@ -208,6 +208,29 @@ Non-american users need a proxy to use pandora.com. Only the xmlrpc interface
 will use this proxy. The music is streamed directly.
 
 .TP
+.B bind_to = {if!tunX,host!x.x.x.x,..}
+This sets the interface name to use as outgoing network interface. The name can be an interface name, an IP address, or a host name. (from CURLOPT_INTERFACE)
+.RS
+It can be used to bind pianobar to vpn connection. 
+Example openvpn client config file:
+.nf
+
+client
+dev tun
+proto tcp
+remote x.x.x.x x
+nobind
+tls-client
+tls-auth /etc/openvpn/tls.key 1
+ca /etc/openvpn/ca.crt
+persist-tun
+[...]
+.fi
+.B route-nopull 
+#! to keep existing gateway and routing (don't pass whole machine traffic by vpn)
+.RE
+
+.TP
 .B decrypt_password = R=U!LH$O2B#
 
 .TP
