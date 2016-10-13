@@ -209,12 +209,12 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 		setAndCheck (CURLOPT_CAINFO, settings->caBundle);
 	}
 
-      if (settings->bind_to!= NULL) {
+      if (settings->bindTo!= NULL) {
 		if (curl_easy_setopt (http, CURLOPT_INTERFACE,
-				settings->bind_to) != CURLE_OK) {
+				settings->bindTo) != CURLE_OK) {
 			/* if binding fails, notice about that */
-			BarUiMsg (settings, MSG_ERR, "bind_to (%s) is invalid!\n",
-					 settings->bind_to);
+			BarUiMsg (settings, MSG_ERR, "bindTo (%s) is invalid!\n",
+					 settings->bindTo);
 		}
       }
 

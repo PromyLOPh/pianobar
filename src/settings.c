@@ -111,7 +111,7 @@ void BarSettingsInit (BarSettings_t *settings) {
 void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->controlProxy);
 	free (settings->proxy);
-	free (settings->bind_to);
+	free (settings->bindTo);
 	free (settings->username);
 	free (settings->password);
 	free (settings->passwordCmd);
@@ -271,7 +271,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 			} else if (streq ("proxy", key)) {
 				settings->proxy = strdup (val);
 			} else if (streq ("bind_to", key)) {
-				settings->bind_to = strdup (val);
+				settings->bindTo = strdup (val);
 			} else if (streq ("user", key)) {
 				settings->username = strdup (val);
 			} else if (streq ("password", key)) {

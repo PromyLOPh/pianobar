@@ -93,7 +93,7 @@ typedef struct {
 	char *password, *passwordCmd;
 	char *controlProxy; /* non-american listeners need this */
 	char *proxy;
-	char *bind_to;
+	char *bindTo;
 	char *autostartStation;
 	char *eventCmd;
 	char *loveIcon;
