@@ -68,6 +68,7 @@ static void printError (const BarSettings_t * const settings,
  */
 void BarPlayerInit () {
 	ao_initialize ();
+	av_log_set_level (AV_LOG_FATAL);
 	av_register_all ();
 	avfilter_register_all ();
 	avformat_network_init ();
