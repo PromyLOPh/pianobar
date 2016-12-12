@@ -139,4 +139,13 @@ install-libpiano:
 	install -d ${DESTDIR}${INCDIR}/
 	install -m644 src/libpiano/piano.h ${DESTDIR}${INCDIR}/
 
-.PHONY: install install-libpiano test debug all
+uninstall:
+	$(RM) ${DESTDIR}/${BINDIR}/pianobar \
+	${DESTDIR}/${MANDIR}/man1/pianobar.1 \
+	${DESTDIR}/${LIBDIR}/libpiano.so.0.0.0 \
+	${DESTDIR}/${LIBDIR}/libpiano.so.0 \
+	${DESTDIR}/${LIBDIR}/libpiano.so \
+	${DESTDIR}/${LIBDIR}/libpiano.a \
+	${DESTDIR}/${INCDIR}/piano.h
+
+.PHONY: install install-libpiano uninstall test debug all
