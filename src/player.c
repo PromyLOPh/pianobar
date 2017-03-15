@@ -94,13 +94,13 @@ void BarPlayerSetVolume (player_t * const player) {
 	 * -> print to string and let them parse it again */
 	char strbuf[16];
 	snprintf (strbuf, sizeof (strbuf), "%fdB",
-			player->settings->volume + player->gain);
+			player->settings->volume + (player->gain * player->settings->gainMul));
 	assert (player->fgraph != NULL);
 	if ((ret = avfilter_graph_send_command (player->fgraph, "volume", "volume",
 					strbuf, NULL, 0, 0)) < 0) {
 #else
 	/* convert from decibel */
-	const double volume = pow (10, (player->settings->volume + player->gain) / 20);
+	const double volume = pow (10, (player->settings->volume + (player->gain * player->settings->gainMul)) / 20);
 	/* libav does not provide other means to set this right now. it might not
 	 * even work everywhere. */
 	assert (player->fvolume != NULL);

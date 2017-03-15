@@ -160,6 +160,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->autoselect = true;
 	settings->history = 5;
 	settings->volume = 0;
+	settings->gainMul = 1.0;
 	settings->maxPlayerErrors = 5;
 	settings->sortOrder = BAR_SORT_NAME_AZ;
 	settings->loveIcon = strdup (" <3");
@@ -362,6 +363,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->atIcon = strdup (val);
 			} else if (streq ("volume", key)) {
 				settings->volume = atoi (val);
+			} else if (streq ("gain_mul", key)) {
+				settings->gainMul = atof (val);
 			} else if (streq ("format_nowplaying_song", key)) {
 				free (settings->npSongFormat);
 				settings->npSongFormat = strdup (val);

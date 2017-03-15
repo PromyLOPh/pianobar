@@ -364,6 +364,12 @@ Your pandora.com username.
 .B volume = 0
 Initial volume correction in dB. Usually between -30 and +5.
 
+.TP
+.B gain_mul = 1.0
+Pandora sends a ReplayGain value with every song. This sets a multiplier so that the gain adjustment can be
+reduced. 0.0 means no gain adjustment, 1.0 means full gain adjustment, values inbetween reduce the magnitude
+of gain adjustment.
+
 .SH REMOTE CONTROL
 .B pianobar
 can be controlled through a fifo. You have to create it yourself by executing
