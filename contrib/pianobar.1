@@ -198,16 +198,6 @@ or the key you defined in
 Icon for banned songs.
 
 .TP
-.B ca_bundle
-Path to CA certifiate bundle, containing the root and intermediate certificates
-required to validate Pandora’s SSL certificate.
-
-.TP
-.B control_proxy = http://user:password@host:port/
-Non-american users need a proxy to use pandora.com. Only the xmlrpc interface
-will use this proxy. The music is streamed directly.
-
-.TP
 .B bind_to = {if!tunX,host!x.x.x.x,..}
 This sets the interface name to use as outgoing network interface. The name can
 be an interface name, an IP address, or a host name. (from CURLOPT_INTERFACE)
@@ -216,7 +206,17 @@ It can be used as a replacement for
 .B control_proxy
 in conjunction with OpenVPN's
 option
-.B route-nopull. 
+.B route-nopull.
+
+.TP
+.B ca_bundle = /etc/ssl/certs/ca-certificates.crt
+Path to CA certifiate bundle, containing the root and intermediate certificates
+required to validate Pandora's SSL certificate.
+
+.TP
+.B control_proxy = http://user:password@host:port/
+Non-american users need a proxy to use pandora.com. Only the xmlrpc interface
+will use this proxy. The music is streamed directly.
 
 .TP
 .B decrypt_password = R=U!LH$O2B#
@@ -308,6 +308,12 @@ Station name
 Station id
 
 .TP
+.B gain_mul = 1.0
+Pandora sends a ReplayGain value with every song. This sets a multiplier so that the gain adjustment can be
+reduced. 0.0 means no gain adjustment, 1.0 means full gain adjustment, values inbetween reduce the magnitude
+of gain adjustment.
+
+.TP
 .B history = 5
 Keep a history of the last n songs (5, by default). You can rate these songs.
 
@@ -353,22 +359,12 @@ sorts by name from a to z, quickmix_01_name_za by type (quickmix at the
 bottom) and name from z to a.
 
 .TP
-.B tls_fingerprint = D9980BA2CC0F97BB03822C6211EAEA4A06EEF427
-Hex-encoded SHA1 fingerprint of Pandora's TLS certificate.
-
-.TP
 .B user = your@user.name
 Your pandora.com username.
 
 .TP
 .B volume = 0
 Initial volume correction in dB. Usually between -30 and +5.
-
-.TP
-.B gain_mul = 1.0
-Pandora sends a ReplayGain value with every song. This sets a multiplier so that the gain adjustment can be
-reduced. 0.0 means no gain adjustment, 1.0 means full gain adjustment, values inbetween reduce the magnitude
-of gain adjustment.
 
 .SH REMOTE CONTROL
 .B pianobar
