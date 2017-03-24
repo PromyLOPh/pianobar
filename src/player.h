@@ -63,6 +63,7 @@ typedef struct {
 	AVFilterGraph *fgraph;
 	AVFormatContext *fctx;
 	AVStream *st;
+	AVCodecContext *cctx;
 	AVFilterContext *fbufsink, *fabuf;
 	int streamIdx;
 	int64_t lastTimestamp;

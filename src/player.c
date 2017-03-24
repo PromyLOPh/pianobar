@@ -166,16 +166,23 @@ static bool openStream (player_t * const player) {
 	}
 
 	player->st = player->fctx->streams[player->streamIdx];
-	AVCodecContext * const cctx = player->st->codec;
 	player->st->discard = AVDISCARD_DEFAULT;
 
 	/* decoder setup */
-	AVCodec * const decoder = avcodec_find_decoder (cctx->codec_id);
+	if ((player->cctx = avcodec_alloc_context3 (NULL)) == NULL) {
+		softfail ("avcodec_alloc_context3");
+	}
+	const AVCodecParameters * const cp = player->st->codecpar;
+	if ((ret = avcodec_parameters_to_context (player->cctx, cp)) < 0) {
+		softfail ("avcodec_parameters_to_context");
+	}
+
+	AVCodec * const decoder = avcodec_find_decoder (cp->codec_id);
 	if (decoder == NULL) {
 		softfail ("find_decoder");
 	}
 
-	if ((ret = avcodec_open2 (cctx, decoder, NULL)) < 0) {
+	if ((ret = avcodec_open2 (player->cctx, decoder, NULL)) < 0) {
 		softfail ("codec_open2");
 	}
 
@@ -196,7 +203,7 @@ static bool openFilter (player_t * const player) {
 	/* filter setup */
 	char strbuf[256];
 	int ret = 0;
-	AVCodecContext * const cctx = player->st->codec;
+	AVCodecParameters * const cp = player->st->codecpar;
 
 	if ((player->fgraph = avfilter_graph_alloc ()) == NULL) {
 		softfail ("graph_alloc");
@@ -205,17 +212,11 @@ static bool openFilter (player_t * const player) {
 	/* abuffer */
 	AVRational time_base = player->st->time_base;
 
-	/* Workaround for a bug in libav-11, which reports an invalid channel
-	 * layout mp3 files */
-	if (cctx->channel_layout == 0) {
-		cctx->channel_layout = av_get_default_channel_layout (cctx->channels);
-	}
-
 	snprintf (strbuf, sizeof (strbuf),
 			"time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"PRIx64, 
-			time_base.num, time_base.den, cctx->sample_rate,
-			av_get_sample_fmt_name (cctx->sample_fmt),
-			cctx->channel_layout);
+			time_base.num, time_base.den, cp->sample_rate,
+			av_get_sample_fmt_name (player->cctx->sample_fmt),
+			cp->channel_layout);
 	if ((ret = avfilter_graph_create_filter (&player->fabuf,
 			avfilter_get_by_name ("abuffer"), NULL, strbuf, NULL,
 			player->fgraph)) < 0) {
@@ -263,14 +264,14 @@ static bool openFilter (player_t * const player) {
 /*	setup libao
  */
 static bool openDevice (player_t * const player) {
-	AVCodecContext * const cctx = player->st->codec;
+	const AVCodecParameters * const cp = player->st->codecpar;
 
 	ao_sample_format aoFmt;
 	memset (&aoFmt, 0, sizeof (aoFmt));
 	aoFmt.bits = av_get_bytes_per_sample (avformat) * 8;
 	assert (aoFmt.bits > 0);
-	aoFmt.channels = cctx->channels;
-	aoFmt.rate = cctx->sample_rate;
+	aoFmt.channels = cp->channels;
+	aoFmt.rate = cp->sample_rate;
 	aoFmt.byte_format = AO_FMT_NATIVE;
 
 	int driver = ao_default_driver_id ();
@@ -288,6 +289,7 @@ static int play (player_t * const player) {
 	assert (player != NULL);
 
 	AVPacket pkt;
+	AVCodecContext * const cctx = player->cctx;
 	av_init_packet (&pkt);
 	pkt.data = NULL;
 	pkt.size = 0;
@@ -298,17 +300,27 @@ static int play (player_t * const player) {
 	filteredFrame = av_frame_alloc ();
 	assert (filteredFrame != NULL);
 
-	while (!player->doQuit) {
-		int ret = av_read_frame (player->fctx, &pkt);
-		if (ret < 0) {
-			av_free_packet (&pkt);
-			return ret;
-		} else if (pkt.stream_index != player->streamIdx) {
-			av_free_packet (&pkt);
-			continue;
+	enum { FILL, DRAIN, DONE } drainMode = FILL;
+	int ret = 0;
+	while (!player->doQuit && drainMode != DONE) {
+		if (drainMode == FILL) {
+			ret = av_read_frame (player->fctx, &pkt);
+			if (ret == AVERROR_EOF) {
+				/* enter drain mode */
+				drainMode = DRAIN;
+				avcodec_send_packet (cctx, NULL);
+			} else if (pkt.stream_index != player->streamIdx) {
+				/* unused packet */
+				av_packet_unref (&pkt);
+				continue;
+			} else if (ret < 0) {
+				/* error, abort */
+				break;
+			} else {
+				/* fill buffer */
+				avcodec_send_packet (cctx, &pkt);
+			}
 		}
-
-		AVPacket pkt_orig = pkt;
 
 		/* pausing */
 		pthread_mutex_lock (&player->pauseMutex);
@@ -321,54 +333,50 @@ static int play (player_t * const player) {
 		}
 		pthread_mutex_unlock (&player->pauseMutex);
 
-		while (pkt.size > 0 && !player->doQuit) {
-			int got_frame = 0;
-
-			const int decoded = avcodec_decode_audio4 (player->st->codec,
-					frame, &got_frame, &pkt);
-			if (decoded < 0) {
-				/* skip this one */
+		while (!player->doQuit) {
+			ret = avcodec_receive_frame (cctx, frame);
+			if (ret == AVERROR_EOF) {
+				/* done draining */
+				drainMode = DONE;
+				break;
+			} else if (ret != 0) {
+				/* no more output */
 				break;
 			}
 
-			if (got_frame != 0) {
-				/* XXX: suppresses warning from resample filter */
-				if (frame->pts == (int64_t) AV_NOPTS_VALUE) {
-					frame->pts = 0;
-				}
-				ret = av_buffersrc_write_frame (player->fabuf, frame);
-				assert (ret >= 0);
-
-				while (true) {
-					if (av_buffersink_get_frame (player->fbufsink, filteredFrame) < 0) {
-						/* try again next frame */
-						break;
-					}
-
-					const int numChannels = av_get_channel_layout_nb_channels (
-							filteredFrame->channel_layout);
-					const int bps = av_get_bytes_per_sample(filteredFrame->format);
-					ao_play (player->aoDev, (char *) filteredFrame->data[0],
-							filteredFrame->nb_samples * numChannels * bps);
-
-					av_frame_unref (filteredFrame);
-				}
+			/* XXX: suppresses warning from resample filter */
+			if (frame->pts == (int64_t) AV_NOPTS_VALUE) {
+				frame->pts = 0;
 			}
+			ret = av_buffersrc_write_frame (player->fabuf, frame);
+			assert (ret >= 0);
 
-			pkt.data += decoded;
-			pkt.size -= decoded;
-		};
+			while (true) {
+				if (av_buffersink_get_frame (player->fbufsink, filteredFrame) < 0) {
+					/* try again next frame */
+					break;
+				}
 
-		av_free_packet (&pkt_orig);
+				const int numChannels = av_get_channel_layout_nb_channels (
+						filteredFrame->channel_layout);
+				const int bps = av_get_bytes_per_sample(filteredFrame->format);
+				ao_play (player->aoDev, (char *) filteredFrame->data[0],
+						filteredFrame->nb_samples * numChannels * bps);
+
+				av_frame_unref (filteredFrame);
+			}
+		}
 
 		player->songPlayed = av_q2d (player->st->time_base) * (double) pkt.pts;
 		player->lastTimestamp = pkt.pts;
+
+		av_packet_unref (&pkt);
 	}
 
 	av_frame_free (&filteredFrame);
 	av_frame_free (&frame);
 
-	return 0;
+	return ret;
 }
 
 static void finish (player_t * const player) {
@@ -378,9 +386,9 @@ static void finish (player_t * const player) {
 		avfilter_graph_free (&player->fgraph);
 		player->fgraph = NULL;
 	}
-	if (player->st != NULL && player->st->codec != NULL) {
-		avcodec_close (player->st->codec);
-		player->st = NULL;
+	if (player->cctx != NULL) {
+		avcodec_close (player->cctx);
+		player->cctx = NULL;
 	}
 	if (player->fctx != NULL) {
 		avformat_close_input (&player->fctx);

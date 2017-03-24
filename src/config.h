@@ -1,5 +1,4 @@
-#ifndef SRC_CONFIG_H_S6A1C09K
-#define SRC_CONFIG_H_S6A1C09K
+#pragma once
 
 /* package name */
 #define PACKAGE "pianobar"
@@ -20,13 +19,3 @@
 #define HAVE_AVFILTER_GRAPH_SEND_COMMAND
 #endif
 
-/* need avcodec.h (ffmpeg 1.2) */
-#if LIBAVFILTER_VERSION_MAJOR == 3 && \
-		LIBAVFILTER_VERSION_MINOR <= 42 && \
-		LIBAVFILTER_VERSION_MINOR > 32 && \
-		LIBAVFILTER_VERSION_MICRO >= 100
-#define HAVE_AV_BUFFERSINK_GET_BUFFER_REF
-#define HAVE_LIBAVFILTER_AVCODEC_H
-#endif
-
-#endif /* SRC_CONFIG_H_S6A1C09K */

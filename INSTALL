@@ -10,7 +10,7 @@ Dependencies
 - libcurl
 - gcrypt[1]
 - json-c
-- libav/ffmpeg[2]
+- libav>=12/ffmpeg>=3.1 [2]
 - UTF-8 console/locale
 
 [1] with blowfish cipher enabled
