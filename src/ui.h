@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef SRC_UI_H_46P20TS0
-#define SRC_UI_H_46P20TS0
+#pragma once
 
 #include <stdbool.h>
 
@@ -54,4 +53,3 @@ bool BarUiPianoCall (BarApp_t * const, const PianoRequestType_t,
 		void *, PianoReturn_t *, CURLcode *);
 void BarUiHistoryPrepend (BarApp_t *app, PianoSong_t *song);
 
-#endif /* SRC_UI_H_46P20TS0 */

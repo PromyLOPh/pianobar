@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef SRC_UI_DISPATCH_H_PV2JON1Z
-#define SRC_UI_DISPATCH_H_PV2JON1Z
+#pragma once
 
 /* bit-mask */
 typedef enum {
@@ -113,6 +112,4 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 
 BarKeyShortcutId_t BarUiDispatch (BarApp_t *, const char, PianoStation_t *, PianoSong_t *,
 		const bool, BarUiDispatchContext_t);
-
-#endif /* SRC_UI_DISPATCH_H_PV2JON1Z */
 

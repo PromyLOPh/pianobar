@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef SRC_LIBPIANO_PIANO_H_MFBT13PN
-#define SRC_LIBPIANO_PIANO_H_MFBT13PN
+#pragma once
 
 #include "../config.h"
 
@@ -367,4 +366,3 @@ PianoStation_t *PianoFindStationById (PianoStation_t * const,
 		const char * const);
 const char *PianoErrorToStr (PianoReturn_t);
 
-#endif /* SRC_LIBPIANO_PIANO_H_MFBT13PN */

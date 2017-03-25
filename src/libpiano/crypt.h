@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef SRC_LIBPIANO_CRYPT_H_O832IVGK
-#define SRC_LIBPIANO_CRYPT_H_O832IVGK
+#pragma once
 
 #ifdef __FreeBSD__
 #define _GCRYPT_IN_LIBGCRYPT
@@ -33,4 +32,3 @@ char *PianoDecryptString (gcry_cipher_hd_t, const char * const,
 		size_t * const);
 char *PianoEncryptString (gcry_cipher_hd_t, const char *);
 
-#endif /* SRC_LIBPIANO_CRYPT_H_O832IVGK */

@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef SRC_UI_READLINE_H_IFRX74VM
-#define SRC_UI_READLINE_H_IFRX74VM
+#pragma once
 
 #include <stdbool.h>
 #include <sys/select.h>
@@ -47,6 +46,4 @@ size_t BarReadlineStr (char *, const size_t,
 		BarReadlineFds_t *, const BarReadlineFlags_t);
 size_t BarReadlineInt (int *, BarReadlineFds_t *);
 bool BarReadlineYesNo (bool, BarReadlineFds_t *);
-
-#endif /* SRC_UI_READLINE_H_IFRX74VM */
 

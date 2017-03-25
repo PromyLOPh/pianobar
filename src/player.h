@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef SRC_PLAYER_H_CN979RE9
-#define SRC_PLAYER_H_CN979RE9
+#pragma once
 
 #include "config.h"
 
@@ -88,4 +87,3 @@ void BarPlayerSetVolume (player_t * const player);
 void BarPlayerInit ();
 void BarPlayerDestroy ();
 
-#endif /* SRC_PLAYER_H_CN979RE9 */
