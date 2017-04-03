@@ -352,7 +352,9 @@ static void BarMainLoop (BarApp_t *app) {
 
 		if (!login_success) {
 			free (app->settings.username);
+			app->settings.username = NULL;
 			free (app->settings.password);
+			app->settings.password = NULL;
 		}
 	}
 
