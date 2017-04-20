@@ -11,7 +11,7 @@ case "$1" in
 #	songstart)
 #		echo 'naughty.notify({title = "pianobar", text = "Now playing: ' "$title" ' by ' "$artist" '"})' | awesome-client -
 
-#		echo "$title -- $artist" > $XDG_CONFIG_HOME/pianobar/nowplaying
+#		echo "${title} -- ${artist}" > "${XDG_CONFIG_HOME}/pianobar/nowplaying"
 
 #		if [ "$rating" -eq 1 ]
 #		then
