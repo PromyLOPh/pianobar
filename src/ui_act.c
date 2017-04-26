@@ -240,11 +240,13 @@ BarUiActCallback(BarUiActDeleteStation) {
 				/* drain playlist */
 				PianoDestroyPlaylist (PianoListNextP (app->playlist));
 				app->playlist->head.next = NULL;
+				selSong = NULL;
 			}
 			app->nextStation = NULL;
 			/* XXX: usually we shoudn’t touch cur*, but DELETE_STATION destroys
 			 * station struct */
 			app->curStation = NULL;
+			selStation = NULL;
 		}
 		BarUiActDefaultEventcmd ("stationdelete");
 	}
