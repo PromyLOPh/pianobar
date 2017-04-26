@@ -1,6 +1,8 @@
 # makefile of pianobar
 
-PREFIX:=/usr/local
+ifeq (${PREFIX},)
+	PREFIX:=/usr/local
+endif
 BINDIR:=${PREFIX}/bin
 LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
