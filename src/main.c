@@ -82,7 +82,7 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 		BarReadlineFds_t *input) {
 	bool usernameFromConfig = true;
 
-	if (settings->username == NULL) {
+	if (settings->config_username == NULL) {
 		char nameBuf[100];
 
 		BarUiMsg (settings, MSG_QUESTION, "Email: ");
@@ -91,9 +91,11 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 		}
 		settings->username = strdup (nameBuf);
 		usernameFromConfig = false;
+	} else {
+		settings->username = strdup (settings->config_username);
 	}
 
-	if (settings->password == NULL) {
+	if (settings->config_password == NULL) {
 		char passBuf[100];
 
 		if (usernameFromConfig) {
@@ -158,6 +160,8 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 				}
 			}
 		} /* end else passwordCmd */
+	} else {
+	    settings->password = strdup (settings->config_password);
 	}
 
 	return true;
@@ -337,12 +341,25 @@ static void BarMainPrintTime (BarApp_t *app) {
 static void BarMainLoop (BarApp_t *app) {
 	pthread_t playerThread;
 
-	if (!BarMainGetLoginCredentials (&app->settings, &app->input)) {
-		return;
+	bool login_success = false;
+
+	for (int i = 0;
+	     !login_success && i < app->settings.num_login_tries;
+	     i++)
+	{
+		login_success = BarMainGetLoginCredentials (&app->settings, &app->input)
+		    && BarMainLoginUser(app);
+
+		if (!login_success) {
+			free (app->settings.username);
+			app->settings.username = NULL;
+			free (app->settings.password);
+			app->settings.password = NULL;
+		}
 	}
 
-	if (!BarMainLoginUser (app)) {
-		return;
+	if (!login_success) {
+	    return;
 	}
 
 	if (!BarMainGetStations (app)) {

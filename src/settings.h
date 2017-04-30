@@ -86,11 +86,12 @@ typedef struct {
 	bool autoselect;
 	unsigned int history, maxPlayerErrors;
 	int volume;
+	int num_login_tries;
 	float gainMul;
 	BarStationSorting_t sortOrder;
 	PianoAudioQuality_t audioQuality;
-	char *username;
-	char *password, *passwordCmd;
+	char *config_username, *username;
+	char *config_password, *password, *passwordCmd;
 	char *controlProxy; /* non-american listeners need this */
 	char *proxy;
 	char *bindTo;

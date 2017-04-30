@@ -112,7 +112,9 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->controlProxy);
 	free (settings->proxy);
 	free (settings->bindTo);
+	free (settings->config_username);
 	free (settings->username);
+	free (settings->config_password);
 	free (settings->password);
 	free (settings->passwordCmd);
 	free (settings->autostartStation);
@@ -156,6 +158,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 			sizeof (dispatchActions) / sizeof (*dispatchActions));
 
 	/* apply defaults */
+	settings->num_login_tries = 1;
 	settings->audioQuality = PIANO_AQ_HIGH;
 	settings->autoselect = true;
 	settings->history = 5;
@@ -278,9 +281,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 			} else if (streq ("bind_to", key)) {
 				settings->bindTo = strdup (val);
 			} else if (streq ("user", key)) {
-				settings->username = strdup (val);
+				settings->config_username = strdup (val);
 			} else if (streq ("password", key)) {
-				settings->password = strdup (val);
+				settings->config_password = strdup (val);
 			} else if (streq ("password_command", key)) {
 				settings->passwordCmd = strdup (val);
 			} else if (streq ("rpc_host", key)) {
@@ -409,6 +412,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 						break;
 					}
 				}
+			} else if (streq ("num_login_tries", key)) {
+				settings->num_login_tries = atoi (val);
 			} else {
 				BarUiMsg (settings, MSG_INFO,
 						"Unrecognized key %s at %s:%zu\n", key, path, lineNum);
