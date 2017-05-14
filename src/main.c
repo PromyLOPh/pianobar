@@ -490,6 +490,10 @@ int main (int argc, char **argv) {
 
 	BarMainLoop (&app);
 
+	BarUiStartEventCmd (&app.settings, "pianoquit",
+		app.curStation, NULL, &app.player, app.ph.stations,
+		PIANO_RET_OK, CURLE_OK);
+
 	if (app.input.fds[1] != -1) {
 		close (app.input.fds[1]);
 	}
