@@ -236,6 +236,9 @@ else
         ensure_fifo
         while [[ $# > 0 ]]; do
                 send_input "$1"
+                if [ "$1" == "i" ]; then
+                	tail -n2 $OUT
+                fi
                 shift
         done
 fi
