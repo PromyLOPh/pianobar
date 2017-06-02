@@ -159,6 +159,22 @@ size_t BarReadline (char *buf, const size_t bufSize, const char *mask,
 				}
 				break;
 
+			/* clear line */
+			case 21:
+				/* move caret back and delete last character */
+				if (echo) {
+					for(int i = 0; i < bufLen; i++)
+					{
+						fputs ("\033[D\033[K", stdout);
+					}
+					fflush (stdout);
+				}
+				bufPos = 0;
+				bufLen = 0;
+
+				buf[0] = '\0';
+				break;
+
 			default:
 				/* ignore control/escape characters */
 				if (chr <= 0x1F) {
