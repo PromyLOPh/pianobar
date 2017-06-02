@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# This is the general build process for all linux versions.
+
+if test $(which apt-get)
+then
+  # Since we are an apt based machine, lets include the functions here.
+  . script/setup.linux/apt.functions
+
+  if test $(which lsb_release)
+  then
+    distro=$(lsb_release -i | awk '{print $3}')
+    version=$(lsb_release -r | awk '{print $2}')
+  fi
+fi
+
+
+if [ -f script/setup.linux/$distro-$version ]
+then
+  . script/setup.linux/$distro-$version
+else
+  "Your system is currently not supported via bootstrap."
+fi
+
+# Build it and they will come.
+info 'building'
+$make >> $output 2>&1
+success 'built'
+
+# Installing FTW!
+info 'installing'
+sudo $make install >> $output 2>&1
+success 'installed'

@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# Bootstrap pianobar installation.
+
+output=/tmp/pianobar-bootstrap
+
+. script/functions $output
+
+if [[ "$OS" == "Darwin" ]]
+then
+  OS=osx
+fi
+
+if [ -f "script/setup.$OS/setup" ]
+then
+  . script/setup.$OS/setup
+fi

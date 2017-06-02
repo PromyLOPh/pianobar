@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# Setup functions for the update/bootstrap scripts.
+
+set -e
+
+echo ''
+echo '' > $1
+
+OS=$(uname -s)
+
+if test $(which gmake)
+then
+  make=gmake
+else
+  make=make
+fi
+
+info() {
+  printf "  [    ] $1"
+}
+
+success() {
+  printf "\r  [ ok ] $1           \n"
+}
+
+fail() {
+  printf "\r  [FAIL] $1           \n"
+  echo ''
+  echo 'See /tmp/pianobar-bootstrap for more information.'
+  exit
+}

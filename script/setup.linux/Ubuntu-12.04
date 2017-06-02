@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# Install dependancies for pianobar.
+
+apt_install 'libao-dev'
+apt_install 'libmad0-dev'
+apt_install 'libfaad-dev'
+apt_install 'libgnutls-dev'
+apt_install 'libjson0-dev'
+apt_install 'libgcrypt11-dev'

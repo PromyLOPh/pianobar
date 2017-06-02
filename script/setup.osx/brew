@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# Install needed packages to be able to build pianobar from a fresh install.
+
+brew_installed () {
+  brew list | grep -i $1 > /dev/null
+  [ $? -eq 0 ]
+}
+
+brew_install () {
+  if brew_installed $1
+  then
+    success $1
+    return
+  fi
+
+  info "installing $1"
+  if $2 >> $output
+  then
+    brew install $1 >> $output
+    success $1
+  else
+    fail $1
+  fi
+}
+
+brew_install 'cmake'      # make
+brew_install 'libao'
+brew_install 'gnutls'
+brew_install 'libgcrypt'
+brew_install 'json-c'
+brew_install 'faad2'      # libfaad2
+brew_install 'mad'        # libmad

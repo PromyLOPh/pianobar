@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Update pianobar in one simple script
+
+. script/functions /dev/null
+
+# Cleanup
+info 'cleaning'
+$make clean >> /tmp/pianobar-bootstrap 2>&1
+if [ $? -eq 0 ]
+then
+  success 'cleaned'
+else
+  fail "$make clean"
+fi
+
+# Get any updates.
+info 'updating'
+if test $(which git)
+then
+  git pull -s recursive -X theirs --quiet
+  success 'updated'
+else
+  fail 'git not found. You must update the source manually and run script/bootstrap instead afterwards.'
+fi
+
+. script/bootstrap
