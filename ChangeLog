@@ -1,3 +1,12 @@
+Release 2017.08.30
+
+- Support binding to specific network interface, see config option bind_to
+- New config option gain_mul softens effect of replay gain
+- Replaced deprecated ffmpeg and json-c functions, bumps ffmpeg/libav version
+  requirement
+- Fix use-after-free
+- Minor improvements to code and documentation
+
 Release 2016.06.02
 
 - Quit pianobar upon reception of two SIGINT
