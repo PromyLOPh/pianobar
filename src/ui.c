@@ -743,20 +743,27 @@ void BarUiPrintSong (const BarSettings_t *settings,
 size_t BarUiListSongs (const BarSettings_t *settings,
 		const PianoSong_t *song, const char *filter) {
 	size_t i = 0;
-	char digits[8];
 
 	PianoListForeachP (song) {
 		if (filter == NULL ||
 				(filter != NULL && (BarStrCaseStr (song->artist, filter) != NULL ||
 				BarStrCaseStr (song->title, filter) != NULL))) {
-			char outstr[512];
+			char outstr[512], digits[8], duration[8] = "??:??";
 			const char *vals[] = {digits, song->artist, song->title,
 					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon :
-					((song->rating == PIANO_RATE_BAN) ? settings->banIcon : "")};
+					((song->rating == PIANO_RATE_BAN) ? settings->banIcon : ""),
+					duration};
 
+			/* pre-format a few strings */
 			snprintf (digits, sizeof (digits) / sizeof (*digits), "%2zu", i);
+			const unsigned int length = song->length;
+			if (length > 0) {
+				snprintf (duration, sizeof (duration), "%02u:%02u",
+						length / 60, length % 60);
+			}
+
 			BarUiCustomFormat (outstr, sizeof (outstr), settings->listSongFormat,
-					"iatr", vals);
+					"iatrd", vals);
 			BarUiAppendNewline (outstr, sizeof (outstr));
 			BarUiMsg (settings, MSG_LIST, "%s", outstr);
 		}
