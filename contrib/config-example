@@ -46,14 +46,16 @@
 #event_command = /home/user/.config/pianobar/eventcmd
 #fifo = /tmp/pianobar
 #sort = quickmix_10_name_az
-#love_icon = [+]
-#ban_icon = [-]
 #volume = 0
 #ca_bundle = /etc/ssl/certs/ca-certificates.crt
 #gain_mul = 1.0
 
 # Format strings
 #format_nowplaying_song = [32m%t[0m by [34m%a[0m on %l[31m%r[0m%@%s
+#format_nowplaying_song = [32m%t[0m by [34m%a[0m on %l%r%@%s
+#ban_icon =  [32m</3[0m
+#love_icon =  [31m<3[0m
+#tired_icon =  [33mzZ[0m
 #format_nowplaying_station = Station [35m%n[0m
 #format_list_song = %i) %a - %t%r
 

@@ -65,7 +65,8 @@ typedef struct PianoStation {
 typedef enum {
 	PIANO_RATE_NONE = 0,
 	PIANO_RATE_LOVE = 1,
-	PIANO_RATE_BAN = 2
+	PIANO_RATE_BAN = 2,
+	PIANO_RATE_TIRED = 3,
 } PianoSongRating_t;
 
 /* UNKNOWN should be 0, because memset sets audio format to 0 */

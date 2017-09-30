@@ -714,6 +714,23 @@ void BarUiPrintStation (const BarSettings_t *settings,
 	BarUiMsg (settings, MSG_PLAYING, "%s", outstr);
 }
 
+static const char *ratingToIcon (const BarSettings_t * const settings,
+		const PianoSong_t * const song) {
+	switch (song->rating) {
+		case PIANO_RATE_LOVE:
+			return settings->loveIcon;
+
+		case PIANO_RATE_BAN:
+			return settings->banIcon;
+
+		case PIANO_RATE_TIRED:
+			return settings->tiredIcon;
+
+		default:
+			return "";
+	}
+}
+
 /*	Print song infos (artist, title, album, loved)
  *	@param pianobar settings
  *	@param the song
@@ -723,7 +740,7 @@ void BarUiPrintSong (const BarSettings_t *settings,
 		const PianoSong_t *song, const PianoStation_t *station) {
 	char outstr[512];
 	const char *vals[] = {song->title, song->artist, song->album,
-			(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
+			ratingToIcon (settings, song),
 			station != NULL ? settings->atIcon : "",
 			station != NULL ? station->name : "",
 			song->detailUrl};
@@ -750,8 +767,7 @@ size_t BarUiListSongs (const BarSettings_t *settings,
 				BarStrCaseStr (song->title, filter) != NULL))) {
 			char outstr[512], digits[8], duration[8] = "??:??";
 			const char *vals[] = {digits, song->artist, song->title,
-					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon :
-					((song->rating == PIANO_RATE_BAN) ? settings->banIcon : ""),
+					ratingToIcon (settings, song),
 					duration};
 
 			/* pre-format a few strings */

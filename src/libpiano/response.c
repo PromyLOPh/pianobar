@@ -436,8 +436,13 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			break;
 		}
 
+		case PIANO_REQUEST_ADD_TIRED_SONG: {
+			PianoSong_t * const song = req->data;
+			song->rating = PIANO_RATE_TIRED;
+			break;
+		}
+
 		case PIANO_REQUEST_ADD_SEED:
-		case PIANO_REQUEST_ADD_TIRED_SONG:
 		case PIANO_REQUEST_SET_QUICKMIX:
 		case PIANO_REQUEST_BOOKMARK_SONG:
 		case PIANO_REQUEST_BOOKMARK_ARTIST:
