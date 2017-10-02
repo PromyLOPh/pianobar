@@ -505,7 +505,7 @@ BarUiActCallback(BarUiActTempBanSong) {
 BarUiActCallback(BarUiActPrintUpcoming) {
 	PianoSong_t * const nextSong = PianoListNextP (selSong);
 	if (nextSong != NULL) {
-		BarUiListSongs (&app->settings, nextSong, NULL);
+		BarUiListSongs (app, nextSong, NULL);
 	} else {
 		BarUiMsg (&app->settings, MSG_INFO, "No songs in queue.\n");
 	}
@@ -587,7 +587,7 @@ BarUiActCallback(BarUiActHistory) {
 	PianoSong_t *histSong;
 
 	if (app->songHistory != NULL) {
-		histSong = BarUiSelectSong (&app->settings, app->songHistory,
+		histSong = BarUiSelectSong (app, app->songHistory,
 				&app->input);
 		if (histSong != NULL) {
 			BarKeyShortcutId_t action;
@@ -842,7 +842,7 @@ BarUiActCallback(BarUiActManageStation) {
 				BarUiActDefaultEventcmd ("stationdeleteartistseed");
 			}
 		} else if (selectBuf[0] == 's') {
-			PianoSong_t *song = BarUiSelectSong (&app->settings,
+			PianoSong_t *song = BarUiSelectSong (app,
 					reqData.info.songSeeds, &app->input);
 			if (song != NULL) {
 				PianoRequestDataDeleteSeed_t subReqData;
@@ -869,7 +869,7 @@ BarUiActCallback(BarUiActManageStation) {
 				BarUiActDefaultEventcmd ("stationdeletestationseed");
 			}
 		} else if (selectBuf[0] == 'f') {
-			PianoSong_t *song = BarUiSelectSong (&app->settings,
+			PianoSong_t *song = BarUiSelectSong (app,
 					reqData.info.feedback, &app->input);
 			if (song != NULL) {
 				BarUiMsg (&app->settings, MSG_INFO, "Deleting feedback... ");

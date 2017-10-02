@@ -219,7 +219,11 @@ void PianoDestroyRequest (PianoRequest_t *req) {
  */
 PianoStation_t *PianoFindStationById (PianoStation_t * const stations,
 		const char * const searchStation) {
-	assert (searchStation != NULL);
+	assert (stations != NULL);
+
+	if (searchStation == NULL) {
+		return NULL;
+	}
 
 	PianoStation_t *currStation = stations;
 	PianoListForeachP (currStation) {

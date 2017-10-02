@@ -57,7 +57,7 @@
 #love_icon =  [31m<3[0m
 #tired_icon =  [33mzZ[0m
 #format_nowplaying_station = Station [35m%n[0m
-#format_list_song = %i) %a - %t%r
+#format_list_song = %i) %a - %t%r (%d)%@%s
 
 # high-quality audio (192k mp3, for Pandora One subscribers only!)
 #audio_quality = high

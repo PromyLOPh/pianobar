@@ -486,20 +486,21 @@ PianoStation_t *BarUiSelectStation (BarApp_t *app, PianoStation_t *stations,
 }
 
 /*	let user pick one song
- *	@param pianobar settings
+ *	@param app
  *	@param song list
  *	@param input fds
  *	@return pointer to selected item in song list or NULL
  */
-PianoSong_t *BarUiSelectSong (const BarSettings_t *settings,
+PianoSong_t *BarUiSelectSong (const BarApp_t * const app,
 		PianoSong_t *startSong, BarReadlineFds_t *input) {
+	const BarSettings_t * const settings = &app->settings;
 	PianoSong_t *tmpSong = NULL;
 	char buf[100];
 
 	memset (buf, 0, sizeof (buf));
 
 	do {
-		BarUiListSongs (settings, startSong, buf);
+		BarUiListSongs (app, startSong, buf);
 
 		BarUiMsg (settings, MSG_QUESTION, "Select song: ");
 		if (BarReadlineStr (buf, sizeof (buf), input, BAR_RL_DEFAULT) == 0) {
@@ -598,7 +599,7 @@ char *BarUiSelectMusicId (BarApp_t *app, PianoStation_t *station,
 					musicId = strdup (tmpArtist->musicId);
 				}
 			} else if (*selectBuf == 't') {
-				tmpSong = BarUiSelectSong (&app->settings, searchResult.songs,
+				tmpSong = BarUiSelectSong (app, searchResult.songs,
 						&app->input);
 				if (tmpSong != NULL) {
 					musicId = strdup (tmpSong->musicId);
@@ -606,7 +607,7 @@ char *BarUiSelectMusicId (BarApp_t *app, PianoStation_t *station,
 			}
 		} else if (searchResult.songs != NULL) {
 			/* songs found */
-			tmpSong = BarUiSelectSong (&app->settings, searchResult.songs,
+			tmpSong = BarUiSelectSong (app, searchResult.songs,
 					&app->input);
 			if (tmpSong != NULL) {
 				musicId = strdup (tmpSong->musicId);
@@ -757,18 +758,34 @@ void BarUiPrintSong (const BarSettings_t *settings,
  *	@param artist/song filter string
  *	@return # of songs
  */
-size_t BarUiListSongs (const BarSettings_t *settings,
+size_t BarUiListSongs (const BarApp_t * const app,
 		const PianoSong_t *song, const char *filter) {
+	const BarSettings_t * const settings = &app->settings;
 	size_t i = 0;
 
 	PianoListForeachP (song) {
 		if (filter == NULL ||
 				(filter != NULL && (BarStrCaseStr (song->artist, filter) != NULL ||
 				BarStrCaseStr (song->title, filter) != NULL))) {
+			const char * const empty = "";
+			const char *stationName = "(deleted)";
+			const PianoStation_t * const station =
+					PianoFindStationById (app->ph.stations, song->stationId);
+			if (station != NULL) {
+				if (station != app->curStation) {
+					stationName = station->name;
+				} else {
+					stationName = empty;
+				}
+			}
+
 			char outstr[512], digits[8], duration[8] = "??:??";
 			const char *vals[] = {digits, song->artist, song->title,
 					ratingToIcon (settings, song),
-					duration};
+					duration,
+					stationName != empty ? settings->atIcon : "",
+					stationName,
+					};
 
 			/* pre-format a few strings */
 			snprintf (digits, sizeof (digits) / sizeof (*digits), "%2zu", i);
@@ -779,7 +796,7 @@ size_t BarUiListSongs (const BarSettings_t *settings,
 			}
 
 			BarUiCustomFormat (outstr, sizeof (outstr), settings->listSongFormat,
-					"iatrd", vals);
+					"iatrd@s", vals);
 			BarUiAppendNewline (outstr, sizeof (outstr));
 			BarUiMsg (settings, MSG_LIST, "%s", outstr);
 		}
