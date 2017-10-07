@@ -639,6 +639,11 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 						feedbackSong->rating = getBoolDefault (s, "isPositive",
 								false) ?  PIANO_RATE_LOVE : PIANO_RATE_BAN;
 
+						json_object *v;
+						feedbackSong->length =
+								json_object_object_get_ex (s, "trackLength", &v) ?
+								json_object_get_int (v) : 0;
+
 						info->feedback = PianoListAppendP (info->feedback,
 								feedbackSong);
 					}
