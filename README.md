@@ -1,7 +1,6 @@
 # pianobar
 
-pianobar is a console client for the personalized web radio [Pandora]
-([http://www.pandora.com](http://www.pandora.com)).
+pianobar is a console client for the personalized web radio [Pandora](http://www.pandora.com).
 
 ### Features
 
