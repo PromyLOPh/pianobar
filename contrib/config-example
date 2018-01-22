@@ -59,8 +59,6 @@
 #format_nowplaying_station = Station [35m%n[0m
 #format_list_song = %i) %a - %t%r (%d)%@%s
 
-# high-quality audio (192k mp3, for Pandora One subscribers only!)
-#audio_quality = high
 #rpc_host = internal-tuner.pandora.com
 #partner_user = pandora one
 #partner_password = TVCKIBGS9AO9TSYLNNFUML0743LH82D
