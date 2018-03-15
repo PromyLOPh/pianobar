@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2013
+Copyright (c) 2008-2018
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -252,15 +252,12 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 			strncmp (curSong->audioUrl, httpPrefix, strlen (httpPrefix)) != 0) {
 		BarUiMsg (&app->settings, MSG_ERR, "Invalid song url.\n");
 	} else {
-		/* setup player */
-		memset (&app->player, 0, sizeof (app->player));
+		player_t * const player = &app->player;
+		BarPlayerReset (player);
 
 		app->player.url = curSong->audioUrl;
 		app->player.gain = curSong->fileGain;
-		app->player.settings = &app->settings;
 		app->player.songDuration = curSong->length;
-		pthread_mutex_init (&app->player.pauseMutex, NULL);
-		pthread_cond_init (&app->player.pauseCond, NULL);
 
 		assert (interrupted == &app->doQuit);
 		interrupted = &app->player.interrupted;
@@ -291,8 +288,6 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 	/* FIXME: pthread_join blocks everything if network connection
 	 * is hung up e.g. */
 	pthread_join (*playerThread, &threadRet);
-	pthread_cond_destroy (&app->player.pauseCond);
-	pthread_mutex_destroy (&app->player.pauseMutex);
 
 	if (threadRet == (void *) PLAYER_RET_OK) {
 		app->playerErrors = 0;
@@ -306,10 +301,10 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 		app->nextStation = NULL;
 	}
 
-	memset (&app->player, 0, sizeof (app->player));
-
 	assert (interrupted == &app->player.interrupted);
 	interrupted = &app->doQuit;
+
+	app->player.mode = PLAYER_DEAD;
 }
 
 /*	print song duration
@@ -317,19 +312,24 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 static void BarMainPrintTime (BarApp_t *app) {
 	unsigned int songRemaining;
 	char sign;
+	player_t * const player = &app->player;
 
-	if (app->player.songPlayed <= app->player.songDuration) {
-		songRemaining = app->player.songDuration - app->player.songPlayed;
+	pthread_mutex_lock (&player->lock);
+	const unsigned int songDuration = player->songDuration;
+	const unsigned int songPlayed = player->songPlayed;
+	pthread_mutex_unlock (&player->lock);
+
+	if (songPlayed <= songDuration) {
+		songRemaining = songDuration - songPlayed;
 		sign = '-';
 	} else {
 		/* longer than expected */
-		songRemaining = app->player.songPlayed - app->player.songDuration;
+		songRemaining = songPlayed - songDuration;
 		sign = '+';
 	}
 	BarUiMsg (&app->settings, MSG_TIME, "%c%02u:%02u/%02u:%02u\r",
 			sign, songRemaining / 60, songRemaining % 60,
-			app->player.songDuration / 60,
-			app->player.songDuration % 60);
+			songDuration / 60, songDuration % 60);
 }
 
 /*	main loop
@@ -351,14 +351,12 @@ static void BarMainLoop (BarApp_t *app) {
 
 	BarMainGetInitialStation (app);
 
-	/* little hack, needed to signal: hey! we need a playlist, but don't
-	 * free anything (there is nothing to be freed yet) */
-	memset (&app->player, 0, sizeof (app->player));
+	player_t * const player = &app->player;
 
 	while (!app->doQuit) {
 		/* song finished playing, clean up things/scrobble song */
-		if (app->player.mode == PLAYER_FINISHED) {
-			if (app->player.interrupted != 0) {
+		if (BarPlayerGetMode (player) == PLAYER_FINISHED) {
+			if (player->interrupted != 0) {
 				app->doQuit = 1;
 			}
 			BarMainPlayerCleanup (app, &playerThread);
@@ -366,7 +364,7 @@ static void BarMainLoop (BarApp_t *app) {
 
 		/* check whether player finished playing and start playing new
 		 * song */
-		if (app->player.mode == PLAYER_DEAD) {
+		if (BarPlayerGetMode (player) == PLAYER_DEAD) {
 			/* what's next? */
 			if (app->playlist != NULL) {
 				PianoSong_t *histsong = app->playlist;
@@ -389,12 +387,12 @@ static void BarMainLoop (BarApp_t *app) {
 		BarMainHandleUserInput (app);
 
 		/* show time */
-		if (app->player.mode == PLAYER_PLAYING) {
+		if (BarPlayerGetMode (player) == PLAYER_PLAYING) {
 			BarMainPrintTime (app);
 		}
 	}
 
-	if (app->player.mode != PLAYER_DEAD) {
+	if (BarPlayerGetMode (player) != PLAYER_DEAD) {
 		pthread_join (playerThread, NULL);
 	}
 }
@@ -433,7 +431,7 @@ int main (int argc, char **argv) {
 	gcry_check_version (NULL);
 	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
 	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
-	BarPlayerInit ();
+	BarPlayerInit (&app.player, &app.settings);
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
@@ -502,7 +500,7 @@ int main (int argc, char **argv) {
 	PianoDestroyPlaylist (app.playlist);
 	curl_easy_cleanup (app.http);
 	curl_global_cleanup ();
-	BarPlayerDestroy ();
+	BarPlayerDestroy (&app.player);
 	BarSettingsDestroy (&app.settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */

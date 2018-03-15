@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2014
+Copyright (c) 2008-2018
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -39,23 +39,31 @@ THE SOFTWARE.
 
 #include "settings.h"
 
-typedef struct {
-	/* protected by pauseMutex */
-	volatile bool doQuit;
-	volatile bool doPause;
-	pthread_mutex_t pauseMutex;
-	pthread_cond_t pauseCond;
+typedef enum {
+	/* not running */
+	PLAYER_DEAD = 0,
+	/* running, but not ready to play music yet */
+	PLAYER_WAITING,
+	/* currently playing a song */
+	PLAYER_PLAYING,
+	/* finished playing a song */
+	PLAYER_FINISHED,
+} BarPlayerMode;
 
-	enum {
-		/* not running */
-		PLAYER_DEAD = 0,
-		/* running, but not ready to play music yet */
-		PLAYER_WAITING,
-		/* currently playing a song */
-		PLAYER_PLAYING,
-		/* finished playing a song */
-		PLAYER_FINISHED,
-	} mode;
+typedef struct {
+	/* public attributes protected by mutex */
+	pthread_mutex_t lock;
+	pthread_cond_t cond; /* broadcast changes to doPause */
+
+	bool doQuit, doPause;
+
+	/* measured in seconds */
+	unsigned int songDuration;
+	unsigned int songPlayed;
+
+	BarPlayerMode mode;
+
+	/* private attributes _not_ protected by mutex */
 
 	/* libav */
 	AVFilterContext *fvolume;
@@ -70,20 +78,18 @@ typedef struct {
 
 	ao_device *aoDev;
 
-	/* settings */
+	/* settings (must be set before starting the thread) */
 	double gain;
 	char *url;
 	const BarSettings_t *settings;
-
-	/* measured in seconds */
-	volatile unsigned int songDuration;
-	volatile unsigned int songPlayed;
 } player_t;
 
 enum {PLAYER_RET_OK = 0, PLAYER_RET_HARDFAIL = 1, PLAYER_RET_SOFTFAIL = 2};
 
 void *BarPlayerThread (void *data);
 void BarPlayerSetVolume (player_t * const player);
-void BarPlayerInit ();
-void BarPlayerDestroy ();
+void BarPlayerInit (player_t * const p, const BarSettings_t * const settings);
+void BarPlayerReset (player_t * const p);
+void BarPlayerDestroy (player_t * const p);
+BarPlayerMode BarPlayerGetMode (player_t * const player);
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2013
+Copyright (c) 2008-2018
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -52,11 +52,11 @@ THE SOFTWARE.
 static inline void BarUiDoSkipSong (player_t * const player) {
 	assert (player != NULL);
 
-	pthread_mutex_lock (&player->pauseMutex);
+	pthread_mutex_lock (&player->lock);
 	player->doQuit = true;
 	player->doPause = false;
-	pthread_cond_broadcast (&player->pauseCond);
-	pthread_mutex_unlock (&player->pauseMutex);
+	pthread_cond_broadcast (&player->cond);
+	pthread_mutex_unlock (&player->lock);
 }
 
 /*	transform station if necessary to allow changes like rename, rate, ...
@@ -419,28 +419,28 @@ BarUiActCallback(BarUiActSkipSong) {
 /*	play
  */
 BarUiActCallback(BarUiActPlay) {
-	pthread_mutex_lock (&app->player.pauseMutex);
+	pthread_mutex_lock (&app->player.lock);
 	app->player.doPause = false;
-	pthread_cond_broadcast (&app->player.pauseCond);
-	pthread_mutex_unlock (&app->player.pauseMutex);
+	pthread_cond_broadcast (&app->player.cond);
+	pthread_mutex_unlock (&app->player.lock);
 }
 
 /*	pause
  */
 BarUiActCallback(BarUiActPause) {
-	pthread_mutex_lock (&app->player.pauseMutex);
+	pthread_mutex_lock (&app->player.lock);
 	app->player.doPause = true;
-	pthread_cond_broadcast (&app->player.pauseCond);
-	pthread_mutex_unlock (&app->player.pauseMutex);
+	pthread_cond_broadcast (&app->player.cond);
+	pthread_mutex_unlock (&app->player.lock);
 }
 
 /*	toggle pause
  */
 BarUiActCallback(BarUiActTogglePause) {
-	pthread_mutex_lock (&app->player.pauseMutex);
+	pthread_mutex_lock (&app->player.lock);
 	app->player.doPause = !app->player.doPause;
-	pthread_cond_broadcast (&app->player.pauseCond);
-	pthread_mutex_unlock (&app->player.pauseMutex);
+	pthread_cond_broadcast (&app->player.cond);
+	pthread_mutex_unlock (&app->player.lock);
 }
 
 /*	rename current station

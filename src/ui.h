@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2011
+Copyright (c) 2008-2018
 	Lars-Dominik Braun <lars@6xq.net>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -48,7 +48,7 @@ void BarUiPrintSong (const BarSettings_t *, const PianoSong_t *,
 size_t BarUiListSongs (const BarApp_t * const app,
 		const PianoSong_t *song, const char *filter);
 void BarUiStartEventCmd (const BarSettings_t *, const char *,
-		const PianoStation_t *, const PianoSong_t *, const player_t *,
+		const PianoStation_t *, const PianoSong_t *, player_t *,
 		PianoStation_t *, PianoReturn_t, CURLcode);
 bool BarUiPianoCall (BarApp_t * const, const PianoRequestType_t,
 		void *, PianoReturn_t *, CURLcode *);
