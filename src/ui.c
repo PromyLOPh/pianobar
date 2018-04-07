@@ -205,6 +205,7 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 	setAndCheck (CURLOPT_PROGRESSDATA, &lint);
 	setAndCheck (CURLOPT_NOPROGRESS, 0);
 	setAndCheck (CURLOPT_POST, 1);
+	setAndCheck (CURLOPT_TIMEOUT, settings->timeout);
 	if (settings->caBundle != NULL) {
 		setAndCheck (CURLOPT_CAINFO, settings->caBundle);
 	}
@@ -241,7 +242,21 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 	list = curl_slist_append (list, "Content-Type: text/plain");
 	setAndCheck (CURLOPT_HTTPHEADER, list);
 
-	httpret = curl_easy_perform (http);
+	unsigned int retry = 0;
+	do {
+		httpret = curl_easy_perform (http);
+		++retry;
+		if (httpret == CURLE_OPERATION_TIMEDOUT) {
+			free (buffer.data);
+			buffer.data = NULL;
+			buffer.pos = 0;
+			if (retry > settings->maxRetry) {
+				break;
+			}
+		} else {
+			break;
+		}
+	} while (true);
 
 	curl_slist_free_all (list);
 

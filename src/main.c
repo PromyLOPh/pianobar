@@ -293,7 +293,7 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 		app->playerErrors = 0;
 	} else if (threadRet == (void *) PLAYER_RET_SOFTFAIL) {
 		++app->playerErrors;
-		if (app->playerErrors >= app->settings.maxPlayerErrors) {
+		if (app->playerErrors >= app->settings.maxRetry) {
 			/* don't continue playback if thread reports too many error */
 			app->nextStation = NULL;
 		}

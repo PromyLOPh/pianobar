@@ -84,7 +84,7 @@ typedef struct {
 
 typedef struct {
 	bool autoselect;
-	unsigned int history, maxPlayerErrors;
+	unsigned int history, maxRetry, timeout;
 	int volume;
 	float gainMul;
 	BarStationSorting_t sortOrder;

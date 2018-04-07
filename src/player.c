@@ -174,8 +174,16 @@ static bool openStream (player_t * const player) {
 	player->fctx->interrupt_callback.callback = intCb;
 	player->fctx->interrupt_callback.opaque = player;
 
+	/* in microseconds */
+	unsigned long int timeout = player->settings->timeout*1000000;
+	char timeoutStr[16];
+	ret = snprintf (timeoutStr, sizeof (timeoutStr), "%lu", timeout);
+	assert (ret < sizeof (timeoutStr));
+	AVDictionary *options = NULL;
+	av_dict_set (&options, "timeout", timeoutStr, 0);
+
 	assert (player->url != NULL);
-	if ((ret = avformat_open_input (&player->fctx, player->url, NULL, NULL)) < 0) {
+	if ((ret = avformat_open_input (&player->fctx, player->url, NULL, &options)) < 0) {
 		softfail ("Unable to open audio file");
 	}
 

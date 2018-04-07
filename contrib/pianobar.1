@@ -333,8 +333,8 @@ Keep a history of the last n songs (5, by default). You can rate these songs.
 Icon for loved songs.
 
 .TP
-.B max_player_errors = 5
-Amount of song download errors in a row after pianobar stops playback.
+.B max_retry = 3
+Max failures for several actions before giving up.
 
 .TP
 .B partner_password = AC7IBG09A3DTSYM4R41UJWL07VLN8JI7
@@ -368,6 +368,10 @@ variable. Only "Basic" http authentication is supported.
 Sort station list by name or type (is quickmix) and name. name_az for example
 sorts by name from a to z, quickmix_01_name_za by type (quickmix at the
 bottom) and name from z to a.
+
+.TP
+.B timeout = 30
+Network operation timeout.
 
 .TP
 .B tired_icon =  zZ
