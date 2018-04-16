@@ -36,7 +36,6 @@ THE SOFTWARE.
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 #include <libavfilter/avfilter.h>
-#include <libavfilter/avfiltergraph.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 #ifdef HAVE_LIBAVFILTER_AVCODEC_H
