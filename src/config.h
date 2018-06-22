@@ -3,7 +3,7 @@
 /* package name */
 #define PACKAGE "pianobar"
 
-#define VERSION "2018.06.22"
+#define VERSION "2018.06.22-dev"
 
 /* glibc feature test macros, define _before_ including other files */
 #define _POSIX_C_SOURCE 200809L
