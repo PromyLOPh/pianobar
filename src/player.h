@@ -25,7 +25,6 @@ THE SOFTWARE.
 
 #include "config.h"
 
-#include <sys/queue.h>
 /* required for freebsd */
 #include <sys/types.h>
 #include <pthread.h>
@@ -50,21 +49,10 @@ typedef enum {
 	PLAYER_FINISHED,
 } BarPlayerMode;
 
-struct _QUEUE_ELEMT {
-	STAILQ_ENTRY(_QUEUE_ELEMT) entry;
-	/*The element could be an AVFrame or an AVPacket or a QUEUE_EOF*/
-	enum { AVFRAME, AVPACKET, QUEUE_EOF } type;
-	union {
-		AVFrame * frm;
-		AVPacket * pkt;
-	} data;
-};
-
 typedef struct {
 	/* public attributes protected by mutex */
-	pthread_mutex_t lock;
-	pthread_cond_t cond; /* broadcast changes to doPause */
-
+	pthread_mutex_t lock, aoplay_lock;
+	pthread_cond_t cond, aoplay_cond; /* broadcast changes to doPause */
 	bool doQuit, doPause;
 
 	/* measured in seconds */
@@ -72,13 +60,6 @@ typedef struct {
 	unsigned int songPlayed;
 
 	BarPlayerMode mode;
-
-	pthread_mutex_t aoplay_lock;
-	pthread_cond_t aoplay_cond;
-	/*queue head*/
-	STAILQ_HEAD (_QUEUE_ELEMT_head, _QUEUE_ELEMT) queue_head;
-	unsigned int queueSize;
-	bool forcePause, queueDone;
 
 	/* private attributes _not_ protected by mutex */
 
@@ -104,7 +85,7 @@ typedef struct {
 enum {PLAYER_RET_OK = 0, PLAYER_RET_HARDFAIL = 1, PLAYER_RET_SOFTFAIL = 2};
 
 void *BarPlayerThread (void *data);
-void *BarAoPlayThread(void *data);
+void *BarAoPlayThread (void *data);
 void BarPlayerSetVolume (player_t * const player);
 void BarPlayerInit (player_t * const p, const BarSettings_t * const settings);
 void BarPlayerReset (player_t * const p);

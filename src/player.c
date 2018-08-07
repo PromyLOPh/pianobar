@@ -25,7 +25,6 @@ THE SOFTWARE.
 
 #include "config.h"
 
-#include <sys/queue.h>
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
@@ -77,7 +76,6 @@ void BarPlayerInit (player_t * const p, const BarSettings_t * const settings) {
 	pthread_cond_init (&p->cond, NULL);
 	pthread_mutex_init (&p->aoplay_lock, NULL);
 	pthread_cond_init (&p->aoplay_cond, NULL);
-	STAILQ_INIT (&p->queue_head);
 	BarPlayerReset (p);
 	p->settings = settings;
 }
@@ -356,58 +354,36 @@ BarPlayerMode BarPlayerGetMode (player_t * const player) {
 static int play (player_t * const player) {
 	assert (player != NULL);
 
-	const unsigned int minQueueSize = 256;
-	pthread_mutex_lock (&player->aoplay_lock);
-	player->forcePause = true;
-	player->queueDone = false;
-	player->queueSize = 0;
-	pthread_mutex_unlock (&player->aoplay_lock);
-	pthread_t aoplaythread;
-	pthread_create (&aoplaythread, NULL, BarAoPlayThread, player);
-
-	AVPacket *pkt = NULL;
+	AVPacket pkt;
 	AVCodecContext * const cctx = player->cctx;
+	av_init_packet (&pkt);
+	pkt.data = NULL;
+	pkt.size = 0;
 
-	AVFrame *frame = NULL, *filteredFrame = NULL;
+	AVFrame *frame = NULL;
 	frame = av_frame_alloc ();
 	assert (frame != NULL);
-
+	pthread_t aoplaythread;
+	pthread_create (&aoplaythread, NULL, BarAoPlayThread, player);
 	enum { FILL, DRAIN, DONE } drainMode = FILL;
 	int ret = 0;
 	while (!shouldQuit (player) && drainMode != DONE) {
-		/* alloc queue element for AVPacket */
-		struct _QUEUE_ELEMT * pkt_element =
-				(struct _QUEUE_ELEMT *) calloc (1, sizeof (struct _QUEUE_ELEMT));
-		pkt_element->type = AVPACKET;
-		pkt = pkt_element->data.pkt = av_packet_alloc ();
-		assert (pkt != NULL);
-		av_init_packet (pkt);
-		pkt->data = NULL;
-		pkt->size = 0;
-		/* alloc queue element for AVFrame */
-		struct _QUEUE_ELEMT * frm_element =
-				(struct _QUEUE_ELEMT *) calloc (1, sizeof (struct _QUEUE_ELEMT));
-		frm_element->type = AVFRAME;
-		filteredFrame = frm_element->data.frm = av_frame_alloc ();
-		assert (filteredFrame != NULL);
-
 		if (drainMode == FILL) {
-			ret = av_read_frame (player->fctx, pkt);
+			ret = av_read_frame (player->fctx, &pkt);
 			if (ret == AVERROR_EOF) {
 				/* enter drain mode */
 				drainMode = DRAIN;
 				avcodec_send_packet (cctx, NULL);
-			} else if (pkt->stream_index != player->streamIdx) {
+			} else if (pkt.stream_index != player->streamIdx) {
 				/* unused packet */
-				av_packet_unref (pkt);
-				free (pkt_element);
+				av_packet_unref (&pkt);
 				continue;
 			} else if (ret < 0) {
 				/* error, abort */
 				break;
 			} else {
 				/* fill buffer */
-				avcodec_send_packet (cctx, pkt);
+				avcodec_send_packet (cctx, &pkt);
 			}
 		}
 
@@ -416,6 +392,9 @@ static int play (player_t * const player) {
 			if (ret == AVERROR_EOF) {
 				/* done draining */
 				drainMode = DONE;
+				/* mark the EOF*/
+				int rt = av_buffersrc_add_frame (player->fabuf, NULL);
+				assert( rt == 0);
 				break;
 			} else if (ret != 0) {
 				/* no more output */
@@ -428,52 +407,14 @@ static int play (player_t * const player) {
 			}
 			ret = av_buffersrc_write_frame (player->fabuf, frame);
 			assert (ret >= 0);
-
-			while (true) {
-				if (av_buffersink_get_frame (player->fbufsink, filteredFrame) < 0) {
-					/* try again next frame */
-					break;
-				}
-
-				/*Insert frame for playing*/
-				pthread_mutex_lock (&player->aoplay_lock);
-				STAILQ_INSERT_TAIL (&player->queue_head, frm_element, entry);
-				player->queueSize++;
-				if (player->queueSize >= minQueueSize) {
-						player->forcePause = false;
-						pthread_cond_broadcast (&player->aoplay_cond);
-				}
-				pthread_mutex_unlock (&player->aoplay_lock);
-				filteredFrame=NULL;
-			}
-		}
-
-		/* insert packet for timestamp */
-		pthread_mutex_lock (&player->aoplay_lock);
-		STAILQ_INSERT_TAIL (&player->queue_head, pkt_element, entry);
-		player->queueSize++;
-		if (player->queueSize >= minQueueSize) {
-			player->forcePause = false;
+			pthread_mutex_lock (&player->aoplay_lock);
 			pthread_cond_broadcast (&player->aoplay_cond);
+			pthread_mutex_unlock (&player->aoplay_lock);
 		}
-		pthread_mutex_unlock (&player->aoplay_lock);
-		pkt = NULL;
-	}
 
-	filteredFrame = NULL;
+		av_packet_unref (&pkt);
+	}
 	av_frame_free (&frame);
-
-	/* insert EOF */
-	if (drainMode == DONE) {
-		struct _QUEUE_ELEMT * eof_element =
-				(struct _QUEUE_ELEMT *) calloc (1, sizeof (struct _QUEUE_ELEMT));
-		eof_element->type = QUEUE_EOF;
-		pthread_mutex_lock (&player->aoplay_lock);
-		player->queueDone = true;
-		pthread_cond_broadcast (&player->aoplay_cond);
-		STAILQ_INSERT_TAIL (&player->queue_head, eof_element, entry);
-		pthread_mutex_unlock (&player->aoplay_lock);
-	}
 	pthread_join (aoplaythread, NULL);
 
 	return ret;
@@ -534,108 +475,55 @@ void *BarPlayerThread (void *data) {
 void *BarAoPlayThread (void *data) {
 	assert (data != NULL);
 
-	player_t *const player = data;
+	player_t * const player = data;
 
-	AVFrame *frm = NULL;
-	AVPacket *pkt = NULL;
+	AVFrame *filteredFrame = NULL;
+	filteredFrame = av_frame_alloc ();
+	assert (filteredFrame != NULL);
 
 	bool quit = false;
-
-	while (!shouldQuit (player) && !quit) {
-		struct _QUEUE_ELEMT * queue_element = NULL;
-		while (!shouldQuit (player) && !quit && queue_element == NULL) {
-
-			/* force pausing until the queue size get 256 or decoding is done*/
-			pthread_mutex_lock (&player->aoplay_lock);
-			if (player->forcePause && !player->queueDone) {
-				do {
-					pthread_cond_wait (&player->aoplay_cond, &player->aoplay_lock);
-				} while (player->forcePause && !player->queueDone);
+	int ret;
+	while (true) {
+		while ((ret = av_buffersink_get_frame (player->fbufsink, filteredFrame)) < 0) {
+			if (ret == AVERROR_EOF){
+				quit=true;
+				break;
 			}
-			pthread_mutex_unlock (&player->aoplay_lock);
-
-			/* pausing by user*/
-			pthread_mutex_lock (&player->lock);
-			if (player->doPause) {
-				av_read_pause (player->fctx);
-				do {
-					pthread_cond_wait (&player->cond, &player->lock);
-				} while (player->doPause);
-				av_read_play (player->fctx);
-			}
-			pthread_mutex_unlock (&player->lock);
-
-			pthread_mutex_lock (&player->aoplay_lock);
-			queue_element = STAILQ_FIRST (&player->queue_head);
+			/* wait for more frames */
+		  pthread_mutex_lock (&player->aoplay_lock);
+			pthread_cond_wait (&player->aoplay_cond, &player->aoplay_lock);
 			pthread_mutex_unlock (&player->aoplay_lock);
 		}
 
-		if (queue_element == NULL) {
+		if (shouldQuit(player) || quit){
 			break;
 		}
 
-		int numChannels;
-		int bps;
-		unsigned int songPlayed;
-		switch (queue_element->type) {
-		case AVFRAME:
-			frm = queue_element->data.frm;
-			numChannels = av_get_channel_layout_nb_channels (frm->channel_layout);
-			bps = av_get_bytes_per_sample (frm->format);
-			ao_play (player->aoDev, (char *) frm->data[0],
-					frm->nb_samples * numChannels * bps);
-			av_frame_free (&frm);
-			frm = NULL;
-			break;
-		case AVPACKET:
-			pkt = queue_element->data.pkt;
-			songPlayed = av_q2d (player->st->time_base) * (double) pkt->pts;
-			pthread_mutex_lock (&player->lock);
-			player->songPlayed = songPlayed;
-			pthread_mutex_unlock (&player->lock);
-			player->lastTimestamp = pkt->pts;
-
-			av_packet_free (&pkt);
-			pkt = NULL;
-
-			break;
-		case QUEUE_EOF:
-			quit = true;
-			break;
+		/* pausing */
+		pthread_mutex_lock (&player->lock);
+		if (player->doPause) {
+			do {
+				pthread_cond_wait (&player->cond, &player->lock);
+			} while (player->doPause);
 		}
-		pthread_mutex_lock (&player->aoplay_lock);
-		STAILQ_REMOVE_HEAD (&player->queue_head, entry);
-		player->queueSize--;
-		if (player->queueSize == 0)
-			player->forcePause = true;
-		pthread_mutex_unlock (&player->aoplay_lock);
-		free (queue_element);
+		pthread_mutex_unlock (&player->lock);
+
+		const int numChannels = av_get_channel_layout_nb_channels (
+				filteredFrame->channel_layout);
+		const int bps = av_get_bytes_per_sample(filteredFrame->format);
+		ao_play (player->aoDev, (char *) filteredFrame->data[0],
+				filteredFrame->nb_samples * numChannels * bps);
+
+		const unsigned int songPlayed = av_q2d (player->st->time_base) * 
+				(double) filteredFrame->pts;
+		pthread_mutex_lock (&player->lock);
+		player->songPlayed = songPlayed;
+		pthread_mutex_unlock (&player->lock);
+		player->lastTimestamp = filteredFrame->pts;
+
+		av_frame_unref (filteredFrame);
 	}
+	av_frame_free (&filteredFrame);
 
-	/*Clear the queue*/
-	while (!STAILQ_EMPTY (&player->queue_head)) {
-		struct _QUEUE_ELEMT * queue_element = STAILQ_FIRST (&player->queue_head);
-		switch (queue_element->type) {
-		case AVFRAME:
-			frm = queue_element->data.frm;
-			av_frame_free (&frm);
-			frm = NULL;
-			break;
-		case AVPACKET:
-			pkt = queue_element->data.pkt;
-			av_packet_free (&pkt);
-			pkt = NULL;
-			break;
-		case QUEUE_EOF:
-			/* nothing need to do here*/
-			break;
-		}
-		pthread_mutex_lock (&player->aoplay_lock);
-		STAILQ_REMOVE_HEAD (&player->queue_head, entry);
-		pthread_mutex_unlock (&player->aoplay_lock);
-
-		free (queue_element);
-		queue_element = NULL;
-	}
 	return (void *) 0;
 }
