@@ -57,6 +57,9 @@ static inline void BarUiDoSkipSong (player_t * const player) {
 	player->doPause = false;
 	pthread_cond_broadcast (&player->cond);
 	pthread_mutex_unlock (&player->lock);
+	pthread_mutex_lock (&player->aoplay_lock);
+	pthread_cond_broadcast (&player->aoplay_cond);
+	pthread_mutex_unlock (&player->aoplay_lock);
 }
 
 /*	transform station if necessary to allow changes like rename, rate, ...
@@ -881,4 +884,3 @@ BarUiActCallback(BarUiActManageStation) {
 
 	PianoDestroyStationInfo (&reqData.info);
 }
-

@@ -484,29 +484,22 @@ void *BarAoPlayThread (void *data) {
 	filteredFrame = av_frame_alloc ();
 	assert (filteredFrame != NULL);
 
-	bool quit = false;
 	int ret;
-	while (true) {
+	while (!shouldQuit(player)) {
 		pthread_mutex_lock (&player->aoplay_lock);
 		ret = av_buffersink_get_frame (player->fbufsink, filteredFrame);
 		pthread_mutex_unlock (&player->aoplay_lock);
-		if ( ret < 0) {
-			do {
-				if (ret == AVERROR_EOF){
-					quit=true;
-					break;
-				}
-				/* wait for more frames */
-		  	pthread_mutex_lock (&player->aoplay_lock);
-				pthread_cond_wait (&player->aoplay_cond, &player->aoplay_lock);
-				ret = av_buffersink_get_frame (player->fbufsink, filteredFrame);
-				pthread_mutex_unlock (&player->aoplay_lock);
-			} while (ret < 0);
-		}
 
-		if (shouldQuit(player) || quit){
+		if ( !shouldQuit(player) && ret < 0 && ret != AVERROR_EOF) {
+			/* wait for more frames */
+			pthread_mutex_lock (&player->aoplay_lock);
+			pthread_cond_wait (&player->aoplay_cond, &player->aoplay_lock);
+			pthread_mutex_unlock (&player->aoplay_lock);
+			continue;
+		} else if (ret == AVERROR_EOF || shouldQuit(player)){
 			break;
 		}
+
 
 		/* pausing */
 		pthread_mutex_lock (&player->lock);
