@@ -380,6 +380,12 @@ static int play (player_t * const player) {
 				continue;
 			} else if (ret < 0) {
 				/* error, abort */
+				/* mark the EOF, so that BarAoPlayThread can quit*/
+				pthread_mutex_lock (&player->aoplay_lock);
+				int rt = av_buffersrc_add_frame (player->fabuf, NULL);
+				assert( rt == 0);
+				pthread_cond_broadcast (&player->aoplay_cond);
+				pthread_mutex_unlock (&player->aoplay_lock);
 				break;
 			} else {
 				/* fill buffer */
