@@ -561,15 +561,15 @@ BarUiActCallback(BarUiActSelectQuickMix) {
 	if (selStation->isQuickMix) {
 		PianoStation_t *toggleStation;
 		while ((toggleStation = BarUiSelectStation (app, app->ph.stations,
-				"Toggle quickmix for station: ",
+				"Toggle QuickMix for station: ",
 				BarUiActQuickmixCallback, false)) != NULL) {
 			toggleStation->useQuickMix = !toggleStation->useQuickMix;
 		}
-		BarUiMsg (&app->settings, MSG_INFO, "Setting quickmix stations... ");
+		BarUiMsg (&app->settings, MSG_INFO, "Setting QuickMix stations... ");
 		BarUiActDefaultPianoCall (PIANO_REQUEST_SET_QUICKMIX, NULL);
 		BarUiActDefaultEventcmd ("stationquickmixtoggle");
 	} else {
-		BarUiMsg (&app->settings, MSG_ERR, "Not a QuickMix station.\n");
+		BarUiMsg (&app->settings, MSG_ERR, "Please select a QuickMix station first.\n");
 	}
 }
 
