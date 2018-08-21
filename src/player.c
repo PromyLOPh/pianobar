@@ -365,6 +365,7 @@ static int play (player_t * const player) {
 	assert (frame != NULL);
 	pthread_t aoplaythread;
 	pthread_create (&aoplaythread, NULL, BarAoPlayThread, player);
+	int64_t buffer_health = 0;
 	enum { FILL, DRAIN, DONE } drainMode = FILL;
 	int ret = 0;
 	while (!shouldQuit (player) && drainMode != DONE) {
@@ -419,6 +420,17 @@ static int play (player_t * const player) {
 			assert (ret >= 0);
 			pthread_cond_broadcast (&player->aoplay_cond);
 			pthread_mutex_unlock (&player->aoplay_lock);
+			
+			do {
+				pthread_mutex_lock (&player->aoplay_lock);
+				buffer_health = av_q2d (player->st->time_base) * 
+						(double) (frame->pts - player->lastTimestamp);
+				if (buffer_health > 4){
+					/* Buffer is healthy enough, wait */
+					pthread_cond_wait (&player->aoplay_cond, &player->aoplay_lock);
+				}
+				pthread_mutex_unlock (&player->aoplay_lock);
+			} while(buffer_health > 4);
 		}
 
 		av_packet_unref (&pkt);
@@ -527,7 +539,11 @@ void *BarAoPlayThread (void *data) {
 		pthread_mutex_lock (&player->lock);
 		player->songPlayed = songPlayed;
 		pthread_mutex_unlock (&player->lock);
+
+		pthread_mutex_lock (&player->aoplay_lock);
 		player->lastTimestamp = filteredFrame->pts;
+		pthread_cond_broadcast (&player->aoplay_cond);
+		pthread_mutex_unlock (&player->aoplay_lock);
 
 		av_frame_unref (filteredFrame);
 	}
