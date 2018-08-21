@@ -518,16 +518,6 @@ void *BarAoPlayThread (void *data) {
 			break;
 		}
 
-
-		/* pausing */
-		pthread_mutex_lock (&player->lock);
-		if (player->doPause) {
-			do {
-				pthread_cond_wait (&player->cond, &player->lock);
-			} while (player->doPause);
-		}
-		pthread_mutex_unlock (&player->lock);
-
 		const int numChannels = av_get_channel_layout_nb_channels (
 				filteredFrame->channel_layout);
 		const int bps = av_get_bytes_per_sample(filteredFrame->format);
@@ -538,6 +528,15 @@ void *BarAoPlayThread (void *data) {
 				(double) filteredFrame->pts;
 		pthread_mutex_lock (&player->lock);
 		player->songPlayed = songPlayed;
+		pthread_mutex_unlock (&player->lock);
+
+		/* pausing */
+		pthread_mutex_lock (&player->lock);
+		if (player->doPause) {
+			do {
+				pthread_cond_wait (&player->cond, &player->lock);
+			} while (player->doPause);
+		}
 		pthread_mutex_unlock (&player->lock);
 
 		pthread_mutex_lock (&player->aoplay_lock);
