@@ -418,7 +418,6 @@ static int play (player_t * const player) {
 			pthread_mutex_lock (&player->aoplay_lock);
 			ret = av_buffersrc_write_frame (player->fabuf, frame);
 			assert (ret >= 0);
-			pthread_cond_broadcast (&player->aoplay_cond);
 			pthread_mutex_unlock (&player->aoplay_lock);
 			
 			do {
@@ -426,6 +425,8 @@ static int play (player_t * const player) {
 				buffer_health = av_q2d (player->st->time_base) * 
 						(double) (frame->pts - player->lastTimestamp);
 				if (buffer_health > 4){
+					/* Buffer get healthy, resume */
+					pthread_cond_broadcast (&player->aoplay_cond);
 					/* Buffer is healthy enough, wait */
 					pthread_cond_wait (&player->aoplay_cond, &player->aoplay_lock);
 				}
