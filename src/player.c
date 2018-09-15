@@ -21,7 +21,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-/* receive/play audio stream */
+/* receive/play audio stream.
+ *
+ * There are two threads involved here:
+ * BarPlayerThread
+ * 		Sets up the stream and fetches the data into a ffmpeg buffersrc
+ * BarAoPlayThread
+ * 		Reads data from the filter chain’s sink and hands it over to libao for
+ * 		playback.
+ * 
+ */
 
 #include "config.h"
 
@@ -382,8 +391,8 @@ static int play (player_t * const player) {
 				/* error, abort */
 				/* mark the EOF, so that BarAoPlayThread can quit*/
 				pthread_mutex_lock (&player->aoplayLock);
-				int rt = av_buffersrc_add_frame (player->fabuf, NULL);
-				assert( rt == 0);
+				const int rt = av_buffersrc_add_frame (player->fabuf, NULL);
+				assert (rt == 0);
 				pthread_cond_broadcast (&player->aoplayCond);
 				pthread_mutex_unlock (&player->aoplayLock);
 				break;
@@ -400,8 +409,8 @@ static int play (player_t * const player) {
 				drainMode = DONE;
 				/* mark the EOF*/
 				pthread_mutex_lock (&player->aoplayLock);
-				int rt = av_buffersrc_add_frame (player->fabuf, NULL);
-				assert( rt == 0);
+				const int rt = av_buffersrc_add_frame (player->fabuf, NULL);
+				assert (rt == 0);
 				pthread_cond_broadcast (&player->aoplayCond);
 				pthread_mutex_unlock (&player->aoplayLock);
 				break;
@@ -420,18 +429,19 @@ static int play (player_t * const player) {
 			pthread_mutex_unlock (&player->aoplayLock);
 			
 			int64_t bufferHealth = 0;
+			const int64_t minBufferHealth = 4; /* in seconds */
 			do {
 				pthread_mutex_lock (&player->aoplayLock);
 				bufferHealth = av_q2d (player->st->time_base) * 
 						(double) (frame->pts - player->lastTimestamp);
-				if (bufferHealth > 4){
+				if (bufferHealth > minBufferHealth) {
 					/* Buffer get healthy, resume */
 					pthread_cond_broadcast (&player->aoplayCond);
 					/* Buffer is healthy enough, wait */
 					pthread_cond_wait (&player->aoplayCond, &player->aoplayLock);
 				}
 				pthread_mutex_unlock (&player->aoplayLock);
-			} while(bufferHealth > 4);
+			} while (bufferHealth > minBufferHealth);
 		}
 
 		av_packet_unref (&pkt);
@@ -507,21 +517,21 @@ void *BarAoPlayThread (void *data) {
 	while (!shouldQuit(player)) {
 		pthread_mutex_lock (&player->aoplayLock);
 		ret = av_buffersink_get_frame (player->fbufsink, filteredFrame);
-		pthread_mutex_unlock (&player->aoplayLock);
-
-		if ( !shouldQuit(player) && ret < 0 && ret != AVERROR_EOF) {
+		if (ret == AVERROR_EOF || shouldQuit (player)) {
+			/* we are done here */
+			pthread_mutex_unlock (&player->aoplayLock);
+			break;
+		} else if (ret < 0) {
 			/* wait for more frames */
-			pthread_mutex_lock (&player->aoplayLock);
 			pthread_cond_wait (&player->aoplayCond, &player->aoplayLock);
 			pthread_mutex_unlock (&player->aoplayLock);
 			continue;
-		} else if (ret == AVERROR_EOF || shouldQuit(player)){
-			break;
 		}
+		pthread_mutex_unlock (&player->aoplayLock);
 
 		const int numChannels = av_get_channel_layout_nb_channels (
 				filteredFrame->channel_layout);
-		const int bps = av_get_bytes_per_sample(filteredFrame->format);
+		const int bps = av_get_bytes_per_sample (filteredFrame->format);
 		ao_play (player->aoDev, (char *) filteredFrame->data[0],
 				filteredFrame->nb_samples * numChannels * bps);
 
@@ -529,10 +539,8 @@ void *BarAoPlayThread (void *data) {
 				(double) filteredFrame->pts;
 		pthread_mutex_lock (&player->lock);
 		player->songPlayed = songPlayed;
-		pthread_mutex_unlock (&player->lock);
 
 		/* pausing */
-		pthread_mutex_lock (&player->lock);
 		if (player->doPause) {
 			do {
 				pthread_cond_wait (&player->cond, &player->lock);
@@ -540,6 +548,7 @@ void *BarAoPlayThread (void *data) {
 		}
 		pthread_mutex_unlock (&player->lock);
 
+		/* notify download thread, we might need more data */
 		pthread_mutex_lock (&player->aoplayLock);
 		player->lastTimestamp = filteredFrame->pts;
 		pthread_cond_broadcast (&player->aoplayCond);
