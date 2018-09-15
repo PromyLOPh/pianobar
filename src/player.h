@@ -51,9 +51,8 @@ typedef enum {
 
 typedef struct {
 	/* public attributes protected by mutex */
-	pthread_mutex_t lock;
-	pthread_cond_t cond; /* broadcast changes to doPause */
-
+	pthread_mutex_t lock, aoplayLock;
+	pthread_cond_t cond, aoplayCond; /* broadcast changes to doPause */
 	bool doQuit, doPause;
 
 	/* measured in seconds */
@@ -86,6 +85,7 @@ typedef struct {
 enum {PLAYER_RET_OK = 0, PLAYER_RET_HARDFAIL = 1, PLAYER_RET_SOFTFAIL = 2};
 
 void *BarPlayerThread (void *data);
+void *BarAoPlayThread (void *data);
 void BarPlayerSetVolume (player_t * const player);
 void BarPlayerInit (player_t * const p, const BarSettings_t * const settings);
 void BarPlayerReset (player_t * const p);
