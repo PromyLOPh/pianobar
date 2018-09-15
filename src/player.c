@@ -21,7 +21,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-/* receive/play audio stream */
+/* receive/play audio stream.
+ *
+ * There are two threads involved here:
+ * BarPlayerThread
+ * 		Sets up the stream and fetches the data into a ffmpeg buffersrc
+ * BarAoPlayThread
+ * 		Reads data from the filter chain’s sink and hands it over to libao for
+ * 		playback.
+ * 
+ */
 
 #include "config.h"
 
@@ -74,6 +83,8 @@ void BarPlayerInit (player_t * const p, const BarSettings_t * const settings) {
 
 	pthread_mutex_init (&p->lock, NULL);
 	pthread_cond_init (&p->cond, NULL);
+	pthread_mutex_init (&p->aoplayLock, NULL);
+	pthread_cond_init (&p->aoplayCond, NULL);
 	BarPlayerReset (p);
 	p->settings = settings;
 }
@@ -81,6 +92,8 @@ void BarPlayerInit (player_t * const p, const BarSettings_t * const settings) {
 void BarPlayerDestroy (player_t * const p) {
 	pthread_cond_destroy (&p->cond);
 	pthread_mutex_destroy (&p->lock);
+	pthread_cond_destroy (&p->aoplayCond);
+	pthread_mutex_destroy (&p->aoplayLock);
 
 	avformat_network_deinit ();
 	ao_shutdown ();
@@ -356,12 +369,11 @@ static int play (player_t * const player) {
 	pkt.data = NULL;
 	pkt.size = 0;
 
-	AVFrame *frame = NULL, *filteredFrame = NULL;
+	AVFrame *frame = NULL;
 	frame = av_frame_alloc ();
 	assert (frame != NULL);
-	filteredFrame = av_frame_alloc ();
-	assert (filteredFrame != NULL);
-
+	pthread_t aoplaythread;
+	pthread_create (&aoplaythread, NULL, BarAoPlayThread, player);
 	enum { FILL, DRAIN, DONE } drainMode = FILL;
 	int ret = 0;
 	while (!shouldQuit (player) && drainMode != DONE) {
@@ -377,6 +389,12 @@ static int play (player_t * const player) {
 				continue;
 			} else if (ret < 0) {
 				/* error, abort */
+				/* mark the EOF, so that BarAoPlayThread can quit*/
+				pthread_mutex_lock (&player->aoplayLock);
+				const int rt = av_buffersrc_add_frame (player->fabuf, NULL);
+				assert (rt == 0);
+				pthread_cond_broadcast (&player->aoplayCond);
+				pthread_mutex_unlock (&player->aoplayLock);
 				break;
 			} else {
 				/* fill buffer */
@@ -384,22 +402,17 @@ static int play (player_t * const player) {
 			}
 		}
 
-		/* pausing */
-		pthread_mutex_lock (&player->lock);
-		if (player->doPause) {
-			av_read_pause (player->fctx);
-			do {
-				pthread_cond_wait (&player->cond, &player->lock);
-			} while (player->doPause);
-			av_read_play (player->fctx);
-		}
-		pthread_mutex_unlock (&player->lock);
-
 		while (!shouldQuit (player)) {
 			ret = avcodec_receive_frame (cctx, frame);
 			if (ret == AVERROR_EOF) {
 				/* done draining */
 				drainMode = DONE;
+				/* mark the EOF*/
+				pthread_mutex_lock (&player->aoplayLock);
+				const int rt = av_buffersrc_add_frame (player->fabuf, NULL);
+				assert (rt == 0);
+				pthread_cond_broadcast (&player->aoplayCond);
+				pthread_mutex_unlock (&player->aoplayLock);
 				break;
 			} else if (ret != 0) {
 				/* no more output */
@@ -410,36 +423,31 @@ static int play (player_t * const player) {
 			if (frame->pts == (int64_t) AV_NOPTS_VALUE) {
 				frame->pts = 0;
 			}
+			pthread_mutex_lock (&player->aoplayLock);
 			ret = av_buffersrc_write_frame (player->fabuf, frame);
 			assert (ret >= 0);
-
-			while (true) {
-				if (av_buffersink_get_frame (player->fbufsink, filteredFrame) < 0) {
-					/* try again next frame */
-					break;
+			pthread_mutex_unlock (&player->aoplayLock);
+			
+			int64_t bufferHealth = 0;
+			const int64_t minBufferHealth = 4; /* in seconds */
+			do {
+				pthread_mutex_lock (&player->aoplayLock);
+				bufferHealth = av_q2d (player->st->time_base) * 
+						(double) (frame->pts - player->lastTimestamp);
+				if (bufferHealth > minBufferHealth) {
+					/* Buffer get healthy, resume */
+					pthread_cond_broadcast (&player->aoplayCond);
+					/* Buffer is healthy enough, wait */
+					pthread_cond_wait (&player->aoplayCond, &player->aoplayLock);
 				}
-
-				const int numChannels = av_get_channel_layout_nb_channels (
-						filteredFrame->channel_layout);
-				const int bps = av_get_bytes_per_sample(filteredFrame->format);
-				ao_play (player->aoDev, (char *) filteredFrame->data[0],
-						filteredFrame->nb_samples * numChannels * bps);
-
-				av_frame_unref (filteredFrame);
-			}
+				pthread_mutex_unlock (&player->aoplayLock);
+			} while (bufferHealth > minBufferHealth);
 		}
-
-		const unsigned int songPlayed = av_q2d (player->st->time_base) * (double) pkt.pts;
-		pthread_mutex_lock (&player->lock);
-		player->songPlayed = songPlayed;
-		pthread_mutex_unlock (&player->lock);
-		player->lastTimestamp = pkt.pts;
 
 		av_packet_unref (&pkt);
 	}
-
-	av_frame_free (&filteredFrame);
 	av_frame_free (&frame);
+	pthread_join (aoplaythread, NULL);
 
 	return ret;
 }
@@ -496,3 +504,59 @@ void *BarPlayerThread (void *data) {
 	return (void *) pret;
 }
 
+void *BarAoPlayThread (void *data) {
+	assert (data != NULL);
+
+	player_t * const player = data;
+
+	AVFrame *filteredFrame = NULL;
+	filteredFrame = av_frame_alloc ();
+	assert (filteredFrame != NULL);
+
+	int ret;
+	while (!shouldQuit(player)) {
+		pthread_mutex_lock (&player->aoplayLock);
+		ret = av_buffersink_get_frame (player->fbufsink, filteredFrame);
+		if (ret == AVERROR_EOF || shouldQuit (player)) {
+			/* we are done here */
+			pthread_mutex_unlock (&player->aoplayLock);
+			break;
+		} else if (ret < 0) {
+			/* wait for more frames */
+			pthread_cond_wait (&player->aoplayCond, &player->aoplayLock);
+			pthread_mutex_unlock (&player->aoplayLock);
+			continue;
+		}
+		pthread_mutex_unlock (&player->aoplayLock);
+
+		const int numChannels = av_get_channel_layout_nb_channels (
+				filteredFrame->channel_layout);
+		const int bps = av_get_bytes_per_sample (filteredFrame->format);
+		ao_play (player->aoDev, (char *) filteredFrame->data[0],
+				filteredFrame->nb_samples * numChannels * bps);
+
+		const unsigned int songPlayed = av_q2d (player->st->time_base) * 
+				(double) filteredFrame->pts;
+		pthread_mutex_lock (&player->lock);
+		player->songPlayed = songPlayed;
+
+		/* pausing */
+		if (player->doPause) {
+			do {
+				pthread_cond_wait (&player->cond, &player->lock);
+			} while (player->doPause);
+		}
+		pthread_mutex_unlock (&player->lock);
+
+		/* notify download thread, we might need more data */
+		pthread_mutex_lock (&player->aoplayLock);
+		player->lastTimestamp = filteredFrame->pts;
+		pthread_cond_broadcast (&player->aoplayCond);
+		pthread_mutex_unlock (&player->aoplayLock);
+
+		av_frame_unref (filteredFrame);
+	}
+	av_frame_free (&filteredFrame);
+
+	return (void *) 0;
+}
