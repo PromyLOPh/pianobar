@@ -51,8 +51,8 @@ typedef enum {
 
 typedef struct {
 	/* public attributes protected by mutex */
-	pthread_mutex_t lock, aoplay_lock;
-	pthread_cond_t cond, aoplay_cond; /* broadcast changes to doPause */
+	pthread_mutex_t lock, aoplayLock;
+	pthread_cond_t cond, aoplayCond; /* broadcast changes to doPause */
 	bool doQuit, doPause;
 
 	/* measured in seconds */

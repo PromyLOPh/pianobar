@@ -74,8 +74,8 @@ void BarPlayerInit (player_t * const p, const BarSettings_t * const settings) {
 
 	pthread_mutex_init (&p->lock, NULL);
 	pthread_cond_init (&p->cond, NULL);
-	pthread_mutex_init (&p->aoplay_lock, NULL);
-	pthread_cond_init (&p->aoplay_cond, NULL);
+	pthread_mutex_init (&p->aoplayLock, NULL);
+	pthread_cond_init (&p->aoplayCond, NULL);
 	BarPlayerReset (p);
 	p->settings = settings;
 }
@@ -83,8 +83,8 @@ void BarPlayerInit (player_t * const p, const BarSettings_t * const settings) {
 void BarPlayerDestroy (player_t * const p) {
 	pthread_cond_destroy (&p->cond);
 	pthread_mutex_destroy (&p->lock);
-	pthread_cond_destroy (&p->aoplay_cond);
-	pthread_mutex_destroy (&p->aoplay_lock);
+	pthread_cond_destroy (&p->aoplayCond);
+	pthread_mutex_destroy (&p->aoplayLock);
 
 	avformat_network_deinit ();
 	ao_shutdown ();
@@ -365,7 +365,6 @@ static int play (player_t * const player) {
 	assert (frame != NULL);
 	pthread_t aoplaythread;
 	pthread_create (&aoplaythread, NULL, BarAoPlayThread, player);
-	int64_t buffer_health = 0;
 	enum { FILL, DRAIN, DONE } drainMode = FILL;
 	int ret = 0;
 	while (!shouldQuit (player) && drainMode != DONE) {
@@ -382,11 +381,11 @@ static int play (player_t * const player) {
 			} else if (ret < 0) {
 				/* error, abort */
 				/* mark the EOF, so that BarAoPlayThread can quit*/
-				pthread_mutex_lock (&player->aoplay_lock);
+				pthread_mutex_lock (&player->aoplayLock);
 				int rt = av_buffersrc_add_frame (player->fabuf, NULL);
 				assert( rt == 0);
-				pthread_cond_broadcast (&player->aoplay_cond);
-				pthread_mutex_unlock (&player->aoplay_lock);
+				pthread_cond_broadcast (&player->aoplayCond);
+				pthread_mutex_unlock (&player->aoplayLock);
 				break;
 			} else {
 				/* fill buffer */
@@ -400,11 +399,11 @@ static int play (player_t * const player) {
 				/* done draining */
 				drainMode = DONE;
 				/* mark the EOF*/
-				pthread_mutex_lock (&player->aoplay_lock);
+				pthread_mutex_lock (&player->aoplayLock);
 				int rt = av_buffersrc_add_frame (player->fabuf, NULL);
 				assert( rt == 0);
-				pthread_cond_broadcast (&player->aoplay_cond);
-				pthread_mutex_unlock (&player->aoplay_lock);
+				pthread_cond_broadcast (&player->aoplayCond);
+				pthread_mutex_unlock (&player->aoplayLock);
 				break;
 			} else if (ret != 0) {
 				/* no more output */
@@ -415,23 +414,24 @@ static int play (player_t * const player) {
 			if (frame->pts == (int64_t) AV_NOPTS_VALUE) {
 				frame->pts = 0;
 			}
-			pthread_mutex_lock (&player->aoplay_lock);
+			pthread_mutex_lock (&player->aoplayLock);
 			ret = av_buffersrc_write_frame (player->fabuf, frame);
 			assert (ret >= 0);
-			pthread_mutex_unlock (&player->aoplay_lock);
+			pthread_mutex_unlock (&player->aoplayLock);
 			
+			int64_t bufferHealth = 0;
 			do {
-				pthread_mutex_lock (&player->aoplay_lock);
-				buffer_health = av_q2d (player->st->time_base) * 
+				pthread_mutex_lock (&player->aoplayLock);
+				bufferHealth = av_q2d (player->st->time_base) * 
 						(double) (frame->pts - player->lastTimestamp);
-				if (buffer_health > 4){
+				if (bufferHealth > 4){
 					/* Buffer get healthy, resume */
-					pthread_cond_broadcast (&player->aoplay_cond);
+					pthread_cond_broadcast (&player->aoplayCond);
 					/* Buffer is healthy enough, wait */
-					pthread_cond_wait (&player->aoplay_cond, &player->aoplay_lock);
+					pthread_cond_wait (&player->aoplayCond, &player->aoplayLock);
 				}
-				pthread_mutex_unlock (&player->aoplay_lock);
-			} while(buffer_health > 4);
+				pthread_mutex_unlock (&player->aoplayLock);
+			} while(bufferHealth > 4);
 		}
 
 		av_packet_unref (&pkt);
@@ -505,15 +505,15 @@ void *BarAoPlayThread (void *data) {
 
 	int ret;
 	while (!shouldQuit(player)) {
-		pthread_mutex_lock (&player->aoplay_lock);
+		pthread_mutex_lock (&player->aoplayLock);
 		ret = av_buffersink_get_frame (player->fbufsink, filteredFrame);
-		pthread_mutex_unlock (&player->aoplay_lock);
+		pthread_mutex_unlock (&player->aoplayLock);
 
 		if ( !shouldQuit(player) && ret < 0 && ret != AVERROR_EOF) {
 			/* wait for more frames */
-			pthread_mutex_lock (&player->aoplay_lock);
-			pthread_cond_wait (&player->aoplay_cond, &player->aoplay_lock);
-			pthread_mutex_unlock (&player->aoplay_lock);
+			pthread_mutex_lock (&player->aoplayLock);
+			pthread_cond_wait (&player->aoplayCond, &player->aoplayLock);
+			pthread_mutex_unlock (&player->aoplayLock);
 			continue;
 		} else if (ret == AVERROR_EOF || shouldQuit(player)){
 			break;
@@ -540,10 +540,10 @@ void *BarAoPlayThread (void *data) {
 		}
 		pthread_mutex_unlock (&player->lock);
 
-		pthread_mutex_lock (&player->aoplay_lock);
+		pthread_mutex_lock (&player->aoplayLock);
 		player->lastTimestamp = filteredFrame->pts;
-		pthread_cond_broadcast (&player->aoplay_cond);
-		pthread_mutex_unlock (&player->aoplay_lock);
+		pthread_cond_broadcast (&player->aoplayCond);
+		pthread_mutex_unlock (&player->aoplayLock);
 
 		av_frame_unref (filteredFrame);
 	}
