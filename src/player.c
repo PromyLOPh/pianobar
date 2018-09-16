@@ -77,8 +77,10 @@ static void printError (const BarSettings_t * const settings,
 void BarPlayerInit (player_t * const p, const BarSettings_t * const settings) {
 	ao_initialize ();
 	av_log_set_level (AV_LOG_FATAL);
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	av_register_all ();
 	avfilter_register_all ();
+#endif
 	avformat_network_init ();
 
 	pthread_mutex_init (&p->lock, NULL);
