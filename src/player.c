@@ -70,16 +70,19 @@ static void printError (const BarSettings_t * const settings,
 }
 
 /*	global initialization
- *
- *	XXX: in theory we can select the filters/formats we want to support, but
- *	this does not work in practise.
  */
 void BarPlayerInit (player_t * const p, const BarSettings_t * const settings) {
 	ao_initialize ();
 	av_log_set_level (AV_LOG_FATAL);
+#ifdef HAVE_AV_REGISTER_ALL
 	av_register_all ();
+#endif
+#ifdef HAVE_AVFILTER_REGISTER_ALL
 	avfilter_register_all ();
+#endif
+#ifdef HAVE_AVFORMAT_NETWORK_INIT
 	avformat_network_init ();
+#endif
 
 	pthread_mutex_init (&p->lock, NULL);
 	pthread_cond_init (&p->cond, NULL);
@@ -95,7 +98,9 @@ void BarPlayerDestroy (player_t * const p) {
 	pthread_cond_destroy (&p->aoplayCond);
 	pthread_mutex_destroy (&p->aoplayLock);
 
+#ifdef HAVE_AVFORMAT_NETWORK_INIT
 	avformat_network_deinit ();
+#endif
 	ao_shutdown ();
 }
 
