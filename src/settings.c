@@ -163,7 +163,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->volume = 0;
 	settings->timeout = 30; /* seconds */
 	settings->gainMul = 1.0;
-	settings->maxRetry = 3;
+	/* should be > 4, otherwise expired audio urls (403) can stop playback */
+	settings->maxRetry = 5;
 	settings->sortOrder = BAR_SORT_NAME_AZ;
 	settings->loveIcon = strdup (" <3");
 	settings->banIcon = strdup (" </3");

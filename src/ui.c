@@ -250,7 +250,7 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 			free (buffer.data);
 			buffer.data = NULL;
 			buffer.pos = 0;
-			if (retry > settings->maxRetry) {
+			if (retry >= settings->maxRetry) {
 				break;
 			}
 		} else {
