@@ -165,6 +165,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->gainMul = 1.0;
 	/* should be > 4, otherwise expired audio urls (403) can stop playback */
 	settings->maxRetry = 5;
+	settings->bufferSecs = 5;
 	settings->sortOrder = BAR_SORT_NAME_AZ;
 	settings->loveIcon = strdup (" <3");
 	settings->banIcon = strdup (" </3");
@@ -343,6 +344,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->maxRetry = atoi (val);
 			} else if (streq ("timeout", key)) {
 				settings->timeout = atoi (val);
+			} else if (streq ("buffer_seconds", key)) {
+				settings->bufferSecs = atoi (val);
 			} else if (streq ("sort", key)) {
 				size_t i;
 				static const char *mapping[] = {"name_az",

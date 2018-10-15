@@ -367,6 +367,7 @@ BarPlayerMode BarPlayerGetMode (player_t * const player) {
  */
 static int play (player_t * const player) {
 	assert (player != NULL);
+	const int64_t minBufferHealth = player->settings->bufferSecs;
 
 	AVPacket pkt;
 	AVCodecContext * const cctx = player->cctx;
@@ -434,7 +435,6 @@ static int play (player_t * const player) {
 			pthread_mutex_unlock (&player->aoplayLock);
 			
 			int64_t bufferHealth = 0;
-			const int64_t minBufferHealth = 4; /* in seconds */
 			do {
 				pthread_mutex_lock (&player->aoplayLock);
 				bufferHealth = av_q2d (player->st->time_base) * 
