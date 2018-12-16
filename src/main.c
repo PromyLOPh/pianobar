@@ -51,6 +51,7 @@ THE SOFTWARE.
 #include <piano.h>
 
 #include "main.h"
+#include "debug.h"
 #include "terminal.h"
 #include "ui.h"
 #include "ui_dispatch.h"
@@ -401,6 +402,7 @@ sig_atomic_t *interrupted = NULL;
 
 static void intHandler (int signal) {
 	if (interrupted != NULL) {
+		debugPrint(DEBUG_UI, "Received ^C\n");
 		*interrupted += 1;
 	}
 }
@@ -416,6 +418,8 @@ static void BarMainSetupSigaction () {
 
 int main (int argc, char **argv) {
 	static BarApp_t app;
+
+	debugEnable();
 
 	memset (&app, 0, sizeof (app));
 

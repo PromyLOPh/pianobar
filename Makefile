@@ -24,6 +24,7 @@ endif
 PIANOBAR_DIR:=src
 PIANOBAR_SRC:=\
 		${PIANOBAR_DIR}/main.c \
+		${PIANOBAR_DIR}/debug.c \
 		${PIANOBAR_DIR}/player.c \
 		${PIANOBAR_DIR}/settings.c \
 		${PIANOBAR_DIR}/terminal.c \
