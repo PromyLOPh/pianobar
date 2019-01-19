@@ -528,6 +528,7 @@ void *BarAoPlayThread (void *data) {
 			break;
 		} else if (ret < 0) {
 			/* wait for more frames */
+			pthread_cond_broadcast (&player->aoplayCond);
 			pthread_cond_wait (&player->aoplayCond, &player->aoplayLock);
 			pthread_mutex_unlock (&player->aoplayLock);
 			continue;
