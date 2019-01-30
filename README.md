@@ -1,6 +1,6 @@
 # pianobar
 
-pianobar is a console client for the personalized web radio [Pandora](http://www.pandora.com).
+pianobar is a console client for the personalized web radio [Pandora](https://www.pandora.com).
 
 ### Features
 
@@ -13,9 +13,9 @@ pianobar is a console client for the personalized web radio [Pandora](http://www
 
 ### Source Code
 
-The source code can be downloaded at [github.com](http://github.com/PromyLOPh/pianobar/)
-or [6xq.net](http://6xq.net/projects/pianobar/).
+The source code can be downloaded at [github.com](https://github.com/PromyLOPh/pianobar)
+or [6xq.net](https://6xq.net/pianobar/).
 
 ### Download/Installation
 
-There are community provided packages available for most Linux distributions (see your distribution’s package manager), Mac OS X ([MacPorts](http://trac.macports.org/browser/trunk/dports/audio/pianobar/Portfile) or [homebrew](http://brew.sh/)) and *BSD as well as a [native Windows port](https://github.com/thedmd/pianobar-windows).
+There are community provided packages available for most Linux distributions (see your distribution’s package manager), macOS ([MacPorts](https://www.macports.org) or [Homebrew](https://brew.sh)) and *BSD as well as a [native Windows port](https://github.com/thedmd/pianobar-windows).
