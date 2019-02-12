@@ -382,6 +382,7 @@ static int play (player_t * const player) {
 	pthread_create (&aoplaythread, NULL, BarAoPlayThread, player);
 	enum { FILL, DRAIN, DONE } drainMode = FILL;
 	int ret = 0;
+	const double timeBase = av_q2d (player->st->time_base);
 	while (!shouldQuit (player) && drainMode != DONE) {
 		if (drainMode == FILL) {
 			ret = av_read_frame (player->fctx, &pkt);
@@ -437,8 +438,7 @@ static int play (player_t * const player) {
 			int64_t bufferHealth = 0;
 			do {
 				pthread_mutex_lock (&player->aoplayLock);
-				bufferHealth = av_q2d (player->st->time_base) * 
-						(double) (frame->pts - player->lastTimestamp);
+				bufferHealth = timeBase * (double) (frame->pts - player->lastTimestamp);
 				if (bufferHealth > minBufferHealth) {
 					/* Buffer get healthy, resume */
 					pthread_cond_broadcast (&player->aoplayCond);
@@ -519,7 +519,8 @@ void *BarAoPlayThread (void *data) {
 	assert (filteredFrame != NULL);
 
 	int ret;
-	const AVRational timeBase = av_buffersink_get_time_base (player->fbufsink);
+	const double timeBase = av_q2d (av_buffersink_get_time_base (player->fbufsink)),
+			timeBaseSt = av_q2d (player->st->time_base);
 	while (!shouldQuit(player)) {
 		pthread_mutex_lock (&player->aoplayLock);
 		ret = av_buffersink_get_frame (player->fbufsink, filteredFrame);
@@ -542,10 +543,8 @@ void *BarAoPlayThread (void *data) {
 		ao_play (player->aoDev, (char *) filteredFrame->data[0],
 				filteredFrame->nb_samples * numChannels * bps);
 
-		/* we could also use av_q2d here and use double arithmetic */
-		const AVRational ptsQ = av_make_q (filteredFrame->pts, 1);
-		const AVRational timestampQ = av_mul_q (timeBase, ptsQ);
-		const unsigned int songPlayed = timestampQ.num/timestampQ.den;
+		const double timestamp = (double) filteredFrame->pts * timeBase;
+		const unsigned int songPlayed = timestamp;
 
 		pthread_mutex_lock (&player->lock);
 		player->songPlayed = songPlayed;
@@ -559,8 +558,7 @@ void *BarAoPlayThread (void *data) {
 
 		/* lastTimestamp must be the last pts, but expressed in terms of
 		 * st->time_base, not the sink’s time_base. */
-		AVRational lastTimestampQ = av_mul_q (timestampQ, av_inv_q (player->st->time_base));
-		const int64_t lastTimestamp = lastTimestampQ.num/lastTimestampQ.den;
+		const int64_t lastTimestamp = timestamp/timeBaseSt;
 		/* notify download thread, we might need more data */
 		pthread_mutex_lock (&player->aoplayLock);
 		player->lastTimestamp = lastTimestamp;
