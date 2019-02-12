@@ -275,14 +275,14 @@ static bool openFilter (player_t * const player) {
 			av_get_sample_fmt_name (player->cctx->sample_fmt),
 			cp->channel_layout);
 	if ((ret = avfilter_graph_create_filter (&player->fabuf,
-			avfilter_get_by_name ("abuffer"), NULL, strbuf, NULL,
+			avfilter_get_by_name ("abuffer"), "source", strbuf, NULL,
 			player->fgraph)) < 0) {
 		softfail ("create_filter abuffer");
 	}
 
 	/* volume */
 	if ((ret = avfilter_graph_create_filter (&player->fvolume,
-			avfilter_get_by_name ("volume"), NULL, "0dB", NULL,
+			avfilter_get_by_name ("volume"), "volume", "0dB", NULL,
 			player->fgraph)) < 0) {
 		softfail ("create_filter volume");
 	}
@@ -292,14 +292,14 @@ static bool openFilter (player_t * const player) {
 	snprintf (strbuf, sizeof (strbuf), "sample_fmts=%s",
 			av_get_sample_fmt_name (avformat));
 	if ((ret = avfilter_graph_create_filter (&fafmt,
-					avfilter_get_by_name ("aformat"), NULL, strbuf, NULL,
+					avfilter_get_by_name ("aformat"), "format", strbuf, NULL,
 					player->fgraph)) < 0) {
 		softfail ("create_filter aformat");
 	}
 
 	/* abuffersink */
 	if ((ret = avfilter_graph_create_filter (&player->fbufsink,
-			avfilter_get_by_name ("abuffersink"), NULL, NULL, NULL,
+			avfilter_get_by_name ("abuffersink"), "sink", NULL, NULL,
 			player->fgraph)) < 0) {
 		softfail ("create_filter abuffersink");
 	}
