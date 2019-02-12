@@ -519,6 +519,7 @@ void *BarAoPlayThread (void *data) {
 	assert (filteredFrame != NULL);
 
 	int ret;
+	const AVRational timeBase = av_buffersink_get_time_base (player->fbufsink);
 	while (!shouldQuit(player)) {
 		pthread_mutex_lock (&player->aoplayLock);
 		ret = av_buffersink_get_frame (player->fbufsink, filteredFrame);
@@ -541,11 +542,13 @@ void *BarAoPlayThread (void *data) {
 		ao_play (player->aoDev, (char *) filteredFrame->data[0],
 				filteredFrame->nb_samples * numChannels * bps);
 
-		const unsigned int songPlayed = av_q2d (player->st->time_base) * 
-				(double) filteredFrame->pts;
+		/* we could also use av_q2d here and use double arithmetic */
+		const AVRational ptsQ = av_make_q (filteredFrame->pts, 1);
+		const AVRational timestampQ = av_mul_q (timeBase, ptsQ);
+		const unsigned int songPlayed = timestampQ.num/timestampQ.den;
+
 		pthread_mutex_lock (&player->lock);
 		player->songPlayed = songPlayed;
-
 		/* pausing */
 		if (player->doPause) {
 			do {
