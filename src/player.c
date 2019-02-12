@@ -557,9 +557,13 @@ void *BarAoPlayThread (void *data) {
 		}
 		pthread_mutex_unlock (&player->lock);
 
+		/* lastTimestamp must be the last pts, but expressed in terms of
+		 * st->time_base, not the sink’s time_base. */
+		AVRational lastTimestampQ = av_mul_q (timestampQ, av_inv_q (player->st->time_base));
+		const int64_t lastTimestamp = lastTimestampQ.num/lastTimestampQ.den;
 		/* notify download thread, we might need more data */
 		pthread_mutex_lock (&player->aoplayLock);
-		player->lastTimestamp = filteredFrame->pts;
+		player->lastTimestamp = lastTimestamp;
 		pthread_cond_broadcast (&player->aoplayCond);
 		pthread_mutex_unlock (&player->aoplayLock);
 
