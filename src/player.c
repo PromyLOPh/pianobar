@@ -350,6 +350,7 @@ static bool openDevice (player_t * const player) {
       BarUiMsg(player->settings, MSG_ERR, "File is not a pipe, error.\n");
       return false;
     }
+    close(fd);
     driver = ao_driver_id("raw");
     if ((player->aoDev = ao_open_file(driver, player->settings->audioPipe, 1, &aoFmt, NULL)) == NULL) {
       BarUiMsg(player->settings, MSG_ERR, "Cannot open audio pipe file.\n");
