@@ -125,6 +125,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->npStationFormat);
 	free (settings->listSongFormat);
 	free (settings->fifo);
+  free (settings->audioPipe);
 	free (settings->rpcHost);
 	free (settings->rpcTlsPort);
 	free (settings->partnerUser);
@@ -182,6 +183,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->inkey = strdup ("R=U!LH$O2B#");
 	settings->outkey = strdup ("6#26FRL$ZWD");
 	settings->fifo = BarGetXdgConfigDir (PACKAGE "/ctl");
+  settings->audioPipe = NULL;
 	assert (settings->fifo != NULL);
 
 	settings->msgFormat[MSG_NONE].prefix = NULL;
@@ -389,6 +391,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 			} else if (streq ("fifo", key)) {
 				free (settings->fifo);
 				settings->fifo = BarSettingsExpandTilde (val, userhome);
+			} else if (streq ("audio_pipe", key)) {
+				free (settings->audioPipe);
+				settings->audioPipe = BarSettingsExpandTilde (val, userhome);
 			} else if (streq ("autoselect", key)) {
 				settings->autoselect = atoi (val);
 			} else if (strncmp (formatMsgPrefix, key,
