@@ -337,7 +337,7 @@ static bool openDevice (player_t * const player) {
   if (player->settings->audioPipe) {
     // using audio pipe
     struct stat st;
-    int fd = open(player->settings->audioPipe, O_RDONLY);
+    int fd = open(player->settings->audioPipe, O_RDWR);
     if (fd < 0) {
       BarUiMsg(player->settings, MSG_ERR, "Cannot open audio pipe file.\n");
       return false;
