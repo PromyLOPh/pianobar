@@ -49,6 +49,7 @@
 #volume = 0
 #ca_bundle = /etc/ssl/certs/ca-certificates.crt
 #gain_mul = 1.0
+#audio_pipe = /tmp/mypipe
 
 # Format strings
 #format_nowplaying_song = [32m%t[0m by [34m%a[0m on %l[31m%r[0m%@%s
