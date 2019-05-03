@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include <ao/ao.h>
 #include <libavformat/avformat.h>
 #include <libavfilter/avfilter.h>
+#include <libswresample/swresample.h>
 #include <piano.h>
 
 #include "settings.h"
@@ -70,6 +71,7 @@ typedef struct {
 	AVStream *st;
 	AVCodecContext *cctx;
 	AVFilterContext *fbufsink, *fabuf;
+  SwrContext *swrctx;
 	int streamIdx;
 	int64_t lastTimestamp;
 	sig_atomic_t interrupted;
