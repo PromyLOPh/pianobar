@@ -337,12 +337,7 @@ static bool openDevice (player_t * const player) {
 	if (player->settings->audioPipe) {
 	  // using audio pipe
 	  struct stat st;
-	  int fd = open(player->settings->audioPipe, O_RDWR);
-	  if (fd < 0) {
-	    BarUiMsg(player->settings, MSG_ERR, "Cannot open audio pipe file.\n");
-	    return false;
-	  }
-	  if (fstat(fd, &st)) {
+	  if (stat(player->settings->audioPipe, &st)) {
 	    BarUiMsg(player->settings, MSG_ERR, "Cannot stat audio pipe file.\n");
 	    return false;
 	  }
@@ -350,7 +345,6 @@ static bool openDevice (player_t * const player) {
 	    BarUiMsg(player->settings, MSG_ERR, "File is not a pipe, error.\n");
 	    return false;
 	  }
-	  close(fd);
 	  driver = ao_driver_id("raw");
 	  if ((player->aoDev = ao_open_file(driver, player->settings->audioPipe, 1, &aoFmt, NULL)) == NULL) {
 	    BarUiMsg(player->settings, MSG_ERR, "Cannot open audio pipe file.\n");
