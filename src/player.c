@@ -473,7 +473,7 @@ static void finish (player_t * const player) {
 		avformat_close_input (&player->fctx);
 	}
 	if (player->swrctx != NULL) {
-	  swr_close(player->swrctx);
+		swr_close(player->swrctx);
 	}
 }
 
@@ -531,7 +531,6 @@ void *BarAoPlayThread (void *data) {
 	while (!shouldQuit(player)) {
 		pthread_mutex_lock (&player->aoplayLock);
 
-	  // NOTE samples are gotten here
 		ret = av_buffersink_get_frame (player->fbufsink, filteredFrame);
 
 		if (ret == AVERROR_EOF || shouldQuit (player)) {
@@ -546,28 +545,28 @@ void *BarAoPlayThread (void *data) {
 			continue;
 		}
 
-	  // same channel layout and format assumed
-	  resampledFrame->channel_layout = filteredFrame->channel_layout;
-	  resampledFrame->format = filteredFrame->format;
-	  resampledFrame->sample_rate = player->settings->sampleRate;
-	  ret = swr_config_frame(player->swrctx, resampledFrame, filteredFrame);
-	  if (ret) {
-	    // ERROR
-	    pthread_mutex_unlock(&player->aoplayLock);
-	    break;
-	  }
+		// same channel layout and format assumed
+		resampledFrame->channel_layout = filteredFrame->channel_layout;
+		resampledFrame->format = filteredFrame->format;
+		resampledFrame->sample_rate = player->settings->sampleRate;
+		ret = swr_config_frame(player->swrctx, resampledFrame, filteredFrame);
+		if (ret) {
+		  // ERROR
+		  pthread_mutex_unlock(&player->aoplayLock);
+		  break;
+		}
 
-	  // resample frame
-	  ret = swr_convert_frame(player->swrctx, resampledFrame, filteredFrame);
-	  if (ret) {
-	    pthread_mutex_unlock(&player->aoplayLock);
-	    break;
-	  }
+		// resample frame
+		ret = swr_convert_frame(player->swrctx, resampledFrame, filteredFrame);
+		if (ret) {
+		  pthread_mutex_unlock(&player->aoplayLock);
+		  break;
+		}
 
 		pthread_mutex_unlock (&player->aoplayLock);
-	  const int numChannels = av_get_channel_layout_nb_channels (
-	                  resampledFrame->channel_layout);
-	  const int bps = av_get_bytes_per_sample (resampledFrame->format);
+		const int numChannels = av_get_channel_layout_nb_channels (
+		                resampledFrame->channel_layout);
+		const int bps = av_get_bytes_per_sample (resampledFrame->format);
 		ao_play (player->aoDev, (char *) resampledFrame->data[0],
 				resampledFrame->nb_samples * numChannels * bps);
 
@@ -594,7 +593,7 @@ void *BarAoPlayThread (void *data) {
 		pthread_mutex_unlock (&player->aoplayLock);
 
 		av_frame_unref (filteredFrame);
-	  av_frame_unref (resampledFrame);
+		av_frame_unref (resampledFrame);
 	}
 	av_frame_free (&filteredFrame);
 	av_frame_free (&resampledFrame);
