@@ -289,8 +289,8 @@ static bool openFilter (player_t * const player) {
 
 	/* aformat: convert float samples into something more usable */
 	AVFilterContext *fafmt = NULL;
-	snprintf (strbuf, sizeof (strbuf), "sample_fmts=%s",
-			av_get_sample_fmt_name (avformat));
+	snprintf (strbuf, sizeof (strbuf), "sample_fmts=%s:sample_rates=%d",
+			av_get_sample_fmt_name (avformat), player->settings->sampleRate);
 	if ((ret = avfilter_graph_create_filter (&fafmt,
 					avfilter_get_by_name ("aformat"), "format", strbuf, NULL,
 					player->fgraph)) < 0) {
