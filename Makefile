@@ -44,8 +44,8 @@ LIBPIANO_OBJ:=${LIBPIANO_SRC:.c=.o}
 LIBPIANO_RELOBJ:=${LIBPIANO_SRC:.c=.lo}
 LIBPIANO_INCLUDE:=${LIBPIANO_DIR}
 
-LIBAV_CFLAGS:=$(shell pkg-config --cflags libavcodec libavformat libavutil libavfilter libswresample)
-LIBAV_LDFLAGS:=$(shell pkg-config --libs libavcodec libavformat libavutil libavfilter libswresample)
+LIBAV_CFLAGS:=$(shell pkg-config --cflags libavcodec libavformat libavutil libavfilter)
+LIBAV_LDFLAGS:=$(shell pkg-config --libs libavcodec libavformat libavutil libavfilter)
 
 LIBCURL_CFLAGS:=$(shell pkg-config --cflags libcurl)
 LIBCURL_LDFLAGS:=$(shell pkg-config --libs libcurl)
