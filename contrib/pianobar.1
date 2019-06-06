@@ -180,6 +180,12 @@ Replacement for %@ in station format string. It's " @ " by default.
 Select audio quality.
 
 .TP
+.B audio_pipe = /path/to/fifo
+Stream decoded, raw audio samples to a pipe instead of the default audio device. Use
+.B sample_rate
+to enforce a fixed sample rate.
+
+.TP
 .B autoselect = {1,0}
 Auto-select last remaining item of filtered list. Currently enabled for station
 selection only.

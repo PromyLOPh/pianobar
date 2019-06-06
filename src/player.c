@@ -38,9 +38,11 @@ THE SOFTWARE.
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <assert.h>
 #include <arpa/inet.h>
+#include <sys/stat.h>
 
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
@@ -340,10 +342,30 @@ static bool openDevice (player_t * const player) {
 	aoFmt.rate = getSampleRate (player);
 	aoFmt.byte_format = AO_FMT_NATIVE;
 
-	int driver = ao_default_driver_id ();
-	if ((player->aoDev = ao_open_live (driver, &aoFmt, NULL)) == NULL) {
-		BarUiMsg (player->settings, MSG_ERR, "Cannot open audio device.\n");
-		return false;
+	int driver = -1;
+	if (player->settings->audioPipe) {
+		// using audio pipe
+		struct stat st;
+		if (stat (player->settings->audioPipe, &st)) {
+			BarUiMsg (player->settings, MSG_ERR, "Cannot stat audio pipe file.\n");
+			return false;
+		}
+		if (!S_ISFIFO (st.st_mode)) {
+			BarUiMsg (player->settings, MSG_ERR, "File is not a pipe, error.\n");
+			return false;
+		}
+		driver = ao_driver_id ("raw");
+		if ((player->aoDev = ao_open_file(driver, player->settings->audioPipe, 1, &aoFmt, NULL)) == NULL) {
+			BarUiMsg (player->settings, MSG_ERR, "Cannot open audio pipe file.\n");
+			return false;
+		}
+	} else {
+		// use driver from libao configuration
+		driver = ao_default_driver_id ();
+		if ((player->aoDev = ao_open_live (driver, &aoFmt, NULL)) == NULL) {
+			BarUiMsg (player->settings, MSG_ERR, "Cannot open audio device.\n");
+			return false;
+		}
 	}
 
 	return true;

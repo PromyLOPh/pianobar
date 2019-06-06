@@ -103,6 +103,7 @@ typedef struct {
 	char *listSongFormat;
 	char *fifo;
 	char *rpcHost, *rpcTlsPort, *partnerUser, *partnerPassword, *device, *inkey, *outkey, *caBundle;
+	char *audioPipe;
 	char keys[BAR_KS_COUNT];
 	int sampleRate;
 	BarMsgFormatStr_t msgFormat[MSG_COUNT];
