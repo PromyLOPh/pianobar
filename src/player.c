@@ -254,6 +254,15 @@ static bool openStream (player_t * const player) {
 	return true;
 }
 
+/*	Get output sample rate. Default to stream sample rate
+ */
+static int getSampleRate (const player_t * const player) {
+	AVCodecParameters const * const cp = player->st->codecpar;
+	return player->settings->sampleRate == 0 ?
+			cp->sample_rate :
+			player->settings->sampleRate;
+}
+
 /*	setup filter chain
  */
 static bool openFilter (player_t * const player) {
@@ -289,8 +298,8 @@ static bool openFilter (player_t * const player) {
 
 	/* aformat: convert float samples into something more usable */
 	AVFilterContext *fafmt = NULL;
-	snprintf (strbuf, sizeof (strbuf), "sample_fmts=%s",
-			av_get_sample_fmt_name (avformat));
+	snprintf (strbuf, sizeof (strbuf), "sample_fmts=%s:sample_rates=%d",
+			av_get_sample_fmt_name (avformat), getSampleRate (player));
 	if ((ret = avfilter_graph_create_filter (&fafmt,
 					avfilter_get_by_name ("aformat"), "format", strbuf, NULL,
 					player->fgraph)) < 0) {
@@ -328,7 +337,7 @@ static bool openDevice (player_t * const player) {
 	aoFmt.bits = av_get_bytes_per_sample (avformat) * 8;
 	assert (aoFmt.bits > 0);
 	aoFmt.channels = cp->channels;
-	aoFmt.rate = cp->sample_rate;
+	aoFmt.rate = getSampleRate (player);
 	aoFmt.byte_format = AO_FMT_NATIVE;
 
 	int driver = ao_default_driver_id ();

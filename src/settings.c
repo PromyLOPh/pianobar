@@ -183,6 +183,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->outkey = strdup ("6#26FRL$ZWD");
 	settings->fifo = BarGetXdgConfigDir (PACKAGE "/ctl");
 	assert (settings->fifo != NULL);
+	settings->sampleRate = 0; /* default to stream sample rate */
 
 	settings->msgFormat[MSG_NONE].prefix = NULL;
 	settings->msgFormat[MSG_NONE].postfix = NULL;
@@ -391,6 +392,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->fifo = BarSettingsExpandTilde (val, userhome);
 			} else if (streq ("autoselect", key)) {
 				settings->autoselect = atoi (val);
+			} else if (streq ("sample_rate", key)) {
+				settings->sampleRate = atoi (val);
 			} else if (strncmp (formatMsgPrefix, key,
 					strlen (formatMsgPrefix)) == 0) {
 				static const char *mapping[] = {"none", "info", "nowplaying",
