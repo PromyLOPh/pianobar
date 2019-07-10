@@ -298,6 +298,11 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					return PIANO_RET_OUT_OF_MEMORY;
 				}
 
+				if (json_object_object_get_ex (s, "adToken", NULL)) {
+					song->adToken = PianoJsonStrdup (s, "adToken");
+					playlist = PianoListAppendP (playlist, song);
+					continue;
+				}
 				if (!json_object_object_get_ex (s, "artistName", NULL)) {
 					free (song);
 					continue;
@@ -342,7 +347,6 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				song->stationId = PianoJsonStrdup (s, "stationId");
 				song->coverArt = PianoJsonStrdup (s, "albumArtUrl");
 				song->detailUrl = PianoJsonStrdup (s, "songDetailUrl");
-				song->adToken = PianoJsonStrdup (s, "adToken");
 				song->fileGain = json_object_object_get_ex (s, "trackGain", &v) ?
 						json_object_get_double (v) : 0.0;
 				song->length = json_object_object_get_ex (s, "trackLength", &v) ?
