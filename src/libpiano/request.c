@@ -117,6 +117,9 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			/* get stations, user must be authenticated */
 			assert (ph->user.listenerId != NULL);
 
+			json_object_object_add (j, "returnAllStations",
+					json_object_new_boolean (true));
+
 			method = "user.getStationList";
 			break;
 		}
