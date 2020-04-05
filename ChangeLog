@@ -1,3 +1,9 @@
+Release 2020.04.05
+
+- Support writing audio to named pipe (audio_pipe)
+- Add resampling (sample_rate)
+- Fix station list not showing more than 95 stations
+
 Release 2019.02.14
 
 - Fix MP3 playback (affects premium subscribers with audio quality “high”)
