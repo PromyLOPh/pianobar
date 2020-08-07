@@ -183,6 +183,18 @@ static void PianoDestroyPartner (PianoPartner_t *partner) {
 	memset (partner, 0, sizeof (*partner));
 }
 
+void PianoDestroyStationMode (PianoStationMode_t * const modes) {
+	PianoStationMode_t *curMode = modes;
+
+	while (curMode != NULL) {
+		free (curMode->name);
+		free (curMode->description);
+		PianoStationMode_t * const lastMode = curMode;
+		curMode = (PianoStationMode_t *) curMode->head.next;
+		free (lastMode);
+	}
+}
+
 /*	frees the whole piano handle structure
  *	@param piano handle
  *	@return nothing

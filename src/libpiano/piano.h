@@ -155,6 +155,13 @@ typedef struct {
 	bool explicitContentFilter;
 } PianoSettings_t;
 
+typedef struct {
+	PianoListHead_t head;
+	char *name, *description;
+	bool isAlgorithmic, isTakeover, active;
+	int id;
+} PianoStationMode_t;
+
 typedef enum {
 	/* 0 is reserved: memset (x, 0, sizeof (x)) */
 	PIANO_REQUEST_LOGIN = 1,
@@ -179,6 +186,8 @@ typedef enum {
 	PIANO_REQUEST_DELETE_SEED = 22,
 	PIANO_REQUEST_GET_SETTINGS = 23,
 	PIANO_REQUEST_CHANGE_SETTINGS = 24,
+	PIANO_REQUEST_GET_STATION_MODES = 25,
+	PIANO_REQUEST_SET_STATION_MODE = 26,
 } PianoRequestType_t;
 
 typedef struct PianoRequest {
@@ -265,6 +274,16 @@ typedef struct {
 	char *currentPassword, *newPassword;
 	PianoTristate_t explicitContentFilter;
 } PianoRequestDataChangeSettings_t;
+
+typedef struct {
+	PianoStation_t *station;
+	PianoStationMode_t *retModes;
+} PianoRequestDataGetStationModes_t;
+
+typedef struct {
+	PianoStation_t *station;
+	unsigned int id;
+} PianoRequestDataSetStationMode_t;
 
 /* pandora error code offset */
 #define PIANO_RET_OFFSET 1024
@@ -355,6 +374,7 @@ void PianoDestroy (PianoHandle_t *);
 void PianoDestroyPlaylist (PianoSong_t *);
 void PianoDestroySearchResult (PianoSearchResult_t *);
 void PianoDestroyStationInfo (PianoStationInfo_t *);
+void PianoDestroyStationMode (PianoStationMode_t * const);
 
 /* pandora rpc */
 PianoReturn_t PianoRequest (PianoHandle_t *, PianoRequest_t *,

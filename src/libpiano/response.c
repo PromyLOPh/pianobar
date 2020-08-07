@@ -651,6 +651,66 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			}
 			break;
 		}
+
+		case PIANO_REQUEST_GET_STATION_MODES: {
+			PianoRequestDataGetStationModes_t *reqData = req->data;
+			assert (reqData != NULL);
+
+			int active = -1;
+
+			json_object *activeMode;
+			if (json_object_object_get_ex (result, "currentModeId", &activeMode)) {
+				active = json_object_get_int (activeMode);
+			}
+
+			json_object *availableModes;
+			if (json_object_object_get_ex (result, "availableModes", &availableModes)) {
+				for (int i = 0; i < json_object_array_length (availableModes); i++) {
+					json_object *val = json_object_array_get_idx (availableModes, i);
+
+					assert (json_object_is_type (val, json_type_object));
+
+					PianoStationMode_t *mode;
+					if ((mode = calloc (1, sizeof (*mode))) == NULL) {
+						return PIANO_RET_OUT_OF_MEMORY;
+					}
+
+					json_object *modeId;
+					if (json_object_object_get_ex (val, "modeId", &modeId)) {
+						mode->id = json_object_get_int (modeId);
+						mode->name = PianoJsonStrdup (val, "modeName");
+						mode->description = PianoJsonStrdup (val, "modeDescription");
+						mode->isAlgorithmic = getBoolDefault (val, "isAlgorithmicMode",
+								false);
+						mode->isTakeover = getBoolDefault (val, "isTakeoverMode",
+								false);
+						mode->active = active == mode->id;
+					}
+
+					reqData->retModes = PianoListAppendP (reqData->retModes,
+							mode);
+				}
+			}
+			break;
+		}
+
+		case PIANO_REQUEST_SET_STATION_MODE: {
+			PianoRequestDataSetStationMode_t *reqData = req->data;
+			assert (reqData != NULL);
+
+			int active = -1;
+
+			json_object *activeMode;
+			if (json_object_object_get_ex (result, "currentModeId", &activeMode)) {
+				active = json_object_get_int (activeMode);
+			}
+
+			if (active != reqData->id) {
+				/* this did not work */
+				return PIANO_RET_ERR;
+			}
+			break;
+		}
 	}
 
 cleanup:
