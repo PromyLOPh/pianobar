@@ -60,6 +60,7 @@
 #tired_icon =  [33mzZ[0m
 #format_nowplaying_station = Station [35m%n[0m
 #format_list_song = %i) %a - %t%r (%d)%@%s
+#format_time = %e/%t
 
 #rpc_host = internal-tuner.pandora.com
 #partner_user = pandora one

@@ -652,7 +652,7 @@ char *BarUiSelectMusicId (BarApp_t *app, PianoStation_t *station,
  *	@param format characters
  *	@param replacement for each given format character
  */
-static void BarUiCustomFormat (char *dest, size_t destSize, const char *format,
+void BarUiCustomFormat (char *dest, size_t destSize, const char *format,
 		const char *formatChars, const char **formatVals) {
 	bool haveFormatChar = false;
 

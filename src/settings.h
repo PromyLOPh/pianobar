@@ -100,7 +100,7 @@ typedef struct {
 	char *atIcon;
 	char *npSongFormat;
 	char *npStationFormat;
-	char *listSongFormat;
+	char *listSongFormat, *timeFormat;
 	char *fifo;
 	char *rpcHost, *rpcTlsPort, *partnerUser, *partnerPassword, *device, *inkey, *outkey, *caBundle;
 	char *audioPipe;

@@ -124,6 +124,7 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->npSongFormat);
 	free (settings->npStationFormat);
 	free (settings->listSongFormat);
+	free (settings->timeFormat);
 	free (settings->fifo);
 	free (settings->audioPipe);
 	free (settings->rpcHost);
@@ -175,6 +176,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->npSongFormat = strdup ("\"%t\" by \"%a\" on \"%l\"%r%@%s");
 	settings->npStationFormat = strdup ("Station \"%n\" (%i)");
 	settings->listSongFormat = strdup ("%i) %a - %t%r");
+	settings->timeFormat = strdup ("%s%r/%t");
 	settings->rpcHost = strdup (PIANO_RPC_HOST);
 	settings->rpcTlsPort = strdup ("443");
 	settings->partnerUser = strdup ("android");
@@ -389,6 +391,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 			} else if (streq ("format_list_song", key)) {
 				free (settings->listSongFormat);
 				settings->listSongFormat = strdup (val);
+			} else if (streq ("format_time", key)) {
+				free (settings->timeFormat);
+				settings->timeFormat = strdup (val);
 			} else if (streq ("fifo", key)) {
 				free (settings->fifo);
 				settings->fifo = BarSettingsExpandTilde (val, userhome);

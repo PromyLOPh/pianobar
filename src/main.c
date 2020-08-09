@@ -312,7 +312,7 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
  */
 static void BarMainPrintTime (BarApp_t *app) {
 	unsigned int songRemaining;
-	char sign;
+	char sign[2] = {0, 0};
 	player_t * const player = &app->player;
 
 	pthread_mutex_lock (&player->lock);
@@ -322,15 +322,26 @@ static void BarMainPrintTime (BarApp_t *app) {
 
 	if (songPlayed <= songDuration) {
 		songRemaining = songDuration - songPlayed;
-		sign = '-';
+		sign[0] = '-';
 	} else {
 		/* longer than expected */
 		songRemaining = songPlayed - songDuration;
-		sign = '+';
+		sign[0] = '+';
 	}
-	BarUiMsg (&app->settings, MSG_TIME, "%c%02u:%02u/%02u:%02u\r",
-			sign, songRemaining / 60, songRemaining % 60,
-			songDuration / 60, songDuration % 60);
+
+	char outstr[512], totalFormatted[16], remainingFormatted[16],
+			elapsedFormatted[16];
+	const char *vals[] = {totalFormatted, remainingFormatted,
+			elapsedFormatted, sign};
+	snprintf (totalFormatted, sizeof (totalFormatted), "%02u:%02u",
+			songDuration/60, songDuration%60);
+	snprintf (remainingFormatted, sizeof (remainingFormatted), "%02u:%02u",
+			songRemaining/60, songRemaining%60);
+	snprintf (elapsedFormatted, sizeof (elapsedFormatted), "%02u:%02u",
+			songPlayed/60, songPlayed%60);
+	BarUiCustomFormat (outstr, sizeof (outstr), app->settings.timeFormat,
+			"tres", vals);
+	BarUiMsg (&app->settings, MSG_TIME, "%s\r", outstr);
 }
 
 /*	main loop
