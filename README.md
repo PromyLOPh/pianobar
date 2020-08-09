@@ -1,5 +1,7 @@
 # pianobar
 
+![build](https://github.com/PromyLOPh/pianobar/workflows/build/badge.svg)
+
 pianobar is a console client for the personalized web radio [Pandora](https://www.pandora.com).
 
 ### Features
