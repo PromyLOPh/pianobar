@@ -65,7 +65,7 @@ BarKeyShortcutId_t BarUiDispatch (BarApp_t *app, const char key, PianoStation_t 
 				return BAR_KS_COUNT;
 			}
 		} else if (app->settings.keys[i] != BAR_KS_DISABLED &&
-				app->settings.keys[i] == (key - 'a') &&
+				app->settings.keys[i] == (key - 'A' + 'a') &&
 				verbose) {
 			// if lower(key) is a valid command, gently notify the user
 			BarUiMsg(&app->settings, MSG_ERR, "Caps lock may be on, command not recognized\n");
