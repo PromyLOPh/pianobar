@@ -65,6 +65,7 @@ BarKeyShortcutId_t BarUiDispatch (BarApp_t *app, const char key, PianoStation_t 
 				return BAR_KS_COUNT;
 			}
 		} else if (app->settings.keys[i] != BAR_KS_DISABLED &&
+                key < 'a' && /* keep the next operation from overflowing */
 				app->settings.keys[i] == (key - 'A' + 'a') &&
 				verbose) {
 			// if lower(key) is a valid command, gently notify the user
