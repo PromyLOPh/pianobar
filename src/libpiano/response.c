@@ -77,7 +77,7 @@ static void PianoStrpcat (char * restrict dest, const char * restrict src,
 		--len;
 	}
 
-	/* append until source exhaused or destination full */
+	/* append until source exhausted or destination full */
 	while (*src != '\0' && len > 1) {
 		*dest = *src;
 		++dest;
