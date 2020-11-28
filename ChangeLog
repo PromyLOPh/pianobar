@@ -1,3 +1,9 @@
+Release 2020.11.28
+
+- Support changing station modes
+- Allow choosing time format
+- Add optional debug output
+
 Release 2020.04.05
 
 - Support writing audio to named pipe (audio_pipe)
