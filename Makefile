@@ -1,5 +1,6 @@
 # makefile of pianobar
 
+PKG_CONFIG?=pkg-config
 PREFIX:=/usr/local
 BINDIR:=${PREFIX}/bin
 LIBDIR:=${PREFIX}/lib
@@ -45,20 +46,20 @@ LIBPIANO_OBJ:=${LIBPIANO_SRC:.c=.o}
 LIBPIANO_RELOBJ:=${LIBPIANO_SRC:.c=.lo}
 LIBPIANO_INCLUDE:=${LIBPIANO_DIR}
 
-LIBAV_CFLAGS:=$(shell pkg-config --cflags libavcodec libavformat libavutil libavfilter)
-LIBAV_LDFLAGS:=$(shell pkg-config --libs libavcodec libavformat libavutil libavfilter)
+LIBAV_CFLAGS:=$(shell $(PKG_CONFIG) --cflags libavcodec libavformat libavutil libavfilter)
+LIBAV_LDFLAGS:=$(shell $(PKG_CONFIG) --libs libavcodec libavformat libavutil libavfilter)
 
-LIBCURL_CFLAGS:=$(shell pkg-config --cflags libcurl)
-LIBCURL_LDFLAGS:=$(shell pkg-config --libs libcurl)
+LIBCURL_CFLAGS:=$(shell $(PKG_CONFIG) --cflags libcurl)
+LIBCURL_LDFLAGS:=$(shell $(PKG_CONFIG) --libs libcurl)
 
 LIBGCRYPT_CFLAGS:=
 LIBGCRYPT_LDFLAGS:=-lgcrypt
 
-LIBJSONC_CFLAGS:=$(shell pkg-config --cflags json-c 2>/dev/null || pkg-config --cflags json)
-LIBJSONC_LDFLAGS:=$(shell pkg-config --libs json-c 2>/dev/null || pkg-config --libs json)
+LIBJSONC_CFLAGS:=$(shell $(PKG_CONFIG) --cflags json-c 2>/dev/null || $(PKG_CONFIG) --cflags json)
+LIBJSONC_LDFLAGS:=$(shell $(PKG_CONFIG) --libs json-c 2>/dev/null || $(PKG_CONFIG) --libs json)
 
-LIBAO_CFLAGS:=$(shell pkg-config --cflags ao)
-LIBAO_LDFLAGS:=$(shell pkg-config --libs ao)
+LIBAO_CFLAGS:=$(shell $(PKG_CONFIG) --cflags ao)
+LIBAO_LDFLAGS:=$(shell $(PKG_CONFIG) --libs ao)
 
 # combine all flags
 ALL_CFLAGS:=${CFLAGS} -I ${LIBPIANO_INCLUDE} \
