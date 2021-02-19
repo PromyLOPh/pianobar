@@ -646,22 +646,34 @@ BarUiActCallback(BarUiActBookmark) {
 /*	decrease volume
  */
 BarUiActCallback(BarUiActVolDown) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+
 	--app->settings.volume;
 	BarPlayerSetVolume (&app->player);
+	BarUiStartEventCmd (&app->settings, "volchange", NULL, NULL, &app->player, NULL, pRet, wRet);
 }
 
 /*	increase volume
  */
 BarUiActCallback(BarUiActVolUp) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+
 	++app->settings.volume;
 	BarPlayerSetVolume (&app->player);
+	BarUiStartEventCmd (&app->settings, "volchange", NULL, NULL, &app->player, NULL, pRet, wRet);
 }
 
 /*	reset volume
  */
 BarUiActCallback(BarUiActVolReset) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+
 	app->settings.volume = 0;
 	BarPlayerSetVolume (&app->player);
+	BarUiStartEventCmd (&app->settings, "volchange", NULL, NULL, &app->player, NULL, pRet, wRet);
 }
 
 static const char *boolToYesNo (const bool value) {
