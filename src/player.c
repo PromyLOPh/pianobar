@@ -401,12 +401,12 @@ BarPlayerMode BarPlayerGetMode (player_t * const player) {
 static int play (player_t * const player) {
 	assert (player != NULL);
 	const int64_t minBufferHealth = player->settings->bufferSecs;
-
-	AVPacket pkt;
 	AVCodecContext * const cctx = player->cctx;
-	av_init_packet (&pkt);
-	pkt.data = NULL;
-	pkt.size = 0;
+
+	AVPacket *pkt = av_packet_alloc ();
+	assert (pkt != NULL);
+	pkt->data = NULL;
+	pkt->size = 0;
 
 	AVFrame *frame = NULL;
 	frame = av_frame_alloc ();
@@ -418,15 +418,15 @@ static int play (player_t * const player) {
 	const double timeBase = av_q2d (player->st->time_base);
 	while (!shouldQuit (player) && drainMode != DONE) {
 		if (drainMode == FILL) {
-			ret = av_read_frame (player->fctx, &pkt);
+			ret = av_read_frame (player->fctx, pkt);
 			if (ret == AVERROR_EOF) {
 				/* enter drain mode */
 				drainMode = DRAIN;
 				avcodec_send_packet (cctx, NULL);
 				debugPrint (DEBUG_AUDIO, "decoder entering drain mode after EOF\n");
-			} else if (pkt.stream_index != player->streamIdx) {
+			} else if (pkt->stream_index != player->streamIdx) {
 				/* unused packet */
-				av_packet_unref (&pkt);
+				av_packet_unref (pkt);
 				continue;
 			} else if (ret < 0) {
 				/* error, abort */
@@ -441,7 +441,7 @@ static int play (player_t * const player) {
 				break;
 			} else {
 				/* fill buffer */
-				avcodec_send_packet (cctx, &pkt);
+				avcodec_send_packet (cctx, pkt);
 			}
 		}
 
@@ -490,9 +490,10 @@ static int play (player_t * const player) {
 			} while (bufferHealth > minBufferHealth);
 		}
 
-		av_packet_unref (&pkt);
+		av_packet_unref (pkt);
 	}
 	av_frame_free (&frame);
+	av_packet_free (&pkt);
 	debugPrint (DEBUG_AUDIO, "decoder is done, waiting for ao player\n");
 	pthread_join (aoplaythread, NULL);
 
