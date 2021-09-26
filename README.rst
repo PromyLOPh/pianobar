@@ -16,11 +16,12 @@ Features
 - play and manage (create, add more music, delete, rename, ...) stations
 - rate songs and explain why they have been selected
 - upcoming songs/song history
-- customize keybindings and text output
+- customize keybindings and text output (see `configuration example`_)
 - remote control and eventcmd interface (send tracks to last.fm_, for example)
 - proxy support for listeners outside the USA
 
 .. _last.fm: https://www.last.fm
+.. _configuration example: https://github.com/PromyLOPh/pianobar/blob/master/contrib/config-example
 
 Download
 --------
