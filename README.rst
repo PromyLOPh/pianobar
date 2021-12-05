@@ -181,10 +181,13 @@ pianobar.el_
     Emacs interface for pianobar
 `pianobar-mediaplayer2`_
     Control pianobar like any other media player through DBUS/MPRIS.
+PianobarNowPlayable_
+    Integrate pianobar with the Now Playing feature of macOS
 
 .. _control-pianobar: http://malabarba.github.io/control-pianobar/
 .. _pianobar.el: https://github.com/agrif/pianobar.el
 .. _pianobar-mediaplayer2: https://github.com/ryanswilson59/pianobar-mediaplayer2
+.. _PianobarNowPlayable: https://github.com/iDom818/PianobarNowPlayable
 
 Clients
 +++++++
