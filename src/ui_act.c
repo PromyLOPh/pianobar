@@ -814,14 +814,21 @@ BarUiActCallback(BarUiActManageStation) {
 		strcat (question, "[f]eedback");
 		*allowedPos++ = 'f';
 	}
-	/* station mode is always available */
 	if (allowedPos != allowedActions) {
 		strcat (question, "? ");
 	}
-	strcat (question, "Manage [m]ode? ");
-	*allowedPos++ = 'm';
+	/* station mode is not available for QuickMix. */
+	if (!selStation->isQuickMix) {
+		strcat (question, "Manage [m]ode? ");
+		*allowedPos++ = 'm';
+	}
 
 	*allowedPos = '\0';
+
+	if (allowedPos == allowedActions) {
+		BarUiMsg (&app->settings, MSG_INFO, "No actions available.\n");
+		return;
+	}
 
 	assert (strlen (question) < sizeof (question) / sizeof (*question));
 
