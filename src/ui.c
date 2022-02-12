@@ -171,6 +171,27 @@ int progressCb (void * const data, double dltotal, double dlnow,
 	}
 }
 
+/*	Error codes from libcurl, which may be temporary and should be retried.
+ */
+static bool temporaryCurlError (const CURLcode code) {
+	switch (code) {
+		case CURLE_COULDNT_RESOLVE_PROXY:
+		case CURLE_COULDNT_RESOLVE_HOST:
+		case CURLE_COULDNT_CONNECT:
+		case CURLE_WEIRD_SERVER_REPLY:
+		case CURLE_READ_ERROR:
+		case CURLE_OPERATION_TIMEDOUT:
+		case CURLE_SSL_CONNECT_ERROR:
+		case CURLE_GOT_NOTHING:
+		case CURLE_SEND_ERROR:
+		case CURLE_RECV_ERROR:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 #define setAndCheck(k,v) \
 	httpret = curl_easy_setopt (http, k, v); \
 	assert (httpret == CURLE_OK);
@@ -248,7 +269,7 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 	do {
 		httpret = curl_easy_perform (http);
 		++retry;
-		if (httpret == CURLE_OPERATION_TIMEDOUT) {
+		if (temporaryCurlError (httpret)) {
 			free (buffer.data);
 			buffer.data = NULL;
 			buffer.pos = 0;
