@@ -71,7 +71,7 @@ __ https://6xq.net/pianobar/pianobar-2020.11.28.tar.bz2.sha256
 __ https://6xq.net/pianobar/pianobar-2020.11.28.tar.bz2.asc
 .. _snapshot: http://github.com/PromyLOPh/pianobar/tarball/master
 .. _GitHub: http://github.com/PromyLOPh/pianobar/
-.. _gitweb: https://6xq.net/pianobar/git/
+.. _gitweb: https://6xq.net/git/lars/pianobar.git/
 .. _2020.04.05: https://6xq.net/pianobar/pianobar-2020.04.05.tar.bz2
 __ https://6xq.net/pianobar/pianobar-2020.04.05.tar.bz2.sha256
 __ https://6xq.net/pianobar/pianobar-2020.04.05.tar.bz2.asc
