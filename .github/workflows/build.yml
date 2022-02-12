@@ -13,8 +13,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: deps
-      run: sudo apt install libao-dev libavcodec-dev libavfilter-dev libavformat-dev libavutil-dev libcurl4-gnutls-dev libgcrypt20-dev libjson-c-dev libpth-dev pkg-config build-essential
-    - name: make
+    - name: Install dependencies
+      run: |
+          sudo apt-get update
+          sudo apt install libao-dev libavcodec-dev libavfilter-dev libavformat-dev libavutil-dev libcurl4-gnutls-dev libgcrypt20-dev libjson-c-dev libpth-dev pkg-config build-essential
+    - name: Build pianobar
       run: make
 
