@@ -785,7 +785,12 @@ BarUiActCallback(BarUiActManageStation) {
 	}
 
 	/* enable submenus depending on data availability */
-	strcpy (question, "Delete ");
+	if (reqData.info.artistSeeds != NULL ||
+			reqData.info.songSeeds != NULL ||
+			reqData.info.stationSeeds != NULL ||
+			reqData.info.feedback != NULL) {
+		strcpy (question, "Delete ");
+	}
 	if (reqData.info.artistSeeds != NULL) {
 		strcat (question, "[a]rtist");
 		*allowedPos++ = 'a';
