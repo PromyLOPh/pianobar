@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include <ao/ao.h>
 #include <libavformat/avformat.h>
 #include <libavfilter/avfilter.h>
+#include <libavcodec/avcodec.h>
 #include <piano.h>
 
 #include "settings.h"
