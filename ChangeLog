@@ -1,3 +1,10 @@
+Release 2022.04.01
+
+- Not a joke
+- Fix compilation with ffmpeg 5.0 and replace deprecated function
+- Improved retry handling with unreliable HTTP proxies
+- Minor UI improvements
+
 Release 2020.11.28
 
 - Support changing station modes
