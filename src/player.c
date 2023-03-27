@@ -533,7 +533,9 @@ void *BarPlayerThread (void *data) {
 			if (openFilter (player) && openDevice (player)) {
 				changeMode (player, PLAYER_PLAYING);
 				BarPlayerSetVolume (player);
-				retry = play (player) == AVERROR_INVALIDDATA &&
+				const int ret = play (player);
+				retry = (ret == AVERROR_INVALIDDATA ||
+						 ret == -ECONNRESET) &&
 						!player->interrupted;
 			} else {
 				/* filter missing or audio device busy */
