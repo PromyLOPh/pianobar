@@ -912,6 +912,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 				"wRetStr=%s\n"
 				"songDuration=%u\n"
 				"songPlayed=%u\n"
+				"volume=%i\n"
 				"rating=%i\n"
 				"detailUrl=%s\n",
 				curSong == NULL ? "" : curSong->artist,
@@ -926,6 +927,7 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 				curl_easy_strerror (wRet),
 				songDuration,
 				songPlayed,
+				settings->volume,
 				curSong == NULL ? PIANO_RATE_NONE : curSong->rating,
 				curSong == NULL ? "" : curSong->detailUrl
 				);
