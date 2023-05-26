@@ -187,11 +187,14 @@ pianobar.el_
     Control pianobar like any other media player through DBUS/MPRIS.
 PianobarNowPlayable_
     Integrate pianobar with the Now Playing feature of macOS
+tmux-pianobar_
+    A menu and status bar widget for Pianobar
 
 .. _control-pianobar: http://malabarba.github.io/control-pianobar/
 .. _pianobar.el: https://github.com/agrif/pianobar.el
 .. _pianobar-mediaplayer2: https://github.com/ryanswilson59/pianobar-mediaplayer2
 .. _PianobarNowPlayable: https://github.com/iDom818/PianobarNowPlayable
+.. _tmux-pianobar: https://github.com/GoHarder/tmux-pianobar
 
 Clients
 +++++++
