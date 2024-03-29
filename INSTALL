@@ -7,7 +7,7 @@ Dependencies
 - gmake
 - pthreads
 - libao
-- libcurl
+- libcurl>=7.32.0
 - gcrypt[1]
 - json-c
 - ffmpeg>=3.3 [2]

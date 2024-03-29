@@ -161,8 +161,8 @@ static size_t httpFetchCb (char *ptr, size_t size, size_t nmemb,
 
 /*	libcurl progress callback. aborts the current request if user pressed ^C
  */
-int progressCb (void * const data, double dltotal, double dlnow,
-		double ultotal, double ulnow) {
+int progressCb (void * const data, curl_off_t dltotal, curl_off_t dlnow,
+		curl_off_t ultotal, curl_off_t ulnow) {
 	const sig_atomic_t lint = *((sig_atomic_t *) data);
 	if (lint) {
 		return 1;
@@ -224,8 +224,8 @@ static CURLcode BarPianoHttpRequest (CURL * const http,
 	setAndCheck (CURLOPT_POSTFIELDS, req->postData);
 	setAndCheck (CURLOPT_WRITEFUNCTION, httpFetchCb);
 	setAndCheck (CURLOPT_WRITEDATA, &buffer);
-	setAndCheck (CURLOPT_PROGRESSFUNCTION, progressCb);
-	setAndCheck (CURLOPT_PROGRESSDATA, &lint);
+	setAndCheck (CURLOPT_XFERINFOFUNCTION, progressCb);
+	setAndCheck (CURLOPT_XFERINFODATA, &lint);
 	setAndCheck (CURLOPT_NOPROGRESS, 0);
 	setAndCheck (CURLOPT_POST, 1);
 	setAndCheck (CURLOPT_TIMEOUT, settings->timeout);
