@@ -206,7 +206,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				break;
 			}
 
-			for (int i = 0; i < json_object_array_length (stations); i++) {
+			for (unsigned int i = 0; i < json_object_array_length (stations); i++) {
 				PianoStation_t *tmpStation;
 				json_object *s = json_object_array_get_idx (stations, i);
 
@@ -229,7 +229,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			if (mix != NULL) {
 				PianoStation_t *curStation = ph->stations;
 				PianoListForeachP (curStation) {
-					for (int i = 0; i < json_object_array_length (mix); i++) {
+					for (unsigned int i = 0; i < json_object_array_length (mix); i++) {
 						json_object *id = json_object_array_get_idx (mix, i);
 						if (strcmp (json_object_get_string (id),
 								curStation->id) == 0) {
@@ -256,7 +256,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			}
 			assert (items != NULL);
 
-			for (int i = 0; i < json_object_array_length (items); i++) {
+			for (unsigned int i = 0; i < json_object_array_length (items); i++) {
 				json_object *s = json_object_array_get_idx (items, i);
 				PianoSong_t *song;
 
@@ -377,7 +377,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			/* get artists */
 			json_object *artists;
 			if (json_object_object_get_ex (result, "artists", &artists)) {
-				for (int i = 0; i < json_object_array_length (artists); i++) {
+				for (unsigned int i = 0; i < json_object_array_length (artists); i++) {
 					json_object *a = json_object_array_get_idx (artists, i);
 					PianoArtist_t *artist;
 
@@ -396,7 +396,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			/* get songs */
 			json_object *songs;
 			if (json_object_object_get_ex (result, "songs", &songs)) {
-				for (int i = 0; i < json_object_array_length (songs); i++) {
+				for (unsigned int i = 0; i < json_object_array_length (songs); i++) {
 					json_object *s = json_object_array_get_idx (songs, i);
 					PianoSong_t *song;
 
@@ -456,7 +456,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			/* get genre stations */
 			json_object *categories;
 			if (json_object_object_get_ex (result, "categories", &categories)) {
-				for (int i = 0; i < json_object_array_length (categories); i++) {
+				for (unsigned int i = 0; i < json_object_array_length (categories); i++) {
 					json_object *c = json_object_array_get_idx (categories, i);
 					PianoGenreCategory_t *tmpGenreCategory;
 
@@ -471,7 +471,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					/* get genre subnodes */
 					json_object *stations;
 					if (json_object_object_get_ex (c, "stations", &stations)) {
-						for (int k = 0;
+						for (unsigned int k = 0;
 								k < json_object_array_length (stations); k++) {
 							json_object *s =
 									json_object_array_get_idx (stations, k);
@@ -525,7 +525,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 						sizeof (*reqData->retExplain));
 				strncpy (reqData->retExplain, "We're playing this track "
 						"because it features ", strSize);
-				for (int i = 0; i < json_object_array_length (explanations); i++) {
+				for (unsigned int i = 0; i < json_object_array_length (explanations); i++) {
 					json_object *e = json_object_array_get_idx (explanations,
 							i);
 					json_object *f;
@@ -573,7 +573,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				/* songs */
 				json_object *songs;
 				if (json_object_object_get_ex (music, "songs", &songs)) {
-					for (int i = 0; i < json_object_array_length (songs); i++) {
+					for (unsigned int i = 0; i < json_object_array_length (songs); i++) {
 						json_object *s = json_object_array_get_idx (songs, i);
 						PianoSong_t *seedSong;
 
@@ -594,7 +594,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				/* artists */
 				json_object *artists;
 				if (json_object_object_get_ex (music, "artists", &artists)) {
-					for (int i = 0; i < json_object_array_length (artists); i++) {
+					for (unsigned int i = 0; i < json_object_array_length (artists); i++) {
 						json_object *a = json_object_array_get_idx (artists, i);
 						PianoArtist_t *seedArtist;
 
@@ -622,7 +622,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 						continue;
 					}
 					assert (json_object_is_type (val, json_type_array));
-					for (int i = 0; i < json_object_array_length (val); i++) {
+					for (unsigned int i = 0; i < json_object_array_length (val); i++) {
 						json_object *s = json_object_array_get_idx (val, i);
 						PianoSong_t *feedbackSong;
 
@@ -665,7 +665,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 
 			json_object *availableModes;
 			if (json_object_object_get_ex (result, "availableModes", &availableModes)) {
-				for (int i = 0; i < json_object_array_length (availableModes); i++) {
+				for (unsigned int i = 0; i < json_object_array_length (availableModes); i++) {
 					json_object *val = json_object_array_get_idx (availableModes, i);
 
 					assert (json_object_is_type (val, json_type_object));
