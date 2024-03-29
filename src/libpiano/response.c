@@ -520,7 +520,8 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			assert (reqData != NULL);
 
 			json_object *explanations;
-			if (json_object_object_get_ex (result, "explanations", &explanations)) {
+			if (json_object_object_get_ex (result, "explanations", &explanations) &&
+					json_object_array_length (explanations) > 0) {
 				reqData->retExplain = malloc (strSize *
 						sizeof (*reqData->retExplain));
 				strncpy (reqData->retExplain, "We're playing this track "

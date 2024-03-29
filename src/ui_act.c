@@ -271,8 +271,12 @@ BarUiActCallback(BarUiActExplain) {
 
 	BarUiMsg (&app->settings, MSG_INFO, "Receiving explanation... ");
 	if (BarUiActDefaultPianoCall (PIANO_REQUEST_EXPLAIN, &reqData)) {
-		BarUiMsg (&app->settings, MSG_INFO, "%s\n", reqData.retExplain);
-		free (reqData.retExplain);
+		if (reqData.retExplain == NULL) {
+			BarUiMsg (&app->settings, MSG_ERR, "No explanation provided.\n");
+		} else {
+			BarUiMsg (&app->settings, MSG_INFO, "%s\n", reqData.retExplain);
+			free (reqData.retExplain);
+		}
 	}
 	BarUiActDefaultEventcmd ("songexplain");
 }
