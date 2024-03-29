@@ -433,8 +433,12 @@ static int play (player_t * const player) {
 			} else if (ret < 0) {
 				/* error, abort */
 				/* mark the EOF, so that BarAoPlayThread can quit*/
-				debugPrint (DEBUG_AUDIO, "av_read_frame failed with code %i, sending "
-						"NULL frame\n", ret);
+				char error[AV_ERROR_MAX_STRING_SIZE];
+				if (av_strerror(ret, error, sizeof(error)) < 0) {
+					strncpy (error, "(unknown)", sizeof(error)-1);
+				}
+				debugPrint (DEBUG_AUDIO, "av_read_frame failed with code %i (%s), "
+						"sending NULL frame\n", ret, error);
 				pthread_mutex_lock (&player->aoplayLock);
 				const int rt = av_buffersrc_add_frame (player->fabuf, NULL);
 				assert (rt == 0);
