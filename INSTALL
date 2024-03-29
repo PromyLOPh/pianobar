@@ -10,7 +10,7 @@ Dependencies
 - libcurl>=7.32.0
 - gcrypt[1]
 - json-c
-- ffmpeg>=3.3 [2]
+- ffmpeg>=5.1 [2]
 - UTF-8 console/locale
 
 [1] with blowfish cipher enabled
