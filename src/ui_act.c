@@ -429,28 +429,54 @@ BarUiActCallback(BarUiActSkipSong) {
 /*	play
  */
 BarUiActCallback(BarUiActPlay) {
+	bool tookAction = false;
+	PianoReturn_t pRet = PIANO_RET_OK;;
+	CURLcode wRet = CURLE_OK;
+
 	pthread_mutex_lock (&app->player.lock);
-	app->player.doPause = false;
-	pthread_cond_broadcast (&app->player.cond);
+	if (app->player.doPause) {
+		tookAction = true;
+		app->player.doPause = false;
+		pthread_cond_broadcast (&app->player.cond);
+	}
 	pthread_mutex_unlock (&app->player.lock);
+	if (tookAction) {
+		BarUiActDefaultEventcmd("songresume");
+	}
 }
 
 /*	pause
  */
 BarUiActCallback(BarUiActPause) {
+	bool tookAction = false;
+	PianoReturn_t pRet = PIANO_RET_OK;;
+	CURLcode wRet = CURLE_OK;
+
 	pthread_mutex_lock (&app->player.lock);
-	app->player.doPause = true;
-	pthread_cond_broadcast (&app->player.cond);
+	if (!app->player.doPause) {
+		tookAction = true;
+		app->player.doPause = true;
+		pthread_cond_broadcast (&app->player.cond);
+	}
 	pthread_mutex_unlock (&app->player.lock);
+	if (tookAction) {
+		BarUiActDefaultEventcmd("songpause");
+	}
 }
 
 /*	toggle pause
  */
 BarUiActCallback(BarUiActTogglePause) {
+	bool paused;
+	PianoReturn_t pRet = PIANO_RET_OK;;
+	CURLcode wRet = CURLE_OK;
+
 	pthread_mutex_lock (&app->player.lock);
 	app->player.doPause = !app->player.doPause;
+	paused = app->player.doPause;
 	pthread_cond_broadcast (&app->player.cond);
 	pthread_mutex_unlock (&app->player.lock);
+	BarUiActDefaultEventcmd(paused ? "songpause" : "songresume");
 }
 
 /*	rename current station
