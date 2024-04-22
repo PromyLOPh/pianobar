@@ -23,7 +23,6 @@
 #act_stationaddbygenre = g
 #act_songinfo = i
 #act_addshared = j
-#act_songmove = m
 #act_songnext = n
 #act_songpause = S
 #act_songpausetoggle = p
