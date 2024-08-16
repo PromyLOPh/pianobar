@@ -52,8 +52,8 @@ LIBAV_LDFLAGS:=$(shell $(PKG_CONFIG) --libs libavcodec libavformat libavutil lib
 LIBCURL_CFLAGS:=$(shell $(PKG_CONFIG) --cflags libcurl)
 LIBCURL_LDFLAGS:=$(shell $(PKG_CONFIG) --libs libcurl)
 
-LIBGCRYPT_CFLAGS:=
-LIBGCRYPT_LDFLAGS:=-lgcrypt
+LIBGCRYPT_CFLAGS:=$(shell $(PKG_CONFIG) --cflags libgcrypt)
+LIBGCRYPT_LDFLAGS:=$(shell $(PKG_CONFIG) --libs libgcrypt)
 
 LIBJSONC_CFLAGS:=$(shell $(PKG_CONFIG) --cflags json-c 2>/dev/null || $(PKG_CONFIG) --cflags json)
 LIBJSONC_LDFLAGS:=$(shell $(PKG_CONFIG) --libs json-c 2>/dev/null || $(PKG_CONFIG) --libs json)
