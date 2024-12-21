@@ -514,7 +514,7 @@ static void finish (player_t * const player) {
 		player->fgraph = NULL;
 	}
 	if (player->cctx != NULL) {
-		avcodec_close (player->cctx);
+		avcodec_free_context (&player->cctx);
 		player->cctx = NULL;
 	}
 	if (player->fctx != NULL) {
