@@ -1,3 +1,9 @@
+Release 2024.12.21
+
+- Improved network error retrying
+- Improved compatibility with newer versions of ffmpeg and libcurl
+- Minor documentation fixes
+
 Release 2022.04.01
 
 - Not a joke
