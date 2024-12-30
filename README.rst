@@ -161,6 +161,36 @@ __ https://6xq.net/pianobar/pianobar-2010.10.07.tar.bz2.sha1
 .. _2010.08.21: https://6xq.net/pianobar/pianobar-2010.08.21.tar.bz2
 __ https://6xq.net/pianobar/pianobar-2010.08.21.tar.bz2.sha1
 
+Install
+-------
+
+You need the following software to build pianobar:
+
+- GNU make
+- pthreads
+- libao
+- libcurl ≥ 7.32.0
+- gcrypt [1]_
+- json-c
+- ffmpeg ≤ 5.1 [2]_
+- UTF-8 console/locale
+
+.. [1] with blowfish cipher enabled
+.. [2] required: demuxer mov, decoder aac, protocol http and filters volume,
+        aformat, aresample
+
+Then type::
+
+	gmake clean && gmake
+
+You can run the client directly from the source directory now::
+
+	./pianobar
+
+Or install it to ``/usr/local`` by issuing::
+
+	gmake install
+
 FAQ
 ---
 
