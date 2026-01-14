@@ -25,6 +25,14 @@ THE SOFTWARE.
 
 #include "piano.h"
 
+#ifdef DEBUG
+	#define LOG(format, ... ) printf("%s: " format,__FUNCTION__,## __VA_ARGS__)
+	#define LOG_RAW(format, ... ) printf(format,## __VA_ARGS__)
+#else
+	#define LOG(format, ... )
+	#define LOG_RAW(format, ... )
+#endif
+
 void PianoDestroyStation (PianoStation_t *station);
 void PianoDestroyUserInfo (PianoUserInfo_t *user);
 

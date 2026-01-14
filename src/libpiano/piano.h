@@ -50,17 +50,32 @@ typedef struct PianoListHead {
 typedef struct PianoUserInfo {
 	char *listenerId;
 	char *authToken;
+	bool IsSubscriber;
+	bool IsPremiumUser;
+	int PlayListCount;
+	int StationCount;
+	int AlbumCount;
+	int TrackCount;
+	int PodcastCount;
 } PianoUserInfo_t;
 
-typedef struct PianoStation {
-	PianoListHead_t head;
-	char isCreator;
-	char isQuickMix;
-	char useQuickMix; /* station will be included in quickmix */
-	char *name;
-	char *id;
-	char *seedId;
-} PianoStation_t;
+typedef enum {
+	PIANO_TYPE_NONE = 0,
+	PIANO_TYPE_STATION = 1,
+	PIANO_TYPE_PODCAST = 2,
+	PIANO_TYPE_PLAYLIST = 3,
+	PIANO_TYPE_ALBUM = 4,
+	PIANO_TYPE_TRACK = 5,
+	PIANO_TYPE_LAST
+} PianoStationType_t;
+
+typedef enum {
+	PIANO_MODE_STATION = 0,
+	PIANO_MODE_PODCAST = 1,
+	PIANO_MODE_PLAYLIST = 2,
+	PIANO_MODE_ALBUM = 3,
+	PIANO_MODE_ALL = 4
+} PianoMode_t;
 
 typedef enum {
 	PIANO_RATE_NONE = 0,
@@ -100,7 +115,26 @@ typedef struct PianoSong {
 	unsigned int length; /* song length in seconds */
 	PianoSongRating_t rating;
 	PianoAudioFormat_t audioFormat;
+	unsigned int releaseDate;
 } PianoSong_t;
+
+typedef struct PianoStation {
+	PianoListHead_t head;
+	char isCreator;
+	char isQuickMix;
+	char useQuickMix; /* station will be included in quickmix */
+	char *name;
+	char *id;
+	char *seedId;
+	PianoStationType_t stationType;
+	PianoSong_t *theSong;
+} PianoStation_t;
+
+typedef struct {
+	PianoStation_t *station;
+	PianoSong_t *playList;
+	bool bGetAll;
+} PianoRequestDataGetEpisodes_t;
 
 /* currently only used for search results */
 typedef struct PianoArtist {
@@ -188,6 +222,14 @@ typedef enum {
 	PIANO_REQUEST_CHANGE_SETTINGS = 24,
 	PIANO_REQUEST_GET_STATION_MODES = 25,
 	PIANO_REQUEST_SET_STATION_MODE = 26,
+	PIANO_REQUEST_GET_PLAYLISTS = 27,
+	PIANO_REQUEST_GET_TRACKS = 28,
+	PIANO_REQUEST_GET_PLAYBACK_INFO = 29,
+	PIANO_REQUEST_GET_ITEMS = 30,
+	PIANO_REQUEST_GET_USER_PROFILE = 31,
+	PIANO_REQUEST_ANNOTATE_OBJECTS = 32,
+	PIANO_REQUEST_REMOVE_ITEM = 33,
+	PIANO_REQUEST_GET_EPISODES = 34,
 } PianoRequestType_t;
 
 typedef struct PianoRequest {

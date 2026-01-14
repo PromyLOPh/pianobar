@@ -45,8 +45,14 @@ typedef struct {
 	sig_atomic_t doQuit;
 	BarReadlineFds_t input;
 	unsigned int playerErrors;
+	PianoStationType_t Filter;
+	char stationStarted;
+	PianoSong_t *FullPlaylist;
 } BarApp_t;
 
 #include <signal.h>
 extern sig_atomic_t *interrupted;
 
+const char *StationType2Str(PianoStationType_t Type);
+PianoSong_t *CopySong(PianoSong_t *song);
+PianoSong_t *CopyPlaylist(PianoSong_t *song);

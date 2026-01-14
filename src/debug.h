@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 #include "config.h"
 #include <stdbool.h>
+#include "debug_log.h"
 
 #ifdef HAVE_DEBUGLOG
 #include <stdio.h>

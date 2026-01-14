@@ -55,4 +55,5 @@ bool BarUiPianoCall (BarApp_t * const, const PianoRequestType_t,
 void BarUiHistoryPrepend (BarApp_t *app, PianoSong_t *song);
 void BarUiCustomFormat (char *dest, size_t destSize, const char *format,
 		const char *formatChars, const char **formatVals);
+void BarUiSelectFilter(BarApp_t *app);
 

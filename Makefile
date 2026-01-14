@@ -7,7 +7,12 @@ LIBDIR:=${PREFIX}/lib
 INCDIR:=${PREFIX}/include
 MANDIR:=${PREFIX}/share/man
 DYNLINK:=0
-CFLAGS?=-O2 -DNDEBUG
+
+ifeq ($(MAKECMDGOALS),debug)
+	CFLAGS?=-O0 -g -DDEBUG
+else
+	CFLAGS?=-O2 -DNDEBUG
+endif
 
 ifeq (${CC},cc)
 	OS := $(shell uname)
@@ -41,13 +46,18 @@ LIBPIANO_SRC:=\
 		${LIBPIANO_DIR}/piano.c \
 		${LIBPIANO_DIR}/request.c \
 		${LIBPIANO_DIR}/response.c \
-		${LIBPIANO_DIR}/list.c
+		${LIBPIANO_DIR}/list.c \
+		${LIBPIANO_DIR}/debug_log.c
 LIBPIANO_OBJ:=${LIBPIANO_SRC:.c=.o}
 LIBPIANO_RELOBJ:=${LIBPIANO_SRC:.c=.lo}
 LIBPIANO_INCLUDE:=${LIBPIANO_DIR}
 
-LIBAV_CFLAGS:=$(shell $(PKG_CONFIG) --cflags libavcodec libavformat libavutil libavfilter)
-LIBAV_LDFLAGS:=$(shell $(PKG_CONFIG) --libs libavcodec libavformat libavutil libavfilter)
+ifneq (${LIBAV},)
+PKG_CONFIG_LIBDIR=PKG_CONFIG_LIBDIR=${LIBAV}/lib/pkgconfig
+endif
+
+LIBAV_CFLAGS:=$(shell ${PKG_CONFIG_LIBDIR} $(PKG_CONFIG) --cflags libavcodec libavformat libavutil libavfilter)
+LIBAV_LDFLAGS:=$(shell ${PKG_CONFIG_LIBDIR} $(PKG_CONFIG) --libs libavcodec libavformat libavutil libavfilter)
 
 LIBCURL_CFLAGS:=$(shell $(PKG_CONFIG) --cflags libcurl)
 LIBCURL_LDFLAGS:=$(shell $(PKG_CONFIG) --libs libcurl)
@@ -122,6 +132,8 @@ clean:
 
 all: pianobar
 
+debug: pianobar
+
 ifeq (${DYNLINK},1)
 install: pianobar install-libpiano
 else
@@ -150,4 +162,10 @@ uninstall:
 	${DESTDIR}/${LIBDIR}/libpiano.a \
 	${DESTDIR}/${INCDIR}/piano.h
 
-.PHONY: install install-libpiano uninstall test debug all
+.PHONY: install install-libpiano uninstall test debug all make_debug
+
+make_debug:
+	@echo "LIBAV: '${LIBAV}'"
+	@echo "PKG_CONFIG_LIBDIR: '${PKG_CONFIG_LIBDIR}'"
+	@echo "LIBAV_CFLAGS: '${LIBAV_CFLAGS}'"
+	@echo "LIBAV_LDFLAGS: '${LIBAV_LDFLAGS}'"

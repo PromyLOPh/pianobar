@@ -174,7 +174,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->tiredIcon = strdup (" zZ");
 	settings->atIcon = strdup (" @ ");
 	settings->npSongFormat = strdup ("\"%t\" by \"%a\" on \"%l\"%r%@%s");
-	settings->npStationFormat = strdup ("Station \"%n\" (%i)");
+	settings->npStationFormat = strdup ("%s \"%n\" (%i)");
 	settings->listSongFormat = strdup ("%i) %a - %t%r");
 	settings->timeFormat = strdup ("%s%r/%t");
 	settings->rpcHost = strdup (PIANO_RPC_HOST);

@@ -467,6 +467,7 @@ PianoStation_t *BarUiSelectStation (BarApp_t *app, PianoStation_t *stations,
 	PianoStation_t **sortedStations = NULL, *retStation = NULL;
 	size_t stationCount, i, lastDisplayed, displayCount;
 	char buf[100];
+	PianoStationType_t Filter = app->Filter;
 
 	if (stations == NULL) {
 		BarUiMsg (&app->settings, MSG_ERR, "No station available.\n");
@@ -484,11 +485,37 @@ PianoStation_t *BarUiSelectStation (BarApp_t *app, PianoStation_t *stations,
 		for (i = 0; i < stationCount; i++) {
 			const PianoStation_t *currStation = sortedStations[i];
 			/* filter stations */
-			if (BarStrCaseStr (currStation->name, buf) != NULL) {
-				BarUiMsg (&app->settings, MSG_LIST, "%2zi) %c%c%c %s\n", i,
+			if (BarStrCaseStr (currStation->name, buf) != NULL && 
+				 (Filter == PIANO_TYPE_NONE || Filter == currStation->stationType))
+			{
+				char StationTypeChar = ' ';
+				switch(currStation->stationType) {
+					case PIANO_TYPE_STATION:
+						if(!currStation->isCreator) {
+							StationTypeChar = 'S';
+						}
+						break;
+
+					case PIANO_TYPE_PLAYLIST:
+						StationTypeChar = 'P';
+						break;
+
+					case PIANO_TYPE_PODCAST:
+						StationTypeChar = 'C';
+						break;
+
+					case PIANO_TYPE_ALBUM:
+						StationTypeChar = 'A';
+						break;
+
+					case PIANO_TYPE_TRACK:
+						StationTypeChar = 'T';
+						break;
+				}
+				BarUiMsg (&app->settings, MSG_LIST, "%2zi) %c%c%c %s\n", displayCount,
 						currStation->useQuickMix ? 'q' : ' ',
 						currStation->isQuickMix ? 'Q' : ' ',
-						!currStation->isCreator ? 'S' : ' ',
+						StationTypeChar,
 						currStation->name);
 				++displayCount;
 				lastDisplayed = i;
@@ -508,8 +535,22 @@ PianoStation_t *BarUiSelectStation (BarApp_t *app, PianoStation_t *stations,
 
 			if (isnumeric (buf)) {
 				unsigned long selected = strtoul (buf, NULL, 0);
-				if (selected < stationCount) {
-					retStation = sortedStations[selected];
+				if (selected < displayCount) {
+					memset (buf, 0, sizeof (buf));
+					displayCount = 0;
+					for (i = 0; i < stationCount; i++) {
+						PianoStation_t *currStation = sortedStations[i];
+						/* filter stations */
+						if (BarStrCaseStr (currStation->name, buf) != NULL && 
+							 (Filter == PIANO_TYPE_NONE || Filter == currStation->stationType))
+						{
+							if(displayCount == selected) {
+								retStation = currStation;
+								break;
+							}
+							++displayCount;
+						}
+					}
 				}
 			}
 
@@ -746,12 +787,20 @@ static void BarUiAppendNewline (char *s, size_t maxlen) {
 void BarUiPrintStation (const BarSettings_t *settings,
 		PianoStation_t *station) {
 	char outstr[512];
-	const char *vals[] = {station->name, station->id};
+	char StationTypeStr[32];
+	const char *vals[] = {StationTypeStr, station->name, station->id};
+	strcpy(StationTypeStr,StationType2Str(station->stationType));
+	StationTypeStr[0] = toupper(StationTypeStr[0]);
 
-	BarUiCustomFormat (outstr, sizeof (outstr), settings->npStationFormat,
-			"ni", vals);
-	BarUiAppendNewline (outstr, sizeof (outstr));
-	BarUiMsg (settings, MSG_PLAYING, "%s", outstr);
+	switch(station->stationType) {
+		case PIANO_TYPE_STATION:
+		case PIANO_TYPE_PODCAST:
+			BarUiCustomFormat (outstr, sizeof (outstr), settings->npStationFormat,
+					"sni", vals);
+			BarUiAppendNewline (outstr, sizeof (outstr));
+			BarUiMsg (settings, MSG_PLAYING, "%s", outstr);
+			break;
+	}
 }
 
 static const char *ratingToIcon (const BarSettings_t * const settings,
@@ -785,8 +834,14 @@ void BarUiPrintSong (const BarSettings_t *settings,
 			station != NULL ? station->name : "",
 			song->detailUrl};
 
-	BarUiCustomFormat (outstr, sizeof (outstr), settings->npSongFormat,
-			"talr@su", vals);
+	if(song->seedId != NULL && strncmp(song->seedId,"PC:",3) == 0) {
+	// "Song" is a podcast
+		strcpy(outstr,song->title);
+	}
+	else {
+		BarUiCustomFormat (outstr, sizeof (outstr), settings->npSongFormat,
+				"talr@su", vals);
+	}
 	BarUiAppendNewline (outstr, sizeof (outstr));
 	BarUiMsg (settings, MSG_PLAYING, "%s", outstr);
 }
@@ -885,6 +940,37 @@ static void BarUiEventcmdPrintSong (FILE * restrict stream,
 			postfix,
 			songDuration == NO_DURATION ? song->length : songDuration
 			);
+}
+
+/* let user pick one station
+ * @param app handle
+ * @param stations that should be listed
+ * @param prompt string
+ * @param called if input was not a number
+ * @param auto-select if only one station remains after filtering
+ * @return pointer to selected station or NULL
+ */
+void BarUiSelectFilter(BarApp_t *app)
+{
+	char buf[100];
+	const char *FilterTypes[] = { 
+		"All","Stations","Podcasts","Playlists","Albums","Tracks",NULL
+	};
+
+	for(int i = 0; FilterTypes[i] != NULL; i++) {
+		BarUiMsg (&app->settings, MSG_LIST, "%i) %s\n", i,FilterTypes[i]);
+		if(i == PIANO_TYPE_PODCAST && !app->ph.user.IsSubscriber){
+		// Must be a subscriber for Playlists, etc
+			break;
+		}
+	}
+	BarUiMsg (&app->settings, MSG_QUESTION, "%s", "Select filter: ");
+
+	if (!BarReadlineStr (buf, sizeof (buf), &app->input, BAR_RL_DEFAULT) == 0
+		 && isnumeric (buf))
+	{
+		app->Filter = atoi(buf);
+	}
 }
 
 /*	Excute external event handler

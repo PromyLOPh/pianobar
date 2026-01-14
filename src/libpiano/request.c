@@ -30,7 +30,9 @@ THE SOFTWARE.
 #include <string.h>
 
 #include "piano.h"
+#include "piano_private.h"
 #include "crypt.h"
+#include "debug.h"
 
 /*	prepare piano request (initializes request type, urlpath and postData)
  *	@param piano handle
@@ -95,6 +97,8 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 							json_object_new_string (ph->partner.authToken));
 					json_object_object_add (j, "syncTime",
 							json_object_new_int (timestamp));
+					json_object_object_add (j, "returnIsSubscriber",
+					json_object_new_boolean (true));
 
 					CURL * const curl = curl_easy_init ();
 					urlencAuthToken = curl_easy_escape (curl,
@@ -501,8 +505,155 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 			goto cleanup;
 			break;
 		}
-	}
+		case PIANO_REQUEST_GET_PLAYLISTS: {
+			/* get stations, user must be authenticated */
+			assert (ph->user.listenerId != NULL);
+			req->secure = true;
+			json_object *a = json_object_new_object ();
+			json_object_object_add(a,"listenerId",json_object_new_string(ph->user.listenerId));
+			json_object_object_add(a,"offset",json_object_new_int(0));
+			json_object_object_add(a,"limit",json_object_new_int(100));
+			json_object_object_add(a,"annotationLimit",json_object_new_int(100));
+			json_object_object_add(j,"request",a);
+			method = "collections.v7.getSortedPlaylists";
+			break;
+		}
 
+		case PIANO_REQUEST_GET_TRACKS: {
+			assert (ph->user.listenerId != NULL);
+			PianoRequestDataGetPlaylist_t *reqData = req->data;
+
+			assert (reqData != NULL);
+			assert (reqData->station != NULL);
+			assert (reqData->station->id != NULL);
+
+			req->secure = true;
+			switch(reqData->station->stationType) {
+				case PIANO_TYPE_PLAYLIST: {
+					json_object *a = json_object_new_object ();
+					json_object_object_add(a,"pandoraId",json_object_new_string(reqData->station->id));
+					json_object_object_add(a,"limit",json_object_new_int(100));
+					json_object_object_add(a,"annotationLimit",json_object_new_int(100));
+					json_object_object_add(a,"bypassPrivacyRu1les",json_object_new_boolean(true));
+					json_object_object_add(j,"request",a);
+					method = "playlists.v7.getTracks";
+					break;
+				}
+
+				case PIANO_TYPE_ALBUM: {
+					json_object *a = json_object_new_array();
+					json_object_array_add(a,json_object_new_string(reqData->station->id));
+					json_object_object_add(j,"pandoraIds",a);
+					json_object_object_add(j,"annotateAlbumTracks",json_object_new_boolean(true));
+					method = "catalog.v4.annotateObjects";
+					break;
+				}
+
+				default:
+					LOG("Invalid stationType 0x%x\n",ph->stations->stationType);
+					break;
+			}
+			break;
+		}
+
+		case PIANO_REQUEST_GET_PLAYBACK_INFO: {
+			PianoRequestDataGetPlaylist_t *reqData = req->data;
+
+			assert (reqData != NULL);
+			assert (reqData->station != NULL);
+			assert (reqData->station->id != NULL);
+			assert (reqData->station->stationType != PIANO_TYPE_STATION);
+
+			req->secure = true;
+			json_object_object_add (j, "pandoraId",
+					json_object_new_string (reqData->retPlaylist->trackToken));
+			json_object_object_add (j, "sourcePandoraId",
+					json_object_new_string (reqData->retPlaylist->seedId));
+			json_object_object_add (j, "includeAudioToken",
+					json_object_new_boolean (true));
+			json_object_object_add (j, "deviceCode",json_object_new_string (""));
+			method = "onDemand.getAudioPlaybackInfo";
+			break;
+		}
+
+		case PIANO_REQUEST_GET_USER_PROFILE: {
+			req->secure = true;
+			json_object *a = json_object_new_object ();
+			json_object_object_add(a,"limit",json_object_new_int(10));
+			json_object_object_add(a,"annotationLimit",json_object_new_int(10));
+			json_object_object_add(a,"profileOwner",
+										  json_object_new_string(ph->user.listenerId));
+			json_object_object_add(j,"request",a);
+			method = "profile.v1.getFullProfile";
+			break;
+		}
+
+		case PIANO_REQUEST_GET_ITEMS: {
+			req->secure = true;
+
+			json_object *a = json_object_new_object ();
+			json_object_object_add(j,"request",a);
+	#if 0
+	// test ability to continue after hitting limit
+			json_object_object_add(a,"limit",json_object_new_int(4));
+			json_object_object_add(a,"cursor",json_object_new_string("g6FjzwAFdTr1OqMYoXbAoXSWokFSolRSolBMolBDokFMolBF"));
+	#endif
+			method = "collections.v7.getItems";
+			break;
+		}
+
+		case PIANO_REQUEST_ANNOTATE_OBJECTS: {
+			json_object *a = json_object_new_array();
+			PianoStation_t *station = ph->stations;
+			req->secure = true;
+
+			while(station != NULL) {
+				assert(station->id != NULL);
+				if(station->name == NULL) {
+					switch(station->stationType) {
+						case PIANO_TYPE_PODCAST:
+						case PIANO_TYPE_ALBUM:
+						case PIANO_TYPE_TRACK:
+							json_object_array_add(a,json_object_new_string(station->id));
+							break;
+					}
+				}
+				station = (PianoStation_t *) station->head.next;
+			}
+			json_object_object_add(j,"pandoraIds",a);
+			json_object_object_add(j,"annotateAlbumTracks",
+										  json_object_new_boolean(false));
+			method = "catalog.v4.annotateObjects";
+			break;
+		}
+
+		case PIANO_REQUEST_REMOVE_ITEM: {
+			/* delete item */
+			PianoStation_t *station = req->data;
+			assert (station != NULL);
+
+			req->secure = true;
+			json_object *a = json_object_new_object ();
+			json_object_object_add(a,"pandoraId",json_object_new_string(station->id));
+			json_object_object_add(j,"request",a);
+			method = "collections.v7.removeItem";
+			break;
+		}
+
+		case PIANO_REQUEST_GET_EPISODES: {
+			PianoRequestDataGetEpisodes_t *reqData = req->data;
+			PianoStation_t *station = reqData->station;
+			assert (station != NULL);
+
+			req->secure = true;
+			json_object_object_add(j,"annotationLimit",json_object_new_int(20));
+			json_object_object_add(j,"catalogVersion",json_object_new_int(4));
+			json_object_object_add(j,"pandoraId",json_object_new_string(station->id));
+			json_object_object_add(j,"sortingOrder",json_object_new_string(""));
+			method = "aesop.v1.getDetails";
+			break;
+		}
+	}
 	/* standard parameter */
 	if (method != NULL) {
 		char *urlencAuthToken;

@@ -61,4 +61,6 @@ BarUiActCallback(BarUiActVolUp);
 BarUiActCallback(BarUiActManageStation);
 BarUiActCallback(BarUiActVolReset);
 BarUiActCallback(BarUiActSettings);
+BarUiActCallback(BarUiActFilter);
+BarUiActCallback(BarUiActGotoSong);
 

@@ -56,6 +56,7 @@ THE SOFTWARE.
 #include "ui.h"
 #include "ui_dispatch.h"
 #include "ui_readline.h"
+#include "debug_log.h"
 
 /*	authenticate user
  */
@@ -178,6 +179,53 @@ static bool BarMainGetStations (BarApp_t *app) {
 	return ret;
 }
 
+static bool BarMainGetUserProfile(BarApp_t *app) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+	bool ret;
+
+	BarUiMsg (&app->settings, MSG_INFO, "Get user profile ... ");
+	ret = BarUiPianoCall (app, PIANO_REQUEST_GET_USER_PROFILE, NULL, &pRet, &wRet);
+	return ret;
+}
+
+static bool BarMainGetAllStations (BarApp_t *app) {
+	PianoReturn_t pRet;
+	CURLcode wRet;
+	bool ret;
+	PianoRequestDataGetPlaylist_t reqData;
+	reqData.station = app->nextStation;
+	reqData.quality = app->settings.audioQuality;
+	reqData.retPlaylist = NULL;
+
+	do {
+		ret = BarMainGetStations (app);
+		if(!ret) {
+			break;
+		}
+		BarUiMsg (&app->settings, MSG_INFO, "Get items ... ");
+		ret = BarUiPianoCall (app, PIANO_REQUEST_GET_ITEMS, &reqData, &pRet, &wRet);
+		if(!ret) {
+			break;
+		}
+		BarUiMsg (&app->settings, MSG_INFO, "Annotate Objects ... ");
+		ret = BarUiPianoCall (app, PIANO_REQUEST_ANNOTATE_OBJECTS, &reqData, &pRet, &wRet);
+		if(!ret) {
+			break;
+		}
+		if(app->ph.user.IsPremiumUser) {
+			BarUiMsg (&app->settings, MSG_INFO, "Get Playlists ... ");
+			ret = BarUiPianoCall (app, PIANO_REQUEST_GET_PLAYLISTS,NULL, &pRet, &wRet);
+			if(!ret) {
+				break;
+			}
+		}
+		BarUiStartEventCmd (&app->settings, "usergetstations", NULL, NULL, &app->player,
+				app->ph.stations, pRet, wRet);
+
+	} while (false);
+	return ret;
+}
 /*	get initial station from autostart setting or user input
  */
 static void BarMainGetInitialStation (BarApp_t *app) {
@@ -214,21 +262,108 @@ static void BarMainGetPlaylist (BarApp_t *app) {
 	PianoReturn_t pRet;
 	CURLcode wRet;
 	PianoRequestDataGetPlaylist_t reqData;
-	reqData.station = app->nextStation;
-	reqData.quality = app->settings.audioQuality;
+	PianoStation_t *station = app->nextStation;
+	assert(station != NULL);
 
-	BarUiMsg (&app->settings, MSG_INFO, "Receiving new playlist... ");
-	if (!BarUiPianoCall (app, PIANO_REQUEST_GET_PLAYLIST,
-			&reqData, &pRet, &wRet)) {
-		app->nextStation = NULL;
-	} else {
-		app->playlist = reqData.retPlaylist;
-		if (app->playlist == NULL) {
-			BarUiMsg (&app->settings, MSG_INFO, "No tracks left.\n");
+	memset(&reqData,0,sizeof(reqData));
+	reqData.station = station;
+	reqData.quality = app->settings.audioQuality;
+	app->stationStarted = true;
+
+	LOG("stationType %s\n",StationType2Str(station->stationType));
+
+	switch(station->stationType) {
+		case PIANO_TYPE_STATION:
+			BarUiMsg (&app->settings, MSG_INFO, "Receiving new playlist... ");
+			if (!BarUiPianoCall (app, PIANO_REQUEST_GET_PLAYLIST,
+					&reqData, &pRet, &wRet)) {
+				app->nextStation = NULL;
+			} else {
+				app->playlist = reqData.retPlaylist;
+				if (app->playlist == NULL) {
+					BarUiMsg (&app->settings, MSG_INFO, "No tracks left.\n");
+					app->nextStation = NULL;
+				}
+			}
+			app->curStation = app->nextStation;
+			break;
+
+		case PIANO_TYPE_PLAYLIST:
+			BarUiMsg (&app->settings, MSG_INFO, "Get tracks ... ");
+			if (!BarUiPianoCall (app, PIANO_REQUEST_GET_TRACKS,
+					&reqData, &pRet, &wRet)) {
+				app->nextStation = NULL;
+			} else {
+				app->playlist = reqData.retPlaylist;
+				app->FullPlaylist = CopyPlaylist(app->playlist);
+
+				if (app->playlist == NULL) {
+					BarUiMsg (&app->settings, MSG_INFO, "No tracks left.\n");
+					app->nextStation = NULL;
+				}
+			}
+			app->curStation = app->nextStation;
+			break;
+
+		case PIANO_TYPE_TRACK:
+			assert(station->theSong != NULL);
+			reqData.retPlaylist = CopySong(station->theSong);
+			assert(reqData.retPlaylist != NULL);
+			reqData.retPlaylist->trackToken = strdup(station->id);
+			reqData.retPlaylist->seedId = strdup(station->seedId);
+
+			BarUiMsg (&app->settings, MSG_INFO, "Get playback info ... ");
+			if (BarUiPianoCall (app, PIANO_REQUEST_GET_PLAYBACK_INFO,
+					&reqData, &pRet, &wRet)) {
+				app->playlist = reqData.retPlaylist;
+			}
+			else {
+				ELOG("REQUEST_GET_PLAYBACK_INFO failed\n");
+			} 
+			app->curStation = app->nextStation;
+			break;
+
+		case PIANO_TYPE_PODCAST:
+			PianoSong_t *song = station->theSong;
+			station->theSong = NULL;
+			assert (song != NULL);
+			song->trackToken = strdup(station->seedId);
+			song->seedId = strdup(station->id);
+			app->playlist = song;
+			app->curStation = app->nextStation;
 			app->nextStation = NULL;
-		}
+			if(song->title == NULL) {
+			// Get name of episode
+				PianoRequestDataGetEpisodes_t reqData1;
+				reqData1.station = app->curStation;
+				reqData1.playList = song;
+				reqData1.bGetAll = false;
+				BarUiMsg (&app->settings, MSG_INFO, "Get episodes ... ");
+				if (!BarUiPianoCall (app, PIANO_REQUEST_GET_EPISODES,
+						&reqData1, &pRet, &wRet)) {
+					app->curStation = NULL;
+					ELOG("Internal error\n");
+					break;
+				}
+			}
+			break;
+
+		case PIANO_TYPE_ALBUM:
+			BarUiMsg (&app->settings, MSG_INFO, "Get tracks ... ");
+			if (!BarUiPianoCall (app, PIANO_REQUEST_GET_TRACKS,
+					&reqData, &pRet, &wRet)) {
+				app->nextStation = NULL;
+			} else {
+				app->playlist = reqData.retPlaylist;
+				app->FullPlaylist = CopyPlaylist(app->playlist);
+				if (app->playlist == NULL) {
+					BarUiMsg (&app->settings, MSG_INFO, "No tracks left.\n");
+					app->nextStation = NULL;
+				}
+			}
+			app->curStation = app->nextStation;
+			break;
 	}
-	app->curStation = app->nextStation;
 	BarUiStartEventCmd (&app->settings, "stationfetchplaylist",
 			app->curStation, app->playlist, &app->player, app->ph.stations,
 			pRet, wRet);
@@ -243,14 +378,34 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 	const PianoSong_t * const curSong = app->playlist;
 	assert (curSong != NULL);
 
+	app->stationStarted = true;
 	BarUiPrintSong (&app->settings, curSong, app->curStation->isQuickMix ?
 			PianoFindStationById (app->ph.stations,
 			curSong->stationId) : NULL);
 
+	if(app->curStation->stationType != PIANO_TYPE_STATION && 
+		curSong->audioUrl == NULL) 
+	{
+		PianoRequestDataGetPlaylist_t reqData;
+		PianoReturn_t pRet;
+		CURLcode wRet;
+
+		reqData.station = app->curStation;
+		reqData.quality = app->settings.audioQuality;
+		reqData.retPlaylist = app->playlist;
+
+		BarUiMsg (&app->settings, MSG_INFO, "Get playback info ... ");
+		BarUiPianoCall (app, PIANO_REQUEST_GET_PLAYBACK_INFO,
+				&reqData, &pRet, &wRet);
+	}
+
 	static const char httpPrefix[] = "http://";
+	static const char httpsPrefix[] = "https://";
 	/* avoid playing local files */
-	if (curSong->audioUrl == NULL ||
-			strncmp (curSong->audioUrl, httpPrefix, strlen (httpPrefix)) != 0) {
+	if (curSong->audioUrl == NULL 
+		 || (strncmp (curSong->audioUrl, httpPrefix, strlen (httpPrefix)) != 0
+		 &&  strncmp (curSong->audioUrl, httpsPrefix, strlen (httpsPrefix))) != 0)
+	{
 		BarUiMsg (&app->settings, MSG_ERR, "Invalid song url.\n");
 	} else {
 		player_t * const player = &app->player;
@@ -357,7 +512,11 @@ static void BarMainLoop (BarApp_t *app) {
 		return;
 	}
 
-	if (!BarMainGetStations (app)) {
+	if(app->ph.user.IsSubscriber) {
+		BarMainGetUserProfile (app);
+	}
+
+	if (!BarMainGetAllStations (app)) {
 		return;
 	}
 
@@ -386,9 +545,29 @@ static void BarMainLoop (BarApp_t *app) {
 			}
 			if (app->playlist == NULL && app->nextStation != NULL && !app->doQuit) {
 				if (app->nextStation != app->curStation) {
+					app->stationStarted = false;
 					BarUiPrintStation (&app->settings, app->nextStation);
 				}
-				BarMainGetPlaylist (app);
+				switch(app->nextStation->stationType) {
+					case PIANO_TYPE_STATION:
+					case PIANO_TYPE_PLAYLIST:
+					// when these types finish playing just start them over
+						BarMainGetPlaylist (app);
+						break;
+
+					case PIANO_TYPE_ALBUM:
+					case PIANO_TYPE_PODCAST:
+					case PIANO_TYPE_TRACK:
+						if(app->stationStarted) {
+						// when these types finish playing prompt user to select a new "station"
+							app->nextStation = NULL;
+							BarUiActSelectStation( app, NULL,NULL,BAR_DC_UNDEFINED);
+						}
+						else {
+							BarMainGetPlaylist (app);
+						}
+						break;
+				}
 			}
 			/* song ready to play */
 			if (app->playlist != NULL) {
@@ -425,6 +604,82 @@ static void BarMainSetupSigaction () {
 			};
 	sigemptyset (&act.sa_mask);
 	sigaction (SIGINT, &act, NULL);
+}
+
+const char *StationType2Str(PianoStationType_t Type)
+{
+	const char *Ret = "Invalid station type";
+	const char *StationTypeStrings[] = {
+		"station",  // PIANO_TYPE_NONE
+		"station",  // PIANO_TYPE_STATION
+		"podcast",  // PIANO_TYPE_PODCAST
+		"playlist", // PIANO_TYPE_PLAYLIST
+		"album",    // PIANO_TYPE_ALBUM
+		"track",    // PIANO_TYPE_TRACK
+	};
+	if(Type <= PIANO_TYPE_TRACK) {
+		Ret = StationTypeStrings[Type];
+	}
+	return Ret;
+}
+
+PianoSong_t *CopySong(PianoSong_t *song)
+{
+	PianoSong_t *Ret = calloc(1, sizeof (PianoSong_t));
+
+	if(Ret != NULL) {
+		if(song->artist != NULL) {
+			Ret->artist = strdup(song->artist);
+		}
+		if(song->stationId != NULL) {
+			Ret->stationId = strdup(song->stationId);
+		}
+		if(song->album != NULL) {
+			Ret->album = strdup(song->album);
+		}
+		if(song->audioUrl != NULL) {
+			Ret->audioUrl = strdup(song->audioUrl);
+		}
+		if(song->coverArt != NULL) {
+			Ret->coverArt = strdup(song->coverArt);
+		}
+		if(song->musicId != NULL) {
+			Ret->musicId = strdup(song->musicId);
+		}
+		if(song->title != NULL) {
+			Ret->title = strdup(song->title);
+		}
+		if(song->seedId != NULL) {
+			Ret->seedId = strdup(song->seedId);
+		}
+		if(song->feedbackId != NULL) {
+			Ret->feedbackId = strdup(song->feedbackId);
+		}
+		if(song->detailUrl != NULL) {
+			Ret->detailUrl = strdup(song->detailUrl);
+		}
+		if(song->trackToken != NULL) {
+			Ret->trackToken = strdup(song->trackToken);
+		}
+		Ret->fileGain = song->fileGain;
+		Ret->length = song->length;
+		Ret->rating = song->rating;
+		Ret->audioFormat = song->audioFormat;
+	}
+	
+	return Ret;
+}
+
+PianoSong_t *CopyPlaylist(PianoSong_t *song)
+{
+	PianoSong_t *Ret = NULL;
+
+	while(song != NULL) {
+		PianoSong_t *NewSong = CopySong(song);
+		Ret = PianoListAppend(&Ret->head,&NewSong->head);
+		song = (PianoSong_t *) song->head.next;
+	}
+	return Ret;
 }
 
 int main (int argc, char **argv) {
@@ -513,6 +768,7 @@ int main (int argc, char **argv) {
 	PianoDestroy (&app.ph);
 	PianoDestroyPlaylist (app.songHistory);
 	PianoDestroyPlaylist (app.playlist);
+	PianoDestroyPlaylist (app.FullPlaylist);
 	curl_easy_cleanup (app.http);
 	curl_global_cleanup ();
 	BarPlayerDestroy (&app.player);

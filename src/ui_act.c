@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include "ui.h"
 #include "ui_readline.h"
 #include "ui_dispatch.h"
+#include "debug_log.h"
 
 /*	standard eventcmd call
  */
@@ -90,7 +91,7 @@ BarUiActCallback(BarUiActHelp) {
 	BarUiMsg (&app->settings, MSG_NONE, "\r");
 	for (size_t i = 0; i < BAR_KS_COUNT; i++) {
 		if (dispatchActions[i].helpText != NULL &&
-				(context & dispatchActions[i].context) == dispatchActions[i].context &&
+			 BarUiContextMatch(context,dispatchActions[i].context,NULL) &&
 				app->settings.keys[i] != BAR_KS_DISABLED) {
 			BarUiMsg (&app->settings, MSG_LIST, "%c    %s\n", app->settings.keys[i],
 					dispatchActions[i].helpText);
@@ -225,11 +226,16 @@ BarUiActCallback(BarUiActAddSharedStation) {
 }
 
 static void drainPlaylist (BarApp_t * const app) {
+	app->stationStarted = false;
 	BarUiDoSkipSong (&app->player);
 	if (app->playlist != NULL) {
 		/* drain playlist */
 		PianoDestroyPlaylist (PianoListNextP (app->playlist));
 		app->playlist->head.next = NULL;
+	}
+	if(app->FullPlaylist != NULL) {
+		PianoDestroyPlaylist (app->FullPlaylist);
+		app->FullPlaylist = NULL;
 	}
 }
 
@@ -238,23 +244,52 @@ static void drainPlaylist (BarApp_t * const app) {
 BarUiActCallback(BarUiActDeleteStation) {
 	PianoReturn_t pRet;
 	CURLcode wRet;
-
+	bool bDeleted;
+	PianoRequestType_t requestType = 0;
+	char Temp[32];
+	const char *StationTypeStr;
 	assert (selStation != NULL);
+	StationTypeStr = StationType2Str(selStation->stationType);
 
-	BarUiMsg (&app->settings, MSG_QUESTION, "Really delete \"%s\"? [yN] ",
-			selStation->name);
-	if (BarReadlineYesNo (false, &app->input)) {
-		BarUiMsg (&app->settings, MSG_INFO, "Deleting station... ");
-		if (BarUiActDefaultPianoCall (PIANO_REQUEST_DELETE_STATION,
-				selStation) && selStation == app->curStation) {
-			drainPlaylist (app);
-			app->nextStation = NULL;
-			/* XXX: usually we shoudn’t touch cur*, but DELETE_STATION destroys
-			 * station struct */
-			app->curStation = NULL;
-			selStation = NULL;
+	switch(selStation->stationType) {
+		case PIANO_TYPE_STATION:
+			requestType = PIANO_REQUEST_DELETE_STATION;
+			break;
+
+		case PIANO_TYPE_PLAYLIST:
+		case PIANO_TYPE_ALBUM:
+		case PIANO_TYPE_TRACK:
+			requestType = PIANO_REQUEST_REMOVE_ITEM;
+			break;
+
+		default:
+			BarUiMsg (&app->settings, MSG_ERR, "Delete not implemented for %ss.\n",
+						 StationTypeStr);
+			break;
+	}
+
+	if(requestType) {
+		BarUiMsg (&app->settings, MSG_QUESTION, "Really delete the %s \"%s\"? [yN] ",
+				StationTypeStr,selStation->name);
+		if (BarReadlineYesNo (false, &app->input)) {
+			BarUiMsg (&app->settings, MSG_INFO, "Deleting %s... ",StationTypeStr);
+			if (BarUiActDefaultPianoCall (requestType,selStation) 
+				 && selStation == app->curStation) 
+			{
+				drainPlaylist (app);
+				if(app->FullPlaylist != NULL) {
+					PianoDestroyPlaylist (app->FullPlaylist);
+					app->FullPlaylist = NULL;
+				}
+				app->nextStation = NULL;
+				/* XXX: usually we shoudn’t touch cur*, but DELETE_STATION destroys
+				 * station struct */
+				app->curStation = NULL;
+				selStation = NULL;
+			}
+			snprintf(Temp,sizeof(Temp),"%sdelete",StationTypeStr);
+			BarUiActDefaultEventcmd (Temp);
 		}
-		BarUiActDefaultEventcmd ("stationdelete");
 	}
 }
 
@@ -481,11 +516,17 @@ BarUiActCallback(BarUiActRenameStation) {
 /*	play another station
  */
 BarUiActCallback(BarUiActSelectStation) {
+	char prompt[32];
+	snprintf(prompt,sizeof(prompt),"Select %s: ",StationType2Str(app->Filter));
 	PianoStation_t *newStation = BarUiSelectStation (app, app->ph.stations,
-			"Select station: ", NULL, app->settings.autoselect);
+			prompt, NULL, app->settings.autoselect);
 	if (newStation != NULL) {
 		app->nextStation = newStation;
 		drainPlaylist (app);
+	}
+	if(app->FullPlaylist != NULL) {
+		PianoDestroyPlaylist (app->FullPlaylist);
+		app->FullPlaylist = NULL;
 	}
 }
 
@@ -927,6 +968,10 @@ BarUiActCallback(BarUiActManageStation) {
 							PIANO_REQUEST_SET_STATION_MODE, &subReqDataSet)) {
 						drainPlaylist (app);
 					}
+					if(app->FullPlaylist != NULL) {
+						PianoDestroyPlaylist (app->FullPlaylist);
+						app->FullPlaylist = NULL;
+					}
 					BarUiActDefaultEventcmd ("stationsetmode");
 					break;
 				}
@@ -937,4 +982,131 @@ BarUiActCallback(BarUiActManageStation) {
 	}
 
 	PianoDestroyStationInfo (&reqData.info);
+}
+
+/* set station list filter
+ */
+BarUiActCallback(BarUiActFilter) {
+	BarUiSelectFilter(app);
+}
+
+/* skip to specific track in a playlist or album */
+BarUiActCallback(BarUiActGotoSong) {
+	assert (selStation != NULL);
+	PianoRequestType_t requestType = 0;
+	PianoSong_t *song = NULL;
+
+	switch(selStation->stationType) {
+		case PIANO_TYPE_ALBUM: {
+			song = app->FullPlaylist;
+			int i;
+			while(song != NULL) {
+				BarUiMsg (&app->settings, MSG_LIST, "%s\n", song->title);
+				song = (PianoSong_t *) song->head.next;
+			}
+			BarUiMsg (&app->settings, MSG_QUESTION, "Select track: ");
+			if (BarReadlineInt (&i, &app->input) == 0) {
+				return;
+			}
+			song = app->FullPlaylist;
+			while(song != NULL) {
+				int TrackNumber;
+				sscanf(song->title,"%d",&TrackNumber);
+				if(i == TrackNumber) {
+					LOG("Selected %s\n",song->title);
+					break;
+				}
+				song = (PianoSong_t *) song->head.next;
+			}
+			break;
+		}
+
+		case PIANO_TYPE_PLAYLIST: {
+			song = app->FullPlaylist;
+			int i = 1;
+			while(song != NULL) {
+				BarUiMsg (&app->settings, MSG_LIST, "%d) %s\n", i ,song->title);
+				song = (PianoSong_t *) song->head.next;
+				i++;
+			}
+			BarUiMsg (&app->settings, MSG_QUESTION, "Select song: ");
+			if (BarReadlineInt (&i, &app->input) == 0) {
+				return;
+			}
+
+			song = app->FullPlaylist;
+			int j = 1;
+			while(song != NULL) {
+				if(i == j++) {
+					break;
+				}
+				song = (PianoSong_t *) song->head.next;
+			}
+			break;
+		}
+
+		case PIANO_TYPE_PODCAST: {
+			PianoReturn_t pRet;
+			CURLcode wRet;
+			PianoRequestDataGetEpisodes_t reqData;
+			int i = 1;
+
+			reqData.station = selStation;
+			reqData.playList = NULL;
+			reqData.bGetAll = true;
+
+			if (BarUiActDefaultPianoCall(PIANO_REQUEST_GET_EPISODES,&reqData) ) {
+				song = reqData.playList;
+				while(song != NULL) {
+					BarUiMsg (&app->settings, MSG_LIST, "%2d) %s\n", i ,song->title);
+					song = (PianoSong_t *) song->head.next;
+					i++;
+				}
+				BarUiMsg (&app->settings, MSG_QUESTION, "Select episode: ");
+				if (BarReadlineInt (&i, &app->input) != 0) {
+					song = reqData.playList;
+					int j = 1;
+					while(song != NULL) {
+						if(i == j++) {
+							break;
+						}
+						song = (PianoSong_t *) song->head.next;
+					}
+					if(song != NULL) {
+						PianoSong_t *NewSong = CopySong(app->playlist);
+						LOG("Selected '%s'\n",song->title);
+
+						assert(NewSong->trackToken != NULL);
+						assert(NewSong->title != NULL);
+						free(NewSong->trackToken);
+						NewSong->trackToken = strdup(song->trackToken);
+						free(NewSong->title);
+						NewSong->title = strdup(song->title);
+						NewSong->fileGain = 0.0;
+						song = NewSong;
+					}
+				}
+			}
+			PianoDestroyPlaylist(reqData.playList);
+			break;
+		}
+
+		case PIANO_TYPE_STATION:
+		case PIANO_TYPE_TRACK:
+		default:
+			BarUiMsg (&app->settings, MSG_ERR, "GoTo not implemented for %ss.\n",
+						 StationType2Str(selStation->stationType));
+			break;
+	}
+
+	if(song != NULL) {
+		BarUiDoSkipSong (&app->player);
+		assert(app->playlist != NULL);
+		PianoSong_t *PlayTail = (PianoSong_t *) app->playlist->head.next;
+
+		if (PlayTail != NULL) {
+			PianoDestroyPlaylist (PianoListNextP (PlayTail));
+		}
+		app->playlist->head.next = (PianoListHead_t *) CopyPlaylist(song);
+	}
 }

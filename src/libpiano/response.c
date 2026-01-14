@@ -33,6 +33,15 @@ THE SOFTWARE.
 #include "piano_private.h"
 #include "crypt.h"
 
+static const char *qualityMap[] = {
+	"", "lowQuality", "mediumQuality","highQuality"
+};
+
+static const char *formatMap[] = {
+	"", "aacplus", "mp3"
+};
+
+static const char *imageHost = "https://content-images.p-cdn.com/";
 static char *PianoJsonStrdup (json_object *j, const char *key) {
 	assert (j != NULL);
 	assert (key != NULL);
@@ -55,6 +64,69 @@ static bool getBoolDefault (json_object * const j, const char * const key, const
 	} else {
 		return def;
 	}
+}
+
+static const char *PianoJsonGetStr(json_object *j, const char *key) {
+	assert (j != NULL);
+	assert (key != NULL);
+
+	json_object *v;
+	if (json_object_object_get_ex (j, key, &v)) {
+		return json_object_get_string (v);
+	} else {
+		return NULL;
+	}
+}
+
+static int getInt(json_object * const j, const char * const key) {
+	assert (j != NULL);
+	assert (key != NULL);
+
+	json_object *v;
+	if (json_object_object_get_ex (j, key, &v)) {
+		return json_object_get_int(v);
+	} else {
+		return 0;
+	}
+}
+
+static char *getCoverArt(struct json_object *Val)
+{
+	char artUrl[120];
+	json_object *v = NULL;
+	char *Ret = NULL;
+
+	if (json_pointer_get(Val, "/icon/artUrl", &v)) {
+		LOG("Couldn't get artUrl\n");
+	}
+	else {
+		assert (v != NULL);
+		snprintf(artUrl,sizeof(artUrl),"%s%s",
+					imageHost,json_object_get_string(v));
+		Ret = strdup(artUrl);
+	}
+
+	return Ret;
+}
+
+static int getBool(json_object * const j, const char * const key) {
+	assert (j != NULL);
+	assert (key != NULL);
+
+	json_object *v;
+	if (json_pointer_get(j, key, &v)) {
+		return -1;
+	} else {
+		return json_object_get_boolean (v) ? 1 : 0;
+	}
+}
+
+static void PianoJsonParsePlaylist(json_object *j, PianoStation_t *s) 
+{
+	s->name = PianoJsonStrdup (j, "name");
+	s->id = PianoJsonStrdup (j, "pandoraId");
+	s->isCreator = false;
+	s->isQuickMix = false;
 }
 
 static void PianoJsonParseStation (json_object *j, PianoStation_t *s) {
@@ -191,6 +263,8 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					ph->user.listenerId = PianoJsonStrdup (result, "userId");
 					ph->user.authToken = PianoJsonStrdup (result,
 							"userAuthToken");
+					ph->user.IsSubscriber = getBoolDefault (result,
+							"isSubscriber", false);
 					break;
 			}
 			break;
@@ -213,6 +287,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 				if ((tmpStation = calloc (1, sizeof (*tmpStation))) == NULL) {
 					return PIANO_RET_OUT_OF_MEMORY;
 				}
+				tmpStation->stationType = PIANO_TYPE_STATION;
 
 				PianoJsonParseStation (s, tmpStation);
 
@@ -238,6 +313,173 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 					}
 				}
 			}
+			break;
+		}
+
+		case PIANO_REQUEST_GET_PLAYLISTS: {
+			/* get playlists */
+			assert (req->responseData != NULL);
+
+			json_object *playlists;
+
+			if (!json_object_object_get_ex (result, "items", &playlists)) {
+				break;
+			}
+
+			for (int i = 0; i < json_object_array_length (playlists); i++) {
+				PianoStation_t *tmpStation;
+				json_object *s = json_object_array_get_idx (playlists, i);
+
+				if ((tmpStation = calloc (1, sizeof (*tmpStation))) == NULL) {
+					return PIANO_RET_OUT_OF_MEMORY;
+				}
+				tmpStation->stationType = PIANO_TYPE_PLAYLIST;
+
+				PianoJsonParsePlaylist(s, tmpStation);
+
+				/* start new linked list or append */
+				ph->stations = PianoListAppendP (ph->stations, tmpStation);
+			}
+			break;
+		}
+
+	// Get album or playlist tracks
+		case PIANO_REQUEST_GET_TRACKS: {
+			assert (req->responseData != NULL);
+
+			PianoRequestDataGetPlaylist_t *reqData = req->data;
+			PianoSong_t *playlist = NULL;
+			PianoSong_t *FullPlaylist = NULL;
+
+			assert (result != NULL);
+			assert (req->responseData != NULL);
+			assert (reqData != NULL);
+
+			switch(reqData->station->stationType) {
+				case PIANO_TYPE_PLAYLIST: {
+					json_object *tracks = NULL;
+					json_object *annotations = NULL;
+					if (!json_object_object_get_ex (result, "tracks", &tracks)) {
+						break;
+					}
+					assert (tracks!= NULL);
+					LOG("got tracks\n");
+					if (!json_object_object_get_ex (result, "annotations", &annotations)) {
+						break;
+					}
+					assert (annotations != NULL);
+					LOG("got annotations\n");
+
+					for (int i = 0; i < json_object_array_length (tracks); i++) {
+						json_object *s = json_object_array_get_idx (tracks, i);
+						json_object *trackInfo = NULL;
+						PianoSong_t *song;
+
+						if ((song = calloc (1, sizeof (*song))) == NULL) {
+							return PIANO_RET_OUT_OF_MEMORY;
+						}
+
+						song->seedId = PianoJsonStrdup(result, "pandoraId");
+						song->trackToken = PianoJsonStrdup (s, "trackPandoraId");
+						assert (song->trackToken != NULL);
+
+						LOG("track %d: %s\n",i + 1,song->trackToken);
+
+						if (!json_object_object_get_ex (annotations, song->trackToken, &trackInfo)) {
+							break;
+						}
+						assert (trackInfo!= NULL);
+						song->artist = PianoJsonStrdup(trackInfo, "artistName");
+						song->album = PianoJsonStrdup(trackInfo, "albumName");
+						song->title = PianoJsonStrdup(trackInfo, "name");
+						song->fileGain = 0.0;
+						song->length = getInt(trackInfo, "duration");
+						song->coverArt = getCoverArt(trackInfo);
+						playlist = PianoListAppendP (playlist, song);
+					}
+					break;
+				}
+
+				case PIANO_TYPE_ALBUM: {
+					char trackTitle[120];
+					int totalTracks = 0;
+					int trackNumber;
+
+				// Count tracks
+					json_object_object_foreach(result,Key1,Val1) {
+						if(Key1[0] != 'T' || Key1[1] != 'R') {
+							continue;
+						}
+						totalTracks++;
+					}
+
+					json_object_object_foreach(result,Key,Val) {
+						if(Key[0] != 'T' || Key[1] != 'R') {
+							continue;
+						}
+						LOG("got track %s: ",Key);
+						trackNumber = getInt(Val,"trackNumber");
+						snprintf(trackTitle,sizeof(trackTitle),
+									totalTracks > 9 ? "%02d %s" : "%d %s",
+									trackNumber,PianoJsonGetStr(Val,"name"));
+						LOG_RAW("%s\n",trackTitle);
+						if(getBool(Val,"/rightsInfo/hasInteractive") != 1) {
+							LOG(" ignored\n");
+							LOG("  hasInteractive: %d\n",getBool(Val,"/rightsInfo/hasInteractive"));
+							LOG("  hasOffline: %d\n",getBool(Val,"/rightsInfo/hasOffline"));
+							LOG("  hasNonInteractive: %d\n",getBool(Val,"/rightsInfo/hasNonInteractive"));
+							LOG("  hasStatutory: %d\n",getBool(Val,"/rightsInfo/hasStatutory"));
+							LOG("  hasRadioRights: %d\n",getBool(Val,"/rightsInfo/hasRadioRights"));
+							continue;
+						}
+						PianoSong_t *song;
+
+						if ((song = calloc (1, sizeof (*song))) == NULL) {
+							return PIANO_RET_OUT_OF_MEMORY;
+						}
+
+						song->stationId = strdup(reqData->station->id);
+						song->title = strdup(trackTitle);
+						song->trackToken = strdup(Key);
+						song->seedId = PianoJsonStrdup(Val,"albumId");
+						song->artist = PianoJsonStrdup(Val,"artistName");
+						song->album = PianoJsonStrdup(Val,"albumName");
+						song->fileGain = 0.0;
+						song->length = getInt(Val, "duration");
+						song->coverArt = getCoverArt(Val);
+					// Add to playlist in track order
+
+						if(playlist == NULL) {
+							playlist = song;
+						}
+						else {
+							PianoSong_t *lastSong = (PianoSong_t *) &playlist;
+							PianoSong_t *nextSong = playlist;
+							do {
+								int nextSongTrackNum;
+								if(nextSong == NULL) {
+									lastSong->head.next = (struct PianoListHead *) song;
+									break;
+								}
+								sscanf(nextSong->title,"%d",&nextSongTrackNum);
+								if(nextSongTrackNum > trackNumber) {
+									lastSong->head.next = (struct PianoListHead *) song;
+									song->head.next = (struct PianoListHead *) nextSong;
+									break;
+								}
+								lastSong = nextSong;
+								nextSong = (PianoSong_t *) nextSong->head.next;
+							} while(true);
+						}
+					}
+					break;
+				}
+
+				default:
+					LOG("Invalid stationType 0x%x\n",ph->stations->stationType);
+					break;
+			}
+			reqData->retPlaylist = playlist;
 			break;
 		}
 
@@ -351,6 +593,7 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			break;
 		}
 
+		case PIANO_REQUEST_REMOVE_ITEM:
 		case PIANO_REQUEST_DELETE_STATION: {
 			/* delete station from server and station list */
 			PianoStation_t *station = req->data;
@@ -712,8 +955,371 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 			}
 			break;
 		}
-	}
 
+		case PIANO_REQUEST_GET_PLAYBACK_INFO: {
+			PianoRequestDataGetPlaylist_t *reqData = req->data;
+			PianoSong_t *song = reqData->retPlaylist;
+
+			assert (req->responseData != NULL);
+			assert (reqData != NULL);
+			assert (reqData->quality < sizeof (qualityMap)/sizeof (*qualityMap));
+			assert (song != NULL);
+
+			json_object *audioUrlMap = NULL;
+			if (!json_object_object_get_ex (result, "audioUrlMap", &audioUrlMap)) {
+				break;
+			}
+			assert (audioUrlMap != NULL);
+
+			const char *quality = qualityMap[reqData->quality];
+			json_object *umap;
+
+			json_object *jsonEncoding = NULL;
+			if (json_object_object_get_ex (audioUrlMap, quality, &umap)) {
+				assert (umap != NULL);
+				if (json_object_object_get_ex (umap, "encoding", &jsonEncoding)) {
+					assert (jsonEncoding != NULL);
+					const char *encoding = json_object_get_string (jsonEncoding);
+					assert (encoding != NULL);
+					for (size_t k = 0; k < sizeof (formatMap)/sizeof (*formatMap); k++) {
+						if (strcmp (formatMap[k], encoding) == 0) {
+							song->audioFormat = k;
+							break;
+						}
+					}
+					song->audioUrl = PianoJsonStrdup (umap, "audioUrl");
+				}
+			}
+
+			if(song->audioUrl == NULL) {
+			/* requested quality is not available */
+				LOG("quality %s not found in audioUrlMap\n",quality);
+				ret = PIANO_RET_QUALITY_UNAVAILABLE;
+				PianoDestroyPlaylist (reqData->retPlaylist);
+				goto cleanup;
+			}
+			break;
+		}
+
+		case PIANO_REQUEST_GET_USER_PROFILE: {
+			assert (req->responseData != NULL);
+
+			json_object *stations;
+			json_object *annotations = NULL;
+			ph->user.IsPremiumUser = getBoolDefault (result,"isPremiumUser", false);
+			LOG("IsPremiumUser: %d\n",ph->user.IsPremiumUser);
+
+			if (!json_object_object_get_ex (result, "annotations", &annotations)) {
+				break;
+			}
+			assert (annotations != NULL);
+			int Annotations = 0;
+			json_object_object_foreach(annotations,Key,Val) {
+				const char *type = PianoJsonGetStr(Val,"type");
+
+				Annotations++;
+				if(strcmp(type,"PL") == 0) {
+					ph->user.PlayListCount++;
+				}
+				else if(strcmp(type,"ST") == 0) {
+					ph->user.StationCount++;
+				}
+				else if(strcmp(type,"AL") == 0) {
+					ph->user.AlbumCount++;
+				}
+				else if(strcmp(type,"TR") == 0) {
+					ph->user.TrackCount++;
+				}
+				else if(strcmp(type,"LI") == 0) {
+				}
+				else if(strcmp(type,"AR") == 0) {
+				}
+				else {
+					LOG("type %s ignored\n",type);
+				}
+			}
+			LOG("Found: %d annotations:\n",Annotations);
+			LOG("  PlayLists: %d:\n",ph->user.PlayListCount);
+			LOG("  Stations: %d:\n",ph->user.StationCount);
+			LOG("  Albums: %d:\n",ph->user.AlbumCount);
+			LOG("  Tracks: %d:\n",ph->user.TrackCount);
+			break;
+		}
+
+		case PIANO_REQUEST_GET_ITEMS: {
+			assert (req->responseData != NULL);
+			json_object *items = NULL;
+			if (!json_object_object_get_ex (result, "items", &items)) {
+				break;
+			}
+			assert (items != NULL);
+			for (int i = 0; i < json_object_array_length (items); i++) {
+				json_object *s = json_object_array_get_idx (items, i);
+				const char *type = PianoJsonGetStr(s,"pandoraType");
+				PianoSong_t *song;
+				PianoStationType_t stationType = PIANO_TYPE_NONE;
+
+				assert(type != NULL);
+				if(strcmp(type,"PL") == 0 || strcmp(type,"ST") == 0) {
+				// Playlists and stations handled elsewhere
+				}
+				else if(strcmp(type,"AL") == 0) {
+					stationType = PIANO_TYPE_ALBUM;
+				}
+				else if(strcmp(type,"TR") == 0) {
+					stationType = PIANO_TYPE_TRACK;
+				}
+				else if(strcmp(type,"PC") == 0) {
+					stationType = PIANO_TYPE_PODCAST;
+					ph->user.PodcastCount++;
+				}
+				else {
+					LOG("type %s ignored\n",type);
+				}
+
+				if(stationType != PIANO_TYPE_NONE) {
+					PianoStation_t *tmpStation;
+					if ((tmpStation = calloc (1, sizeof (*tmpStation))) == NULL) {
+						return PIANO_RET_OUT_OF_MEMORY;
+					}
+					tmpStation->stationType = stationType;
+					tmpStation->id = PianoJsonStrdup (s, "pandoraId");
+					/* start new linked list or append */
+					ph->stations = PianoListAppendP (ph->stations, tmpStation);
+				}
+				else {
+					LOG("type %s ignored\n",type);
+				}
+			}
+
+			if(ph->user.PodcastCount) {
+				LOG("Found %d podcast stations\n",ph->user.PodcastCount);
+			}
+			break;
+		}
+
+		case PIANO_REQUEST_ANNOTATE_OBJECTS: {
+			assert (req->responseData != NULL);
+			assert (req->data != NULL);
+			PianoStation_t *station = ph->stations;
+			PianoRequestDataGetPlaylist_t *reqData = req->data;
+
+			while(station != NULL) {
+				assert(station->id != NULL);
+				switch(station->stationType) {
+					case PIANO_TYPE_PODCAST: {
+						json_object_object_foreach(result,Key,Val) {
+							if(strcmp(Key,station->id) == 0) {
+								PianoSong_t *song = station->theSong;
+								assert (song == NULL);
+								if ((song = calloc (1, sizeof (*song))) == NULL) {
+									return PIANO_RET_OUT_OF_MEMORY;
+								}
+								station->name = PianoJsonStrdup(Val,"name");
+								station->seedId = PianoJsonStrdup(Val,"latestEpisodeId");
+								station->theSong = song;
+								song->album = strdup(station->name);
+								song->coverArt = getCoverArt(Val);  // podcast coverArt
+								LOG("podcast coverart %s\n",song->coverArt);
+								break;
+							}
+						}
+						if(station->name == NULL) {
+							LOG("Couldn't find station %s\n",station->id);
+						}
+						break;
+					}
+
+					case PIANO_TYPE_ALBUM: {
+						json_object_object_foreach(result,Key,Val) {
+							if(strcmp(Key,station->id) == 0) {
+								char Temp[120];
+								snprintf(Temp,sizeof(Temp),"%s - %s",
+											PianoJsonGetStr(Val,"artistName"),
+											PianoJsonGetStr(Val,"name"));
+								station->name = strdup(Temp);
+								station->seedId = PianoJsonStrdup(Val,"pandoraId");
+								break;
+							}
+						}
+						if(station->name == NULL) {
+							LOG("Couldn't find station %s\n",station->id);
+						}
+						break;
+					}
+
+					case PIANO_TYPE_TRACK: {
+						json_object_object_foreach(result,Key,Val) {
+							if(strcmp(Key,station->id) == 0) {
+								station->name = PianoJsonStrdup(Val,"name");
+								station->seedId = PianoJsonStrdup(Val,"albumId");
+
+								PianoSong_t *song = station->theSong;
+								assert (song == NULL);
+								if ((song = calloc (1, sizeof (*song))) == NULL) {
+									return PIANO_RET_OUT_OF_MEMORY;
+								}
+								station->theSong = song;
+								song->artist = PianoJsonStrdup(Val, "artistName");
+								song->album = PianoJsonStrdup(Val, "albumName");
+								song->title = PianoJsonStrdup(Val, "name");
+								song->length = getInt(Val, "duration");
+								song->coverArt = getCoverArt(Val);
+								song->fileGain = 0.0;
+								break;
+							}
+						}
+						if(station->name == NULL) {
+							LOG("Couldn't find station %s\n",station->id);
+						}
+						break;
+					}
+				}
+				station = (PianoStation_t *) station->head.next;
+			}
+			break;
+		}
+			
+		case PIANO_REQUEST_GET_EPISODES: {
+			assert (req->responseData != NULL);
+			assert (req->data != NULL);
+			PianoRequestDataGetEpisodes_t *reqData = req->data;
+			PianoStation_t *station = reqData->station;
+			PianoSong_t *playlist = NULL;
+			int Added = 0;
+			PianoSong_t *song;
+
+			json_object *annotations = NULL;
+			if (json_pointer_get(result, "/details/annotations", &annotations)) {
+				break;
+			}
+			json_object_object_foreach(annotations,Key,Val) {
+				if(Key[0] != 'P' || Key[1] != 'E') {
+				// not episode, ignore it
+					continue;
+				}
+				const char *EpisodeTitle = PianoJsonGetStr(Val,"name");
+
+				if(EpisodeTitle == NULL) {
+					LOG("Couldn't get title of episode\n");
+					continue;
+				}
+				const char *Id  = PianoJsonGetStr(Val,"podcastId");
+				if(Id == NULL) {
+					LOG("Couldn't get podcastId\n");
+					continue;
+				}
+
+				if(strcmp(station->id,Id) != 0) {
+					LOG("Episode not for selected podcast (%s != %s)\n",
+						 station->id,Id);
+					continue;
+				}
+
+				const char *State = PianoJsonGetStr(Val,"contentState");
+				if(State == NULL) {
+					LOG("Couldn't get contentState\n");
+					continue;
+				}
+
+				if(strcmp(State,"AVAILABLE") != 0) {
+					if(strlen(EpisodeTitle) > 0) {
+						LOG(" ignored %s\n",EpisodeTitle);
+						LOG("  contentState: %s\n",State);
+					}
+					continue;
+				}
+				if(getBool(Val,"/rightsInfo/hasInteractive") != 1) {
+					LOG(" ignored %s\n",EpisodeTitle);
+					LOG("  hasInteractive: %d\n",getBool(Val,"/rightsInfo/hasInteractive"));
+					LOG("  hasOffline: %d\n",getBool(Val,"/rightsInfo/hasOffline"));
+					LOG("  hasNonInteractive: %d\n",getBool(Val,"/rightsInfo/hasNonInteractive"));
+					LOG("  hasStatutory: %d\n",getBool(Val,"/rightsInfo/hasStatutory"));
+					LOG("  hasRadioRights: %d\n",getBool(Val,"/rightsInfo/hasRadioRights"));
+					continue;
+				}
+
+				int Month;
+				int Day;
+				int Year;
+				char trackTitle[120];
+				const char *Released = PianoJsonGetStr(Val,"releaseDate");
+				if(Released == NULL) {
+					LOG("Couldn't get releaseDate\n");
+					continue;
+				}
+				if(sscanf(Released,"%d-%d-%d",&Year,&Month,&Day) != 3) {
+					LOG("Couldn't convert releaseDate %s\n",Released);
+					continue;
+				}
+				const char *Title = PianoJsonGetStr(Val,"name");
+				if(Title == NULL) {
+					LOG("Couldn't get episode title\n");
+					continue;
+				}
+				const char *trackToken = PianoJsonGetStr(Val, "pandoraId");
+				if(trackToken == NULL) {
+					LOG("Couldn't get trackToken\n");
+					continue;
+				}
+
+				snprintf(trackTitle,sizeof(trackTitle),"%02d/%02d: %s",
+							Month,Day,Title);
+				LOG("Got %s\n",trackTitle);
+
+				if(!reqData->bGetAll) {
+				// just getting name of the current episode 
+					song = reqData->playList;
+					if(strcmp(trackToken,song->trackToken) != 0) {
+						LOG("Ignoring %s, not current episode\n",trackTitle);
+						continue;
+					}
+					song->title = strdup(trackTitle);
+					LOG("Added name of current episode\n");
+					break;
+				}
+				if ((song = calloc (1, sizeof (*song))) == NULL) {
+					return PIANO_RET_OUT_OF_MEMORY;
+				}
+
+				song->title = strdup(trackTitle);
+				song->trackToken = strdup(trackToken);
+				song->length = getInt(Val, "duration");
+			// Save release date for sorting
+				song->fileGain = ((Year - 1900) * 10000) + (Month * 100) + Day;
+			// Add to playlist in release data order
+				PianoSong_t *thisSong = playlist;
+				PianoSong_t *lastSong = (PianoSong_t *) &playlist;
+				do {
+					if(thisSong == NULL) {
+						lastSong->head.next = (struct PianoListHead *) song;
+						// LOG("Added to end of list\n");
+						break;
+					}
+					// LOG("Comparing to %s\n",thisSong->title);
+					if(thisSong->fileGain > song->fileGain) {
+						lastSong->head.next = (struct PianoListHead *) song;
+						song->head.next = (struct PianoListHead *) thisSong;
+						// LOG("Added before\n");
+						break;
+					}
+					lastSong = thisSong;
+					thisSong = (PianoSong_t *) thisSong->head.next;
+				} while(true);
+				Added++;
+			}
+			reqData->playList = playlist;
+			LOG("Added %d episodes:\n",Added);
+#if 0
+			song = playlist;
+			while(song != NULL) {
+				LOG("  %s\n",song->title);
+				song = (PianoSong_t *) song->head.next;
+			}
+#endif
+			break;
+		}
+   }
 cleanup:
 	json_object_put (j);
 

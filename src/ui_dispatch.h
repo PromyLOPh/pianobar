@@ -29,7 +29,18 @@ typedef enum {
 	BAR_DC_GLOBAL = 1, /* top-level action */
 	BAR_DC_STATION = 2, /* station selected */
 	BAR_DC_SONG = 4, /* song selected */
+	BAR_DC_STATION_TYPE_STATION = 8,
+	BAR_DC_STATION_TYPE_PLAYLIST = 0x10,
+	BAR_DC_STATION_TYPE_PODCAST =  0x20,
+	BAR_DC_STATION_TYPE_ALBUM = 0x40,
+	BAR_DC_STATION_TYPE_TRACK = 0x80,
 } BarUiDispatchContext_t;
+
+#define BAR_DC_ALL_STATION_TYPES (BAR_DC_STATION_TYPE_STATION \
+											| BAR_DC_STATION_TYPE_PLAYLIST \
+											| BAR_DC_STATION_TYPE_PODCAST \
+											| BAR_DC_STATION_TYPE_ALBUM \
+											| BAR_DC_STATION_TYPE_TRACK)
 
 #include "settings.h"
 #include "main.h"
@@ -50,16 +61,18 @@ typedef struct {
 /* see settings.h */
 static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 		{'?', BAR_DC_UNDEFINED, BarUiActHelp, NULL, "act_help"},
-		{'+', BAR_DC_SONG, BarUiActLoveSong, "love song",
-				"act_songlove"},
-		{'-',  BAR_DC_SONG, BarUiActBanSong, "ban song", "act_songban"},
-		{'a', BAR_DC_STATION, BarUiActAddMusic, "add music to station",
-				"act_stationaddmusic"},
+		{'+', BAR_DC_STATION_TYPE_STATION | BAR_DC_SONG, 
+				BarUiActLoveSong, "love song","act_songlove"},
+		{'-', BAR_DC_STATION_TYPE_STATION | BAR_DC_SONG, 
+				BarUiActBanSong, "ban song", "act_songban"},
+		{'a', BAR_DC_STATION_TYPE_STATION | BAR_DC_STATION, 
+				BarUiActAddMusic, "add music to station","act_stationaddmusic"},
 		{'c', BAR_DC_GLOBAL, BarUiActCreateStation, "create new station",
 				"act_stationcreate"},
-		{'d', BAR_DC_STATION, BarUiActDeleteStation, "delete station",
-				"act_stationdelete"},
-		{'e', BAR_DC_SONG, BarUiActExplain, "explain why this song is played",
+		{'d', BAR_DC_ALL_STATION_TYPES | BAR_DC_STATION,
+				BarUiActDeleteStation, "delete station","act_stationdelete"},
+		{'e', BAR_DC_STATION_TYPE_STATION | BAR_DC_SONG, 
+				BarUiActExplain, "explain why this song is played",
 				"act_songexplain"},
 		{'g', BAR_DC_GLOBAL, BarUiActStationFromGenre, "add genre station",
 				"act_stationaddbygenre"},
@@ -73,16 +86,16 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 		{'p', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActTogglePause, "pause/resume playback",
 				"act_songpausetoggle"},
 		{'q', BAR_DC_GLOBAL, BarUiActQuit, "quit", "act_quit"},
-		{'r', BAR_DC_STATION, BarUiActRenameStation, "rename station",
-				"act_stationrename"},
+		{'r', BAR_DC_STATION_TYPE_STATION | BAR_DC_STATION, 
+				BarUiActRenameStation, "rename station","act_stationrename"},
 		{'s', BAR_DC_GLOBAL, BarUiActSelectStation, "change station",
 				"act_stationchange"},
-		{'t', BAR_DC_SONG, BarUiActTempBanSong, "tired (ban song for 1 month)",
-				"act_songtired"},
+		{'t', BAR_DC_STATION_TYPE_STATION | BAR_DC_SONG, 
+				BarUiActTempBanSong, "tired (ban song for 1 month)", "act_songtired"},
 		{'u', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActPrintUpcoming,
 				"upcoming songs", "act_upcoming"},
-		{'x', BAR_DC_STATION, BarUiActSelectQuickMix, "select quickmix stations",
-				"act_stationselectquickmix"},
+		{'x', BAR_DC_STATION_TYPE_STATION | BAR_DC_STATION, 
+				BarUiActSelectQuickMix, "select quickmix stations","act_stationselectquickmix"},
 		{'$', BAR_DC_SONG, BarUiActDebug, NULL, "act_debug"},
 		{'b', BAR_DC_SONG, BarUiActBookmark, "bookmark song/artist",
 				"act_bookmark"},
@@ -90,8 +103,8 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_voldown"},
 		{')', BAR_DC_GLOBAL, BarUiActVolUp, "increase volume",
 				"act_volup"},
-		{'=', BAR_DC_STATION, BarUiActManageStation, "manage station seeds/feedback/mode",
-				"act_managestation"},
+		{'=', BAR_DC_STATION_TYPE_STATION | BAR_DC_STATION, BarUiActManageStation, 
+				"manage station seeds/feedback/mode","act_managestation"},
 		{' ', BAR_DC_GLOBAL | BAR_DC_STATION, BarUiActTogglePause, NULL,
 				"act_songpausetoggle2"},
 		{'v', BAR_DC_SONG, BarUiActCreateStationFromSong,
@@ -104,6 +117,10 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 				"act_volreset"},
 		{'!', BAR_DC_GLOBAL, BarUiActSettings, "change settings",
 				"act_settings"},
+		{'f', BAR_DC_GLOBAL, BarUiActFilter, "filter station list settings",
+				"act_filter"},
+		{'G', BAR_DC_STATION_TYPE_ALBUM | BAR_DC_STATION_TYPE_PLAYLIST | BAR_DC_STATION_TYPE_PODCAST | BAR_DC_SONG, 
+				BarUiActGotoSong, "goto song", "act_gotosong"},
 		};
 
 #include <piano.h>
@@ -112,4 +129,5 @@ static const BarUiDispatchAction_t dispatchActions[BAR_KS_COUNT] = {
 
 BarKeyShortcutId_t BarUiDispatch (BarApp_t *, const char, PianoStation_t *, PianoSong_t *,
 		const bool, BarUiDispatchContext_t);
+bool BarUiContextMatch(BarUiDispatchContext_t Have,BarUiDispatchContext_t Need,const char **ErrMsg);
 
