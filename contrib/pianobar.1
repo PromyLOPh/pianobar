@@ -411,6 +411,13 @@ Your pandora.com username.
 .B volume = 0
 Initial volume correction in dB. Usually between -30 and +5.
 
+.TP
+.B selection_command = fzf
+Use this external command to select stations, songs, or artists. The command
+receives newline-separated entries such as " 0) StationName" or " 0) Artist -
+Title" via stdin and should return the selected entry verbatim via stdout.
+Empty output aborts the selection. For example, `fzf`, `dmenu`, or `fuzzel -d`.
+
 .SH REMOTE CONTROL
 .B pianobar
 can be controlled through a fifo. You have to create it yourself by executing

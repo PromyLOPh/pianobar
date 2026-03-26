@@ -91,6 +91,7 @@ typedef struct {
 	PianoAudioQuality_t audioQuality;
 	char *username;
 	char *password, *passwordCmd;
+	char *selectionCmd;
 	char *controlProxy; /* non-american listeners need this */
 	char *proxy;
 	char *bindTo;

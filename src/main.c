@@ -111,53 +111,18 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 			puts ("");
 			settings->password = strdup (passBuf);
 		} else {
-			pid_t chld;
-			int pipeFd[2];
-
 			BarUiMsg (settings, MSG_INFO, "Requesting password from external helper... ");
 
-			if (pipe (pipeFd) == -1) {
-				BarUiMsg (settings, MSG_NONE, "Error: %s\n", strerror (errno));
+			char *result = BarUiRunExternalCmd (settings, settings->passwordCmd,
+					NULL, 0);
+
+			if (result == NULL) {
+				BarUiMsg (settings, MSG_NONE, "Error: Exit status non-zero.\n");
 				return false;
 			}
 
-			chld = fork ();
-			if (chld == 0) {
-				/* child */
-				close (pipeFd[0]);
-				dup2 (pipeFd[1], fileno (stdout));
-				execl ("/bin/sh", "/bin/sh", "-c", settings->passwordCmd, (char *) NULL);
-				BarUiMsg (settings, MSG_NONE, "Error: %s\n", strerror (errno));
-				close (pipeFd[1]);
-				exit (1);
-			} else if (chld == -1) {
-				BarUiMsg (settings, MSG_NONE, "Error: %s\n", strerror (errno));
-				return false;
-			} else {
-				/* parent */
-				int status;
-
-				close (pipeFd[1]);
-				memset (passBuf, 0, sizeof (passBuf));
-				read (pipeFd[0], passBuf, sizeof (passBuf)-1);
-				close (pipeFd[0]);
-
-				/* drop trailing newlines */
-				ssize_t len = strlen (passBuf)-1;
-				while (len >= 0 && passBuf[len] == '\n') {
-					passBuf[len] = '\0';
-					--len;
-				}
-
-				waitpid (chld, &status, 0);
-				if (WEXITSTATUS (status) == 0) {
-					settings->password = strdup (passBuf);
-					BarUiMsg (settings, MSG_NONE, "Ok.\n");
-				} else {
-					BarUiMsg (settings, MSG_NONE, "Error: Exit status %i.\n", WEXITSTATUS (status));
-					return false;
-				}
-			}
+			settings->password = result;
+			BarUiMsg (settings, MSG_NONE, "Ok.\n");
 		} /* end else passwordCmd */
 	}
 
